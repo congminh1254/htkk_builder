@@ -60,6 +60,29 @@ class EvidenceFilesTests(unittest.TestCase):
   second=self.directory/evidence.NAMES[1];second.write_bytes(synthetic(1).replace(b'25/10/2026',b'24/10/2026'))
   with self.assertRaises(ValueError):self.read()
 
+class SafeDiagnosticTests(unittest.TestCase):
+ def test_value_failure_exposes_only_enum_fixed_leaf_index_and_file_index(self):
+  secret='private-token-and-person'
+  body=synthetic(0).replace(b'SYNTHETIC SIGNER',secret.encode())
+  with self.assertRaises(evidence.EvidenceError) as rejected:evidence.validate_xml(body,0,TODAY)
+  safe=evidence.safe_failure(rejected.exception,'read')
+  self.assertEqual(safe['reason'],'VALUE_MISMATCH');self.assertEqual(safe['leafIndex'],list(evidence.LEAVES).index('TTinTKhaiThue/TKhaiThue/nguoiKy')+1)
+  self.assertNotIn(secret,json.dumps(safe));self.assertNotIn('nguoiKy',json.dumps(safe))
+ def test_unknown_xml_names_or_malformed_contents_never_appear_in_diagnostic(self):
+  for body in [synthetic(0).replace(b'</TTinChung>',b'<SECRET_NODE>PRIVATE_VALUE</SECRET_NODE></TTinChung>'),b'<TTinChung><SECRET_NODE>PRIVATE_VALUE</wrong>']:
+   with self.assertRaises(evidence.EvidenceError) as rejected:evidence.validate_xml(body,0,TODAY)
+   text=json.dumps(evidence.safe_failure(rejected.exception,'read'));self.assertNotIn('SECRET_NODE',text);self.assertNotIn('PRIVATE_VALUE',text)
+ def test_date_diagnostics_reveal_shape_only_not_original_date_or_parser_exception(self):
+  for raw,reason,shape in [(b'2026-10-25','DATE_FORMAT','yyyy-mm-dd'),(b'31/02/2026','DATE_VALUE','dd-mm-yyyy-slashes'),(b'PRIVATE_DATE','DATE_FORMAT','other')]:
+   with self.assertRaises(evidence.EvidenceError) as rejected:evidence.validate_xml(synthetic(0).replace(b'25/10/2026',raw),0,TODAY)
+   safe=evidence.safe_failure(rejected.exception,'read');self.assertEqual(safe['reason'],reason);self.assertEqual(safe['dateShape'],shape);self.assertNotIn(raw.decode(),json.dumps(safe))
+ def test_arbitrary_exceptions_api_errors_and_tampered_context_cannot_log_strings(self):
+  error=urllib.error.HTTPError('https://example.test/PRIVATE_TOKEN',403,'PRIVATE_MESSAGE',{},None)
+  safe=evidence.safe_failure(error,'publish');self.assertEqual(safe['reason'],'API_AUTH');self.assertEqual(safe['httpStatus'],403);self.assertNotIn('PRIVATE',json.dumps(safe))
+  self.assertEqual(evidence.safe_failure(ValueError('PRIVATE_VALUE'),'PRIVATE_STAGE')['reason'],'INTERNAL')
+  error=evidence.EvidenceError('STRUCTURE',leafIndex=1);error.reason=['PRIVATE_VALUE'];error.context={'leafIndex':'PRIVATE','dateShape':{},'arbitrary':'PRIVATE','observedLeafCount':99999}
+  safe=evidence.safe_failure(error,'read');self.assertEqual(safe['reason'],'INTERNAL');self.assertNotIn('PRIVATE',json.dumps(safe));self.assertNotIn('observedLeafCount',safe)
+
 class PublicationTests(unittest.TestCase):
  def files(self):return {**{name:synthetic(index) for index,name in enumerate(evidence.NAMES)},'manifest.json':b'{"scope":"test"}'}
  def test_public_or_wrong_repository_denied_before_any_blob_write(self):

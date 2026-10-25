@@ -33,52 +33,93 @@ LEAVES={
  'TTinTKhaiThue/NNT/phuongXa':'','TTinTKhaiThue/NNT/maHuyenNNT':'9100001','TTinTKhaiThue/NNT/tenHuyenNNT':'','TTinTKhaiThue/NNT/maTinhNNT':'','TTinTKhaiThue/NNT/tenTinhNNT':'','TTinTKhaiThue/NNT/dthoaiNNT':'','TTinTKhaiThue/NNT/faxNNT':'','TTinTKhaiThue/NNT/emailNNT':'',
  'TTinTKhaiThue/DLyThue/mstDLyThue':'','TTinTKhaiThue/DLyThue/tenDLyThue':'','TTinTKhaiThue/DLyThue/dchiDLyThue':'','TTinTKhaiThue/DLyThue/maHuyenDLyThue':'','TTinTKhaiThue/DLyThue/tenHuyenDLyThue':'','TTinTKhaiThue/DLyThue/maTinhDLyThue':'','TTinTKhaiThue/DLyThue/tenTinhDLyThue':'','TTinTKhaiThue/DLyThue/dthoaiDLyThue':'','TTinTKhaiThue/DLyThue/faxDLyThue':'','TTinTKhaiThue/DLyThue/emailDLyThue':'','TTinTKhaiThue/DLyThue/soHDongDLyThue':'','TTinTKhaiThue/DLyThue/ngayKyHDDLyThue':'','TTinTKhaiThue/DLyThue/NVienDLy/tenNVienDLyThue':'','TTinTKhaiThue/DLyThue/NVienDLy/cchiHNghe':'',
 }
+REASONS=frozenset(('SIZE','ENCODING','DECLARATION','XML_PARSE','ROOT','XML_CONTENT','CONTAINER','DUPLICATE_LEAF','STRUCTURE','DATE_FORMAT','DATE_VALUE','DATE_STALE','VALUE_MISMATCH','PROVENANCE','FILES','FILE_UNSAFE','DATE_CONSISTENCY','HELPER_UNSAFE','GIT_OBJECT','PUBLISH_FILES','PRIVATE_REPO','BUILDER','API_AUTH','API_HTTP','NETWORK','IO','INTERNAL'))
+DATE_SHAPES=frozenset(('empty','dd-mm-yyyy-slashes','yyyy-mm-dd','other'))
+class EvidenceError(ValueError):
+ def __init__(self,reason,**context):
+  if reason not in REASONS:raise ValueError('Invalid safe reason')
+  self.reason=reason;self.context=safe_context(context)
+  super().__init__(reason)
+
+def safe_context(context):
+ result={}
+ bounds={'leafIndex':(1,len(LEAVES)),'fileIndex':(1,len(NAMES)),'expectedLeafCount':(0,1024),'observedLeafCount':(0,1024),'httpStatus':(100,599)}
+ for key,(minimum,maximum) in bounds.items():
+  value=context.get(key)
+  if type(value) is int and minimum<=value<=maximum:result[key]=value
+ if isinstance(context.get('dateShape'),str) and context['dateShape'] in DATE_SHAPES:result['dateShape']=context['dateShape']
+ return result
+
+def safe_failure(error,stage):
+ reason='INTERNAL';context={}
+ if isinstance(error,EvidenceError):reason=error.reason if isinstance(error.reason,str) and error.reason in REASONS else 'INTERNAL';context=safe_context(error.context if isinstance(error.context,dict) else {})
+ elif isinstance(error,urllib.error.HTTPError):
+  reason='API_AUTH' if error.code in (401,403) else 'API_HTTP';context=safe_context({'httpStatus':error.code})
+ elif isinstance(error,urllib.error.URLError):reason='NETWORK'
+ elif isinstance(error,OSError):reason='IO'
+ return {'format':'htkk-common-header-publication-status-v1','status':'rejected','stage':stage if stage in ('read','publish') else 'unknown','reason':reason,**context}
+
+def date_shape(value):
+ if value=='':return 'empty'
+ if re.fullmatch(r'\d{2}/\d{2}/\d{4}',value):return 'dd-mm-yyyy-slashes'
+ if re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):return 'yyyy-mm-dd'
+ return 'other'
+
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 
 def validate_xml(body,index,today=None):
- if not isinstance(body,bytes) or not 0<len(body)<=65536:raise ValueError('Invalid evidence size')
- text=body.decode('utf-8-sig')
- if re.search(r'<!|<\?(?!xml\s)',text,re.I) or text.count('<?')>1:raise ValueError('XML declarations/comments/entities forbidden')
- parser=ET.XMLParser(target=ET.TreeBuilder(insert_comments=True,insert_pis=True));root=ET.fromstring(body,parser=parser)
- if root.tag!='TTinChung':raise ValueError('Unexpected evidence root')
+ if not isinstance(body,bytes) or not 0<len(body)<=65536:raise EvidenceError('SIZE')
+ try:text=body.decode('utf-8-sig')
+ except UnicodeError:raise EvidenceError('ENCODING') from None
+ if re.search(r'<!|<\?(?!xml\s)',text,re.I) or text.count('<?')>1:raise EvidenceError('DECLARATION')
+ parser=ET.XMLParser(target=ET.TreeBuilder(insert_comments=True,insert_pis=True))
+ try:root=ET.fromstring(body,parser=parser)
+ except ET.ParseError:raise EvidenceError('XML_PARSE') from None
+ if root.tag!='TTinChung':raise EvidenceError('ROOT')
  observed={};containers=set();expected_containers={''}
  for path in LEAVES:
   parts=path.split('/')
   expected_containers.update('/'.join(parts[:n]) for n in range(1,len(parts)))
  def visit(node,path):
-  if not isinstance(node.tag,str) or node.attrib or (node.tail or '').strip():raise ValueError('Unexpected XML content')
+  if not isinstance(node.tag,str) or node.attrib or (node.tail or '').strip():raise EvidenceError('XML_CONTENT')
   if len(node):
-   if (node.text or '').strip() or path in containers:raise ValueError('Unexpected XML container')
+   if (node.text or '').strip() or path in containers:raise EvidenceError('CONTAINER')
    containers.add(path)
    for child in node:visit(child,path+'/'+child.tag if path else child.tag)
   else:
-   if path in observed:raise ValueError('Duplicate leaf')
+   if path in observed:raise EvidenceError('DUPLICATE_LEAF',leafIndex=list(LEAVES).index(path)+1 if path in LEAVES else 0)
    observed[path]=node.text or ''
  visit(root,'')
- if list(observed)!=list(LEAVES) or containers!=expected_containers:raise ValueError('Unexpected XML structure')
+ if list(observed)!=list(LEAVES) or containers!=expected_containers:
+  first=next((position for position,path in enumerate(LEAVES,1) if position>len(observed) or list(observed)[position-1]!=path),None)
+  raise EvidenceError('STRUCTURE',leafIndex=first,expectedLeafCount=len(LEAVES),observedLeafCount=min(len(observed),1024))
  expected=dict(LEAVES);expected['TTinTKhaiThue/TKhaiThue/loaiTKhai']=('C','B')[index];expected['TTinTKhaiThue/TKhaiThue/soLan']=str(index)
  date_path='TTinTKhaiThue/TKhaiThue/ngayKy';date=observed[date_path]
- if not re.fullmatch(r'\d{2}/\d{2}/\d{4}',date):raise ValueError('Invalid generated date')
- generated=datetime.datetime.strptime(date,'%d/%m/%Y').date();today=today or datetime.datetime.now(datetime.timezone.utc).date()
- if abs((today-generated).days)>2:raise ValueError('Generated date is stale')
+ if not re.fullmatch(r'\d{2}/\d{2}/\d{4}',date):raise EvidenceError('DATE_FORMAT',leafIndex=list(LEAVES).index(date_path)+1,dateShape=date_shape(date))
+ try:generated=datetime.datetime.strptime(date,'%d/%m/%Y').date()
+ except ValueError:raise EvidenceError('DATE_VALUE',leafIndex=list(LEAVES).index(date_path)+1,dateShape=date_shape(date)) from None
+ today=today or datetime.datetime.now(datetime.timezone.utc).date()
+ if abs((today-generated).days)>2:raise EvidenceError('DATE_STALE',leafIndex=list(LEAVES).index(date_path)+1,dateShape=date_shape(date))
  expected[date_path]=date
- if observed!=expected:raise ValueError('Non-synthetic or unexpected evidence value')
+ if observed!=expected:raise EvidenceError('VALUE_MISMATCH',leafIndex=next(position for position,path in enumerate(LEAVES,1) if observed[path]!=expected[path]))
  return date
 
 def read_evidence(directory,run_id,builder_commit,today=None):
- if not re.fullmatch(r'[0-9]{1,20}',run_id) or not re.fullmatch(r'[0-9a-f]{40}',builder_commit):raise ValueError('Invalid provenance')
- if directory.is_symlink() or not directory.is_dir() or set(p.name for p in directory.iterdir())!=set(NAMES):raise ValueError('Unexpected evidence files')
+ if not re.fullmatch(r'[0-9]{1,20}',run_id) or not re.fullmatch(r'[0-9a-f]{40}',builder_commit):raise EvidenceError('PROVENANCE')
+ if directory.is_symlink() or not directory.is_dir() or set(p.name for p in directory.iterdir())!=set(NAMES):raise EvidenceError('FILES')
  files={};dates=[]
  for index,name in enumerate(NAMES):
   path=directory/name
-  if path.is_symlink() or not path.is_file() or not 0<path.stat().st_size<=65536:raise ValueError('Unsafe evidence file')
-  files[name]=path.read_bytes();dates.append(validate_xml(files[name],index,today))
- if len(set(dates))!=1:raise ValueError('Inconsistent generated date')
+  if path.is_symlink() or not path.is_file() or not 0<path.stat().st_size<=65536:raise EvidenceError('FILE_UNSAFE',fileIndex=index+1)
+  files[name]=path.read_bytes()
+  try:dates.append(validate_xml(files[name],index,today))
+  except EvidenceError as error:raise EvidenceError(error.reason,**{**error.context,'fileIndex':index+1}) from None
+ if len(set(dates))!=1:raise EvidenceError('DATE_CONSISTENCY')
  helpers={}
  for name in HELPERS:
   path=pathlib.Path(__file__).with_name(name)
-  if path.is_symlink() or not path.is_file():raise ValueError('Unsafe helper source')
+  if path.is_symlink() or not path.is_file():raise EvidenceError('HELPER_UNSAFE')
   helpers['scripts/'+name]=hashlib.sha256(path.read_bytes()).hexdigest()
  manifest={'format':'htkk-common-header-reference-evidence-v1','sourceVersion':'5.8.1','sourcePins':PINS,'helperSha256':helpers,'builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'scope':'original-common-header-methods-only','originalMethods':['GetToKhaiInfo','BindToKhaiInfoToTTinChung','xmlExportTTinChungProcessNode'],'inputsSynthetic':True,'guiExportInvoked':False,'fullRoundTrip':False,'files':{name:{'sha256':hashlib.sha256(body).hexdigest(),'bytes':len(body)}for name,body in files.items()}}
  files['manifest.json']=(json.dumps(manifest,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode()
@@ -89,13 +130,13 @@ def api(path,token,payload=None,method=None):
  with urllib.request.build_opener(NoRedirect).open(request,timeout=30) as response:return json.load(response)
 
 def sha(value):
- if not isinstance(value,str) or not re.fullmatch(r'[0-9a-f]{40}',value):raise ValueError('Invalid Git object')
+ if not isinstance(value,str) or not re.fullmatch(r'[0-9a-f]{40}',value):raise EvidenceError('GIT_OBJECT')
  return value
 
 def publish(files,token):
- if set(files)!=set(NAMES)|{'manifest.json'} or any(not isinstance(body,bytes) or not 0<len(body)<=65536 for body in files.values()):raise ValueError('Unexpected publication files')
+ if set(files)!=set(NAMES)|{'manifest.json'} or any(not isinstance(body,bytes) or not 0<len(body)<=65536 for body in files.values()):raise EvidenceError('PUBLISH_FILES')
  info=api('',token)
- if info.get('private') is not True or info.get('full_name')!=REPO:raise ValueError('Evidence target must be fixed private repository')
+ if info.get('private') is not True or info.get('full_name')!=REPO:raise EvidenceError('PRIVATE_REPO')
  entries=[]
  for name,body in files.items():entries.append({'path':name,'mode':'100644','type':'blob','sha':sha(api('/git/blobs',token,{'content':base64.b64encode(body).decode(),'encoding':'base64'})['sha'])})
  tree=sha(api('/git/trees',token,{'tree':entries})['sha'])
@@ -110,11 +151,14 @@ def publish(files,token):
 def main():
  directory=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-common-header-diagnostic'
  if not directory.exists():print('No synthetic common-header evidence retained.');return
+ stage='read'
  try:
-  if os.environ.get('GITHUB_REPOSITORY')!=BUILDER:raise ValueError('Unexpected builder')
-  files=read_evidence(directory,os.environ['GITHUB_RUN_ID'],os.environ['GITHUB_SHA']);commit=publish(files,os.environ['SOURCE_PUBLISH_TOKEN'])
+  if os.environ.get('GITHUB_REPOSITORY')!=BUILDER:raise EvidenceError('BUILDER')
+  files=read_evidence(directory,os.environ['GITHUB_RUN_ID'],os.environ['GITHUB_SHA']);stage='publish';commit=publish(files,os.environ['SOURCE_PUBLISH_TOKEN'])
   print('Private synthetic common-header evidence published: '+commit)
- except Exception:raise SystemExit('Private common-header evidence publication failed; no XML or raw error published.')
+ except Exception as error:
+  print(json.dumps(safe_failure(error,stage),separators=(',',':')))
+  raise SystemExit('Private common-header evidence publication failed; no XML or raw error published.')
  finally:
   if not directory.is_symlink():shutil.rmtree(directory,ignore_errors=True)
 if __name__=='__main__':main()
