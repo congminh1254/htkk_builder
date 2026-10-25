@@ -805,6 +805,12 @@ try {
       }
     } catch { $report.privateSyntheticLoginDiagnostic=@{status='capture-unavailable';captured=$false;realTaxpayerDataUsed=$false;sourceDefaultsMayBeVisible=$true;publicScreenshot=$false} }
   }
+  if($RuntimeHost -eq 'clr2-x86-reference' -and $GuiAutomation -eq 'profile-save' -and $report.stage -eq 'blocked' -and $null -ne $report.guiReferenceAutomation -and $report.guiReferenceAutomation.originalSaveInvoked -eq $true -and $null -ne $referencePreparation -and $null -ne $process){
+   try{if(-not $process.HasExited){
+    . (Join-Path $PSScriptRoot 'Save-HtkkSyntheticWindowDiagnostic.ps1')
+    $report.privateSyntheticLoginDiagnostic=Save-HtkkSyntheticWindowDiagnostic -RootProcessId $process.Id -RootStartTime $rootStartTime -ExpectedHtkkExecutable $exe -LoginReport $report.syntheticLogin -RunId $env:GITHUB_RUN_ID -ReferenceExecutable $referencePreparation.hostPath -ReferenceSha256 $referencePreparation.hostSha256 -GuiReport $report.guiReferenceAutomation
+   }}catch{$report.privateSyntheticLoginDiagnostic=@{status='capture-unavailable';captured=$false;realTaxpayerDataUsed=$false;publicScreenshot=$false}}
+  }
   if($null -ne $process) {
     try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null } } catch { }
     $process.Dispose()

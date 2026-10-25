@@ -12,6 +12,18 @@ class PrivateDiagnosticTests(unittest.TestCase):
   metadata=self.files(root);(root/'regsvr32-window.png').rename(root/'synthetic-login-window.png')
   metadata={'format':'htkk-synthetic-login-diagnostic-v1','runId':'123','runtimeHost':'original','scope':'verified-original-htkk-root-after-synthetic-login','width':100,'height':80,'pngSha256':metadata['pngSha256'],'originalExecutableSha256':'411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938','newIdClicked':True,'fixtureDirectoryPreexisting':False,'syntheticInputVerified':True,'loginClicked':True,'loginHidden':True,'freshFixtureDirectoryCreated':True,'realTaxpayerDataUsed':False,'sourceDefaultsMayBeVisible':True,'publicScreenshot':False}
   (root/'diagnostic.json').write_text(json.dumps(metadata));return metadata
+ def reference_files(self,root):
+  metadata=self.synthetic_files(root);metadata.update(format='htkk-reference-profile-save-diagnostic-v1',runtimeHost='clr2-x86-reference',scope='verified-reference-host-after-synthetic-profile-save',referenceHostSha256='a'*64,performedInputCount=7,originalSaveInvoked=True)
+  (root/'diagnostic.json').write_text(json.dumps(metadata));return metadata
+ def test_reference_save_capture_retains_exact_guarded_private_context(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=pathlib.Path(folder);self.reference_files(root)
+   self.assertEqual(set(diag.read_diagnostic(root,'123')),{'synthetic-login-window.png','diagnostic.json'})
+ def test_reference_save_rejects_unverified_inputs_host_and_mutation_context(self):
+  for field,value in [('referenceHostSha256','bad'),('performedInputCount',6),('originalSaveInvoked',False),('runtimeHost','original'),('sourceDefaultsMayBeVisible',False),('syntheticInputVerified',False),('performedInputCount',True)]:
+   with self.subTest(field=field),tempfile.TemporaryDirectory() as folder:
+    root=pathlib.Path(folder);metadata=self.reference_files(root);metadata[field]=value;(root/'diagnostic.json').write_text(json.dumps(metadata))
+    with self.assertRaises(ValueError):diag.read_diagnostic(root,'123')
  def test_scoped_synthetic_login_pair_allowed(self):
   with tempfile.TemporaryDirectory() as folder:
    root=pathlib.Path(folder);self.synthetic_files(root)

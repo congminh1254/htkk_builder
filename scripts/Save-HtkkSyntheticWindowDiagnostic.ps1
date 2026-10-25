@@ -2,7 +2,7 @@
 # The original application can display bundled defaults: pixels are not claimed all synthetic.
 function Save-HtkkSyntheticWindowDiagnostic {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ExpectedHtkkExecutable,[Parameter(Mandatory=$true)]$LoginReport,[ValidatePattern('^[0-9]{1,20}$')][string]$RunId)
+ param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ExpectedHtkkExecutable,[Parameter(Mandatory=$true)]$LoginReport,[ValidatePattern('^[0-9]{1,20}$')][string]$RunId,[string]$ReferenceExecutable='',[string]$ReferenceSha256='',$GuiReport=$null)
  $safe=[ordered]@{status='not-captured';captured=$false;sha256=$null;realTaxpayerDataUsed=$false;sourceDefaultsMayBeVisible=$true;publicScreenshot=$false}
  $owned=$null;$bitmap=$null;$graphics=$null;$stream=$null
  try {
@@ -12,11 +12,16 @@ function Save-HtkkSyntheticWindowDiagnostic {
   if(Test-Path -LiteralPath $directory){$safe.status='diagnostic-directory-already-exists';return $safe}
   $owned=Get-Process -Id $RootProcessId -ErrorAction Stop;$null=$owned.Handle
   if($owned.HasExited -or $owned.StartTime.ToUniversalTime().Ticks -ne $RootStartTime.ToUniversalTime().Ticks){$safe.status='original-root-not-matched';return $safe}
+  $referenceMode=-not [string]::IsNullOrEmpty($ReferenceExecutable)
   $image=[IO.Path]::GetFullPath($owned.MainModule.FileName)
-  if(-not [string]::Equals($image,[IO.Path]::GetFullPath($ExpectedHtkkExecutable),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($image) -ine 'HTKK.exe'){return $safe}
+  if($referenceMode){
+   if($null -eq $GuiReport -or $GuiReport.mode -cne 'profile-save' -or $GuiReport.sourcePinsVerified -isnot [bool] -or -not $GuiReport.sourcePinsVerified -or $GuiReport.performedInputCount -ne 7 -or $GuiReport.originalSaveInvoked -isnot [bool] -or -not $GuiReport.originalSaveInvoked){return $safe}
+   if($ReferenceSha256 -cnotmatch '^[a-f0-9]{64}$' -or -not [string]::Equals($image,[IO.Path]::GetFullPath($ReferenceExecutable),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($image) -cnotmatch '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$' -or -not [string]::Equals([IO.Path]::GetDirectoryName($image),[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($ExpectedHtkkExecutable)),[StringComparison]::OrdinalIgnoreCase)){return $safe}
+   if((Get-FileHash -LiteralPath $image -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ReferenceSha256){return $safe}
+  }elseif(-not [string]::Equals($image,[IO.Path]::GetFullPath($ExpectedHtkkExecutable),[StringComparison]::OrdinalIgnoreCase) -or [IO.Path]::GetFileName($image) -ine 'HTKK.exe'){return $safe}
   if((Get-Item -LiteralPath $image).Attributes -band [IO.FileAttributes]::ReparsePoint){return $safe}
-  if((Get-FileHash -LiteralPath $image -Algorithm SHA256).Hash.ToLowerInvariant() -ne '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'){return $safe}
-  if((Get-FileHash -LiteralPath ($image+'.config') -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'){return $safe}
+  if((Get-FileHash -LiteralPath $ExpectedHtkkExecutable -Algorithm SHA256).Hash.ToLowerInvariant() -ne '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'){return $safe}
+  if((Get-FileHash -LiteralPath ($ExpectedHtkkExecutable+'.config') -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'){return $safe}
   if(-not ('HtkkPrivateSyntheticImage' -as [type])) {
    Add-Type -AssemblyName System.Drawing
    Add-Type -TypeDefinition @'
@@ -61,6 +66,7 @@ public static class HtkkPrivateSyntheticImage {
   [IO.File]::WriteAllBytes((Join-Path $directory 'synthetic-login-window.png'),$bytes)
   $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
   $metadata=[ordered]@{format='htkk-synthetic-login-diagnostic-v1';runId=$RunId;runtimeHost='original';scope='verified-original-htkk-root-after-synthetic-login';width=$width;height=$height;pngSha256=$hash;originalExecutableSha256='411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938';newIdClicked=$true;fixtureDirectoryPreexisting=$false;syntheticInputVerified=$true;loginClicked=$true;loginHidden=$true;freshFixtureDirectoryCreated=$true;realTaxpayerDataUsed=$false;sourceDefaultsMayBeVisible=$true;publicScreenshot=$false}
+  if($referenceMode){$metadata.format='htkk-reference-profile-save-diagnostic-v1';$metadata.runtimeHost='clr2-x86-reference';$metadata.scope='verified-reference-host-after-synthetic-profile-save';$metadata.referenceHostSha256=$ReferenceSha256;$metadata.performedInputCount=7;$metadata.originalSaveInvoked=$true}
   $metadata | ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $directory 'diagnostic.json') -Encoding UTF8
   $safe.status='captured-for-private-upload';$safe.captured=$true;$safe.sha256=$hash;return $safe
  }catch{$safe.status='capture-unavailable';return $safe}

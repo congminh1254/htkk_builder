@@ -32,6 +32,10 @@ def read_diagnostic(directory,run_id):
   if metadata.get('runtimeHost') not in ('original','clr2-x86-reference'):raise ValueError()
  else:
   expected={'format':'htkk-synthetic-login-diagnostic-v1','runId':run_id,'runtimeHost':'original','scope':'verified-original-htkk-root-after-synthetic-login','width':width,'height':height,'pngSha256':hashlib.sha256(png).hexdigest(),'originalExecutableSha256':'411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938','newIdClicked':True,'fixtureDirectoryPreexisting':False,'syntheticInputVerified':True,'loginClicked':True,'loginHidden':True,'freshFixtureDirectoryCreated':True,'realTaxpayerDataUsed':False,'sourceDefaultsMayBeVisible':True,'publicScreenshot':False}
+ if image_name=='synthetic-login-window.png' and metadata.get('format')=='htkk-reference-profile-save-diagnostic-v1':
+  host_sha=metadata.get('referenceHostSha256')
+  if not isinstance(host_sha,str) or not re.fullmatch('[0-9a-f]{64}',host_sha):raise ValueError()
+  expected.update(format='htkk-reference-profile-save-diagnostic-v1',runtimeHost='clr2-x86-reference',scope='verified-reference-host-after-synthetic-profile-save',referenceHostSha256=host_sha,performedInputCount=7,originalSaveInvoked=True)
  if metadata!=expected or any(type(metadata[key]) is not type(value) for key,value in expected.items()):raise ValueError()
  # Canonical JSON removes any unexpected whitespace or untrusted representation.
  files['diagnostic.json']=(json.dumps(expected,separators=(',',':'))+'\n').encode()
