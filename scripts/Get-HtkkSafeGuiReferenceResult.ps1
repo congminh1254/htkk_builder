@@ -8,7 +8,7 @@ function Get-HtkkSafeGuiReferenceResult {
   $file=Get-Item -LiteralPath $ResultPath
   if($file.Attributes -band [IO.FileAttributes]::ReparsePoint -or $file.Length -gt 16384 -or $file.Length -lt 2){$invalid.status='invalid';$invalid.stage='result-invalid';return $invalid}
   $value=Get-Content -LiteralPath $ResultPath -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
-  $keys=@('format','mode','stage','failureCategory','editorKind','runtime','saveDialogKind','sourcePinsVerified','visibleForms','spreadCount','sheetRows','sheetColumns','mstBoxesMatched','initialRequiredTextBlank','editingApiAvailable','performedInputCount','originalSaveInvoked','savedHeaderExists','savedHeaderChecksMatched','savedHeaderCheckedFieldCount','saveDialogKind','savedHeaderMismatchMask','controlKinds','realTaxpayerDataUsed','runtimeRoundTrip')
+  $keys=@('format','mode','stage','failureCategory','editorKind','runtime','sourcePinsVerified','visibleForms','spreadCount','sheetRows','sheetColumns','mstBoxesMatched','initialRequiredTextBlank','editingApiAvailable','performedInputCount','originalSaveInvoked','savedHeaderExists','savedHeaderChecksMatched','savedHeaderCheckedFieldCount','saveDialogKind','savedHeaderMismatchMask','controlKinds','realTaxpayerDataUsed','runtimeRoundTrip')
   if($value -isnot [Collections.IDictionary] -or $value.Count -ne $keys.Count){throw 'invalid'}
   foreach($key in $keys){if(@($value.Keys) -cnotcontains $key){throw 'invalid'}}
   foreach($key in @('format','mode','stage','failureCategory','editorKind','runtime','saveDialogKind')){if($value[$key] -isnot [string]){throw 'invalid'}}
