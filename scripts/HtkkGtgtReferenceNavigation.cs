@@ -11,6 +11,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool profileClosed=false,mainMenuObserved=false,d1MenuClicked=false,periodObserved=false;
  private int menuRowCount=0,menuClicks=0,menuStep=0,periodControlCount=0;
  private string navigationPhase="not-started";
+ private Form closingProfileForm=null;
+ private bool profileCloseRequested=false;
  private readonly Dictionary<string,string> periodDescriptions=new Dictionary<string,string>();
  private static readonly string[] PeriodNames=new string[]{"chkTkhaiThang","chkTKQuy","OptTKThang","OptChinhthuc","OptBosung","mskYear","mskMonth","cbbQuy","btnDongY","cmdClose","axfpsPhuLuc","cboNganhKD","chkChonPhuLucKeKhaiAll","cboCQTCuc","cboCQTChiCuc","cboTinh","cboXa"};
  private string NavigationJson(){
@@ -52,9 +54,19 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }
   foreach(Control child in root.Controls){if(visited>=512)break;DescribePeriod(child,ref visited);}
  }
+ private static void FindMainMenus(Control root,List<Form> found,List<Control> seen){
+  if(seen.Count>=512||seen.Contains(root))return;seen.Add(root);
+  Form form=root as Form;if(form!=null&&form.Visible&&!form.IsDisposed&&form.GetType().FullName=="HTKK.frmHTKKSystems")found.Add(form);
+  foreach(Control child in root.Controls){if(seen.Count>=512)break;FindMainMenus(child,found,seen);}
+ }
  private void ContinueGtgtNavigation(){
-  if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||!successAcknowledged||!profileClosed){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
-  Form main=null;foreach(Form candidate in Application.OpenForms){if(candidate.Visible&&!candidate.IsDisposed&&candidate.GetType().FullName=="HTKK.frmHTKKSystems"){if(main!=null)throw new InvalidOperationException();main=candidate;}}
+  if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||!successAcknowledged||!profileCloseRequested||closingProfileForm==null){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
+  // The worksheet can be a non-top-level Form inside the still-visible main frame.
+  // Observe THAT original owner across UI turns rather than testing the outer frame.
+  profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;
+  if(!profileClosed){stage="waiting-profile-close";Record();return;}
+  List<Form> menus=new List<Form>();List<Control> seen=new List<Control>();foreach(Form candidate in Application.OpenForms){if(candidate.Visible&&!candidate.IsDisposed)FindMainMenus(candidate,menus,seen);}
+  if(menus.Count>1)throw new InvalidOperationException();Form main=menus.Count==1?menus[0]:null;
   if(main==null){stage="waiting-main-menu";Record();return;}mainMenuObserved=true;
   if(navigationPhase=="waiting-gtgt-period"){
    List<Control> periods=new List<Control>();int visited=0;FindPeriods(main,periods,ref visited);

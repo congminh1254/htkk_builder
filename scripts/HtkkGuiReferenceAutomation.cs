@@ -112,9 +112,15 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    }
    ReadSavedHeader();
    if(mode=="gtgt-inspect"&&headerMatched&&headerChecks==8&&headerMismatchMask==0&&successAcknowledged){
+    // Original forms can be embedded with TopLevel=false. FindForm on the actual
+    // worksheet controls identifies the owner; the outer main frame stays visible.
+    Form profileOwner=closes[0].FindForm();
+    if(profileOwner==null||profileOwner.GetType().FullName!="HTKK.frmWinToKhai"||saves[0].FindForm()!=profileOwner||spread.FindForm()!=profileOwner){stage="gtgt-profile-owner-not-matched";finished=true;Record();return;}
+    closingProfileForm=profileOwner;profileCloseRequested=true;
     stage="profile-close-invoking";navigationPhase="waiting-main-menu";Record();
-    // Original Ghi has cleared isDataChanged. Use only the original profile Đóng.
-    closes[0].PerformClick();profileClosed=form.IsDisposed||!form.Visible;stage="waiting-main-menu";Record();return;
+    // Original Ghi has cleared isDataChanged. Request only the original Đóng once.
+    closes[0].PerformClick();profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;
+    stage=profileClosed?"waiting-main-menu":"waiting-profile-close";Record();return;
    }
    finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
   }
