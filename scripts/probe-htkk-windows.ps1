@@ -9,6 +9,11 @@ $report = [ordered]@{
   officialCabMatchesMirror = $false; msiAuthenticodeValid = $false
   netFx35Present = $false; installExitCode = $null
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
+  runnerSessionId = $null; appSessionId = $null; userInteractive = [Environment]::UserInteractive
+  threadDesktop = 'unavailable'; desktopWindowScope = 'current-thread-desktop'
+  appVisibleWindowCount = 0; appHiddenWindowCount = 0; allVisibleWindowCount = 0
+  childProcessCount = 0; childVisibleWindowCount = 0; childHiddenWindowCount = 0
+  mainWindowHandlePresent = $false; startupWaitSeconds = 0; startupContext = 'not-probed'
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
@@ -20,6 +25,61 @@ function Get-PinnedFile([string]$Url, [string]$Path, [string]$Expected) {
   # Public URLs only. No relay token, cookie, auth header or TLS override.
   Invoke-WebRequest -Uri $Url -OutFile $Path -TimeoutSec 120 -MaximumRedirection 8 -UserAgent 'HotroKeKhai-ReadinessProbe/1.0'
   Assert-Hash $Path $Expected
+}
+# Only aggregate native GUI counts are exposed: no titles, class names, handles or identifiers.
+function Initialize-WindowDiagnostics {
+  Add-Type -TypeDefinition @'
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class HtkkWindowDiagnostics {
+  private delegate bool EnumProc(IntPtr window, IntPtr unused);
+  [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc callback, IntPtr unused);
+  [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
+  [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
+  [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+  [DllImport("user32.dll")] private static extern IntPtr GetThreadDesktop(uint thread);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
+  private static extern bool GetUserObjectInformation(IntPtr handle, int index, StringBuilder value, int size, out int needed);
+  public static string DesktopKind() {
+    var name = new StringBuilder(256); int needed;
+    if (!GetUserObjectInformation(GetThreadDesktop(GetCurrentThreadId()), 2, name, name.Capacity * 2, out needed)) return "unavailable";
+    // Do not publish an arbitrary desktop name: it may contain user-specific data.
+    if (String.Equals(name.ToString(), "Default", StringComparison.OrdinalIgnoreCase)) return "default";
+    if (String.Equals(name.ToString(), "Winlogon", StringComparison.OrdinalIgnoreCase)) return "winlogon";
+    return "other";
+  }
+  // all-visible, app-visible, app-hidden, descendant-visible, descendant-hidden
+  public static int[] Counts(int appProcess, int[] descendants) {
+    var children = new HashSet<int>(descendants); var counts = new int[5];
+    EnumProc callback = (window, unused) => {
+      uint owner; GetWindowThreadProcessId(window, out owner);
+      bool visible = IsWindowVisible(window);
+      if (visible) counts[0]++;
+      if (owner == (uint)appProcess) counts[visible ? 1 : 2]++;
+      else if (children.Contains((int)owner)) counts[visible ? 3 : 4]++;
+      return true;
+    };
+    if (!EnumWindows(callback, IntPtr.Zero)) throw new InvalidOperationException("WINDOW_ENUMERATION_FAILED");
+    GC.KeepAlive(callback); return counts;
+  }
+}
+'@
+}
+function Get-DescendantProcessIds([int]$AppProcessId) {
+  # Read only IDs, not executable paths, command lines, window text or user information.
+  $snapshot = @(Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId)
+  $found = [System.Collections.Generic.HashSet[int]]::new()
+  $found.Add($AppProcessId) | Out-Null
+  do {
+    $added = $false
+    foreach ($entry in $snapshot) {
+      if ($found.Contains([int]$entry.ParentProcessId) -and $found.Add([int]$entry.ProcessId)) { $added = $true }
+    }
+  } while ($added)
+  $found.Remove($AppProcessId) | Out-Null
+  return $found | ForEach-Object { [int]$_ }
 }
 try {
   New-Item -ItemType Directory -Path $work | Out-Null
@@ -74,10 +134,34 @@ try {
   $report.stage = 'startup'
   $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) -PassThru
   $report.processStarted = $true
-  Start-Sleep -Seconds 15
-  $process.Refresh()
-  $report.processAliveAfterWait = -not $process.HasExited
-  if (-not $process.HasExited) { $report.windowObserved = $process.MainWindowHandle -ne [IntPtr]::Zero }
+  Initialize-WindowDiagnostics
+  $report.runnerSessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
+  $report.appSessionId = $process.SessionId
+  $report.threadDesktop = [HtkkWindowDiagnostics]::DesktopKind()
+  $startupClock = [System.Diagnostics.Stopwatch]::StartNew()
+  do {
+    $process.Refresh()
+    $report.processAliveAfterWait = -not $process.HasExited
+    $report.mainWindowHandlePresent = $report.processAliveAfterWait -and ($process.MainWindowHandle -ne [IntPtr]::Zero)
+    $children = @(Get-DescendantProcessIds -AppProcessId $process.Id)
+    $report.childProcessCount = $children.Count
+    $counts = [HtkkWindowDiagnostics]::Counts($process.Id, [int[]]$children)
+    $report.allVisibleWindowCount = $counts[0]
+    $report.appVisibleWindowCount = $counts[1]; $report.appHiddenWindowCount = $counts[2]
+    $report.childVisibleWindowCount = $counts[3]; $report.childHiddenWindowCount = $counts[4]
+    $report.windowObserved = ($counts[1] + $counts[3]) -gt 0
+    $report.startupWaitSeconds = [int][Math]::Floor($startupClock.Elapsed.TotalSeconds)
+    if ($report.windowObserved -or $startupClock.Elapsed.TotalSeconds -ge 45) { break }
+    Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, [Math]::Ceiling(45 - $startupClock.Elapsed.TotalSeconds))))
+  } while ($true)
+  $startupClock.Stop()
+  $report.startupContext = if ($report.windowObserved) { 'visible-app-or-child-window' }
+    elseif ($report.appSessionId -ne $report.runnerSessionId) { 'different-process-session' }
+    elseif ($report.runnerSessionId -eq 0) { 'session-zero' }
+    elseif (-not $report.userInteractive) { 'noninteractive-environment' }
+    elseif ($report.allVisibleWindowCount -eq 0) { 'no-visible-windows-on-current-desktop' }
+    elseif (($report.appHiddenWindowCount + $report.childHiddenWindowCount) -gt 0) { 'only-hidden-app-windows' }
+    else { 'no-app-windows-on-current-desktop' }
   if (-not $report.windowObserved) { throw 'STARTUP_WINDOW_NOT_OBSERVED' }
   $report.stage = 'startup-window-observed'
 } catch {
