@@ -1,0 +1,43 @@
+name: Theo dõi metadata HTKK chính thức
+run-name: HTKK official source watch
+on:
+  schedule:
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Full private main SHA supplied by trusted dispatcher (optional for manual watch)
+        required: false
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: htkk-official-source-watch
+  cancel-in-progress: false
+jobs:
+  watch:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout trusted public watcher only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test source watch boundaries without network
+        run: python3 -m unittest discover -s scripts -p 'test_source_watch.py'
+      - name: Observe public release HTML (direct HTTPS first)
+        env:
+          AGENT_AUTH_TOKEN: ${{ secrets.AGENT_AUTH_TOKEN }}
+        run: python3 scripts/source-watch.py observe
+      - name: Publish bounded report and status to fixed private repository
+        env:
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          REQUESTED_SOURCE_SHA: ${{ inputs.source_sha }}
+        run: python3 scripts/source-watch.py publish
+      - name: Report fixed outcome (no installer activation)
+        run: python3 scripts/source-watch.py outcome
+      - name: Remove local public HTML metadata report
+        if: always()
+        run: rm -f "$RUNNER_TEMP/htkk-official-source-watch.json"
