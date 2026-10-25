@@ -1,4 +1,4 @@
-"""Publish only static site/portable outputs to a private orphan branch."""
+"""Publish only static web output to a private orphan branch."""
 import os,pathlib,re,shutil,subprocess,json,urllib.request,datetime
 sha=os.environ['COMMIT_SHA']
 if not re.fullmatch('[0-9a-f]{40}',sha):raise SystemExit('Invalid source SHA.')
@@ -13,9 +13,7 @@ def run(args,env):
 try:
  shutil.rmtree(root,ignore_errors=True);root.mkdir()
  safe_copy(pathlib.Path('source/out'),root/'site')
- for name in ('hotrokekhai-portable.zip','SHA256SUMS'):
-  portable=root/'site/downloads'/name
-  if not portable.is_file() or portable.is_symlink():raise ValueError()
+ if (root/'site/downloads').exists():raise ValueError('Retired downloads must not be published')
  (root/'site/.nojekyll').touch()
  (root/'.htkk-build.json').write_text(json.dumps({'sourceSha':sha,'checks':'passed','builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'builderRepository':os.environ.get('GITHUB_REPOSITORY',''),'builderRunId':os.environ.get('GITHUB_RUN_ID','')}))
  env={key:os.environ[key] for key in ('PATH','HOME','RUNNER_TEMP') if key in os.environ}

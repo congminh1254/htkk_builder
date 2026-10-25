@@ -55,6 +55,7 @@ jobs:
       - name: Build and verify (private diagnostics)
         env:
           BUILD_MODE: ${{ inputs.mode }}
+          ADSENSE_ENABLED: ${{ vars.ADSENSE_ENABLED }}
         run: python3 builder/scripts/build.py
       - name: Publish static output to private source repository
         if: inputs.mode == 'release'

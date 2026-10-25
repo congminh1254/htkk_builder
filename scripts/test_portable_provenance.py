@@ -6,19 +6,15 @@ BUILDER=pathlib.Path(__file__).with_name('build.py')
 class ReleaseProvenanceTests(unittest.TestCase):
  def build(self,sha='a'*40,version='0.7.0'):
   with tempfile.TemporaryDirectory() as folder:
-   root=pathlib.Path(folder);source=root/'source';source.mkdir();(source/'out').mkdir();(source/'dist').mkdir()
+   root=pathlib.Path(folder);source=root/'source';source.mkdir();(source/'out').mkdir();(source/'out/downloads').mkdir()
    (source/'package.json').write_text(json.dumps({'version':version}))
-   for name in ('hotrokekhai-portable.zip','SHA256SUMS'):(source/'dist'/name).write_text('synthetic-public-output')
+   for name in ('hotrokekhai-portable.zip','SHA256SUMS'):(source/'out/downloads'/name).write_text('synthetic-public-output')
    calls=[]
    def command(args,**kwargs):
     self.assertFalse(any('TOKEN' in key or 'SECRET' in key for key in kwargs['env']))
     calls.append(args)
     if args==['git','rev-parse','HEAD']:
      return type('Result',(),{'returncode':0,'stdout':sha.encode()})()
-    if args==['node','scripts/package-portable.mjs']:
-     # Provenance must already be present when packaging includes the out tree.
-     metadata=json.loads((source/'out/build.json').read_text())
-     self.assertEqual(metadata['sourceSha'],sha);self.assertEqual(metadata['version'],version)
     return type('Result',(),{'returncode':0})()
    previous=pathlib.Path.cwd()
    try:
@@ -27,14 +23,15 @@ class ReleaseProvenanceTests(unittest.TestCase):
      try:runpy.run_path(str(BUILDER))
      except SystemExit as error:return None,calls,str(error)
     metadata=json.loads((source/'out/build.json').read_text())
-    self.assertTrue((source/'out/downloads/hotrokekhai-portable.zip').is_file())
+    self.assertFalse((source/'out/downloads').exists())
     return metadata,calls,None
    finally:os.chdir(previous)
- def test_manifest_embedded_before_packaging_without_credential_environment(self):
+ def test_web_manifest_without_downloads_or_credential_environment(self):
   metadata,calls,error=self.build()
   self.assertIsNone(error);self.assertEqual(metadata['sourceSha'],'a'*40);self.assertEqual(metadata['version'],'0.7.0')
   self.assertIsNotNone(datetime.datetime.fromisoformat(metadata['builtAt']).tzinfo)
-  self.assertIn(['node','scripts/package-portable.mjs'],calls)
+  self.assertNotIn(['node','scripts/package-portable.mjs'],calls)
+  self.assertNotIn(['python3','scripts/fetch-node-runtime.py'],calls)
  def test_invalid_commit_prevents_runtime_fetch_and_package(self):
   metadata,calls,error=self.build(sha='bad; input')
   self.assertIsNone(metadata);self.assertEqual(error,'Build or verification failed. Private diagnostics were not published.')

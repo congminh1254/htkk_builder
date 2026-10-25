@@ -4,7 +4,7 @@ source=pathlib.Path('source').resolve()
 log=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-builder-log.txt'
 allowed=('PATH','HOME','TMPDIR','RUNNER_TEMP','RUNNER_TOOL_CACHE','LANG')
 env={key:os.environ[key] for key in allowed if key in os.environ}
-env.update(CI='1',NEXT_TELEMETRY_DISABLED='1')
+env.update(CI='1',NEXT_TELEMETRY_DISABLED='1',NEXT_PUBLIC_ADSENSE_ENABLED='true' if os.environ.get('ADSENSE_ENABLED') == 'true' else 'false')
 def run(command):
  with log.open('ab') as output:
   result=subprocess.run(command,cwd=source,env=env,stdout=output,stderr=subprocess.STDOUT)
@@ -25,11 +25,7 @@ try:
   version=json.loads((source/'package.json').read_text())['version']
   if not re.fullmatch('[0-9a-f]{40}',sha) or not isinstance(version,str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?',version):raise RuntimeError()
   (source/'out/build.json').write_text(json.dumps({'sourceSha':sha,'version':version,'builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat()},separators=(',',':'))+'\n')
-  env['HTKK_NODE_CACHE']=str(pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-node-runtime')
-  run(['python3','scripts/fetch-node-runtime.py'])
-  run(['node','scripts/package-portable.mjs'])
-  downloads=source/'out/downloads';downloads.mkdir(exist_ok=True)
-  for name in ('hotrokekhai-portable.zip','SHA256SUMS'):
-   shutil.copy2(source/'dist'/name,downloads/name)
+  # Portable distribution is retired. Never carry stale download output forward.
+  shutil.rmtree(source/'out/downloads',ignore_errors=True)
 except Exception:raise SystemExit('Build or verification failed. Private diagnostics were not published.')
 print('Build and verification passed.')
