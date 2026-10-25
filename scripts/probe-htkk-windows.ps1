@@ -1,4 +1,4 @@
-# No tax data, credentials, screenshots or installer logs are published.
+# No tax data, credentials, public screenshots or installer logs are published.
 [CmdletBinding()]
 param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration)
 $ErrorActionPreference = 'Stop'
@@ -28,10 +28,13 @@ $report = [ordered]@{
   ownedWindowKinds = @{}; nativeDialogCueCounts = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
   uiaLegacyRoleCounts = @{}; uiaLegacyPatternAvailable = $false; uiaProviderProcessMismatchCount = 0; uiaViews = @()
   applicationEvents = $null
+  privateRegistrationDiagnostic = $null
+  profileAliasOracle = $null
   taxIdOracle = $null
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
+$rootStartTime = $null
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
 $firewallNames = [Collections.Generic.List[string]]::new()
 $registrationProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
@@ -576,6 +579,8 @@ try {
   Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
   . (Join-Path $PSScriptRoot 'Test-HtkkTaxIdOracle.ps1')
   $report.taxIdOracle = Invoke-HtkkTaxIdOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+  . (Join-Path $PSScriptRoot 'Test-HtkkProfileAliasOracle.ps1')
+  $report.profileAliasOracle = Invoke-HtkkProfileAliasOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
   # Both modes block the original image; the reference mode additionally
   # blocks its own new host before any original code executes inside that host.
   $originalFirewall='HTKK readiness original '+[guid]::NewGuid().ToString('N')
@@ -708,14 +713,26 @@ try {
     if ($report.registrationAcknowledgementLimitReached) { throw 'REGISTRATION_ACKNOWLEDGEMENT_LIMIT' }
   }
   if ($report.taxIdOracle.status -ne 'matched') { throw 'TAX_ID_ORACLE_NOT_VERIFIED' }
+  if ($report.profileAliasOracle.status -ne 'matched') { throw 'PROFILE_ALIAS_ORACLE_NOT_VERIFIED' }
   $report.stage = 'startup-window-observed'
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
 } finally {
+  # Before cleanup, only a verified owned Microsoft RegSvr32 modal may be captured.
+  # This diagnostic contains no taxpayer input and is uploaded privately in a separate step.
+  if($null -ne $process -and $null -ne $rootStartTime -and -not $report.loginReady) {
+    try {
+      if(-not $process.HasExited) {
+        . (Join-Path $PSScriptRoot 'Save-HtkkRegistrationDiagnostic.ps1')
+        $owned=@(Get-DescendantProcessIds -AppProcessId $process.Id -RootStartTime $rootStartTime)
+        $report.privateRegistrationDiagnostic=Save-HtkkRegistrationDiagnostic -RootProcessId $process.Id -OwnedProcessIds ([int[]]$owned) -RootStartTime $rootStartTime -RuntimeHost $RuntimeHost -RunId $env:GITHUB_RUN_ID
+      }
+    } catch { $report.privateRegistrationDiagnostic=@{status='capture-unavailable';captured=$false;taxDataUsed=$false;publicScreenshot=$false} }
+  }
   if($null -ne $process) {
     try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null } } catch { }
     $process.Dispose()

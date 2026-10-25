@@ -41,4 +41,11 @@ jobs:
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration
-      # No artifact upload, cache, screenshot, raw process/window title, tax data or secret input.
+      - name: Publish supplier startup window privately
+        if: always() && inputs.install_and_probe
+        shell: pwsh
+        env:
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/publish-windows-diagnostic.py
+      # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
+      # Only fixed scoped pre-login Microsoft modal pixels may enter the PRIVATE diagnostic branch.
