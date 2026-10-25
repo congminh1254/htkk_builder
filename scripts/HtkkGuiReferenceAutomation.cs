@@ -20,6 +20,8 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private string result,project,mode="inspect",stage="not-started",failure="none",editorKind="not-started";
  private volatile bool finished=false,queued=false;
  private bool pins=false,mstMatched=false,initialBlank=false,editingAvailable=false,saveInvoked=false,headerExists=false,headerMatched=false;
+ private string saveDialogKind="not-observed";
+ private int headerMismatchMask=0;
  private bool successAcknowledged=false;
  private int forms=0,spreads=0,rows=0,columns=0,inputCount=0,headerChecks=0;
  private readonly Dictionary<string,int> kinds=new Dictionary<string,int>();
@@ -29,7 +31,7 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private void Record(){
   string q=((char)34).ToString();StringBuilder counts=new StringBuilder();
   foreach(string key in new string[]{"form","button","combo","text","spread","other"}){if(counts.Length>0)counts.Append(',');counts.Append(q+key+q+":"+(kinds.ContainsKey(key)?kinds[key]:0).ToString(CultureInfo.InvariantCulture));}
-  string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
+  string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
  public void Start(string requestedMode){
@@ -95,6 +97,9 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
    Edit(spread,sheet,31,2,FakeSigner,false,"edit-signer");
    Edit(spread,sheet,33,2,"Thuế Thành phố Hà Nội",true,"edit-tax-authority-head");
    Edit(spread,sheet,35,2,"Thuế cơ sở 16 Thành phố Hà Nội",true,"edit-tax-authority-local");
+   string[] codeValues=new string[]{"101","10129087","10100","10129"};int[] codeRows=new int[]{5,9,33,35},codeColumns=new int[]{18,18,19,19};
+   string[] codeStages=new string[]{"profile-province-code-unmatched","profile-ward-code-unmatched","profile-taxhead-code-unmatched","profile-taxlocal-code-unmatched"};
+   for(int index=0;index<codeValues.Length;index++){if(CellText(sheet,codeRows[index],codeColumns[index])!=codeValues[index]){stage=codeStages[index];finished=true;Record();return;}}
    if(CellText(sheet,29,2)!="01/01")throw new InvalidOperationException();
    stage="original-save-invoking";saveInvoked=true;Record();
    // This is the ORIGINAL application button and its original validators/save handler.
@@ -142,11 +147,14 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  }
  private void AcknowledgeVerifiedSuccess(){
   if(successAcknowledged||!saveInvoked)return;
-  ReadSavedHeader();if(!headerMatched||headerChecks!=8)return;
+  ReadSavedHeader();
   foreach(Form form in Application.OpenForms){
    if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage"||form.Text.Trim()!="Thông báo")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true),buttons=form.Controls.Find("btn_2",true);
-   if(labels.Length!=1||labels[0].Text!="Đã ghi dữ liệu thành công!"||buttons.Length!=1)return;
+   if(labels.Length!=1)return;
+   saveDialogKind=labels[0].Text=="Đã ghi dữ liệu thành công!"?"success-0002":labels[0].Text=="Thông tin kê khai sai, có muốn ghi lại không?"?"invalid-0015":"other-original-message";
+   Record();
+   if(!headerMatched||headerChecks!=8||saveDialogKind!="success-0002"||buttons.Length!=1)return;
    Button close=buttons[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")return;
    if(CountVisibleButtons(form)!=1)return;
    successAcknowledged=true;stage="success-modal-acknowledged";Record();close.PerformClick();return;
@@ -154,12 +162,12 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  }
  private static int CountVisibleButtons(Control root){int count=root is Button&&root.Visible&&root.Enabled?1:0;foreach(Control child in root.Controls)count+=CountVisibleButtons(child);return count;}
  private void ReadSavedHeader(){
-  headerChecks=0;headerMatched=false;headerExists=false;
+  headerChecks=0;headerMismatchMask=0;headerMatched=false;headerExists=false;
   string file=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),"HEADER.xml");headerExists=File.Exists(file);if(!headerExists)return;
   if(new FileInfo(file).Length>2000000)throw new InvalidOperationException();XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
   using(XmlReader reader=XmlReader.Create(file,settings)){document.Load(reader);}Dictionary<string,string> values=new Dictionary<string,string>();foreach(XmlNode node in document.SelectNodes("//*[@PropertyInfo]")){string key=node.Attributes["PropertyInfo"].Value;if(key.Length>0){if(values.ContainsKey(key))throw new InvalidOperationException();values[key]=node.Attributes["Value"]==null?String.Empty:node.Attributes["Value"].Value;}}
   Dictionary<string,string> expected=new Dictionary<string,string>();expected["mst"]=Mst;expected["tenNNT"]=FakeName;expected["dchiNNT"]=FakeAddress;expected["nguoiKy"]=FakeSigner;expected["maTinhNNT"]="101";expected["maXaPhuongNNT"]="10129087";expected["maCQTCapCuc"]="10100";expected["maCQTNoiNop"]="10129";
-  headerMatched=true;foreach(KeyValuePair<string,string> entry in expected){headerChecks++;if(!values.ContainsKey(entry.Key)||values[entry.Key]!=entry.Value)headerMatched=false;}
+  headerMatched=true;string[] checkedKeys=new string[]{"mst","tenNNT","dchiNNT","nguoiKy","maTinhNNT","maXaPhuongNNT","maCQTCapCuc","maCQTNoiNop"};for(int index=0;index<checkedKeys.Length;index++){string key=checkedKeys[index];headerChecks++;if(!values.ContainsKey(key)||values[key]!=expected[key]){headerMatched=false;headerMismatchMask|=1<<index;}}
  }
  private void Failure(Exception error){
   for(int depth=0;depth<8&&error.InnerException!=null;depth++)error=error.InnerException;

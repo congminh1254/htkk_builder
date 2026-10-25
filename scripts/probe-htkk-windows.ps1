@@ -763,7 +763,7 @@ try {
       $nextGui=Get-HtkkSafeGuiReferenceResult -ResultPath $referencePreparation.guiAutomationResultPath -ExpectedMode $GuiAutomation
       if($nextGui.status -eq 'valid') {
         $lastGui=$nextGui
-        $terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in @('source-or-runtime-not-matched','fixture-preexists','initialization-unavailable','profile-wait-timeout','profile-dimensions-unmatched','fresh-synthetic-profile-not-established','editing-api-unavailable','original-profile-saved-verified','original-profile-save-not-verified') -or ($GuiAutomation -eq 'inspect' -and $nextGui.stage -eq 'profile-inspected')
+        $terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in @('source-or-runtime-not-matched','fixture-preexists','initialization-unavailable','profile-wait-timeout','profile-dimensions-unmatched','fresh-synthetic-profile-not-established','editing-api-unavailable','profile-province-code-unmatched','profile-ward-code-unmatched','profile-taxhead-code-unmatched','profile-taxlocal-code-unmatched','original-profile-saved-verified','original-profile-save-not-verified') -or ($GuiAutomation -eq 'inspect' -and $nextGui.stage -eq 'profile-inspected')
         if($terminal){break}
       }
       if($process.HasExited){$automationRootExited=$true;break}

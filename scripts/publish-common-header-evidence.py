@@ -34,7 +34,7 @@ LEAVES={
  'TTinTKhaiThue/DLyThue/mstDLyThue':'','TTinTKhaiThue/DLyThue/tenDLyThue':'','TTinTKhaiThue/DLyThue/dchiDLyThue':'','TTinTKhaiThue/DLyThue/maHuyenDLyThue':'','TTinTKhaiThue/DLyThue/tenHuyenDLyThue':'','TTinTKhaiThue/DLyThue/maTinhDLyThue':'','TTinTKhaiThue/DLyThue/tenTinhDLyThue':'','TTinTKhaiThue/DLyThue/dthoaiDLyThue':'','TTinTKhaiThue/DLyThue/faxDLyThue':'','TTinTKhaiThue/DLyThue/emailDLyThue':'','TTinTKhaiThue/DLyThue/soHDongDLyThue':'','TTinTKhaiThue/DLyThue/ngayKyHDDLyThue':'','TTinTKhaiThue/DLyThue/NVienDLy/tenNVienDLyThue':'','TTinTKhaiThue/DLyThue/NVienDLy/cchiHNghe':'',
 }
 REASONS=frozenset(('SIZE','ENCODING','DECLARATION','XML_PARSE','ROOT','XML_CONTENT','CONTAINER','DUPLICATE_LEAF','STRUCTURE','DATE_FORMAT','DATE_VALUE','DATE_STALE','VALUE_MISMATCH','PROVENANCE','FILES','FILE_UNSAFE','DATE_CONSISTENCY','HELPER_UNSAFE','GIT_OBJECT','PUBLISH_FILES','PRIVATE_REPO','BUILDER','API_AUTH','API_HTTP','NETWORK','IO','INTERNAL'))
-DATE_SHAPES=frozenset(('empty','dd-mm-yyyy-slashes','yyyy-mm-dd','other'))
+DATE_SHAPES=frozenset(('empty','whitespace-only','dd-mm-yyyy-slashes','yyyy-mm-dd','other'))
 class EvidenceError(ValueError):
  def __init__(self,reason,**context):
   if reason not in REASONS:raise ValueError('Invalid safe reason')
@@ -61,6 +61,7 @@ def safe_failure(error,stage):
 
 def date_shape(value):
  if value=='':return 'empty'
+ if value.isspace():return 'whitespace-only'
  if re.fullmatch(r'\d{2}/\d{2}/\d{4}',value):return 'dd-mm-yyyy-slashes'
  if re.fullmatch(r'\d{4}-\d{2}-\d{2}',value):return 'yyyy-mm-dd'
  return 'other'
@@ -102,7 +103,9 @@ def validate_xml(body,index,today=None):
  today=today or datetime.datetime.now(datetime.timezone.utc).date()
  if abs((today-generated).days)>2:raise EvidenceError('DATE_STALE',leafIndex=list(LEAVES).index(date_path)+1,dateShape=date_shape(date))
  expected[date_path]=date
- if observed!=expected:raise EvidenceError('VALUE_MISMATCH',leafIndex=next(position for position,path in enumerate(LEAVES,1) if observed[path]!=expected[path]))
+ if observed!=expected:
+  position,path=next((position,path) for position,path in enumerate(LEAVES,1) if observed[path]!=expected[path])
+  raise EvidenceError('VALUE_MISMATCH',leafIndex=position,dateShape=date_shape(observed[path]))
  return date
 
 def read_evidence(directory,run_id,builder_commit,today=None):
