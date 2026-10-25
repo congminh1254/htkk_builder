@@ -26,3 +26,5 @@ Release builds fetch the pinned Windows runtime into a runner-temporary cache an
 ## Offline verification
 
 Run `python3 -m unittest discover -s scripts -p 'test_*.py'` and `python3 -m py_compile scripts/*.py`. These authorization tests mock API responses; they do not certify Windows HTKK compatibility. Before first dispatch, review the public Git tree to ensure it contains only this builder template, configure the private dispatch/deploy workflows, and configure all four dedicated secrets.
+
+Có thể dùng duy nhất SOURCE_READ_TOKEN cho cả checkout/publish/status theo cấu hình chủ repo: token cần Contents read/write + Commit statuses write chỉ trên htkk_web. Workflow ưu tiên token riêng nếu có, nếu không dùng SOURCE_READ_TOKEN; build subprocess vẫn không nhận token.

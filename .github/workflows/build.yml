@@ -57,7 +57,7 @@ jobs:
       - name: Publish static output to private source repository
         if: inputs.mode == 'release'
         env:
-          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN }}
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
           COMMIT_SHA: ${{ inputs.commit_sha }}
         run: python3 builder/scripts/publish.py
       - name: Remove local source and diagnostic files
@@ -72,7 +72,7 @@ jobs:
     steps:
       - name: Report fixed status to private source
         env:
-          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN }}
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
           COMMIT_SHA: ${{ inputs.commit_sha }}
           BUILD_RESULT: ${{ needs.build.result }}
         run: |
