@@ -14,7 +14,7 @@ $report = [ordered]@{
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
   runnerSessionId = $null; appSessionId = $null; userInteractive = [Environment]::UserInteractive
   registrationAcknowledgementEnabled = [bool]$AcknowledgeRegistration; registrationDialogPosts = 0; registrationProcessesTracked = 0
-  registrationExitCodes = @(); registrationNonzeroExitCount = 0; registrationUnverifiedExitCount = 0; registrationPostFailureCount = 0; registrationAcknowledgementLimitReached = $false
+  registrationExitCodes = @(); registrationNonzeroExitCount = 0; registrationUnverifiedExitCount = 0; registrationPostFailureCount = 0; registrationCloseFallbackPosts = 0; registrationCloseFallbackFailures = 0; registrationAcknowledgementLimitReached = $false
   appArchitecture = 'unknown'; preexistingHtkkProcessCount = 0; preexistingHtkkSameSessionCount = 0
   descendantScope = 'created-at-or-after-root-start'; verifiedMicrosoftChildImages = @(); unknownChildImageInspectionFailures = 0
   threadDesktop = 'unavailable'; desktopWindowScope = 'current-thread-desktop'
@@ -94,8 +94,11 @@ public static class HtkkWindowDiagnostics {
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetWindowText(IntPtr window, StringBuilder text, int size);
   [DllImport("user32.dll", SetLastError=true)] private static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
   // Called only for a retained, verified Microsoft regsvr32 process created by this probe.
-  // Return 0=no exact dialog, 1=exact dialog only, 2=IDOK was posted. No text or HWND is returned.
-  public static int RegistrationDialog(int approvedProcess, bool acknowledge) {
+  // Keep the HWND privately so fallback can only close the SAME modal after IDOK.
+  private static readonly Dictionary<int,IntPtr> PendingRegistrationWindows=new Dictionary<int,IntPtr>();
+  // Return 0=no exact dialog, 1=exact dialog only, 2=IDOK posted, 3=same-modal WM_CLOSE posted.
+  // No text or HWND is returned to PowerShell or public logs.
+  public static int RegistrationDialog(int approvedProcess, bool acknowledge, bool closeFallback) {
     int outcome=0;
     EnumProc callback=(window,unused)=> {
       uint owner; GetWindowThreadProcessId(window,out owner);
@@ -105,8 +108,17 @@ public static class HtkkWindowDiagnostics {
       var caption=new StringBuilder(64); GetWindowText(window,caption,caption.Capacity);
       if (!String.Equals(caption.ToString(),"RegSvr32",StringComparison.OrdinalIgnoreCase)) return true;
       outcome=1;
-      // WM_COMMAND with IDOK=1, never IDYES, WM_CLOSE or a generic default button.
-      if (acknowledge && PostMessage(window,0x0111,new IntPtr(1),IntPtr.Zero)) outcome=2;
+      // Never IDYES or an arbitrary/default button. The fallback requires an earlier
+      // IDOK on this exact HWND and is invoked only once by the retained-process caller.
+      if (closeFallback) {
+        IntPtr original;
+        if (PendingRegistrationWindows.TryGetValue(approvedProcess,out original) && original==window) {
+          PendingRegistrationWindows.Remove(approvedProcess);
+          if (PostMessage(window,0x0010,IntPtr.Zero,IntPtr.Zero)) outcome=3;
+        }
+      } else if (acknowledge && PostMessage(window,0x0111,new IntPtr(1),IntPtr.Zero)) {
+        PendingRegistrationWindows[approvedProcess]=window; outcome=2;
+      }
       return false;
     };
     EnumWindows(callback,IntPtr.Zero); GC.KeepAlive(callback); return outcome;
@@ -360,16 +372,28 @@ function Invoke-HtkkRegistrationAcknowledgement([int[]]$DescendantIds,[int]$AppP
       if (-not ([string]::Equals($imagePath,$system32,[StringComparison]::OrdinalIgnoreCase) -or [string]::Equals($imagePath,$syswow64,[StringComparison]::OrdinalIgnoreCase))) { continue }
       if ((Get-VerifiedMicrosoftImageBasename -ProcessId $candidate.Id) -ne 'regsvr32.exe' -or $candidate.HasExited) { continue }
       if ($report.registrationDialogPosts -ge 16) {
-        if ([HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$false) -eq 1) { $report.registrationAcknowledgementLimitReached = $true }
+        if ([HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$false,$false) -eq 1) { $report.registrationAcknowledgementLimitReached = $true }
         continue
       }
-      $outcome = [HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$true)
+      $outcome = [HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$true,$false)
       if ($outcome -eq 2) {
         $registrationKeys.Add($key) | Out-Null
         $registrationProcesses.Add($candidate); $retained = $true
         $report.registrationDialogPosts++; $report.registrationProcessesTracked = $registrationProcesses.Count
         # Bounded wait only; a still-running process remains retained for later checks.
         $candidate.WaitForExit(1000) | Out-Null
+        if (-not $candidate.HasExited) {
+          # A prior private diagnostic showed the standard successful-registration
+          # information popup. Revalidate scope, then close only that same pending HWND.
+          $freshForClose = @(Get-DescendantProcessIds -AppProcessId $AppProcessId -RootStartTime $RootStartTime)
+          if ($candidate.Id -in $freshForClose -and (Get-VerifiedMicrosoftImageBasename -ProcessId $candidate.Id) -eq 'regsvr32.exe') {
+            $closeOutcome = [HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$false,$true)
+            if ($closeOutcome -eq 3) {
+              $report.registrationCloseFallbackPosts++
+              $candidate.WaitForExit(1000) | Out-Null
+            } elseif ($closeOutcome -eq 1) { $report.registrationCloseFallbackFailures++ }
+          }
+        }
       } elseif ($outcome -eq 1) { $report.registrationPostFailureCount++ }
     } catch { } # No path, PID, caption, error text or command line is published.
     finally { if ($null -ne $candidate -and -not $retained) { $candidate.Dispose() } }
