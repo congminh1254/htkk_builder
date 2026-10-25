@@ -66,5 +66,11 @@ jobs:
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-windows-diagnostic.py
+      - name: Retain synthetic common-header reference privately
+        if: always() && inputs.install_and_probe
+        shell: pwsh
+        env:
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/publish-common-header-evidence.py
       # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
-      # Only fixed scoped pre-login Microsoft modal pixels may enter the PRIVATE diagnostic branch.
+      # Only bounded verified supplier windows may enter the fixed PRIVATE diagnostic branch.
