@@ -17,9 +17,10 @@ $report = [ordered]@{
   uiaStatus = 'not-probed'; uiaWindowCount = 0; uiaControlCount = 0; loginReady = $false
   uiaControlTypeCounts = @{}; uiaAllowedControlIds = @(); uiaStaticLabels = @()
   uiaHelperEncoding = 'utf8-bom'; uiaHelperExitCode = $null; uiaHelperParseErrorCount = 0; uiaHelperFailureCategory = 'not-probed'
-  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; console = 0; shell = 0; browser = 0; updater = 0; debugger = 0; other = 0 }
+  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; console = 0; shell = 0; browser = 0; updater = 0; debugger = 0; errorReporting = 0; other = 0 }
   ownedWindowKinds = @{}; nativeDialogCueCounts = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
   uiaLegacyRoleCounts = @{}; uiaLegacyPatternAvailable = $false; uiaProviderProcessMismatchCount = 0; uiaViews = @()
+  applicationEvents = $null
   taxIdOracle = $null
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
@@ -128,6 +129,94 @@ public static class HtkkWindowDiagnostics {
   }
 }
 '@
+}
+# Read a bounded local Application log window. Event text/XML stays in memory
+# and is never returned, written to files or sent to the public console.
+function Get-HtkkSafeApplicationEvents([datetime]$ApplicationStartTime) {
+  $safe = [ordered]@{ status = 'not-queried'; queriedCount = 0; matchedEventCount = 0; providerQueryFailureCount = 0; bounded = $false; providers = @(); eventIds = @(); categories = @(); hresults = @() }
+  $providerGroups = @{
+    '.NET Runtime' = 'dotnet-runtime'
+    '.NET Runtime 2.0 Error Reporting' = 'dotnet-runtime-v2'
+    'Application Error' = 'application-error'
+    'Windows Error Reporting' = 'windows-error-reporting'
+  }
+  $categoryPatterns = [ordered]@{
+    'bitness-load' = '(?i)BadImageFormatException|0x8007000B|incorrect format'
+    'com-class-not-registered' = '(?i)class not registered|0x80040154'
+    'com-exception' = '(?i)COMException'
+    'assembly-load' = '(?i)could not load file or assembly|FileLoadException'
+    'file-not-found' = '(?i)FileNotFoundException|0x80070002'
+    'native-library-missing' = '(?i)DllNotFoundException'
+    'directory-not-found' = '(?i)DirectoryNotFoundException'
+    'type-initialization' = '(?i)TypeInitializationException'
+    'type-load' = '(?i)TypeLoadException'
+    'format' = '(?i)(?<![A-Za-z])(?:System\.)?FormatException\b'
+    'null-reference' = '(?i)NullReferenceException'
+    'access-violation' = '(?i)AccessViolationException|0xc0000005'
+    'access-denied' = '(?i)UnauthorizedAccessException|0x80070005'
+    'invalid-operation' = '(?i)InvalidOperationException'
+    'argument' = '(?i)ArgumentException|ArgumentOutOfRangeException'
+    'index-range' = '(?i)IndexOutOfRangeException'
+    'security' = '(?i)SecurityException'
+    'native-exception' = '(?i)SEHException|Win32Exception'
+    'stack-overflow' = '(?i)StackOverflowException'
+    'out-of-memory' = '(?i)OutOfMemoryException'
+    'clr-managed-exception' = '(?i)0xe0434352|0xe0434f4d'
+  }
+  try {
+    $collected = [System.Collections.Generic.List[object]]::new()
+    $endTime = Get-Date
+    foreach ($providerName in $providerGroups.Keys) {
+      try {
+        # Query separately so an absent legacy provider cannot hide events from
+        # the other providers. Four queries x25 events is the hard record bound.
+        $filter = @{ LogName = 'Application'; ProviderName = $providerName; StartTime = $ApplicationStartTime.AddSeconds(-1); EndTime = $endTime }
+        $batch = @(Get-WinEvent -FilterHashtable $filter -MaxEvents 25 -ErrorAction Stop)
+        if ($batch.Count -ge 25) { $safe.bounded = $true }
+        foreach ($record in $batch) { $collected.Add($record) }
+      } catch {
+        if ($_.FullyQualifiedErrorId -notlike 'NoMatchingEventsFound*') { $safe.providerQueryFailureCount++ }
+      }
+    }
+    $items = @($collected.ToArray() | Sort-Object TimeCreated -Descending)
+    $safe.queriedCount = $items.Count
+    $matchedCount = 0
+    $providers = [System.Collections.Generic.HashSet[string]]::new()
+    $eventIds = [System.Collections.Generic.HashSet[int]]::new()
+    $categories = [System.Collections.Generic.HashSet[string]]::new()
+    $codes = [System.Collections.Generic.HashSet[string]]::new()
+    foreach ($item in $items) {
+      if (-not $providerGroups.ContainsKey([string]$item.ProviderName)) { continue }
+      $message = ''; $xml = ''
+      try { $message = [string]$item.Message } catch { }
+      try { $xml = [string]$item.ToXml() } catch { }
+      $privateText = $message + "`n" + $xml
+      # Exclude unrelated events even from the allowlisted providers. Matching
+      # only the executable name is intentional; no path or username is emitted.
+      if ($privateText -notmatch '(?i)(?<![A-Za-z0-9_])HTKK\.exe(?![A-Za-z0-9_])') { continue }
+      if ($matchedCount -ge 10) { $safe.bounded = $true; break }
+      foreach ($entry in $categoryPatterns.GetEnumerator()) {
+        if ($privateText -match $entry.Value) { $categories.Add([string]$entry.Key) | Out-Null }
+      }
+      # HRESULT/NTSTATUS-shaped failure codes only: eight hex digits with the
+      # high bit set. Exclude 64-bit addresses, arbitrary strings and success IDs.
+      foreach ($code in [regex]::Matches($privateText, '(?i)(?<![A-Za-z0-9])0x[89a-f][0-9a-f]{7}(?![0-9a-f])')) {
+        if ($codes.Count -ge 10) { break }
+        $codes.Add($code.Value.ToLowerInvariant()) | Out-Null
+      }
+      $providers.Add($providerGroups[[string]$item.ProviderName]) | Out-Null
+      $eventIds.Add([int]$item.Id) | Out-Null
+      $matchedCount++
+    }
+    $safe.matchedEventCount = $matchedCount
+    $safe.providers = @($providers | Sort-Object); $safe.eventIds = @($eventIds | Sort-Object)
+    $safe.categories = @($categories | Sort-Object); $safe.hresults = @($codes | Sort-Object)
+    $safe.status = if ($safe.providerQueryFailureCount -eq $providerGroups.Count) { 'unavailable' } elseif ($items.Count -eq 0) { 'no-events' } elseif ($safe.providerQueryFailureCount -gt 0) { 'partial' } else { 'scanned' }
+  } catch {
+    # A no-match result is distinct from permissions/provider/query failure.
+    $safe.status = if ($_.FullyQualifiedErrorId -like 'NoMatchingEventsFound*') { 'no-events' } else { 'unavailable' }
+  }
+  return $safe
 }
 function Get-DescendantProcessIds([int]$AppProcessId) {
   # Read only IDs, not executable paths, command lines, window text or user information.
@@ -335,6 +424,7 @@ try {
   # Prevent the application from contacting its legacy update endpoint during the startup probe.
   New-NetFirewallRule -DisplayName 'HTKK readiness probe outbound block' -Direction Outbound -Program $exe -Action Block | Out-Null
   $report.stage = 'startup'
+  $applicationStartTime = Get-Date
   $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) -PassThru
   $report.processStarted = $true
   Initialize-WindowDiagnostics
@@ -360,6 +450,7 @@ try {
     Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, [Math]::Ceiling(45 - $startupClock.Elapsed.TotalSeconds))))
   } while ($true)
   $startupClock.Stop()
+  $report.applicationEvents = Get-HtkkSafeApplicationEvents -ApplicationStartTime $applicationStartTime
   $report.ownedWindowKinds = [HtkkWindowDiagnostics]::OwnedWindowKinds($process.Id, [int[]]$children)
   $report.nativeDialogCueCounts = [HtkkWindowDiagnostics]::FixedDialogCues($process.Id, [int[]]$children)
   $report.startupContext = if ($report.windowObserved) { 'visible-app-or-child-window' }
@@ -381,7 +472,8 @@ try {
         'cmd' { 'shell' }; 'powershell' { 'shell' }; 'pwsh' { 'shell' }
         'msedge' { 'browser' }; 'msedgewebview2' { 'browser' }; 'chrome' { 'browser' }; 'firefox' { 'browser' }; 'iexplore' { 'browser' }
         'updater' { 'updater' }; 'autoupdate' { 'updater' }; 'htkkupdate' { 'updater' }
-        'vsjitdebugger' { 'debugger' }; 'vsdebugconsole' { 'debugger' }; 'devenv' { 'debugger' }; 'vsdebugeng' { 'debugger' }; 'dbghost' { 'debugger' }; 'dbgsvc' { 'debugger' }; 'dw20' { 'debugger' }
+        'vsjitdebugger' { 'debugger' }; 'vsdebugconsole' { 'debugger' }; 'devenv' { 'debugger' }; 'vsdebugeng' { 'debugger' }; 'dbghost' { 'debugger' }; 'dbgsvc' { 'debugger' }
+        'dw20' { 'errorReporting' }; 'dwwin' { 'errorReporting' }; 'wermgr' { 'errorReporting' }; 'werfaultsecure' { 'errorReporting' }
         default { 'other' }
       }
       $report.descendantProcessKinds[$kind]++

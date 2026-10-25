@@ -1,5 +1,5 @@
 """Keep private source diagnostics off the public Actions console."""
-import os,pathlib,subprocess,shutil
+import os,pathlib,subprocess,shutil,json,re,datetime
 source=pathlib.Path('source').resolve()
 log=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-builder-log.txt'
 allowed=('PATH','HOME','TMPDIR','RUNNER_TEMP','RUNNER_TOOL_CACHE','LANG')
@@ -20,6 +20,11 @@ try:
  env['CHROMIUM_PATH']=browser
  run(['npm','run','test:e2e'])
  if os.environ['BUILD_MODE']=='release':
+  # Public provenance only; no source files or diagnostics enter this manifest.
+  sha=subprocess.run(['git','rev-parse','HEAD'],cwd=source,env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True).stdout.decode().strip()
+  version=json.loads((source/'package.json').read_text())['version']
+  if not re.fullmatch('[0-9a-f]{40}',sha) or not isinstance(version,str) or not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?',version):raise RuntimeError()
+  (source/'out/build.json').write_text(json.dumps({'sourceSha':sha,'version':version,'builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat()},separators=(',',':'))+'\n')
   env['HTKK_NODE_CACHE']=str(pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-node-runtime')
   run(['python3','scripts/fetch-node-runtime.py'])
   run(['node','scripts/package-portable.mjs'])

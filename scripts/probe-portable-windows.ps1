@@ -2,7 +2,9 @@
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
-$report = [ordered]@{ stage = 'started'; packageSha256 = $null; packageChecksumValid = $false; archivePathsSafe = $false; nodeArchivePinned = $false; nodePayloadMatches = $false; licenseMatches = $false; nodeVersionValid = $false; launcherValid = $false; processStarted = $false; rootHttpOk = $false; dashboardHttpOk = $false; wasmMimeValid = $false; mjsMimeValid = $false; loopbackOnly = $false; browserInteractionTested = $false; userDataUsed = $false }
+$expectedSource = [string]$env:EXPECTED_SOURCE_SHA
+$cacheKey = if ($expectedSource) { '?commit=' + $expectedSource } else { '' }
+$report = [ordered]@{ packageSourceSha = $null; packageVersion = $null; sourceProvenanceValid = $false; stage = 'started'; packageSha256 = $null; packageChecksumValid = $false; archivePathsSafe = $false; nodeArchivePinned = $false; nodePayloadMatches = $false; licenseMatches = $false; nodeVersionValid = $false; launcherValid = $false; processStarted = $false; rootHttpOk = $false; dashboardHttpOk = $false; wasmMimeValid = $false; mjsMimeValid = $false; loopbackOnly = $false; browserInteractionTested = $false; userDataUsed = $false }
 $work = Join-Path $env:RUNNER_TEMP ('portable-probe-' + [guid]::NewGuid().ToString('N'))
 $server = $null
 function Assert-Hash([string]$Path,[string]$Expected) {
@@ -48,13 +50,22 @@ function Start-CleanNode([string]$Exe,[string[]]$Arguments,[string]$Directory) {
 }
 try {
   New-Item -ItemType Directory -Path $work | Out-Null
+  if ($expectedSource -and $expectedSource -cnotmatch '^[0-9a-f]{40}\z') { throw 'INVALID_EXPECTED_SOURCE' }
   $report.stage = 'download'
+  $publishedBuild = $null
+  if ($expectedSource) {
+    $buildFile = Join-Path $work 'published-build.json'
+    Get-PublicFile ('https://hotrokekhai.net/build.json' + $cacheKey) $buildFile
+    if ((Get-Item -LiteralPath $buildFile).Length -gt 4096) { throw 'INVALID_BUILD_MANIFEST' }
+    $publishedBuild = Get-Content -LiteralPath $buildFile -Raw | ConvertFrom-Json -AsHashtable
+    if ($publishedBuild -isnot [Collections.IDictionary] -or $publishedBuild.sourceSha -isnot [string] -or $publishedBuild.version -isnot [string] -or $publishedBuild.builtAt -isnot [string] -or $publishedBuild.sourceSha -cne $expectedSource -or $publishedBuild.version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\z') { throw 'PACKAGE_SOURCE_MISMATCH' }
+  }
   $manifest = Join-Path $work 'SHA256SUMS'; $package = Join-Path $work 'portable.zip'
-  Get-PublicFile 'https://hotrokekhai.net/downloads/SHA256SUMS' $manifest
+  Get-PublicFile ('https://hotrokekhai.net/downloads/SHA256SUMS' + $cacheKey) $manifest
   $checksumMatches = [regex]::Matches([IO.File]::ReadAllText($manifest),'(?im)^([a-f0-9]{64})[ \t]+\*?hotrokekhai-portable\.zip[ \t]*\r?$')
   if ($checksumMatches.Count -ne 1) { throw 'INVALID_PACKAGE_MANIFEST' }
   $expected = $checksumMatches[0].Groups[1].Value.ToLowerInvariant()
-  Get-PublicFile 'https://hotrokekhai.net/downloads/hotrokekhai-portable.zip' $package
+  Get-PublicFile ('https://hotrokekhai.net/downloads/hotrokekhai-portable.zip' + $cacheKey) $package
   Assert-Hash $package $expected; $report.packageChecksumValid = $true; $report.packageSha256 = $expected
   $report.stage = 'extract'
   $extracted = Join-Path $work 'package'
@@ -63,6 +74,15 @@ try {
   foreach ($entry in Get-ChildItem -LiteralPath $root) { if ($entry.Name -notin @('web','runtime','serve.mjs','start.bat','start.sh','HUONG-DAN.txt')) { throw 'UNEXPECTED_PACKAGE_LAYOUT' } }
   foreach ($path in @('runtime/node.exe','runtime/LICENSE','runtime/SOURCE.txt','serve.mjs','start.bat','web/index.html','web/dashboard/index.html')) { if (-not (Test-Path -LiteralPath (Join-Path $root $path) -PathType Leaf)) { throw 'UNEXPECTED_PACKAGE_LAYOUT' } }
   $report.archivePathsSafe = $true
+  $embeddedBuild = Join-Path $root 'web/build.json'
+  if (Test-Path -LiteralPath $embeddedBuild -PathType Leaf) {
+    if ((Get-Item -LiteralPath $embeddedBuild).Length -gt 4096) { throw 'INVALID_BUILD_MANIFEST' }
+    $build = Get-Content -LiteralPath $embeddedBuild -Raw | ConvertFrom-Json -AsHashtable
+    if ($build -isnot [Collections.IDictionary] -or $build.sourceSha -isnot [string] -or $build.version -isnot [string] -or $build.builtAt -isnot [string] -or $build.sourceSha -cnotmatch '^[0-9a-f]{40}\z' -or $build.version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\z') { throw 'INVALID_BUILD_MANIFEST' }
+    if ($expectedSource -and ($build.sourceSha -cne $expectedSource -or $build.version -cne $publishedBuild.version -or $build.builtAt -cne $publishedBuild.builtAt)) { throw 'PACKAGE_SOURCE_MISMATCH' }
+    $report.packageSourceSha = $build.sourceSha; $report.packageVersion = $build.version
+    $report.sourceProvenanceValid = [bool]$expectedSource
+  } elseif ($expectedSource) { throw 'INVALID_BUILD_MANIFEST' }
   $report.stage = 'verify-node'
   $nodeZip = Join-Path $work 'official-node.zip'
   Get-PublicFile 'https://nodejs.org/dist/v24.22.1/node-v24.22.1-win-x64.zip' $nodeZip
@@ -110,7 +130,7 @@ try {
   if (-not ($report.rootHttpOk -and $report.dashboardHttpOk -and $report.loopbackOnly -and $report.wasmMimeValid -and $report.mjsMimeValid)) { throw 'HTTP_VALIDATION_FAILED' }
   $report.stage = 'windows-runtime-and-http-verified'
 } catch {
-  $known = @('CHECKSUM_MISMATCH','ARCHIVE_LIMIT_EXCEEDED','UNSAFE_ARCHIVE_ENTRY','INVALID_PACKAGE_MANIFEST','UNEXPECTED_PACKAGE_LAYOUT','UNEXPECTED_LAUNCHER','NODE_VERSION_FAILED','PORT_ALREADY_IN_USE','SERVER_EXITED','SERVER_NOT_READY','VALIDATOR_ASSET_MISSING','HTTP_VALIDATION_FAILED')
+  $known = @('INVALID_EXPECTED_SOURCE','INVALID_BUILD_MANIFEST','PACKAGE_SOURCE_MISMATCH','CHECKSUM_MISMATCH','ARCHIVE_LIMIT_EXCEEDED','UNSAFE_ARCHIVE_ENTRY','INVALID_PACKAGE_MANIFEST','UNEXPECTED_PACKAGE_LAYOUT','UNEXPECTED_LAUNCHER','NODE_VERSION_FAILED','PORT_ALREADY_IN_USE','SERVER_EXITED','SERVER_NOT_READY','VALIDATOR_ASSET_MISSING','HTTP_VALIDATION_FAILED')
   $report.stage = 'blocked'; $report['blockedReason'] = if ($_.Exception.Message -in $known) { $_.Exception.Message } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
 } finally {
   if ($null -ne $server) { if (-not $server.HasExited) { $server.Kill($true); $server.WaitForExit(5000) | Out-Null }; $server.Dispose() }

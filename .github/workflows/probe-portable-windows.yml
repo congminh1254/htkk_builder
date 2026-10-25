@@ -1,6 +1,11 @@
 name: Kiểm tra portable trên Windows
 on:
   workflow_dispatch:
+    inputs:
+      expected_source_sha:
+        description: Commit nguồn 40 ký tự đã triển khai (tùy chọn)
+        required: false
+        default: ''
 permissions:
   contents: read
 jobs:
@@ -14,5 +19,32 @@ jobs:
           persist-credentials: false
       - name: Kiểm tra runtime và máy chủ portable
         shell: pwsh
+        env:
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
         run: ./scripts/probe-portable-windows.ps1
       # No source checkout, secrets, artifacts, caches, screenshots or user inputs.
+  report:
+    if: always() && github.ref == 'refs/heads/main' && inputs.expected_source_sha != ''
+    needs: portable
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Report fixed portable status to private source
+        env:
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          COMMIT_SHA: ${{ inputs.expected_source_sha }}
+          PROBE_RESULT: ${{ needs.portable.result }}
+        run: |
+          python3 - <<'PYCODE'
+          import os,re,json,urllib.request
+          sha=os.environ['COMMIT_SHA']
+          if not re.fullmatch('[0-9a-f]{40}',sha): raise SystemExit('Invalid source SHA.')
+          state='success' if os.environ['PROBE_RESULT']=='success' else 'failure'
+          payload=json.dumps({'state':state,'context':'htkk-portable-windows','description':'Windows portable '+state,'target_url':os.environ['GITHUB_SERVER_URL']+'/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']}).encode()
+          request=urllib.request.Request('https://api.github.com/repos/congminh1254/htkk_web/statuses/'+sha,data=payload,headers={'Authorization':'Bearer '+os.environ['SOURCE_STATUS_TOKEN'],'Accept':'application/vnd.github+json'},method='POST')
+          try:
+              with urllib.request.urlopen(request,timeout=30) as response: response.read()
+          except Exception: raise SystemExit('Portable status callback failed.')
+          print('Source portable status updated.')
+          PYCODE
