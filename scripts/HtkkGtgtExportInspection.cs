@@ -11,6 +11,7 @@ using System.Windows.Forms;
 using System.Xml;
 public sealed partial class HtkkGuiReferenceAutomation {
  private bool exportStarted=false,exportCommandInvoked=false,exportSelectorMatched=false,exportButtonInvoked=false,exportDialogMatched=false,exportDestinationFresh=false,exportDialogSubmitted=false,exportFileExists=false,exportXmlRootMatched=false,exportSyntheticIdentityMatched=false,exportSuccessAcknowledged=false;
+ private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
  private int exportBytes=0;private string exportSha256="",exportPath="",expectedSaveTitle="";
  private System.Windows.Forms.Timer exportWatcher=null;
  private delegate bool WindowVisitor(IntPtr window,IntPtr parameter);
@@ -31,6 +32,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"exportCommandInvoked","exportSelectorMatched","exportButtonInvoked","exportDialogMatched","exportDestinationFresh","exportDialogSubmitted","exportFileExists","exportXmlRootMatched","exportSyntheticIdentityMatched","exportSuccessAcknowledged"};
   bool[] values=new bool[]{exportCommandInvoked,exportSelectorMatched,exportButtonInvoked,exportDialogMatched,exportDestinationFresh,exportDialogSubmitted,exportFileExists,exportXmlRootMatched,exportSyntheticIdentityMatched,exportSuccessAcknowledged};StringBuilder json=new StringBuilder();string q=((char)34).ToString();
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
+  json.Append(","+q+"exportOriginalPathMatched"+q+":"+Bool(exportOriginalPathMatched)+","+q+"exportOriginalPathKind"+q+":"+q+exportOriginalPathKind+q+","+q+"exportScopedFileCount"+q+":"+exportScopedFileCount+","+q+"exportScopedXmlCount"+q+":"+exportScopedXmlCount);
   json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);return json.ToString();
  }
  private static void FindExportSelectors(Control root,List<Form> found,ref int count){if(++count>512)return;Form form=root as Form;if(form!=null&&form.Visible&&form.GetType().FullName=="HTKK.frmWinSelectExport"&&!found.Contains(form))found.Add(form);foreach(Control child in root.Controls){if(count>=512)break;FindExportSelectors(child,found,ref count);}}
@@ -49,6 +51,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
    if(labels[0].Text!="Kết xuất tờ khai xml thành công."){stage="gtgt-export-original-message-rejected";finished=true;Record();exportWatcher.Stop();return;}
+   stage="gtgt-export-success-file-checking";InspectOriginalExportDestination();Record();if(!exportOriginalPathMatched)throw new InvalidOperationException();
    ReadOriginalExport();if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
    Control[] closeControls=form.Controls.Find("btn_2",true);if(form.Text.Trim()!="Thông Báo"||closeControls.Length!=1||CountVisibleButtons(form)!=1)throw new InvalidOperationException();Button close=closeControls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
    exportSuccessAcknowledged=true;stage="gtgt-export-inspected";finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
@@ -68,6 +71,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(File.Exists(exportPath)||new DirectoryInfo(Path.GetDirectoryName(exportPath)).GetFileSystemInfos().Length!=0)throw new InvalidOperationException();
   exportDialogMatched=true;SendMessage(edits[0],12,IntPtr.Zero,exportPath);if(NativeText(edits[0],false)!=exportPath)throw new InvalidOperationException();
   exportDialogSubmitted=true;stage="gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+ }
+ private void InspectOriginalExportDestination(){
+  Type selector=OriginalAssembly().GetType("HTKK.frmWinSelectExport",true);FieldInfo path=selector.GetField("PathSave",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);if(path==null||path.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)path.GetValue(null);
+  exportOriginalPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(exportPath),StringComparison.OrdinalIgnoreCase);
+  exportOriginalPathKind=String.IsNullOrEmpty(actual)?"empty":exportOriginalPathMatched?"expected-path":String.Equals(Path.GetFullPath(actual),Path.GetFullPath(exportPath+".xml"),StringComparison.OrdinalIgnoreCase)?"expected-double-extension":String.Equals(Path.GetDirectoryName(Path.GetFullPath(actual)),Path.GetDirectoryName(Path.GetFullPath(exportPath)),StringComparison.OrdinalIgnoreCase)?"same-directory-other-name":"other-directory";
+  DirectoryInfo directory=new DirectoryInfo(Path.GetDirectoryName(exportPath));if((directory.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException();FileInfo[] files=directory.GetFiles();if(files.Length>32)throw new InvalidOperationException();exportScopedFileCount=files.Length;exportScopedXmlCount=0;foreach(FileInfo file in files)if(String.Equals(file.Extension,".xml",StringComparison.OrdinalIgnoreCase))exportScopedXmlCount++;
  }
  private void ReadOriginalExport(){
   exportFileExists=File.Exists(exportPath);if(!exportFileExists)throw new InvalidOperationException();FileInfo file=new FileInfo(exportPath);if((file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length<1||file.Length>262144)throw new InvalidOperationException();exportBytes=(int)file.Length;
