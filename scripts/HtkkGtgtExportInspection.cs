@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using System.Xml;
 public sealed partial class HtkkGuiReferenceAutomation {
  private bool exportStarted=false,exportCommandInvoked=false,exportSelectorMatched=false,exportButtonInvoked=false,exportDialogMatched=false,exportDestinationFresh=false,exportDialogSubmitted=false,exportFileExists=false,exportXmlRootMatched=false,exportSyntheticIdentityMatched=false,exportSuccessAcknowledged=false;
- private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
+ private bool exportFilenameEditing=false,exportFilenameKeyboardCommitted=false;private string exportFilenameParentKind="not-observed";private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
  private int exportBytes=0;private string exportSha256="",exportPath="",expectedSaveTitle="";
  private System.Windows.Forms.Timer exportWatcher=null;
  private delegate bool WindowVisitor(IntPtr window,IntPtr parameter);
@@ -24,6 +24,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
  [DllImport("user32.dll")]private static extern bool IsWindowEnabled(IntPtr window);
  [DllImport("user32.dll")]private static extern int GetDlgCtrlID(IntPtr window);
  [DllImport("user32.dll")]private static extern IntPtr GetWindow(IntPtr window,uint command);
+ [DllImport("user32.dll")]private static extern IntPtr GetParent(IntPtr window);
+ [DllImport("user32.dll")]private static extern IntPtr SetFocus(IntPtr window);
+ [DllImport("user32.dll")]private static extern IntPtr GetFocus();
+ [DllImport("user32.dll")]private static extern IntPtr GetForegroundWindow();
+ [DllImport("user32.dll")]private static extern bool SetForegroundWindow(IntPtr window);
  [DllImport("user32.dll")]private static extern IntPtr GetDlgItem(IntPtr window,int id);
  [DllImport("user32.dll",CharSet=CharSet.Unicode)]private static extern IntPtr SendMessage(IntPtr window,uint message,IntPtr wParam,string text);
  [DllImport("user32.dll")]private static extern bool PostMessage(IntPtr window,uint message,IntPtr wParam,IntPtr lParam);
@@ -32,6 +37,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"exportCommandInvoked","exportSelectorMatched","exportButtonInvoked","exportDialogMatched","exportDestinationFresh","exportDialogSubmitted","exportFileExists","exportXmlRootMatched","exportSyntheticIdentityMatched","exportSuccessAcknowledged"};
   bool[] values=new bool[]{exportCommandInvoked,exportSelectorMatched,exportButtonInvoked,exportDialogMatched,exportDestinationFresh,exportDialogSubmitted,exportFileExists,exportXmlRootMatched,exportSyntheticIdentityMatched,exportSuccessAcknowledged};StringBuilder json=new StringBuilder();string q=((char)34).ToString();
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
+  json.Append(","+q+"exportFilenameKeyboardCommitted"+q+":"+Bool(exportFilenameKeyboardCommitted)+","+q+"exportFilenameParentKind"+q+":"+q+exportFilenameParentKind+q);
   json.Append(","+q+"exportOriginalPathMatched"+q+":"+Bool(exportOriginalPathMatched)+","+q+"exportOriginalPathKind"+q+":"+q+exportOriginalPathKind+q+","+q+"exportScopedFileCount"+q+":"+exportScopedFileCount+","+q+"exportScopedXmlCount"+q+":"+exportScopedXmlCount);
   json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);return json.ToString();
  }
@@ -47,7 +53,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ObserveOriginalExport();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();command.PerformClick();
  }
  private void ObserveOriginalExport(){
-  if(finished){exportWatcher.Stop();return;}
+  if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing)return;
   foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
    if(labels[0].Text!="Kết xuất tờ khai xml thành công."){stage="gtgt-export-original-message-rejected";finished=true;Record();exportWatcher.Stop();return;}
@@ -69,9 +75,24 @@ public sealed partial class HtkkGuiReferenceAutomation {
   List<IntPtr> edits=new List<IntPtr>();EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused){int id=GetDlgCtrlID(child);if(IsWindowVisible(child)&&IsWindowEnabled(child)&&NativeText(child,true)=="Edit"&&(id==1001||id==1148))edits.Add(child);return true;},IntPtr.Zero);
   IntPtr save=GetDlgItem(dialog,1);if(edits.Count!=1||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
   if(File.Exists(exportPath)||new DirectoryInfo(Path.GetDirectoryName(exportPath)).GetFileSystemInfos().Length!=0)throw new InvalidOperationException();
-  exportDialogMatched=true;SendMessage(edits[0],12,IntPtr.Zero,exportPath);if(NativeText(edits[0],false)!=exportPath)throw new InvalidOperationException();
-  exportDialogSubmitted=true;stage="gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+  IntPtr edit=edits[0],parent=GetParent(edit);string parentClass=NativeText(parent,true);
+  exportFilenameParentKind=parentClass=="ComboBox"?"combobox":parentClass=="ComboBoxEx32"?"combobox-ex":"other";Record();
+  // Filename editors belong to the verified common-dialog combo. A search edit
+  // or unrelated child must never receive keyboard input.
+  if(parent==IntPtr.Zero||(parentClass!="ComboBox"&&parentClass!="ComboBoxEx32"))throw new InvalidOperationException();
+  exportDialogMatched=true;exportFilenameEditing=true;exportWatcher.Stop();stage="gtgt-export-filename-keyboard-editing";Record();
+  try{
+   SetForegroundWindow(dialog);SetFocus(edit);if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
+   SendKeys.SendWait("^a");if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
+   SendKeys.SendWait(EscapeSendKeys(exportPath));if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=exportPath)throw new InvalidOperationException();
+   exportFilenameKeyboardCommitted=true;
+   // Common-dialog change notifications may rebuild controls. Resolve the
+   // original Save button again in the SAME verified dialog after real typing.
+   save=GetDlgItem(dialog,1);if(NativeText(dialog,false)!=expectedSaveTitle||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
+   exportDialogSubmitted=true;stage="gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+  }finally{exportFilenameEditing=false;if(!finished)exportWatcher.Start();}
  }
+ private static string EscapeSendKeys(string value){StringBuilder escaped=new StringBuilder();foreach(char character in value){if("+^%~(){}[]".IndexOf(character)>=0)escaped.Append("{"+character+"}");else escaped.Append(character);}return escaped.ToString();}
  private void InspectOriginalExportDestination(){
   Type selector=OriginalAssembly().GetType("HTKK.frmWinSelectExport",true);FieldInfo path=selector.GetField("PathSave",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);if(path==null||path.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)path.GetValue(null);
   exportOriginalPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(exportPath),StringComparison.OrdinalIgnoreCase);
