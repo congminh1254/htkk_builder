@@ -3,7 +3,7 @@ function Invoke-HtkkProfileAliasOracle {
   [CmdletBinding()]
   param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
   $ErrorActionPreference = 'Stop'
-  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
+  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; oracleStage='not-started'; oracleStatus='not-run'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
   $directory=$null; $compilerProcess=$null; $oracleProcess=$null; $firewallName=$null
   try {
     $dll=Join-Path $ProjectDirectory 'TAX.HTKK.Utilities.dll'
@@ -26,7 +26,7 @@ using System.Text;
 using System.Xml;
 internal static class ProfileAliasOracle {
   private static int cases=0, matched=0, invocations=0;
-  private static string runtime="unknown",project;
+  private static string runtime="unknown",project,stage="start";
   private static bool distinct=false, caseUntouched=false, ignoreAliases=false, legacyEmpty=false, blanked=false;
   private static readonly string[] keys=new string[]{"maHuyenNNT","maXaPhuongNNT","maXaPhuongDLyThue"};
   private static readonly string[] vectors=new string[]{"9100001","91000002","91000003"};
@@ -40,7 +40,7 @@ internal static class ProfileAliasOracle {
   private static string Bool(bool value){return value?"true":"false";}
   private static void WriteResult(string path,string status){
     string q=((char)34).ToString();
-    string json="{"+q+"format"+q+":"+q+"htkk-profile-alias-oracle-v1"+q+","+q+"status"+q+":"+q+status+q+","+q+"runtime"+q+":"+q+runtime+q+","+q+"cases"+q+":"+cases+","+q+"matched"+q+":"+matched+","+q+"mismatches"+q+":"+(cases-matched)+","+q+"originalLoaderInvocations"+q+":"+invocations+","+q+"aliasValuesRemainDistinct"+q+":"+Bool(distinct)+","+q+"caseSensitiveBackingFieldUntouched"+q+":"+Bool(caseUntouched)+","+q+"loaderIgnoresCellId2"+q+":"+Bool(ignoreAliases)+","+q+"legacyPhuongXaConstructorEmpty"+q+":"+Bool(legacyEmpty)+","+q+"templateValuesBlanked"+q+":"+Bool(blanked)+"}";
+    string json="{"+q+"format"+q+":"+q+"htkk-profile-alias-oracle-v1"+q+","+q+"status"+q+":"+q+status+q+","+q+"runtime"+q+":"+q+runtime+q+","+q+"stage"+q+":"+q+stage+q+","+q+"cases"+q+":"+cases+","+q+"matched"+q+":"+matched+","+q+"mismatches"+q+":"+(cases-matched)+","+q+"originalLoaderInvocations"+q+":"+invocations+","+q+"aliasValuesRemainDistinct"+q+":"+Bool(distinct)+","+q+"caseSensitiveBackingFieldUntouched"+q+":"+Bool(caseUntouched)+","+q+"loaderIgnoresCellId2"+q+":"+Bool(ignoreAliases)+","+q+"legacyPhuongXaConstructorEmpty"+q+":"+Bool(legacyEmpty)+","+q+"templateValuesBlanked"+q+":"+Bool(blanked)+"}";
     File.WriteAllText(path,json,Encoding.UTF8);
   }
   private static XmlDocument LoadTemplate(string path){
@@ -67,17 +67,17 @@ internal static class ProfileAliasOracle {
       project=Path.GetFullPath(args[0]);string dataRoot=Path.GetFullPath(args[2]);
       AppDomain.CurrentDomain.AssemblyResolve+=new ResolveEventHandler(ResolveAssembly);
       Assembly assembly=Assembly.LoadFrom(Path.Combine(project,"TAX.HTKK.Utilities.dll"));
-      Type config=assembly.GetType("TAX.HTKK.Utilities.Core.HTKKConfig",true);
+      stage="configuration";Type config=assembly.GetType("TAX.HTKK.Utilities.Core.HTKKConfig",true);
       string actualRoot=(string)config.GetProperty("DATAFILES",BindingFlags.Public|BindingFlags.Static).GetValue(null,null);
       if(!String.Equals(Path.GetFullPath(actualRoot).TrimEnd(new char[]{'/',(char)92}),dataRoot.TrimEnd(new char[]{'/',(char)92}),StringComparison.OrdinalIgnoreCase)){WriteResult(output,"data-root-mismatch");return 4;}
-      Type header=assembly.GetType("TAX.HTKK.Utilities.Entity.HTKKHeaderInfo",true);
+      stage="header-types";Type header=assembly.GetType("TAX.HTKK.Utilities.Entity.HTKKHeaderInfo",true);
       Type implementation=assembly.GetType("TAX.HTKK.Utilities.Implement.HTKKHeaderImpl",true);
       MethodInfo method=implementation.GetMethod("SetPropertyHeader",BindingFlags.Public|BindingFlags.Instance,null,new Type[]{header.MakeByRefType(),typeof(string)},null);
       bool signature=method!=null&&method.ReturnType==typeof(void)&&!method.IsStatic;
       Check(signature);if(!signature){WriteResult(output,"method-signature-mismatch");return 5;}
-      object loader=Activator.CreateInstance(implementation),baseline=Activator.CreateInstance(header);
+      stage="loader-construction";object loader=Activator.CreateInstance(implementation),baseline=Activator.CreateInstance(header);
       string lowerBefore=Read(header,baseline,"maXaPhuongDlyThue");
-      XmlDocument document=LoadTemplate(args[1]);XmlNodeList cells=document.GetElementsByTagName("Cell");
+      stage="blank-template";XmlDocument document=LoadTemplate(args[1]);XmlNodeList cells=document.GetElementsByTagName("Cell");
       foreach(XmlNode cell in cells){if(cell.Attributes["Value"]==null)throw new InvalidOperationException();cell.Attributes["Value"].Value=String.Empty;}
       blanked=true;XmlNode[] selected=new XmlNode[3];
       foreach(XmlNode cell in cells){
@@ -88,19 +88,19 @@ internal static class ProfileAliasOracle {
       bool collision=true;for(int i=0;i<selected.Length;i++)collision=collision&&selected[i]!=null&&selected[i].Attributes["CellID2"]!=null&&selected[i].Attributes["CellID2"].Value=="V_52";
       Check(collision);if(!collision){WriteResult(output,"source-alias-precondition-failed");return 6;}
       string targetDirectory=Path.Combine(dataRoot,mst);Directory.CreateDirectory(targetDirectory);string target=Path.Combine(targetDirectory,"HEADER.xml");document.Save(target);
-      object first=LoadOriginal(header,loader,method);
+      stage="first-load";object first=LoadOriginal(header,loader,method);
       Check(Read(header,first,"mst")==mst);
       bool firstValues=true;for(int i=0;i<keys.Length;i++){bool ok=Read(header,first,keys[i])==vectors[i];Check(ok);firstValues=firstValues&&ok;}
       bool firstCase=String.Equals(Read(header,first,"maXaPhuongDlyThue"),lowerBefore,StringComparison.Ordinal)&&Read(header,first,"maXaPhuongDlyThue")!=vectors[2];Check(firstCase);
       // Change only CellID2 metadata, not identity properties or synthetic data.
       for(int i=0;i<selected.Length;i++)selected[i].Attributes["CellID2"].Value="TEST_ALIAS_"+i;
-      document.Save(target);object second=LoadOriginal(header,loader,method);
+      document.Save(target);stage="second-load";object second=LoadOriginal(header,loader,method);
       bool secondValues=true;for(int i=0;i<keys.Length;i++){bool ok=Read(header,second,keys[i])==vectors[i];Check(ok);secondValues=secondValues&&ok;}
       bool secondCase=String.Equals(Read(header,second,"maXaPhuongDlyThue"),lowerBefore,StringComparison.Ordinal)&&Read(header,second,"maXaPhuongDlyThue")!=vectors[2];Check(secondCase);
-      Type common=assembly.GetType("TAX.HTKK.Utilities.Entity.HTKKCMCTTinChungInfo",true);object commonInstance=Activator.CreateInstance(common);
+      stage="legacy-constructor";Type common=assembly.GetType("TAX.HTKK.Utilities.Entity.HTKKCMCTTinChungInfo",true);object commonInstance=Activator.CreateInstance(common);
       legacyEmpty=Read(common,commonInstance,"phuongXa")==String.Empty;Check(legacyEmpty);
       distinct=firstValues&&secondValues;caseUntouched=firstCase&&secondCase;ignoreAliases=firstValues&&secondValues;
-      bool okAll=cases==12&&cases==matched&&invocations==2;WriteResult(output,okAll?"matched":"mismatch");return okAll?0:2;
+      stage="complete";bool okAll=cases==12&&cases==matched&&invocations==2;WriteResult(output,okAll?"matched":"mismatch");return okAll?0:2;
     }catch{try{WriteResult(output,"reflection-or-loader-failed");}catch{}return 7;}
   }
 }
@@ -127,10 +127,11 @@ internal static class ProfileAliasOracle {
     $safe.oracleExitCode=$oracleProcess.ExitCode
     if (-not (Test-Path -LiteralPath $resultFile -PathType Leaf) -or (Get-Item -LiteralPath $resultFile).Length -gt 4096){$safe.status='oracle-result-unavailable';return $safe}
     $r=Get-Content -LiteralPath $resultFile -Raw|ConvertFrom-Json -AsHashtable
+    $stages=@('start','configuration','header-types','loader-construction','blank-template','first-load','second-load','legacy-constructor','complete')
     $statuses=@('matched','mismatch','unsupported-runtime','data-root-mismatch','method-signature-mismatch','source-alias-precondition-failed','reflection-or-loader-failed')
-    if ($r.format -ne 'htkk-profile-alias-oracle-v1' -or $r.status -notin $statuses -or $r.runtime -notin @('clr2','unsupported','unknown') -or $r.cases -notin 0..12 -or $r.matched -notin 0..12 -or $r.matched -gt $r.cases -or $r.mismatches -ne ($r.cases-$r.matched) -or $r.originalLoaderInvocations -notin 0..2){$safe.status='oracle-result-invalid';return $safe}
+    if ($r.format -ne 'htkk-profile-alias-oracle-v1' -or $r.status -notin $statuses -or $r.stage -notin $stages -or $r.runtime -notin @('clr2','unsupported','unknown') -or $r.cases -notin 0..12 -or $r.matched -notin 0..12 -or $r.matched -gt $r.cases -or $r.mismatches -ne ($r.cases-$r.matched) -or $r.originalLoaderInvocations -notin 0..2){$safe.status='oracle-result-invalid';return $safe}
     foreach($name in @('aliasValuesRemainDistinct','caseSensitiveBackingFieldUntouched','loaderIgnoresCellId2','legacyPhuongXaConstructorEmpty','templateValuesBlanked')){if($r[$name] -isnot [bool]){$safe.status='oracle-result-invalid';return $safe};$safe[$name]=$r[$name]}
-    $safe.runtime=$r.runtime;$safe.cases=$r.cases;$safe.matched=$r.matched;$safe.mismatches=$r.mismatches;$safe.originalLoaderInvocations=$r.originalLoaderInvocations;$safe.originalMethodInvoked=$r.originalLoaderInvocations -gt 0
+    $safe.oracleStage=$r.stage;$safe.oracleStatus=$r.status;$safe.runtime=$r.runtime;$safe.cases=$r.cases;$safe.matched=$r.matched;$safe.mismatches=$r.mismatches;$safe.originalLoaderInvocations=$r.originalLoaderInvocations;$safe.originalMethodInvoked=$r.originalLoaderInvocations -gt 0
     $safe.status=if ($oracleProcess.ExitCode -eq 0 -and $r.status -eq 'matched' -and $r.cases -eq 12 -and $r.matched -eq 12 -and $r.originalLoaderInvocations -eq 2 -and $safe.aliasValuesRemainDistinct -and $safe.caseSensitiveBackingFieldUntouched -and $safe.loaderIgnoresCellId2 -and $safe.legacyPhuongXaConstructorEmpty -and $safe.templateValuesBlanked){'matched'}elseif($r.status -eq 'mismatch'){'mismatch'}else{'oracle-runtime-blocked'}
     return $safe
   }catch{$safe.status='host-or-tool-failure';return $safe}
