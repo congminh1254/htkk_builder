@@ -12,7 +12,7 @@ using System.Threading;
 using System.Windows.Forms;
 using System.Xml;
 
-public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
+public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private const string Mst="9999999997";
  private const string FakeName="NNT KIEM THU GIA LAP - KHONG NOP";
  private const string FakeAddress="DU LIEU GIA LAP KIEM THU KHONG SU DUNG";
@@ -31,11 +31,11 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private void Record(){
   string q=((char)34).ToString();StringBuilder counts=new StringBuilder();
   foreach(string key in new string[]{"form","button","combo","text","spread","other"}){if(counts.Length>0)counts.Append(',');counts.Append(q+key+q+":"+(kinds.ContainsKey(key)?kinds[key]:0).ToString(CultureInfo.InvariantCulture));}
-  string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
+  string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+NavigationJson()+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
  public void Start(string requestedMode){
-  if(requestedMode!="inspect"&&requestedMode!="profile-save")throw new ArgumentException();
+  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect")throw new ArgumentException();
   mode=requestedMode;string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
   try{
    pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
@@ -72,6 +72,7 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private static object Cell(object sheet,int row,int column){object cells=Get(sheet,"Cells");PropertyInfo item=cells.GetType().GetProperty("Item",new Type[]{typeof(int),typeof(int)});if(item==null)throw new InvalidOperationException();return item.GetValue(cells,new object[]{row,column});}
  private static string CellText(object sheet,int row,int column){object value=Get(Cell(sheet,row,column),"Text");return value==null?String.Empty:Convert.ToString(value,CultureInfo.InvariantCulture);}
  private void InspectAndMaybeSave(){
+  if(mode=="gtgt-inspect"&&navigationPhase!="not-started"){ContinueGtgtNavigation();return;}
   forms=0;
   foreach(Form form in Application.OpenForms){
    if(!form.Visible||form.IsDisposed)continue;forms++;
@@ -109,7 +110,13 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
     acknowledgement.Tick+=delegate(object sender,EventArgs args){try{AcknowledgeVerifiedSuccess();}catch{}};
     acknowledgement.Start();try{saves[0].PerformClick();}finally{acknowledgement.Stop();}
    }
-   ReadSavedHeader();finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
+   ReadSavedHeader();
+   if(mode=="gtgt-inspect"&&headerMatched&&headerChecks==8&&headerMismatchMask==0&&successAcknowledged){
+    stage="profile-close-invoking";navigationPhase="waiting-main-menu";Record();
+    // Original Ghi has cleared isDataChanged. Use only the original profile Đóng.
+    closes[0].PerformClick();profileClosed=form.IsDisposed||!form.Visible;stage="waiting-main-menu";Record();return;
+   }
+   finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
   }
  }
  private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage){

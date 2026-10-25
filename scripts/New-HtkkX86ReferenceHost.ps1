@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   $safe = [ordered]@{
@@ -174,11 +174,13 @@ internal static class HtkkX86ReferenceHost {
     $automationSource=Join-Path $directory 'HtkkGuiReferenceAutomation.cs'
     [IO.File]::WriteAllText($automationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGuiReferenceAutomation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     '<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>' | Set-Content -LiteralPath $hostConfig -Encoding ASCII
+    $navigationSource=Join-Path $directory 'HtkkGtgtReferenceNavigation.cs'
+    [IO.File]::WriteAllText($navigationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtReferenceNavigation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $info=[Diagnostics.ProcessStartInfo]::new()
     $info.FileName=$compiler; $info.WorkingDirectory=$directory; $info.UseShellExecute=$false; $info.CreateNoWindow=$true
     $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true; $info.Environment.Clear()
     foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $info.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource)) { $info.ArgumentList.Add($argument) }
+    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource)) { $info.ArgumentList.Add($argument) }
     $compilerProcess=[Diagnostics.Process]::Start($info)
     $null=$compilerProcess.Handle
     $stdout=$compilerProcess.StandardOutput.ReadToEndAsync(); $stderr=$compilerProcess.StandardError.ReadToEndAsync()
