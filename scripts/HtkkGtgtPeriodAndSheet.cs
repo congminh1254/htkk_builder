@@ -26,13 +26,19 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static bool CheckValue(Control control){RadioButton radio=control as RadioButton;if(radio!=null)return radio.Checked;CheckBox check=control as CheckBox;if(check!=null)return check.Checked;throw new InvalidOperationException();}
  private static void SetCheck(Control control,bool value){RadioButton radio=control as RadioButton;if(radio!=null){radio.Checked=value;return;}CheckBox check=control as CheckBox;if(check!=null){check.Checked=value;return;}throw new InvalidOperationException();}
  private static void SetText(Control root,string name,string value){TextBoxBase input=Named(root,name) as TextBoxBase;if(input==null)throw new InvalidOperationException();input.Focus();input.Text=value;if(input.Text!=value)throw new InvalidOperationException();}
- private static bool SelectCode(Control root,string name,string code,string label){
+ private static bool SelectGeography(Control root,string name,string code,string label,string codeProperty,string labelProperty){
   ComboBox combo=ReadableNamed(root,name) as ComboBox;if(combo==null)throw new InvalidOperationException();
-  if(Convert.ToString(combo.SelectedValue,CultureInfo.InvariantCulture)==code)return true;
-  if(!combo.Enabled)return false;combo.SelectedValue=code;
-  if(Convert.ToString(combo.SelectedValue,CultureInfo.InvariantCulture)==code)return true;
+  // ORIGINAL ShowDetailpnTinhCQT binds human-label string lists, not Key/Value
+  // items. ORIGINAL SelectedIndexChanged resolves those labels to period codes.
+  // Never write SelectedValue=code: that transiently deselects these source lists.
+  // Focus commits the original mskMonth.Leave handler before resolving items.
+  if(combo.Enabled){combo.Focus();if(!combo.Visible||combo.IsDisposed)return false;}
   int selected=-1;for(int index=0;index<combo.Items.Count&&index<4096;index++){if(combo.GetItemText(combo.Items[index])==label){if(selected>=0)throw new InvalidOperationException();selected=index;}}
-  if(selected<0)return false;combo.SelectedIndex=selected;return Convert.ToString(combo.SelectedValue,CultureInfo.InvariantCulture)==code;
+  if(selected<0)return false;
+  if(combo.Enabled){if(combo.SelectedIndex!=selected)combo.SelectedIndex=selected;}
+  else if(combo.SelectedIndex!=selected)return false;
+  object currentPeriod=Global("TTPeriodInfo");
+  return combo.Text==label&&Convert.ToString(Get(currentPeriod,codeProperty),CultureInfo.InvariantCulture)==code&&Convert.ToString(Get(currentPeriod,labelProperty),CultureInfo.InvariantCulture)==label;
  }
  private bool SelectSourceActivity(Control period){
   const string label="Hoạt động sản xuất kinh doanh thông thường";
@@ -65,10 +71,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   SetText(period,"mskYear","2026");SetText(period,"mskMonth","10");
   periodDateMatched=Named(period,"mskYear").Text=="2026"&&Named(period,"mskMonth").Text=="10"&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy"));
   periodDescriptions.Clear();periodControlCount=0;int currentControlCount=0;DescribePeriod(period,ref currentControlCount);
-  stage="gtgt-period-province-selecting";Record();bool provinceMatched=SelectCode(period,"cboTinh","101","Thành phố Hà Nội");
-  stage="gtgt-period-ward-selecting";Record();bool wardMatched=SelectCode(period,"cboXa","10129087","Phường Sơn Tây");
-  stage="gtgt-period-taxhead-selecting";Record();bool taxHeadMatched=SelectCode(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội");
-  stage="gtgt-period-taxlocal-selecting";Record();bool taxLocalMatched=SelectCode(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội");
+  stage="gtgt-period-province-selecting";Record();bool provinceMatched=SelectGeography(period,"cboTinh","101","Thành phố Hà Nội","MaTinh","TenTinh");
+  stage="gtgt-period-ward-selecting";Record();bool wardMatched=SelectGeography(period,"cboXa","10129087","Phường Sơn Tây","MaXa","TenXa");
+  stage="gtgt-period-taxhead-selecting";Record();bool taxHeadMatched=SelectGeography(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội","maCQTCapCuc","tenCQTCapCuc");
+  stage="gtgt-period-taxlocal-selecting";Record();bool taxLocalMatched=SelectGeography(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội","maCQTQuanLy","tenCQTQuanLy");
   periodGeographyMatched=provinceMatched&&wardMatched&&taxHeadMatched&&taxLocalMatched;
   stage="gtgt-period-activity-selecting";Record();periodActivityMatched=SelectSourceActivity(period);
   // Exercise the ORIGINAL select-all/clear-all control, preserving its locked-row rules.
