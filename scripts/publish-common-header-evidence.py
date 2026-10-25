@@ -103,6 +103,11 @@ def validate_xml(body,index,today=None):
  today=today or datetime.datetime.now(datetime.timezone.utc).date()
  if abs((today-generated).days)>2:raise EvidenceError('DATE_STALE',leafIndex=list(LEAVES).index(date_path)+1,dateShape=date_shape(date))
  expected[date_path]=date
+ # XmlDocument.Save can emit indentation text inside known empty elements.
+ # Allow whitespace there for the privacy check only; preserve original bytes.
+ # Nonempty inputs and supplier metadata must still match exactly.
+ for path,value in expected.items():
+  if value=='' and observed[path].isspace():expected[path]=observed[path]
  if observed!=expected:
   position,path=next((position,path) for position,path in enumerate(LEAVES,1) if observed[path]!=expected[path])
   raise EvidenceError('VALUE_MISMATCH',leafIndex=position,dateShape=date_shape(observed[path]))

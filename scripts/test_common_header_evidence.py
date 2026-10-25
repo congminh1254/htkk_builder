@@ -31,6 +31,12 @@ class EvidenceFilesTests(unittest.TestCase):
   for index,name in enumerate(evidence.NAMES):self.assertEqual(result[name],synthetic(index))
   manifest=json.loads(result['manifest.json']);self.assertTrue(manifest['inputsSynthetic']);self.assertFalse(manifest['fullRoundTrip']);self.assertFalse(manifest['guiExportInvoked']);self.assertEqual(manifest['sourceVersion'],'5.8.1');self.assertEqual(manifest['builderCommit'],'a'*40)
   self.assertEqual(set(manifest['helperSha256']),{'scripts/'+name for name in evidence.HELPERS});self.assertEqual(set(manifest['files']),set(evidence.NAMES))
+ def test_retains_native_indentation_in_known_empty_fields_without_accepting_data(self):
+  path=self.directory/evidence.NAMES[0];root=ET.fromstring(path.read_bytes());root.find('TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhaiTuNgay').text='\n      '
+  body=ET.tostring(root,encoding='utf-8',xml_declaration=True);path.write_bytes(body)
+  self.assertEqual(self.read()[evidence.NAMES[0]],body)
+  root.find('TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhaiTuNgay').text='2026-10-01';path.write_bytes(ET.tostring(root,encoding='utf-8'))
+  with self.assertRaises(ValueError):self.read()
  def test_rejects_extra_files_oversize_and_symlink(self):
   extra=self.directory/'private-source.log';extra.write_text('must never publish')
   with self.assertRaises(ValueError):self.read()

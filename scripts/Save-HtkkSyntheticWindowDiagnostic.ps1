@@ -66,7 +66,7 @@ public static class HtkkPrivateSyntheticImage {
   [IO.File]::WriteAllBytes((Join-Path $directory 'synthetic-login-window.png'),$bytes)
   $hash=[Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bytes)).ToLowerInvariant()
   $metadata=[ordered]@{format='htkk-synthetic-login-diagnostic-v1';runId=$RunId;runtimeHost='original';scope='verified-original-htkk-root-after-synthetic-login';width=$width;height=$height;pngSha256=$hash;originalExecutableSha256='411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938';newIdClicked=$true;fixtureDirectoryPreexisting=$false;syntheticInputVerified=$true;loginClicked=$true;loginHidden=$true;freshFixtureDirectoryCreated=$true;realTaxpayerDataUsed=$false;sourceDefaultsMayBeVisible=$true;publicScreenshot=$false}
-  if($referenceMode){$metadata.format='htkk-reference-profile-save-diagnostic-v1';$metadata.runtimeHost='clr2-x86-reference';$metadata.scope='verified-reference-host-after-synthetic-profile-save';$metadata.referenceHostSha256=$ReferenceSha256;$metadata.performedInputCount=7;$metadata.originalSaveInvoked=$true}
+  if($referenceMode){$metadata.format='htkk-reference-profile-save-diagnostic-v1';$metadata.runtimeHost='clr2-x86-reference';$metadata.scope='verified-reference-host-after-synthetic-profile-save';$metadata['referenceHostSha256']=$ReferenceSha256;$metadata['performedInputCount']=7;$metadata['originalSaveInvoked']=$true}
   $metadata | ConvertTo-Json -Compress | Set-Content -LiteralPath (Join-Path $directory 'diagnostic.json') -Encoding UTF8
   $safe.status='captured-for-private-upload';$safe.captured=$true;$safe.sha256=$hash;return $safe
  }catch{$safe.status='capture-unavailable';return $safe}
