@@ -3,7 +3,7 @@ function Invoke-HtkkCommonHeaderOracle {
  [CmdletBinding()]
  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
  $ErrorActionPreference='Stop'
- $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();oracleExitCode=$null;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
+ $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;failedCaseIndices=@();getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();oracleExitCode=$null;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
  $directory=$null;$compilerProcess=$null;$oracleProcess=$null;$firewallName=$null
  try {
   $privateDirectory=Join-Path $env:RUNNER_TEMP 'htkk-common-header-diagnostic'
@@ -46,6 +46,8 @@ function Invoke-HtkkCommonHeaderOracle {
   $r=Get-Content -LiteralPath $resultFile -Raw|ConvertFrom-Json -AsHashtable
   $statuses=@('matched','mismatch','runtime-blocked','reflection-or-runtime-blocked');$stages=@('start','assembly-types','synthetic-profile','period','get-declaration','bind','serialize','save-synthetic','preserve-template','version-fallback','complete')
   if($r.format -ne 'htkk-common-header-oracle-v1' -or $r.status -notin $statuses -or $r.stage -notin $stages -or $r.runtime -notin @('clr2','unsupported','unknown') -or $r.cases -notin 0..43 -or $r.matched -notin 0..43 -or $r.matched -gt $r.cases -or $r.getToKhaiInfoInvocations -notin 0..2 -or $r.bindInvocations -notin 0..2 -or $r.serializeInvocations -notin 0..5){$safe.status='oracle-result-invalid';return $safe}
+  if($r.failedChecks -isnot [array] -or $r.failedChecks.Count -ne ($r.cases-$r.matched) -or @($r.failedChecks|Where-Object{($_ -isnot [long] -and $_ -isnot [int]) -or $_ -notin 1..43}).Count -or @($r.failedChecks|Select-Object -Unique).Count -ne $r.failedChecks.Count){$safe.status='oracle-result-invalid';return $safe}
+  $safe.failedCaseIndices=$r.failedChecks
   foreach($key in @('runtime','stage','cases','matched','getToKhaiInfoInvocations','bindInvocations','serializeInvocations')){$safe[$key]=$r[$key]}
   $safe.status=if($oracleProcess.ExitCode -eq 0 -and $r.status -eq 'matched' -and $r.cases -eq 43 -and $r.matched -eq 43 -and $r.getToKhaiInfoInvocations -eq 2 -and $r.bindInvocations -eq 2 -and $r.serializeInvocations -eq 5){'matched'}elseif($r.status -eq 'mismatch'){'mismatch'}else{'oracle-runtime-blocked'}
   if($safe.status -eq 'matched'){

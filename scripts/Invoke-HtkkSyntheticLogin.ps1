@@ -3,7 +3,7 @@
 function Invoke-HtkkSyntheticLogin {
  [CmdletBinding()]
  param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory)
- $safe=[ordered]@{status='not-started';fixtureDirectoryPreexisting=$null;fixtureDirectoryCreated=$false;syntheticIdentifierOnly=$true;realTaxpayerDataUsed=$false;newIdClicked=$false;inputVerified=$false;loginClicked=$false;loginHidden=$false;profileWindowObserved=$false;nextOwnedWindowObserved=$false;nativeControlKinds=@{};postLoginControlKinds=@{};allowedLabels=@();profileInChildWindow=$false;runtimeRoundTrip=$false}
+ $safe=[ordered]@{status='not-started';fixtureDirectoryPreexisting=$null;fixtureDirectoryCreated=$false;syntheticIdentifierOnly=$true;realTaxpayerDataUsed=$false;newIdClicked=$false;inputVerified=$false;loginClicked=$false;loginHidden=$false;profileWindowObserved=$false;nextOwnedWindowObserved=$false;nativeControlKinds=@{};postLoginControlKinds=@{};allowedLabels=@();profileInChildWindow=$false;profileRecognition='not-verified';profileMainCaptionMatched=$false;profileSaveCloseMatched=$false;profileManagedContainerCount=0;runtimeRoundTrip=$false}
  $retained=$null
  try {
   # Never reuse an installed/bundled or previous-run profile. Do not open its content.
@@ -36,10 +36,13 @@ public static class HtkkSyntheticLoginNative {
  private static string Class(IntPtr window){var value=new StringBuilder(256);GetClassName(window,value,value.Capacity);return value.ToString();}
  private static string Text(IntPtr window){var value=new StringBuilder(256);UIntPtr result;return SendMessageTimeout(window,0x000D,new UIntPtr((uint)value.Capacity),value,2,200,out result)!=IntPtr.Zero?value.ToString().Replace("&","").Trim():String.Empty;}
  private static bool IsForm(IntPtr window){return Class(window).StartsWith("WindowsForms10.Window.",StringComparison.OrdinalIgnoreCase);}
- private static string Kind(IntPtr window){string name=Class(window).ToUpperInvariant();if(name.Contains("COMBOBOX"))return "combo";if(name.Contains("BUTTON"))return "button";if(name.Contains("EDIT"))return "edit";if(name.Contains("STATIC"))return "static";if(name.Contains("SPREAD"))return "spread";return "other";}
+ private static string Kind(IntPtr window){string name=Class(window).ToUpperInvariant();if(name.Contains("COMBOBOX"))return "combo";if(name.Contains("BUTTON"))return "button";if(name.Contains("EDIT"))return "edit";if(name.Contains("STATIC"))return "static";if(name.Contains("SPREAD"))return "spread";if(name.StartsWith("WINDOWSFORMS10.WINDOW.",StringComparison.Ordinal))return "managed-window";return "other";}
  public static Dictionary<string,int> Counts=new Dictionary<string,int>();
  public static string[] Labels=new string[0];
  public static bool ProfileInChildWindow=false;
+ public static bool ProfileMainCaptionMatched=false,ProfileSaveCloseMatched=false;
+ public static int ProfileManagedContainerCount=0;
+ public static string ProfileRecognition="not-verified";
  public static Dictionary<string,int> PostCounts=new Dictionary<string,int>();
  public static bool Find(int root){
   login=combo=newId=submit=IntPtr.Zero;Counts.Clear();var labels=new HashSet<string>();
@@ -74,11 +77,29 @@ public static class HtkkSyntheticLoginNative {
    if(++count>2048||clock.ElapsedMilliseconds>2000)return false;
    if(window==login||!Owned(window,root)||!IsWindowVisible(window)||!IsForm(window))return true;
    if(!profileOnly){found=true;return false;}
-   if(Text(window).Contains("Thông tin doanh nghiệp/Người nộp thuế")){found=true;return false;}
+   if(Text(window).Contains("Thông tin doanh nghiệp/Người nộp thuế")){found=true;ProfileRecognition="source-profile-caption";return false;}
+   // Original ThemMSTMoi opens source Menu100_1 in a generic-title main form.
+   // FarPoint.Win.Spread is managed and can expose only generic native WinForms HWNDs.
+   // Never call a generic native class proof of the managed grid's identity.
+   string caption=Text(window).Replace(" ",String.Empty);
+   bool mainCaption=caption=="Hỗ trợ kê khai thuế - Phiên bản 5.8.1".Replace(" ",String.Empty);
+   if(mainCaption){
+    ProfileMainCaptionMatched=true;int save=0,close=0,containers=0;
+    EnumProc profileChild=(nested,ignored)=>{
+     if(++count>2048||clock.ElapsedMilliseconds>2000)return false;
+     if(!Owned(nested,root)||!IsWindowVisible(nested))return true;
+     string kind=Kind(nested);
+     if(kind=="managed-window"||kind=="spread")containers++;
+     if(kind=="button"&&IsWindowEnabled(nested)){string value=Text(nested);if(value=="Ghi")save++;if(value=="Đóng")close++;}
+     return true;
+    };EnumChildWindows(window,profileChild,IntPtr.Zero);GC.KeepAlive(profileChild);
+    ProfileManagedContainerCount=containers;ProfileSaveCloseMatched=save==1&&close==1;
+    if(ProfileSaveCloseMatched&&containers>0){found=true;ProfileRecognition="source-startup-flow-main-caption-save-close";return false;}
+   }
    // The profile may be a native MDI child rather than a top-level window.
    EnumProc child=(nested,ignored)=>{
     if(++count>2048||clock.ElapsedMilliseconds>2000)return false;
-    if(Owned(nested,root)&&IsWindowVisible(nested)&&Text(nested).Contains("Thông tin doanh nghiệp/Người nộp thuế")){found=true;ProfileInChildWindow=true;return false;}return true;
+    if(Owned(nested,root)&&IsWindowVisible(nested)&&Text(nested).Contains("Thông tin doanh nghiệp/Người nộp thuế")){found=true;ProfileInChildWindow=true;ProfileRecognition="source-profile-child-caption";return false;}return true;
    };EnumChildWindows(window,child,IntPtr.Zero);GC.KeepAlive(child);return !found;
   };EnumWindows(callback,IntPtr.Zero);GC.KeepAlive(callback);return found;
  }
@@ -117,6 +138,10 @@ public static class HtkkSyntheticLoginNative {
   [HtkkSyntheticLoginNative]::CountAfter($RootProcessId)
   $safe.postLoginControlKinds=[HtkkSyntheticLoginNative]::PostCounts
   $safe.profileInChildWindow=[HtkkSyntheticLoginNative]::ProfileInChildWindow
+  $safe.profileRecognition=[HtkkSyntheticLoginNative]::ProfileRecognition
+  $safe.profileMainCaptionMatched=[HtkkSyntheticLoginNative]::ProfileMainCaptionMatched
+  $safe.profileSaveCloseMatched=[HtkkSyntheticLoginNative]::ProfileSaveCloseMatched
+  $safe.profileManagedContainerCount=[HtkkSyntheticLoginNative]::ProfileManagedContainerCount
   $safe.status=if($safe.loginHidden -and $safe.profileWindowObserved){'synthetic-profile-window-observed'}elseif($safe.loginHidden -and $safe.nextOwnedWindowObserved){'next-window-not-yet-identified'}else{'login-transition-not-verified'}
   return $safe
  }catch{$safe.status='native-login-helper-unavailable';return $safe}

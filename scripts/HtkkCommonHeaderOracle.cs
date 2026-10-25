@@ -4,17 +4,19 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using System.Xml;
+using System.Collections.Generic;
 internal static class HtkkCommonHeaderOracle {
  private static string project,stage="start",runtime="unknown";
+ private static readonly List<int> failed=new List<int>();
  private static int cases=0,matched=0,getInvocations=0,bindInvocations=0,serializeInvocations=0;
  private static Assembly Resolve(object sender,ResolveEventArgs args){string name=new AssemblyName(args.Name).Name;if(String.IsNullOrEmpty(name)||name.IndexOfAny(new char[]{'/',(char)92,':'})>=0)return null;string file=Path.Combine(project,name+".dll");return File.Exists(file)?Assembly.LoadFrom(file):null;}
- private static void Check(bool result){cases++;if(result)matched++;}
+ private static void Check(bool result){cases++;if(result)matched++;else failed.Add(cases);}
  private static void Set(object instance,string name,string value){PropertyInfo p=instance.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance);if(p==null||p.PropertyType!=typeof(string))throw new InvalidOperationException();p.SetValue(instance,value,null);}
  private static string Get(object instance,string name){return (string)instance.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance).GetValue(instance,null);}
  private static XmlDocument Load(string file){XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument d=new XmlDocument();d.XmlResolver=null;using(XmlReader r=XmlReader.Create(file,settings)){d.Load(r);}return d;}
  private static XmlDocument EmptyCommon(string template){XmlDocument original=Load(template),d=new XmlDocument();d.XmlResolver=null;XmlNode common=original.SelectSingleNode("//TTinChung");if(common==null)throw new InvalidOperationException();d.AppendChild(d.ImportNode(common,true));foreach(XmlNode node in d.SelectNodes("//*[not(*)]")){node.InnerText=String.Empty;}return d;}
  private static string Text(XmlDocument doc,string path){XmlNode n=doc.SelectSingleNode(path);if(n==null)throw new InvalidOperationException();return n.InnerText;}
- private static void Result(string output,string status){string q=((char)34).ToString();string text="{"+q+"format"+q+":"+q+"htkk-common-header-oracle-v1"+q+","+q+"status"+q+":"+q+status+q+","+q+"stage"+q+":"+q+stage+q+","+q+"runtime"+q+":"+q+runtime+q+","+q+"cases"+q+":"+cases+","+q+"matched"+q+":"+matched+","+q+"getToKhaiInfoInvocations"+q+":"+getInvocations+","+q+"bindInvocations"+q+":"+bindInvocations+","+q+"serializeInvocations"+q+":"+serializeInvocations+"}";File.WriteAllText(output,text,Encoding.UTF8);}
+ private static void Result(string output,string status){string failures=String.Join(",",failed.ConvertAll<string>(delegate(int value){return value.ToString();}).ToArray());string q=((char)34).ToString();string text="{"+q+"format"+q+":"+q+"htkk-common-header-oracle-v1"+q+","+q+"status"+q+":"+q+status+q+","+q+"stage"+q+":"+q+stage+q+","+q+"runtime"+q+":"+q+runtime+q+","+q+"cases"+q+":"+cases+","+q+"matched"+q+":"+matched+","+q+"failedChecks"+q+":["+failures+"],"+q+"getToKhaiInfoInvocations"+q+":"+getInvocations+","+q+"bindInvocations"+q+":"+bindInvocations+","+q+"serializeInvocations"+q+":"+serializeInvocations+"}";File.WriteAllText(output,text,Encoding.UTF8);}
  [STAThread] public static int Main(string[] args){if(args.Length!=5)return 9;string output=args[4];try{
   runtime=Environment.Version.Major==2?"clr2":"unsupported";if(runtime!="clr2"){Result(output,"runtime-blocked");return 3;}
   project=Path.GetFullPath(args[0]);AppDomain.CurrentDomain.AssemblyResolve+=new ResolveEventHandler(Resolve);
