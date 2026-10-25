@@ -30,6 +30,7 @@ $report = [ordered]@{
   applicationEvents = $null
   privateSyntheticLoginDiagnostic = $null
   privateRegistrationDiagnostic = $null
+  privateGtgtExportEvidence = $null
   syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
   guiReferenceAutomationMode = $GuiAutomation; guiReferenceAutomation = $null
   commonHeaderOracle = $null
@@ -840,26 +841,31 @@ try {
   }
   if($GuiAutomation -eq 'gtgt-export-inspect' -and $report.stage -eq 'synthetic-original-gtgt-export-inspected') {
     $evidenceCreated=$false
+    $evidenceStage='preconditions'
     try {
       $gui=$report.guiReferenceAutomation
       if(-not $supplierStopped -or -not $report.originalSourcesUnmodified -or $gui.status -cne 'matched' -or $env:GITHUB_REPOSITORY -cne 'congminh1254/htkk_builder' -or $env:GITHUB_SHA -cnotmatch '^[0-9a-f]{40}$' -or $env:GITHUB_RUN_ID -notmatch '^[0-9]{1,20}$') { throw 'STAGING_NOT_VERIFIED' }
       foreach($flag in @('exportSchemaPinnedVerified','exportCommandInvoked','exportSelectorMatched','exportButtonInvoked','exportDialogMatched','exportDestinationFresh','exportFilenameKeyboardCommitted','exportDialogSubmitted','exportFileExists','exportXmlRootMatched','exportSyntheticIdentityMatched','exportSuccessAcknowledged','exportOriginalPathMatched')) { if($gui[$flag] -isnot [bool] -or -not $gui[$flag]) { throw 'STAGING_NOT_VERIFIED' } }
+      $evidenceStage='source-file'
       $original=Join-Path (Split-Path $exe) 'DataFiles/9999999997/reference-output/01GTGT.xml'
       $originalFile=Get-Item -LiteralPath $original
       foreach($directory in @($originalFile.Directory,$originalFile.Directory.Parent,$originalFile.Directory.Parent.Parent)) { if($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'STAGING_NOT_VERIFIED' } }
       if($originalFile.Attributes -band [IO.FileAttributes]::ReparsePoint -or $originalFile.Length -lt 1 -or $originalFile.Length -gt 262144 -or $originalFile.Length -ne $gui.exportBytes) { throw 'STAGING_NOT_VERIFIED' }
       Assert-Hash $original $gui.exportSha256
+      $evidenceStage='fresh-destination'
       $evidence=Join-Path $env:RUNNER_TEMP 'htkk-gtgt-export-evidence'
       if(Test-Path -LiteralPath $evidence) { throw 'STAGING_NOT_VERIFIED' }
       New-Item -ItemType Directory -Path $evidence | Out-Null
       $evidenceCreated=$true
+      $evidenceStage='copy-original'
       Copy-Item -LiteralPath $original -Destination (Join-Path $evidence '01GTGT.xml')
       Assert-Hash (Join-Path $evidence '01GTGT.xml') $gui.exportSha256
+      $evidenceStage='provenance'
       [ordered]@{format='htkk-gtgt-export-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';originalSourcesUnmodified=$true;inputsSynthetic=$true;guiExportInvoked=$true;originalExportSucceeded=$true;originalExporterValidatedSchema=$true;fullRoundTrip=$false;originalOutputSha256=$gui.exportSha256;originalOutputBytes=[int]$originalFile.Length} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $evidence 'provenance.json') -Encoding utf8NoBOM
-      $report.privateGtgtExportEvidence=@{status='staged';rawBytesPreserved=$true;fullRoundTrip=$false}
+      $report.privateGtgtExportEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
     } catch {
       if($evidenceCreated) { Remove-Item -LiteralPath $evidence -Recurse -Force -ErrorAction SilentlyContinue }
-      $report.privateGtgtExportEvidence=@{status='not-staged';rawBytesPreserved=$false;fullRoundTrip=$false}
+      $report.privateGtgtExportEvidence=@{status='not-staged';stage=$evidenceStage;supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$false;fullRoundTrip=$false}
     }
   }
   foreach($registration in $registrationProcesses) { try { $registration.Dispose() } catch { } }
