@@ -7,6 +7,11 @@ on:
         type: boolean
         required: true
         default: false
+      synthetic_login:
+        description: 'Thử đăng nhập GUI bằng MST giả lập cố định; không xuất/nhập hồ sơ'
+        type: boolean
+        required: false
+        default: false
       acknowledge_registration:
         description: 'Chỉ xác nhận nút OK của hộp RegSvr32 Microsoft thuộc tiến trình kiểm thử; lỗi đăng ký vẫn chặn'
         type: boolean
@@ -34,13 +39,15 @@ jobs:
         env:
           PROBE_INSTALL: ${{ inputs.install_and_probe }}
           PROBE_RUNTIME_HOST: ${{ inputs.runtime_host }}
+          PROBE_SYNTHETIC_LOGIN: ${{ inputs.synthetic_login }}
           PROBE_ACK_REGISTRATION: ${{ inputs.acknowledge_registration }}
         run: |
           $probe = $env:PROBE_INSTALL -eq 'true'
+          $syntheticLogin = $env:PROBE_SYNTHETIC_LOGIN -eq 'true'
           $ackRegistration = $env:PROBE_ACK_REGISTRATION -eq 'true'
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
-          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration
+          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin
       - name: Publish supplier startup window privately
         if: always() && inputs.install_and_probe
         shell: pwsh

@@ -1,6 +1,6 @@
 # No tax data, credentials, public screenshots or installer logs are published.
 [CmdletBinding()]
-param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration)
+param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
@@ -29,6 +29,7 @@ $report = [ordered]@{
   uiaLegacyRoleCounts = @{}; uiaLegacyPatternAvailable = $false; uiaProviderProcessMismatchCount = 0; uiaViews = @()
   applicationEvents = $null
   privateRegistrationDiagnostic = $null
+  syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
   profileAliasOracle = $null
   taxIdOracle = $null
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
@@ -738,10 +739,16 @@ try {
   }
   if ($report.taxIdOracle.status -ne 'matched') { throw 'TAX_ID_ORACLE_NOT_VERIFIED' }
   if ($report.profileAliasOracle.status -ne 'matched') { throw 'PROFILE_ALIAS_ORACLE_NOT_VERIFIED' }
-  $report.stage = 'startup-window-observed'
+  if ($SyntheticLogin) {
+    if (-not $report.loginReady) { throw 'SYNTHETIC_LOGIN_NOT_READY' }
+    . (Join-Path $PSScriptRoot 'Invoke-HtkkSyntheticLogin.ps1')
+    $report.syntheticLogin = Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $rootStartTime -ProjectDirectory (Split-Path $exe)
+    if ($report.syntheticLogin.status -ne 'synthetic-profile-window-observed') { throw 'SYNTHETIC_LOGIN_NOT_VERIFIED' }
+  }
+  $report.stage = if ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
