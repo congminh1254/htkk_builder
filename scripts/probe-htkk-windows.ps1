@@ -847,7 +847,8 @@ try {
       if(-not $supplierStopped -or -not $report.originalSourcesUnmodified -or $gui.status -cne 'matched' -or $env:GITHUB_REPOSITORY -cne 'congminh1254/htkk_builder' -or $env:GITHUB_SHA -cnotmatch '^[0-9a-f]{40}$' -or $env:GITHUB_RUN_ID -notmatch '^[0-9]{1,20}$') { throw 'STAGING_NOT_VERIFIED' }
       foreach($flag in @('exportSchemaPinnedVerified','exportCommandInvoked','exportSelectorMatched','exportButtonInvoked','exportDialogMatched','exportDestinationFresh','exportFilenameKeyboardCommitted','exportDialogSubmitted','exportFileExists','exportXmlRootMatched','exportSyntheticIdentityMatched','exportSuccessAcknowledged','exportOriginalPathMatched')) { if($gui[$flag] -isnot [bool] -or -not $gui[$flag]) { throw 'STAGING_NOT_VERIFIED' } }
       $evidenceStage='source-file'
-      $original=Join-Path (Split-Path $exe) 'DataFiles/9999999997/reference-output/01GTGT.xml'
+      # Original DATAFILES is beside Project, not inside Project.
+      $original=Join-Path (Split-Path (Split-Path $exe)) 'DataFiles/9999999997/reference-output/01GTGT.xml'
       $originalFile=Get-Item -LiteralPath $original
       foreach($directory in @($originalFile.Directory,$originalFile.Directory.Parent,$originalFile.Directory.Parent.Parent)) { if($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'STAGING_NOT_VERIFIED' } }
       if($originalFile.Attributes -band [IO.FileAttributes]::ReparsePoint -or $originalFile.Length -lt 1 -or $originalFile.Length -gt 262144 -or $originalFile.Length -ne $gui.exportBytes) { throw 'STAGING_NOT_VERIFIED' }
