@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       install_and_probe:
-        description: Cài MSI đã xác minh và chỉ kiểm tra cửa sổ khởi động, không dùng dữ liệu thuế
+        description: Cài MSI đã xác minh và kiểm chứng chế độ đã chọn bằng dữ liệu hoàn toàn giả lập
         type: boolean
         required: true
         default: false
@@ -14,7 +14,7 @@ on:
         default: none
         required: true
       synthetic_login:
-        description: 'Thử đăng nhập GUI bằng MST giả lập cố định; không xuất/nhập hồ sơ'
+        description: 'Đăng nhập bằng MST giả lập; xuất/nhập chỉ theo chế độ tham chiếu đã chọn'
         type: boolean
         required: false
         default: false

@@ -66,6 +66,10 @@ def expected_values():
  def header(path,*values):expected[prefix+path]=values
  header('TTinDVu/ttinNhaCCapDVu','@SOURCE_MD5')
  header('TTinTKhaiThue/TKhaiThue/loaiTKhai','C');header('TTinTKhaiThue/TKhaiThue/soLan','0')
+ # ORIGINAL frmHTKKPeriod.GetPeriodInfo initializes explicit bounds for M10/2026.
+ # This is the selected period, not an arbitrary fresh/current date allowance.
+ header('TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhaiTuNgay','2026-10-01','01/10/2026')
+ header('TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhaiDenNgay','2026-10-31','31/10/2026')
  header('TTinTKhaiThue/TKhaiThue/nguoiKy',FAKE_SIGNER)
  header('TTinTKhaiThue/TKhaiThue/ngayKy','@DATE');header('TTinTKhaiThue/TKhaiThue/ngayLapTKhai','@OPTIONAL_DATE')
  header('TTinTKhaiThue/TKhaiThue/nganhNgheKD','',ACTIVITY)

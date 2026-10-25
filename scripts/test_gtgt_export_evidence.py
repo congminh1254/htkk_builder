@@ -48,6 +48,13 @@ class XmlPrivacyTests(unittest.TestCase):
  def test_dates_valid_fresh_and_no_implicit_rollover(self):
   for value,reason in (('2026-02-31','DATE_VALUE'),('2026-10-20','DATE_STALE'),('yesterday','DATE_VALUE')):self.reject(change(self.body,'ngayKy',value),reason)
   e.validate_xml(change(self.body,'ngayKy','25/10/2026'),TODAY)
+ def test_monthly_period_bounds_are_exact_selected_october_dates(self):
+  for name,valid in (('kyKKhaiTuNgay',('2026-10-01','01/10/2026')),('kyKKhaiDenNgay',('2026-10-31','31/10/2026'))):
+   for value in valid:e.validate_xml(change(self.body,name,value),TODAY)
+   for value in ('','2026-10-02','2026-10-30','2026-09-01','2026-11-01','25/10/2026'):
+    with self.subTest(name=name,value=value):self.reject(change(self.body,name,value),'VALUE_MISMATCH')
+  for name in ('kyKKhaiTuThang','kyKKhaiDenThang'):
+   self.reject(change(self.body,name,'10/2026'),'VALUE_MISMATCH')
  def test_dtd_entities_comments_pi_rejected(self):
   for fragment in (b'<!DOCTYPE x>',b'<!-- secret -->',b'<?secret raw?>',b'<!ENTITY x "private">'):
    self.reject(fragment+self.body,'DECLARATION')
