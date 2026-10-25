@@ -64,8 +64,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&!CheckValue(ReadableNamed(period,"OptBosung"));
   SetText(period,"mskYear","2026");SetText(period,"mskMonth","10");
   periodDateMatched=Named(period,"mskYear").Text=="2026"&&Named(period,"mskMonth").Text=="10"&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy"));
-  periodGeographyMatched=SelectCode(period,"cboTinh","101","Thành phố Hà Nội")&&SelectCode(period,"cboXa","10129087","Phường Sơn Tây")&&SelectCode(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội")&&SelectCode(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội");
-  periodActivityMatched=SelectSourceActivity(period);
+  periodDescriptions.Clear();periodControlCount=0;int currentControlCount=0;DescribePeriod(period,ref currentControlCount);
+  stage="gtgt-period-province-selecting";Record();bool provinceMatched=SelectCode(period,"cboTinh","101","Thành phố Hà Nội");
+  stage="gtgt-period-ward-selecting";Record();bool wardMatched=SelectCode(period,"cboXa","10129087","Phường Sơn Tây");
+  stage="gtgt-period-taxhead-selecting";Record();bool taxHeadMatched=SelectCode(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội");
+  stage="gtgt-period-taxlocal-selecting";Record();bool taxLocalMatched=SelectCode(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội");
+  periodGeographyMatched=provinceMatched&&wardMatched&&taxHeadMatched&&taxLocalMatched;
+  stage="gtgt-period-activity-selecting";Record();periodActivityMatched=SelectSourceActivity(period);
   // Exercise the ORIGINAL select-all/clear-all control, preserving its locked-row rules.
   Control all=ReadableNamed(period,"chkChonPhuLucKeKhaiAll");if(all.Enabled){SetCheck(all,true);SetCheck(all,false);}
   Control annex=ReadableNamed(period,"axfpsPhuLuc");if(!IsSpread(annex))throw new InvalidOperationException();object annexSheet=Get(annex,"ActiveSheet");int annexRows=Convert.ToInt32(Get(annexSheet,"RowCount"));if(annexRows<0||annexRows>512)throw new InvalidOperationException();annexSelected=0;

@@ -25,6 +25,11 @@ try {
   $copy.periodControls=@{mskYear=$description};$copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-inspect).status -ne 'invalid'){throw 'Unsafe period descriptor accepted'};$cases++
  }
+ foreach($selectionStage in @('gtgt-period-province-selecting','gtgt-period-ward-selecting','gtgt-period-taxhead-selecting','gtgt-period-taxlocal-selecting','gtgt-period-activity-selecting')){
+  $stageCopy=[ordered]@{};foreach($key in $base.Keys){$stageCopy[$key]=$base[$key]};$stageCopy.mode='gtgt-sheet-inspect';$stageCopy.stage=$selectionStage
+  $stageCopy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-sheet-inspect).status -ne 'valid'){throw 'Safe period selection stage rejected'};$cases++
+ }
  $copy=[ordered]@{};foreach($key in $base.Keys){$copy[$key]=$base[$key]};$copy.mode='gtgt-sheet-inspect';$copy.stage='gtgt-sheet-inspected';$copy.gtgtSheetRows=72;$copy.gtgtSheetColumns=24
  $copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-sheet-inspect).status -ne 'valid'){throw 'Safe D1 sheet descriptor rejected'};$cases++
