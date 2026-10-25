@@ -7,6 +7,12 @@ on:
         type: boolean
         required: true
         default: false
+      gui_automation:
+        description: 'Automation THAM CHIẾU riêng: chỉ custom CLR2/x86 + synthetic login'
+        type: choice
+        options: [none, inspect, profile-save]
+        default: none
+        required: true
       synthetic_login:
         description: 'Thử đăng nhập GUI bằng MST giả lập cố định; không xuất/nhập hồ sơ'
         type: boolean
@@ -34,20 +40,26 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Check safe reference-result boundary
+        shell: pwsh
+        run: ./scripts/Test-HtkkSafeGuiReferenceResult.ps1
       - name: Kiểm tra nguồn và điều kiện Windows
         shell: pwsh
         env:
           PROBE_INSTALL: ${{ inputs.install_and_probe }}
           PROBE_RUNTIME_HOST: ${{ inputs.runtime_host }}
+          PROBE_GUI_AUTOMATION: ${{ inputs.gui_automation }}
           PROBE_SYNTHETIC_LOGIN: ${{ inputs.synthetic_login }}
           PROBE_ACK_REGISTRATION: ${{ inputs.acknowledge_registration }}
         run: |
           $probe = $env:PROBE_INSTALL -eq 'true'
           $syntheticLogin = $env:PROBE_SYNTHETIC_LOGIN -eq 'true'
           $ackRegistration = $env:PROBE_ACK_REGISTRATION -eq 'true'
+          $guiAutomation = if ([string]::IsNullOrEmpty($env:PROBE_GUI_AUTOMATION)) { 'none' } else { $env:PROBE_GUI_AUTOMATION }
+          if ($guiAutomation -notin @('none','inspect','profile-save')) { throw 'Invalid reference GUI automation mode.' }
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
-          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin
+          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation
       - name: Publish supplier startup window privately
         if: always() && inputs.install_and_probe
         shell: pwsh

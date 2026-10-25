@@ -6,7 +6,8 @@ function New-HtkkX86ReferenceHost {
   [CmdletBinding()]
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
-    [Parameter(Mandatory=$true)][string]$TemporaryDirectory
+    [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
+    [ValidateSet('none','inspect','profile-save')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   $safe = [ordered]@{
@@ -15,6 +16,7 @@ function New-HtkkX86ReferenceHost {
     compilerTrustVerified=$false; compilerExitCode=$null; compilerErrorCodes=@()
     hostPath=$null; hostSha256=$null; hostConfigPath=$null; resultPath=$null
     arguments=@(); createdPaths=@(); compilerDirectory=$null
+    guiAutomationMode=$GuiAutomation; guiAutomationResultPath=$null; guiAutomationPermitPath=$null
     originalExecutableModified=$false; originalConfigurationModified=$false
     secondaryDomainUsesOriginalConfiguration=$true; runtimeRoundTrip=$false
   }
@@ -47,13 +49,15 @@ function New-HtkkX86ReferenceHost {
     # No original executable, DLL, configuration, PE flag or native dependency is changed.
     $program=Join-Path $project ('HTKK.X86ReferenceHost.'+[guid]::NewGuid().ToString('N')+'.exe')
     $hostConfig=$program+'.config'; $resultFile=$program+'.result.json'
-    $candidates=@($program,$hostConfig,$resultFile)
+    $automationResultFile=$program+'.gui-automation.json'
+    $automationPermitFile=$program+'.gui-automation.allow'
+    $candidates=@($program,$hostConfig,$resultFile,$automationResultFile,$automationPermitFile)
     foreach($path in $candidates) { if(Test-Path -LiteralPath $path) { $safe.status='owned-path-already-exists'; return $safe } }
     # Claim only the previously absent unique names; a refusal above must never
     # delete an existing file in the installed project.
     $owned=$candidates
     $source=Join-Path $directory 'HtkkX86ReferenceHost.cs'
-    @'
+    $hostSource=@'
 using System;
 using System.Globalization;
 using System.IO;
@@ -148,6 +152,13 @@ internal static class HtkkX86ReferenceHost {
       // in this secondary domain. No loader is injected into its source code.
       AppDomain domain=AppDomain.CreateDomain("HTKK verified x86 reference",null,setup);
       WriteResult("original-starting",-1);
+      // Optional OWN reference helper in the same AppDomain. It uses BeginInvoke
+      // to run public grid editors and the original Save handler on the original UI thread.
+      const string automationMode="__GUI_AUTOMATION_MODE__";
+      if(automationMode!="none") {
+        HtkkGuiReferenceAutomation agent=(HtkkGuiReferenceAutomation)domain.CreateInstanceFromAndUnwrap(host,"HtkkGuiReferenceAutomation");
+        agent.Start(automationMode);
+      }
       int code=domain.ExecuteAssembly(original);
       WriteResult("original-exited",code);
       return code;
@@ -158,13 +169,16 @@ internal static class HtkkX86ReferenceHost {
     }
   }
 }
-'@ | Set-Content -LiteralPath $source -Encoding ASCII
+'@
+    $hostSource.Replace('__GUI_AUTOMATION_MODE__',$GuiAutomation) | Set-Content -LiteralPath $source -Encoding ASCII
+    $automationSource=Join-Path $directory 'HtkkGuiReferenceAutomation.cs'
+    [IO.File]::WriteAllText($automationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGuiReferenceAutomation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     '<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>' | Set-Content -LiteralPath $hostConfig -Encoding ASCII
     $info=[Diagnostics.ProcessStartInfo]::new()
     $info.FileName=$compiler; $info.WorkingDirectory=$directory; $info.UseShellExecute=$false; $info.CreateNoWindow=$true
     $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true; $info.Environment.Clear()
     foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $info.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),$source)) { $info.ArgumentList.Add($argument) }
+    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource)) { $info.ArgumentList.Add($argument) }
     $compilerProcess=[Diagnostics.Process]::Start($info)
     $null=$compilerProcess.Handle
     $stdout=$compilerProcess.StandardOutput.ReadToEndAsync(); $stderr=$compilerProcess.StandardError.ReadToEndAsync()
@@ -176,7 +190,7 @@ internal static class HtkkX86ReferenceHost {
     # Guard again after compilation, before returning anything launchable.
     if((Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedExe -or (Get-FileHash -LiteralPath $business -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedBusiness -or (Get-FileHash -LiteralPath $originalConfig -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedConfig) { $safe.status='source-changed-during-prepare'; return $safe }
     $safe.hostPath=$program; $safe.hostSha256=(Get-FileHash -LiteralPath $program -Algorithm SHA256).Hash.ToLowerInvariant()
-    $safe.hostConfigPath=$hostConfig; $safe.resultPath=$resultFile
+    $safe.hostConfigPath=$hostConfig; $safe.resultPath=$resultFile; $safe.guiAutomationResultPath=$automationResultFile; $safe.guiAutomationPermitPath=$automationPermitFile
     $safe.createdPaths=$owned; $safe.compilerDirectory=$directory; $safe.status='prepared'; $prepared=$true
     return $safe
   } catch { $safe.status='host-or-tool-failure'; return $safe }

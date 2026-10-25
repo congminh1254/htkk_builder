@@ -1,6 +1,6 @@
 # No tax data, credentials, public screenshots or installer logs are published.
 [CmdletBinding()]
-param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin)
+param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin,[ValidateSet('none','inspect','profile-save')][string]$GuiAutomation='none')
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
@@ -31,6 +31,7 @@ $report = [ordered]@{
   privateSyntheticLoginDiagnostic = $null
   privateRegistrationDiagnostic = $null
   syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
+  guiReferenceAutomationMode = $GuiAutomation; guiReferenceAutomation = $null
   commonHeaderOracle = $null
   profileAliasOracle = $null
   taxIdOracle = $null
@@ -557,6 +558,7 @@ $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encodi
 }
 
 try {
+  if($GuiAutomation -ne 'none' -and ($RuntimeHost -ne 'clr2-x86-reference' -or -not $SyntheticLogin -or -not $InstallAndProbe)) { throw 'GUI_REFERENCE_AUTOMATION_MODE_INVALID' }
   New-Item -ItemType Directory -Path $work | Out-Null
   $report.stage = 'download'
   $rar = Join-Path $work 'official.rar'; $zip = Join-Path $work 'mirror.zip'
@@ -619,15 +621,15 @@ try {
   if($RuntimeHost -eq 'clr2-x86-reference') {
     $report.stage='prepare-x86-reference-host'
     . (Join-Path $PSScriptRoot 'New-HtkkX86ReferenceHost.ps1')
-    $referencePreparation=New-HtkkX86ReferenceHost -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+    $referencePreparation=New-HtkkX86ReferenceHost -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work -GuiAutomation $GuiAutomation
     $safeCompilerCodes=@($referencePreparation.compilerErrorCodes | Where-Object { $_ -match '^CS[0-9]{4}$' } | Select-Object -First 10)
     $report.referenceHostPreparation=[ordered]@{ status=$referencePreparation.status; mode='custom-x86-clr2-reference-host'; hostSha256=$null; originalExeHashVerified=$referencePreparation.originalExeHashVerified; businessDllHashVerified=$referencePreparation.businessDllHashVerified; originalConfigHashVerified=$referencePreparation.originalConfigHashVerified; compilerTrustVerified=$referencePreparation.compilerTrustVerified; compilerExitCode=$referencePreparation.compilerExitCode; compilerErrorCodes=$safeCompilerCodes; originalExecutableModified=$false; originalConfigurationModified=$false }
     if($referencePreparation.status -ne 'prepared') { throw 'X86_REFERENCE_HOST_PREPARATION_FAILED' }
     $projectFull=[IO.Path]::GetFullPath((Split-Path $exe)).TrimEnd('\')
     $hostFull=[IO.Path]::GetFullPath($referencePreparation.hostPath)
     $hostLeaf=[IO.Path]::GetFileName($hostFull)
-    if([IO.Path]::GetDirectoryName($hostFull).TrimEnd('\') -ne $projectFull -or $hostLeaf -notmatch '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$' -or $referencePreparation.hostSha256 -notmatch '^[a-f0-9]{64}$' -or @($referencePreparation.arguments).Count -ne 0 -or $referencePreparation.hostConfigPath -ne ($hostFull+'.config') -or $referencePreparation.resultPath -ne ($hostFull+'.result.json')) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
-    $referenceOwnedFiles=@($hostFull,($hostFull+'.config'),($hostFull+'.result.json'))
+    if([IO.Path]::GetDirectoryName($hostFull).TrimEnd('\') -ne $projectFull -or $hostLeaf -notmatch '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$' -or $referencePreparation.hostSha256 -notmatch '^[a-f0-9]{64}$' -or @($referencePreparation.arguments).Count -ne 0 -or $referencePreparation.hostConfigPath -ne ($hostFull+'.config') -or $referencePreparation.resultPath -ne ($hostFull+'.result.json') -or $referencePreparation.guiAutomationResultPath -ne ($hostFull+'.gui-automation.json') -or $referencePreparation.guiAutomationPermitPath -ne ($hostFull+'.gui-automation.allow') -or $referencePreparation.guiAutomationMode -cne $GuiAutomation) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
+    $referenceOwnedFiles=@($hostFull,($hostFull+'.config'),($hostFull+'.result.json'),($hostFull+'.gui-automation.json'),($hostFull+'.gui-automation.allow'))
     Assert-Hash $hostFull $referencePreparation.hostSha256
     $expectedHostConfig='<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>'
     if((Get-Content -LiteralPath ($hostFull+'.config') -Raw -Encoding ASCII).Trim() -cne $expectedHostConfig) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
@@ -749,10 +751,37 @@ try {
     $report.syntheticLogin = Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $rootStartTime -ProjectDirectory (Split-Path $exe)
     if ($report.syntheticLogin.status -ne 'synthetic-profile-window-observed') { throw 'SYNTHETIC_LOGIN_NOT_VERIFIED' }
   }
-  $report.stage = if ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
+  if($GuiAutomation -ne 'none') {
+    . (Join-Path $PSScriptRoot 'Get-HtkkSafeGuiReferenceResult.ps1')
+    if($GuiAutomation -eq 'profile-save') {
+      # Only now authorize mutation: the independent original GUI login/profile
+      # transition and fresh synthetic directory have already been verified above.
+      [IO.File]::WriteAllText($referencePreparation.guiAutomationPermitPath,'profile-save',[Text.Encoding]::ASCII)
+    }
+    $automationClock=[Diagnostics.Stopwatch]::StartNew();$lastGui=$null;$terminal=$false;$automationRootExited=$false
+    do {
+      $nextGui=Get-HtkkSafeGuiReferenceResult -ResultPath $referencePreparation.guiAutomationResultPath -ExpectedMode $GuiAutomation
+      if($nextGui.status -eq 'valid') {
+        $lastGui=$nextGui
+        $terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in @('source-or-runtime-not-matched','fixture-preexists','initialization-unavailable','profile-wait-timeout','profile-dimensions-unmatched','fresh-synthetic-profile-not-established','editing-api-unavailable','original-profile-saved-verified','original-profile-save-not-verified') -or ($GuiAutomation -eq 'inspect' -and $nextGui.stage -eq 'profile-inspected')
+        if($terminal){break}
+      }
+      if($process.HasExited){$automationRootExited=$true;break}
+      Start-Sleep -Milliseconds 500
+    }while($automationClock.Elapsed.TotalSeconds -lt 30)
+    if($null -eq $lastGui){$report.guiReferenceAutomation=[ordered]@{status='no-valid-result';mode=$GuiAutomation;stage='result-unavailable-or-invalid';waitSeconds=[int]$automationClock.Elapsed.TotalSeconds;runtimeRoundTrip=$false};throw 'GUI_REFERENCE_AUTOMATION_NOT_VERIFIED'}
+    $matched=$lastGui.sourcePinsVerified -and $lastGui.mstBoxesMatched -and $lastGui.initialRequiredTextBlank -and $lastGui.editingApiAvailable -and $lastGui.failureCategory -eq 'none' -and $lastGui.spreadCount -eq 1
+    if($GuiAutomation -eq 'inspect'){$matched=$matched -and $lastGui.stage -eq 'profile-inspected' -and -not $lastGui.originalSaveInvoked -and $lastGui.performedInputCount -eq 0}
+    else{$matched=$matched -and $lastGui.stage -eq 'original-profile-saved-verified' -and $lastGui.originalSaveInvoked -and $lastGui.savedHeaderExists -and $lastGui.savedHeaderChecksMatched -and $lastGui.savedHeaderCheckedFieldCount -eq 8 -and $lastGui.performedInputCount -eq 7}
+    $lastGui.status=if($matched){'matched'}elseif($terminal){'failed'}elseif($automationRootExited){'root-exited'}else{'timed-out'}
+    $lastGui['waitSeconds']=[int]$automationClock.Elapsed.TotalSeconds
+    $report.guiReferenceAutomation=$lastGui
+    if(-not $matched){throw 'GUI_REFERENCE_AUTOMATION_NOT_VERIFIED'}
+  }
+  $report.stage = if($GuiAutomation -eq 'profile-save'){'synthetic-original-profile-saved-verified'}elseif($GuiAutomation -eq 'inspect'){'synthetic-profile-managed-controls-inspected'}elseif ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'

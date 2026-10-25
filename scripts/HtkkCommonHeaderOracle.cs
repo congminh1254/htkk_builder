@@ -38,7 +38,8 @@ internal static class HtkkCommonHeaderOracle {
    string basePath="/TTinChung/TTinTKhaiThue/TKhaiThue/";
    Check(Text(document,basePath+"maTKhai")=="842");Check(Text(document,basePath+"pbanTKhaiXML")=="2.8.3");Check(Text(document,basePath+"loaiTKhai")==modes[index]);Check(Text(document,basePath+"soLan")==index.ToString());Check(Text(document,"/TTinChung/TTinTKhaiThue/NNT/phuongXa")==String.Empty);Check(Text(document,"/TTinChung/TTinTKhaiThue/NNT/tenNNT")==Get(header,"tenNNT"));Check(document.SelectSingleNode("//tenXaPhuongNNT")==null&&document.SelectSingleNode("//maXaPhuongNNT")==null);
    stage="save-synthetic";document.Save(Path.Combine(args[3],index==0?"common-header-first.xml":"common-header-supplement.xml"));
-   stage="preserve-template";document.SelectSingleNode(basePath+"maTKhai").InnerText="SYNTHETIC KEEP";serialize.Invoke(null,new object[]{document.DocumentElement});serializeInvocations++;Check(Text(document,basePath+"maTKhai")=="SYNTHETIC KEEP");
+   // D1 exporter replaces existing template metadata with the bound source property.
+   stage="d1-overwrites-existing-metadata";document.SelectSingleNode(basePath+"maTKhai").InnerText="SYNTHETIC KEEP";serialize.Invoke(null,new object[]{document.DocumentElement});serializeInvocations++;Check(Text(document,basePath+"maTKhai")=="842");
   }
   stage="version-fallback";object last=commonField.GetValue(null);Set(last,"pbanTKhaiXML",String.Empty);XmlDocument fallback=EmptyCommon(args[2]);serialize.Invoke(null,new object[]{fallback.DocumentElement});serializeInvocations++;Check(Text(fallback,"/TTinChung/TTinTKhaiThue/TKhaiThue/pbanTKhaiXML")=="2.8.3");
   stage="complete";bool ok=cases==43&&matched==cases&&getInvocations==2&&bindInvocations==2&&serializeInvocations==5;Result(output,ok?"matched":"mismatch");return ok?0:2;
