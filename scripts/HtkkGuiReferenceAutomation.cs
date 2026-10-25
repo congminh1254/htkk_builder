@@ -149,7 +149,7 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
   if(successAcknowledged||!saveInvoked)return;
   ReadSavedHeader();
   foreach(Form form in Application.OpenForms){
-   if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage"||form.Text.Trim()!="Thông báo")continue;
+   if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage"||form.Text.Trim()!="Thông Báo")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true),buttons=form.Controls.Find("btn_2",true);
    if(labels.Length!=1)return;
    saveDialogKind=labels[0].Text=="Đã ghi dữ liệu thành công!"?"success-0002":labels[0].Text=="Thông tin kê khai sai, có muốn ghi lại không?"?"invalid-0015":"other-original-message";
