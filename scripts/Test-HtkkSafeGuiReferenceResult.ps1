@@ -25,7 +25,7 @@ try {
   $copy.periodControls=@{mskYear=$description};$copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-inspect).status -ne 'invalid'){throw 'Unsafe period descriptor accepted'};$cases++
  }
- foreach($selectionStage in @('gtgt-period-province-selecting','gtgt-period-ward-selecting','gtgt-period-taxhead-selecting','gtgt-period-taxlocal-selecting','gtgt-period-activity-selecting')){
+ foreach($selectionStage in @('waiting-profile-close-ready','gtgt-period-province-selecting','gtgt-period-ward-selecting','gtgt-period-taxhead-selecting','gtgt-period-taxlocal-selecting','gtgt-period-activity-selecting')){
   $stageCopy=[ordered]@{};foreach($key in $base.Keys){$stageCopy[$key]=$base[$key]};$stageCopy.mode='gtgt-sheet-inspect';$stageCopy.stage=$selectionStage
   $stageCopy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-sheet-inspect).status -ne 'valid'){throw 'Safe period selection stage rejected'};$cases++

@@ -116,11 +116,11 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
     // worksheet controls identifies the owner; the outer main frame stays visible.
     Form profileOwner=closes[0].FindForm();
     if(profileOwner==null||profileOwner.GetType().FullName!="HTKK.frmWinToKhai"||saves[0].FindForm()!=profileOwner||spread.FindForm()!=profileOwner){stage="gtgt-profile-owner-not-matched";finished=true;Record();return;}
-    closingProfileForm=profileOwner;profileCloseRequested=true;
-    stage="profile-close-invoking";navigationPhase="waiting-main-menu";Record();
-    // Original Ghi has cleared isDataChanged. Request only the original Đóng once.
-    closes[0].PerformClick();profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;
-    stage=profileClosed?"waiting-main-menu":"waiting-profile-close";Record();return;
+    if(closes[0].Name!="cmdExit"){stage="gtgt-profile-owner-not-matched";finished=true;Record();return;}
+    closingProfileForm=profileOwner;pendingProfileClose=closes[0];
+    // Do not close inside the just-completed Save/modal callback. The next
+    // ORIGINAL UI turn must observe restored owner/button availability first.
+    stage="waiting-profile-close-ready";navigationPhase="waiting-profile-close-ready";Record();return;
    }
    finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
   }

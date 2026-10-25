@@ -13,6 +13,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private string navigationPhase="not-started";
  private Form closingProfileForm=null;
  private bool profileCloseRequested=false;
+ private Button pendingProfileClose=null;
  private readonly Dictionary<string,string> periodDescriptions=new Dictionary<string,string>();
  private static readonly string[] PeriodNames=new string[]{"chkTkhaiThang","chkTKQuy","OptTKThang","OptChinhthuc","OptBosung","mskYear","mskMonth","cbbQuy","btnDongY","cmdClose","axfpsPhuLuc","cboNganhKD","chkChonPhuLucKeKhaiAll","cboCQTCuc","cboCQTChiCuc","cboTinh","cboXa"};
  private string NavigationJson(){
@@ -60,7 +61,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
   foreach(Control child in root.Controls){if(seen.Count>=512)break;FindMainMenus(child,found,seen);}
  }
  private void ContinueGtgtNavigation(){
-  if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||!successAcknowledged||!profileCloseRequested||closingProfileForm==null){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
+  if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||!successAcknowledged||closingProfileForm==null){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
+  if(navigationPhase=="waiting-profile-close-ready"){
+   foreach(Form modal in Application.OpenForms){if(modal.Visible&&modal.GetType().FullName=="TAX.HTKK.Utilities.Control.frmMessage"){stage="waiting-profile-close-ready";Record();return;}}
+   if(closingProfileForm.IsDisposed||!closingProfileForm.Visible||pendingProfileClose==null||pendingProfileClose.IsDisposed||pendingProfileClose.Name!="cmdExit"||pendingProfileClose.FindForm()!=closingProfileForm||pendingProfileClose.Text.Replace("&",String.Empty).Trim()!="Đóng"){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
+   if(!closingProfileForm.Enabled||!pendingProfileClose.Visible||!pendingProfileClose.Enabled){stage="waiting-profile-close-ready";Record();return;}
+   // ORIGINAL cmdExit_Click (060003A5) and FormClosing consult this field.
+   // Observe its clean state only; never clear it or acknowledge dirty warnings.
+   FieldInfo dirty=closingProfileForm.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);
+   if(dirty==null||dirty.FieldType!=typeof(bool)||(bool)dirty.GetValue(closingProfileForm)){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
+   ReadSavedHeader();if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||profileCloseRequested){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
+   profileCloseRequested=true;navigationPhase="waiting-main-menu";stage="profile-close-invoking";Record();pendingProfileClose.PerformClick();
+   profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;stage=profileClosed?"waiting-main-menu":"waiting-profile-close";Record();return;
+  }
+  if(!profileCloseRequested){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
   // The worksheet can be a non-top-level Form inside the still-visible main frame.
   // Observe THAT original owner across UI turns rather than testing the outer frame.
   profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;
