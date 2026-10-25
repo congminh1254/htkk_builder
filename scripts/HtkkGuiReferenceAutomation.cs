@@ -20,6 +20,7 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private string result,project,mode="inspect",stage="not-started",failure="none",editorKind="not-started";
  private volatile bool finished=false,queued=false;
  private bool pins=false,mstMatched=false,initialBlank=false,editingAvailable=false,saveInvoked=false,headerExists=false,headerMatched=false;
+ private bool successAcknowledged=false;
  private int forms=0,spreads=0,rows=0,columns=0,inputCount=0,headerChecks=0;
  private readonly Dictionary<string,int> kinds=new Dictionary<string,int>();
  public override object InitializeLifetimeService(){return null;}
@@ -35,7 +36,7 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
   if(requestedMode!="inspect"&&requestedMode!="profile-save")throw new ArgumentException();
   mode=requestedMode;string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
   try{
-   pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
+   pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
    if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){stage="source-or-runtime-not-matched";finished=true;Record();return;}
    // Never reuse a source/sample/previous-run fixture directory.
    if(Directory.Exists(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst))){stage="fixture-preexists";finished=true;Record();return;}
@@ -98,7 +99,11 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
    stage="original-save-invoking";saveInvoked=true;Record();
    // This is the ORIGINAL application button and its original validators/save handler.
    // A validation dialog is not dismissed automatically; the outer probe remains bounded.
-   saves[0].PerformClick();
+   using(System.Windows.Forms.Timer acknowledgement=new System.Windows.Forms.Timer()){
+    acknowledgement.Interval=100;
+    acknowledgement.Tick+=delegate(object sender,EventArgs args){try{AcknowledgeVerifiedSuccess();}catch{}};
+    acknowledgement.Start();try{saves[0].PerformClick();}finally{acknowledgement.Stop();}
+   }
    ReadSavedHeader();finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
   }
  }
@@ -108,15 +113,48 @@ public sealed class HtkkGuiReferenceAutomation : MarshalByRefObject {
   Control editor=Get(spread,"EditingControl") as Control;if(editor==null)throw new InvalidOperationException();
   if(isCombo){
    ComboBox combo=editor as ComboBox;if(combo==null){foreach(Control child in editor.Controls){if(child is ComboBox){if(combo!=null)throw new InvalidOperationException();combo=(ComboBox)child;}}}
-   if(combo==null){editorKind="other-control";Record();throw new InvalidOperationException();}
-   editorKind="combo";int selected=-1;
-   for(int index=0;index<combo.Items.Count&&index<4096;index++){if(combo.GetItemText(combo.Items[index])==value){if(selected>=0)throw new InvalidOperationException();selected=index;}}
-   if(selected<0)throw new InvalidOperationException();combo.DroppedDown=true;combo.SelectedIndex=selected;combo.DroppedDown=false;
+   if(combo!=null){
+    editorKind="combo";int selected=-1;
+    for(int index=0;index<combo.Items.Count&&index<4096;index++){if(combo.GetItemText(combo.Items[index])==value){if(selected>=0)throw new InvalidOperationException();selected=index;}}
+    if(selected<0)throw new InvalidOperationException();combo.DroppedDown=true;combo.SelectedIndex=selected;combo.DroppedDown=false;
+   }else{
+    // FarPoint's original editor is FpCombo, not a WinForms ComboBox.
+    // Use its public selection API so original edit/selection events still execute.
+    Control vendor=FindVendorCombo(editor,0);
+    if(vendor==null){editorKind="other-control";Record();throw new InvalidOperationException();}
+    editorKind="combo";SetPublic(vendor,"DroppedDown",true);
+    object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
+    if(count<1||count>4096)throw new InvalidOperationException();
+    PropertyInfo item=list.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null&&sequence==null)throw new InvalidOperationException();
+    int selected=-1;
+    for(int index=0;index<count;index++){object entry=sequence!=null?sequence[index]:item.GetValue(list,new object[]{index});if(entry!=null&&entry.ToString()==value){if(selected>=0)throw new InvalidOperationException();selected=index;}}
+    if(selected<0)throw new InvalidOperationException();SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
+   }
   }else{editorKind=editor is TextBoxBase?"text-box":"other-control";editor.Text=value;}
   spread.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(spread,null);
   if(CellText(sheet,row,column)!=value)throw new InvalidOperationException();inputCount++;Record();
  }
+ private static void SetPublic(object target,string name,object value){PropertyInfo p=target.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance);if(p==null||!p.CanWrite)throw new InvalidOperationException();p.SetValue(target,value,null);}
+ private static Control FindVendorCombo(Control root,int depth){
+  if(depth>6)return null;
+  for(Type type=root.GetType();type!=null;type=type.BaseType)if(type.FullName=="FarPoint.Win.FpCombo")return root;
+  Control found=null;foreach(Control child in root.Controls){Control candidate=FindVendorCombo(child,depth+1);if(candidate!=null){if(found!=null)throw new InvalidOperationException();found=candidate;}}return found;
+ }
+ private void AcknowledgeVerifiedSuccess(){
+  if(successAcknowledged||!saveInvoked)return;
+  ReadSavedHeader();if(!headerMatched||headerChecks!=8)return;
+  foreach(Form form in Application.OpenForms){
+   if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage"||form.Text.Trim()!="Thông báo")continue;
+   Control[] labels=form.Controls.Find("lblThongBao",true),buttons=form.Controls.Find("btn_2",true);
+   if(labels.Length!=1||labels[0].Text!="Đã ghi dữ liệu thành công!"||buttons.Length!=1)return;
+   Button close=buttons[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")return;
+   if(CountVisibleButtons(form)!=1)return;
+   successAcknowledged=true;stage="success-modal-acknowledged";Record();close.PerformClick();return;
+  }
+ }
+ private static int CountVisibleButtons(Control root){int count=root is Button&&root.Visible&&root.Enabled?1:0;foreach(Control child in root.Controls)count+=CountVisibleButtons(child);return count;}
  private void ReadSavedHeader(){
+  headerChecks=0;headerMatched=false;headerExists=false;
   string file=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),"HEADER.xml");headerExists=File.Exists(file);if(!headerExists)return;
   if(new FileInfo(file).Length>2000000)throw new InvalidOperationException();XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
   using(XmlReader reader=XmlReader.Create(file,settings)){document.Load(reader);}Dictionary<string,string> values=new Dictionary<string,string>();foreach(XmlNode node in document.SelectNodes("//*[@PropertyInfo]")){string key=node.Attributes["PropertyInfo"].Value;if(key.Length>0){if(values.ContainsKey(key))throw new InvalidOperationException();values[key]=node.Attributes["Value"]==null?String.Empty:node.Attributes["Value"].Value;}}

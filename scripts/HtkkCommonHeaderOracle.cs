@@ -28,7 +28,8 @@ internal static class HtkkCommonHeaderOracle {
   XmlDocument menu=Load(args[1]);XmlNode menuNode=menu.SelectSingleNode("//*[@ID='D1']");if(menuNode==null)throw new InvalidOperationException();
   string[] modes=new string[]{"C","B"};
   for(int index=0;index<modes.Length;index++){
-   stage="period";object period=Activator.CreateInstance(periodField.FieldType);Set(period,"LoaiToKhai",modes[index]);Set(period,"SoLan",index.ToString());Set(period,"KieuKy","M");Set(period,"Thang","10");Set(period,"Nam","2026");Set(period,"kyKKhai","10/2026");Set(period,"menuID","D1");periodField.SetValue(null,period);
+   // Explicit range inputs prevent unrelated constructor defaults entering this synthetic oracle.
+   stage="period";object period=Activator.CreateInstance(periodField.FieldType);Set(period,"LoaiToKhai",modes[index]);Set(period,"SoLan",index.ToString());Set(period,"KieuKy","M");Set(period,"TuNgay",String.Empty);Set(period,"DenNgay",String.Empty);Set(period,"TuThang",String.Empty);Set(period,"DenThang",String.Empty);Set(period,"Thang","10");Set(period,"Nam","2026");Set(period,"kyKKhai","10/2026");Set(period,"menuID","D1");periodField.SetValue(null,period);
    stage="get-declaration";object declaration=get.Invoke(null,new object[]{menuNode,period});getInvocations++;declarationField.SetValue(null,declaration);
    Check(Get(declaration,"MaToKhai")=="842");Check(Get(declaration,"VersionXML")=="2.8.3");Check(Get(declaration,"TenToKhai")==menuNode.Attributes["TenToKhai"].Value);Check(Get(declaration,"MoTaBieuMau")==menuNode.Attributes["MoTaBieuMau"].Value);
    stage="bind";object common=Activator.CreateInstance(commonField.FieldType);Set(common,"phuongXa","SYNTHETIC LEGACY SENTINEL");commonField.SetValue(null,common);bind.Invoke(null,new object[0]);bindInvocations++;
