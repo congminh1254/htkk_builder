@@ -1,0 +1,90 @@
+name: HTKK trusted builder
+run-name: HTKK ${{ inputs.mode }}
+on:
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: Full source commit SHA
+        required: true
+      mode:
+        type: choice
+        options: [ci, release]
+        default: ci
+        required: true
+      pr_number:
+        description: Internal source PR number for CI (optional on main)
+        default: ''
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: htkk-${{ inputs.mode }}-${{ inputs.mode == 'release' && 'release' || inputs.pr_number || 'main' }}
+  cancel-in-progress: false
+jobs:
+  build:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout trusted builder
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: builder
+          persist-credentials: false
+      - name: Validate source request
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          BUILD_MODE: ${{ inputs.mode }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: python3 builder/scripts/validate.py
+      - name: Checkout authorized source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: congminh1254/htkk_web
+          ref: ${{ inputs.commit_sha }}
+          token: ${{ secrets.SOURCE_READ_TOKEN }}
+          path: source
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Build and verify (private diagnostics)
+        env:
+          BUILD_MODE: ${{ inputs.mode }}
+        run: python3 builder/scripts/build.py
+      - name: Publish static output to private source repository
+        if: inputs.mode == 'release'
+        env:
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: python3 builder/scripts/publish.py
+      - name: Remove local source and diagnostic files
+        if: always()
+        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output"
+  report:
+    if: always() && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: Report fixed status to private source
+        env:
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          python3 - <<'PY'
+          import os,re,json,urllib.request
+          sha=os.environ['COMMIT_SHA']
+          if not re.fullmatch('[0-9a-f]{40}',sha): raise SystemExit('Invalid source SHA.')
+          state='success' if os.environ['BUILD_RESULT']=='success' else 'failure'
+          payload=json.dumps({'state':state,'context':'htkk-builder','description':'Builder '+state}).encode()
+          request=urllib.request.Request('https://api.github.com/repos/congminh1254/htkk_web/statuses/'+sha,data=payload,headers={'Authorization':'Bearer '+os.environ['SOURCE_STATUS_TOKEN'],'Accept':'application/vnd.github+json'},method='POST')
+          try:
+              with urllib.request.urlopen(request,timeout=30) as response: response.read()
+          except Exception: raise SystemExit('Status callback failed.')
+          print('Source status updated.')
+          PY

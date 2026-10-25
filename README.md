@@ -1,0 +1,28 @@
+# HTKK public builder
+
+This repository contains only builder workflows, trusted orchestration scripts, and documentation. The application source remains private in `congminh1254/htkk_web`. Never copy its Git history, source tree, fixtures, credentials, diagnostic logs, screenshots, traces, test reports, or dependency caches into this public repository or its artifacts.
+
+The only trigger is `workflow_dispatch` on this repository's `main`. Inputs: full lowercase `commit_sha`, `mode` (`ci` or `release`), optional positive `pr_number`. Release accepts only current source `main`; CI additionally accepts the current head of an open, nonfork PR targeting source `main`. The trusted private dispatcher must use this exact contract. Anyone who can write the private source/main or its internal PRs is trusted to run code on an ephemeral builder runner; do not grant that access to untrusted contributors. Fork builds are rejected.
+
+Build diagnostics stay in runner-local temporary files, are never uploaded, and are removed at job end. Public console messages contain fixed outcome text only. No Actions caches or artifacts are enabled. Secret-bearing checkout, build, publication, and status reporting are separate steps; build subprocesses receive a small environment allowlist. The status callback runs in a separate clean job with only its own token. Dependency/build commands may access the network; private source execution is trusted, not a sandbox against malicious repository maintainers.
+
+Releases copy only `out/` (including `downloads/hotrokekhai-portable.zip` and `downloads/SHA256SUMS`) into `site/` on the private generated branch `pages-output`, using a new Git root without source history. `.git`, symlinks and source maps are rejected from static output. Root `.htkk-build.json` records source SHA, build time and builder run provenance. Publication rechecks current main, pushes only `pages-output`, then sends private `repository_dispatch` `htkk-pages-ready` with `pages_commit` and `source_sha`. The private Pages workflow must check out that exact commit, verify provenance/current-main SHA, then deploy `site/`. The generated branch is deliberately replaced for each release; source `main` is never pushed by this builder. All release builds are serialized. Failed dispatch leaves an output branch but does not deploy it; retry only with revalidated current main.
+
+## Configure dedicated credentials
+
+Do not reuse a general personal/session token. Fine-grained tokens must have only the selected repository and permissions listed below; metadata read is implicit. Do not place these credentials in source files or command arguments.
+
+| Location | Secret | Selected repository | Permission |
+|---|---|---|---|
+| Private source | `BUILDER_DISPATCH_TOKEN` | Public builder only | Actions: write |
+| Public builder | `SOURCE_READ_TOKEN` | Private `htkk_web` only | Contents: read, Pull requests: read |
+| Public builder | `SOURCE_PUBLISH_TOKEN` | Private `htkk_web` only | Contents: write |
+| Public builder | `SOURCE_STATUS_TOKEN` | Private `htkk_web` only | Commit statuses: write |
+
+Store publication credentials in a protected `release` environment restricted to public-builder `main` if requiring release approval is desired; if used, split the release job or add that environment without giving PR CI access to publication secrets. Current workflow uses separate final-step injection and publishes only validated main releases. The initial environment credential could read repositories but returned HTTP403 for Actions secret administration; repository admin visibility alone does not grant secret-management API permission. The user must create these dedicated credentials/secrets in GitHub settings if that restriction persists.
+
+Release builds fetch the pinned Windows runtime into a runner-temporary cache and reverify it during packaging. The downloaded runtime is never executed by this Linux builder. Windows HTKK execution/round-trip validation is not performed by this Linux builder.
+
+## Offline verification
+
+Run `python3 -m unittest discover -s scripts -p 'test_*.py'` and `python3 -m py_compile scripts/*.py`. These authorization tests mock API responses; they do not certify Windows HTKK compatibility. Before first dispatch, review the public Git tree to ensure it contains only this builder template, configure the private dispatch/deploy workflows, and configure all four dedicated secrets.
