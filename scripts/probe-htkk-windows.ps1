@@ -14,6 +14,9 @@ $report = [ordered]@{
   appVisibleWindowCount = 0; appHiddenWindowCount = 0; allVisibleWindowCount = 0
   childProcessCount = 0; childVisibleWindowCount = 0; childHiddenWindowCount = 0
   mainWindowHandlePresent = $false; startupWaitSeconds = 0; startupContext = 'not-probed'
+  uiaStatus = 'not-probed'; uiaWindowCount = 0; uiaControlCount = 0; loginReady = $false
+  uiaControlTypeCounts = @{}; uiaAllowedControlIds = @(); uiaStaticLabels = @()
+  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; other = 0 }
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
@@ -81,6 +84,74 @@ function Get-DescendantProcessIds([int]$AppProcessId) {
   $found.Remove($AppProcessId) | Out-Null
   return $found | ForEach-Object { [int]$_ }
 }
+# Isolated Windows PowerShell helper: UIAutomation is a desktop .NET Framework assembly.
+# Only process-scoped UIA controls are inspected, never ValuePattern or arbitrary names in output.
+function Get-HtkkSafeUiDiagnostics([int]$AppProcessId, [int[]]$Descendants, [string]$TemporaryDirectory) {
+  $helper = Join-Path $TemporaryDirectory 'uia-helper.ps1'
+  $resultPath = Join-Path $TemporaryDirectory 'uia-safe.json'
+  @'
+param([string]$ProcessIds, [string]$OutputFile)
+$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+$result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @() }
+try {
+  Add-Type -AssemblyName UIAutomationClient
+  Add-Type -AssemblyName UIAutomationTypes
+  $owners = [System.Collections.Generic.HashSet[int]]::new()
+  foreach ($item in $ProcessIds.Split(',')) { $owners.Add([int]$item) | Out-Null }
+  $ids = [System.Collections.Generic.HashSet[string]]::new()
+  $labels = [System.Collections.Generic.HashSet[string]]::new()
+  $allowedIds = @('cboMaSoThue','btnMaSoMoi','btnDongY','btnThoat','frmFormStart','txtMst','txtYear','chkTKQuy','OptTKThang','cboCQTCuc','cboCQTChiCuc','cmdImportXML','cmdExport','btnExport','radKetXuatXML','radKetXuatExcel')
+  $allowedTypes = @('Button','Calendar','CheckBox','ComboBox','Edit','Hyperlink','Image','ListItem','List','Menu','MenuBar','MenuItem','ProgressBar','RadioButton','ScrollBar','Slider','Spinner','StatusBar','Tab','TabItem','Text','ToolBar','ToolTip','Tree','TreeItem','Custom','Group','Thumb','DataGrid','DataItem','Document','SplitButton','Window','Pane','Header','HeaderItem','Table','TitleBar','Separator')
+  $staticNames = @{ 'Mã số thuế' = 'Mã số thuế'; 'Đăng nhập' = 'Đăng nhập'; 'Đăng nhập vào hệ thống' = 'Đăng nhập'; 'Mã số mới' = 'Mã số mới'; 'HTKK' = 'HTKK' }
+  $queue = [System.Collections.Generic.Queue[System.Windows.Automation.AutomationElement]]::new()
+  $top = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+  foreach ($window in $top) {
+    try {
+      if ($owners.Contains($window.Current.ProcessId)) { $queue.Enqueue($window); $result.windows++ }
+    } catch { }
+  }
+  $clock = [System.Diagnostics.Stopwatch]::StartNew()
+  while ($queue.Count -gt 0 -and $result.controls -lt 2000 -and $clock.Elapsed.TotalSeconds -lt 10) {
+    $element = $queue.Dequeue()
+    try {
+      if (-not $owners.Contains($element.Current.ProcessId)) { continue }
+      $result.controls++
+      $id = $element.Current.AutomationId
+      if ($id -in $allowedIds) { $ids.Add($id) | Out-Null }
+      # Names are read only for exact matching against a fixed public label allowlist.
+      # Never output Name, Current.Value, title, HWND, PID, path, exception or a raw UIA node.
+      $name = ([string]$element.Current.Name).Replace('&', '').Trim()
+      if ($staticNames.ContainsKey($name)) { $labels.Add($staticNames[$name]) | Out-Null }
+      $type = $element.Current.ControlType.ProgrammaticName.Replace('ControlType.', '')
+      if ($type -notin $allowedTypes) { $type = 'Other' }
+      if (-not $result.types.ContainsKey($type)) { $result.types[$type] = 0 }
+      $result.types[$type]++
+      $children = $element.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+      foreach ($child in $children) { if ($queue.Count -lt 2000) { $queue.Enqueue($child) } }
+    } catch { }
+  }
+  $result.ids = @($ids | Sort-Object)
+  $result.labels = @($labels | Sort-Object)
+  $result.loginReady = ($ids.Contains('cboMaSoThue') -and ($ids.Contains('btnMaSoMoi') -or $labels.Contains('Mã số thuế'))) -or ($labels.Contains('Mã số thuế') -and $labels.Contains('Đăng nhập') -and $labels.Contains('Mã số mới'))
+  $result.status = if ($queue.Count -gt 0) { 'bounded-partial' } else { 'scanned' }
+} catch { $result.status = 'uia-unavailable' }
+$result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encoding UTF8
+'@ | Set-Content -LiteralPath $helper -Encoding UTF8
+  $legacy = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+  $ownerList = (@($AppProcessId) + @($Descendants)) -join ','
+  $arguments = @('-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',"`"$helper`"",'-ProcessIds',$ownerList,'-OutputFile',"`"$resultPath`"")
+  $helperProcess = Start-Process -FilePath $legacy -ArgumentList $arguments -PassThru -RedirectStandardOutput (Join-Path $TemporaryDirectory 'uia-private.stdout') -RedirectStandardError (Join-Path $TemporaryDirectory 'uia-private.stderr')
+  if (-not $helperProcess.WaitForExit(15000)) {
+    Stop-Process -Id $helperProcess.Id -Force -ErrorAction SilentlyContinue
+    return @{ status = 'uia-timeout'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @() }
+  }
+  if ($helperProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $resultPath)) {
+    return @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @() }
+  }
+  return Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json -AsHashtable
+}
+
 try {
   New-Item -ItemType Directory -Path $work | Out-Null
   $report.stage = 'download'
@@ -163,6 +234,23 @@ try {
     elseif (($report.appHiddenWindowCount + $report.childHiddenWindowCount) -gt 0) { 'only-hidden-app-windows' }
     else { 'no-app-windows-on-current-desktop' }
   if (-not $report.windowObserved) { throw 'STARTUP_WINDOW_NOT_OBSERVED' }
+  # Read-only classification of descendant processes; arbitrary process names are never emitted.
+  foreach ($childId in $children) {
+    try {
+      $name = (Get-Process -Id $childId -ErrorAction Stop).ProcessName
+      $kind = switch ($name.ToLowerInvariant()) {
+        'htkk' { 'HTKK' }; 'msiexec' { 'msiexec' }; 'werfault' { 'WerFault' }
+        'rundll32' { 'rundll32' }; 'dllhost' { 'dllhost' }; default { 'other' }
+      }
+      $report.descendantProcessKinds[$kind]++
+    } catch { $report.descendantProcessKinds.other++ }
+  }
+  try {
+    $uia = Get-HtkkSafeUiDiagnostics -AppProcessId $process.Id -Descendants ([int[]]$children) -TemporaryDirectory $work
+    $report.uiaStatus = $uia.status; $report.uiaWindowCount = $uia.windows; $report.uiaControlCount = $uia.controls
+    $report.uiaControlTypeCounts = $uia.types; $report.uiaAllowedControlIds = @($uia.ids); $report.uiaStaticLabels = @($uia.labels)
+    $report.loginReady = $uia.loginReady
+  } catch { $report.uiaStatus = 'uia-helper-failed' }
   $report.stage = 'startup-window-observed'
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
