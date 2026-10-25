@@ -1,0 +1,28 @@
+name: Kiểm tra điều kiện chạy HTKK Windows
+on:
+  workflow_dispatch:
+    inputs:
+      install_and_probe:
+        description: Cài MSI đã xác minh và chỉ kiểm tra cửa sổ khởi động, không dùng dữ liệu thuế
+        type: boolean
+        required: true
+        default: false
+permissions:
+  contents: read
+jobs:
+  readiness:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Kiểm tra nguồn và điều kiện Windows
+        shell: pwsh
+        env:
+          PROBE_INSTALL: ${{ inputs.install_and_probe }}
+        run: |
+          $probe = $env:PROBE_INSTALL -eq 'true'
+          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe
+      # No artifact upload, cache, screenshot, raw process/window title, tax data or secret input.

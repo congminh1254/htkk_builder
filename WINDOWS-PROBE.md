@@ -1,0 +1,17 @@
+# HTKK Windows readiness probe
+
+Prepared for a separate public repository. Dispatch only; default verifies sources and prerequisites without installing. No workflow has been run by preparing these files.
+
+This probe downloads the public GDT-linked Fshare RAR and known mirror ZIP, verifies pinned SHA-256 for both archives, compares both Data1.cab SHA-256 values against the independently observed official-distribution cabinet, pins the MSI SHA-256, then requires Windows Authenticode `Valid`, expected publisher name/certificate serial, a timestamp certificate and successful Windows SDK SignTool `/pa /all /v` verification. Any missing verification tool blocks installation.
+
+The archive provenance is documented separately in the application repository. RAR and ZIP hashes differ because their containers differ. The CAB matches both distributions. This does not mean the CAB has its own signature or that software is risk-free.
+
+Existing .NET 3.5 must be enabled and installed. Missing .NET stops the probe; no bundled bootstrapper is run and Windows feature installation is not attempted. This is expected to expose an external dependency on some hosted images. `windows-latest` image behavior and HTKK interactive startup are not yet tested.
+
+Only an explicit dispatch input can authorize the installation branch, after all gates. It calls `msiexec /qn /norestart`, disables the installer's update flag, and logs only to temporary runner disk. Before HTKK startup, a Windows firewall outbound rule blocks the application. No taxpayer code or other data is entered. Only process-alive/window-observed booleans are reported; these are readiness observations and never output/round-trip compatibility proof.
+
+The public job has read-only repository permission, disables persisted checkout credentials, accepts no secrets, uploads no artifacts and creates no cache. Raw extraction/signature/MSI logs stay in a temporary directory removed at exit. No screenshot or window-title string is collected: a public workflow cannot safely retain private screenshot artifacts without a separate private storage mechanism, so metadata is the deliberate output. The disposable GitHub runner is destroyed afterward.
+
+Public output is a fixed JSON schema with version, gate booleans, stage, installer exit code and an allowlisted block reason. Network/tool error details, redirect URLs, cookies, installer text, machine paths, login data and environment variables are not printed. The workflow uses no relay token. Public URLs are accessed directly by the hosted runner with normal TLS.
+
+Before dispatch, review the script in the public builder repository and verify the official publication still links to the pinned source. Pin third-party GitHub Actions to a reviewed commit if repository policy requires it. A dependency/image/source change requires a new provenance review; never relax the hash or Authenticode checks to make the probe pass.
