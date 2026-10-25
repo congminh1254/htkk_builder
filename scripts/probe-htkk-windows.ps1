@@ -31,6 +31,7 @@ $report = [ordered]@{
   privateSyntheticLoginDiagnostic = $null
   privateRegistrationDiagnostic = $null
   syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
+  commonHeaderOracle = $null
   profileAliasOracle = $null
   taxIdOracle = $null
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
@@ -607,6 +608,8 @@ try {
   $report.taxIdOracle = Invoke-HtkkTaxIdOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
   . (Join-Path $PSScriptRoot 'Test-HtkkProfileAliasOracle.ps1')
   $report.profileAliasOracle = Invoke-HtkkProfileAliasOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+  . (Join-Path $PSScriptRoot 'Test-HtkkCommonHeaderOracle.ps1')
+  $report.commonHeaderOracle = Invoke-HtkkCommonHeaderOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
   # Both modes block the original image; the reference mode additionally
   # blocks its own new host before any original code executes inside that host.
   $originalFirewall='HTKK readiness original '+[guid]::NewGuid().ToString('N')
