@@ -4,7 +4,7 @@ $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 $expectedSource = [string]$env:EXPECTED_SOURCE_SHA
 $cacheKey = if ($expectedSource) { '?commit=' + $expectedSource } else { '' }
-$report = [ordered]@{ packageSourceSha = $null; packageVersion = $null; sourceProvenanceValid = $false; stage = 'started'; packageSha256 = $null; packageChecksumValid = $false; archivePathsSafe = $false; nodeArchivePinned = $false; nodePayloadMatches = $false; licenseMatches = $false; nodeVersionValid = $false; launcherValid = $false; processStarted = $false; rootHttpOk = $false; dashboardHttpOk = $false; wasmMimeValid = $false; mjsMimeValid = $false; loopbackOnly = $false; browserInteractionTested = $false; userDataUsed = $false }
+$report = [ordered]@{ manifestParser = 'system-text-json-strings'; publishedManifestTypesValid = $false; publishedSourceMatchesExpected = $false; embeddedManifestTypesValid = $false; embeddedSourceMatchesExpected = $false; embeddedPublishedMetadataMatches = $false; packageSourceSha = $null; packageVersion = $null; sourceProvenanceValid = $false; stage = 'started'; packageSha256 = $null; packageChecksumValid = $false; archivePathsSafe = $false; nodeArchivePinned = $false; nodePayloadMatches = $false; licenseMatches = $false; nodeVersionValid = $false; launcherValid = $false; processStarted = $false; rootHttpOk = $false; dashboardHttpOk = $false; wasmMimeValid = $false; mjsMimeValid = $false; loopbackOnly = $false; browserInteractionTested = $false; userDataUsed = $false }
 $work = Join-Path $env:RUNNER_TEMP ('portable-probe-' + [guid]::NewGuid().ToString('N'))
 $server = $null
 function Assert-Hash([string]$Path,[string]$Expected) {
@@ -13,6 +13,25 @@ function Assert-Hash([string]$Path,[string]$Expected) {
 function Get-PublicFile([string]$Url,[string]$Destination) {
   # No redirect downgrade, credentials, cookies, proxy bypass or TLS override.
   Invoke-WebRequest -Uri $Url -OutFile $Destination -TimeoutSec 120 -MaximumRedirection 0 -UserAgent 'HotroKeKhai-PortableProbe/1.0'
+}
+# ConvertFrom-Json may coerce ISO timestamps to DateTime in newer PowerShell.
+# Read only JSON string tokens directly so every supported pwsh preserves their types.
+function Read-BuildManifest([string]$Path) {
+  Add-Type -AssemblyName System.Text.Json
+  $options = [System.Text.Json.JsonDocumentOptions]::new()
+  $options.MaxDepth = 8
+  $document = [System.Text.Json.JsonDocument]::Parse([IO.File]::ReadAllText($Path), $options)
+  try {
+    if ($document.RootElement.ValueKind -ne [System.Text.Json.JsonValueKind]::Object) { throw 'INVALID_BUILD_MANIFEST' }
+    $result = @{}
+    foreach ($property in $document.RootElement.EnumerateObject()) {
+      if ($property.Name -notin @('sourceSha','version','builtAt')) { continue }
+      if ($result.ContainsKey($property.Name) -or $property.Value.ValueKind -ne [System.Text.Json.JsonValueKind]::String) { throw 'INVALID_BUILD_MANIFEST' }
+      $result[$property.Name] = $property.Value.GetString()
+    }
+    if ($result.Count -ne 3) { throw 'INVALID_BUILD_MANIFEST' }
+    return $result
+  } finally { $document.Dispose() }
 }
 function Expand-StrictZip([string]$Archive,[string]$Destination,[string]$Prefix) {
   New-Item -ItemType Directory -Path $Destination | Out-Null
@@ -57,7 +76,9 @@ try {
     $buildFile = Join-Path $work 'published-build.json'
     Get-PublicFile ('https://hotrokekhai.net/build.json' + $cacheKey) $buildFile
     if ((Get-Item -LiteralPath $buildFile).Length -gt 4096) { throw 'INVALID_BUILD_MANIFEST' }
-    $publishedBuild = Get-Content -LiteralPath $buildFile -Raw | ConvertFrom-Json -AsHashtable
+    $publishedBuild = Read-BuildManifest $buildFile
+    $report.publishedManifestTypesValid = $true
+    $report.publishedSourceMatchesExpected = $publishedBuild.sourceSha -ceq $expectedSource
     if ($publishedBuild -isnot [Collections.IDictionary] -or $publishedBuild.sourceSha -isnot [string] -or $publishedBuild.version -isnot [string] -or $publishedBuild.builtAt -isnot [string] -or $publishedBuild.sourceSha -cne $expectedSource -or $publishedBuild.version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\z') { throw 'PACKAGE_SOURCE_MISMATCH' }
   }
   $manifest = Join-Path $work 'SHA256SUMS'; $package = Join-Path $work 'portable.zip'
@@ -77,7 +98,12 @@ try {
   $embeddedBuild = Join-Path $root 'web/build.json'
   if (Test-Path -LiteralPath $embeddedBuild -PathType Leaf) {
     if ((Get-Item -LiteralPath $embeddedBuild).Length -gt 4096) { throw 'INVALID_BUILD_MANIFEST' }
-    $build = Get-Content -LiteralPath $embeddedBuild -Raw | ConvertFrom-Json -AsHashtable
+    $build = Read-BuildManifest $embeddedBuild
+    $report.embeddedManifestTypesValid = $true
+    if ($expectedSource) {
+      $report.embeddedSourceMatchesExpected = $build.sourceSha -ceq $expectedSource
+      $report.embeddedPublishedMetadataMatches = $build.version -ceq $publishedBuild.version -and $build.builtAt -ceq $publishedBuild.builtAt
+    }
     if ($build -isnot [Collections.IDictionary] -or $build.sourceSha -isnot [string] -or $build.version -isnot [string] -or $build.builtAt -isnot [string] -or $build.sourceSha -cnotmatch '^[0-9a-f]{40}\z' -or $build.version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\z') { throw 'INVALID_BUILD_MANIFEST' }
     if ($expectedSource -and ($build.sourceSha -cne $expectedSource -or $build.version -cne $publishedBuild.version -or $build.builtAt -cne $publishedBuild.builtAt)) { throw 'PACKAGE_SOURCE_MISMATCH' }
     $report.packageSourceSha = $build.sourceSha; $report.packageVersion = $build.version

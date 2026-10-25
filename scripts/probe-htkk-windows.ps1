@@ -10,6 +10,8 @@ $report = [ordered]@{
   netFx35Present = $false; installExitCode = $null
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
   runnerSessionId = $null; appSessionId = $null; userInteractive = [Environment]::UserInteractive
+  appArchitecture = 'unknown'; preexistingHtkkProcessCount = 0; preexistingHtkkSameSessionCount = 0
+  descendantScope = 'created-at-or-after-root-start'; verifiedMicrosoftChildImages = @(); unknownChildImageInspectionFailures = 0
   threadDesktop = 'unavailable'; desktopWindowScope = 'current-thread-desktop'
   appVisibleWindowCount = 0; appHiddenWindowCount = 0; allVisibleWindowCount = 0
   childProcessCount = 0; childVisibleWindowCount = 0; childHiddenWindowCount = 0
@@ -50,6 +52,11 @@ public static class HtkkWindowDiagnostics {
   [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr parent, EnumProc callback, IntPtr unused);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern IntPtr SendMessageTimeout(IntPtr window, uint message, UIntPtr count, StringBuilder text, uint flags, uint timeout, out UIntPtr result);
   [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
+  [DllImport("kernel32.dll", SetLastError=true)] private static extern bool IsWow64Process(IntPtr process, out bool wow64);
+  public static string Architecture(IntPtr process) {
+    if (!Environment.Is64BitOperatingSystem) return "x86";
+    bool wow64; return IsWow64Process(process, out wow64) ? (wow64 ? "x86" : "x64") : "unknown";
+  }
   [DllImport("user32.dll")] private static extern IntPtr GetThreadDesktop(uint thread);
   [DllImport("user32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
   private static extern bool GetUserObjectInformation(IntPtr handle, int index, StringBuilder value, int size, out int needed);
@@ -218,19 +225,55 @@ function Get-HtkkSafeApplicationEvents([datetime]$ApplicationStartTime) {
   }
   return $safe
 }
-function Get-DescendantProcessIds([int]$AppProcessId) {
-  # Read only IDs, not executable paths, command lines, window text or user information.
-  $snapshot = @(Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId)
+function Get-DescendantProcessIds([int]$AppProcessId, [datetime]$RootStartTime) {
+  # Creation time prevents an older process whose parent PID was reused from
+  # becoming a false descendant. No command lines or arbitrary process data leave this function.
+  $snapshot = @(Get-CimInstance Win32_Process -Property ProcessId,ParentProcessId,CreationDate | Select-Object -First 4096)
+  $births = @{}; $births[$AppProcessId] = $RootStartTime.ToUniversalTime()
   $found = [System.Collections.Generic.HashSet[int]]::new()
   $found.Add($AppProcessId) | Out-Null
+  $round = 0
   do {
-    $added = $false
+    $added = $false; $round++
     foreach ($entry in $snapshot) {
-      if ($found.Contains([int]$entry.ParentProcessId) -and $found.Add([int]$entry.ProcessId)) { $added = $true }
+      if ($null -eq $entry.CreationDate) { continue }
+      $parentId = [int]$entry.ParentProcessId; $childId = [int]$entry.ProcessId
+      if (-not $found.Contains($parentId) -or $found.Contains($childId)) { continue }
+      $created = ([datetime]$entry.CreationDate).ToUniversalTime()
+      if ($created -lt $births[$parentId]) { continue }
+      if ($found.Add($childId)) { $births[$childId] = $created; $added = $true }
     }
-  } while ($added)
+  } while ($added -and $round -lt 96)
   $found.Remove($AppProcessId) | Out-Null
   return $found | ForEach-Object { [int]$_ }
+}
+function Get-VerifiedMicrosoftImageBasename([int]$ProcessId) {
+  # Only a signed Microsoft system-image basename may be returned. No path,
+  # arbitrary process name, command line, certificate text or user information is published.
+  $imagePath = (Get-Process -Id $ProcessId -ErrorAction Stop).Path
+  if ([string]::IsNullOrWhiteSpace($imagePath)) { return $null }
+  $fullPath = [IO.Path]::GetFullPath($imagePath)
+  $basename = [IO.Path]::GetFileName($fullPath)
+  if ($basename -notmatch '^[A-Za-z][A-Za-z0-9._-]{0,59}\.exe$' -or $basename -match '^(?i:gh[pousr]_|github_pat_|token|secret|password|authorization)') { return $null }
+  $inside = $false
+  $windowsRoot = [IO.Path]::GetFullPath($env:WINDIR).TrimEnd('\') + '\'
+  if ($fullPath.StartsWith($windowsRoot,[StringComparison]::OrdinalIgnoreCase)) { $inside = $true }
+  foreach ($variable in @('ProgramFiles','ProgramFiles(x86)','CommonProgramFiles','CommonProgramFiles(x86)')) {
+    $base = [Environment]::GetEnvironmentVariable($variable)
+    if ([string]::IsNullOrWhiteSpace($base)) { continue }
+    $prefix = [IO.Path]::GetFullPath($base).TrimEnd('\') + '\'
+    if ($fullPath.StartsWith($prefix,[StringComparison]::OrdinalIgnoreCase)) {
+      $firstDirectory = $fullPath.Substring($prefix.Length).Split('\')[0]
+      if ($firstDirectory -match '^Microsoft(?:[ .].*)?$') { $inside = $true }
+    }
+  }
+  if (-not $inside) { return $null }
+  $signature = Get-AuthenticodeSignature -LiteralPath $fullPath -ErrorAction Stop
+  if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate -or $signature.SignerCertificate.Subject -notmatch '(?i)(?:^|,\s*)O=Microsoft Corporation(?:,|$)') { return $null }
+  # Signed OriginalFilename prevents an arbitrary renamed image from becoming an output channel.
+  $originalName = [IO.Path]::GetFileName([Diagnostics.FileVersionInfo]::GetVersionInfo($fullPath).OriginalFilename)
+  if (-not [string]::Equals($basename,$originalName,[StringComparison]::OrdinalIgnoreCase)) { return $null }
+  return $basename.ToLowerInvariant()
 }
 # Isolated Windows PowerShell helper: UIAutomation is a desktop .NET Framework assembly.
 # Only process-scoped UIA controls are inspected, never ValuePattern or arbitrary names in output.
@@ -424,6 +467,10 @@ try {
   # Prevent the application from contacting its legacy update endpoint during the startup probe.
   New-NetFirewallRule -DisplayName 'HTKK readiness probe outbound block' -Direction Outbound -Program $exe -Action Block | Out-Null
   $report.stage = 'startup'
+  $preexistingHtkk = @(Get-Process -Name HTKK -ErrorAction SilentlyContinue)
+  $report.preexistingHtkkProcessCount = $preexistingHtkk.Count
+  $runnerSession = [Diagnostics.Process]::GetCurrentProcess().SessionId
+  foreach ($existing in $preexistingHtkk) { try { if ($existing.SessionId -eq $runnerSession) { $report.preexistingHtkkSameSessionCount++ } } catch { } }
   $applicationStartTime = Get-Date
   $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) -PassThru
   $report.processStarted = $true
@@ -431,12 +478,14 @@ try {
   $report.runnerSessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
   $report.appSessionId = $process.SessionId
   $report.threadDesktop = [HtkkWindowDiagnostics]::DesktopKind()
+  try { $report.appArchitecture = [HtkkWindowDiagnostics]::Architecture($process.Handle) } catch { $report.appArchitecture = 'unknown' }
+  $rootStartTime = $process.StartTime
   $startupClock = [System.Diagnostics.Stopwatch]::StartNew()
   do {
     $process.Refresh()
     $report.processAliveAfterWait = -not $process.HasExited
     $report.mainWindowHandlePresent = $report.processAliveAfterWait -and ($process.MainWindowHandle -ne [IntPtr]::Zero)
-    $children = @(Get-DescendantProcessIds -AppProcessId $process.Id)
+    $children = @(Get-DescendantProcessIds -AppProcessId $process.Id -RootStartTime $rootStartTime)
     $report.childProcessCount = $children.Count
     $counts = [HtkkWindowDiagnostics]::Counts($process.Id, [int[]]$children)
     $report.allVisibleWindowCount = $counts[0]
@@ -462,6 +511,8 @@ try {
     else { 'no-app-windows-on-current-desktop' }
   if (-not $report.windowObserved) { throw 'STARTUP_WINDOW_NOT_OBSERVED' }
   # Read-only classification of descendant processes; arbitrary process names are never emitted.
+  $verifiedChildImages = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+  $unknownInspections = 0
   foreach ($childId in $children) {
     try {
       $name = (Get-Process -Id $childId -ErrorAction Stop).ProcessName
@@ -477,8 +528,13 @@ try {
         default { 'other' }
       }
       $report.descendantProcessKinds[$kind]++
+      if ($kind -eq 'other' -and $unknownInspections -lt 16) {
+        $unknownInspections++
+        try { $image = Get-VerifiedMicrosoftImageBasename -ProcessId $childId; if ($image) { $verifiedChildImages.Add($image) | Out-Null } } catch { $report.unknownChildImageInspectionFailures++ }
+      }
     } catch { $report.descendantProcessKinds.other++ }
   }
+  $report.verifiedMicrosoftChildImages = @($verifiedChildImages | Sort-Object | Select-Object -First 16)
   try {
     $uia = Get-HtkkSafeUiDiagnostics -AppProcessId $process.Id -Descendants ([int[]]$children) -TemporaryDirectory $work
     $report.uiaStatus = $uia.status; $report.uiaWindowCount = $uia.windows; $report.uiaControlCount = $uia.controls
