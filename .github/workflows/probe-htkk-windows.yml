@@ -7,6 +7,12 @@ on:
         type: boolean
         required: true
         default: false
+      runtime_host:
+        description: 'Kiểu chạy: original hoặc host CLR2/x86 tham chiếu riêng; không sửa binary gốc'
+        type: choice
+        options: [original, clr2-x86-reference]
+        default: original
+        required: true
 permissions:
   contents: read
 jobs:
@@ -22,7 +28,10 @@ jobs:
         shell: pwsh
         env:
           PROBE_INSTALL: ${{ inputs.install_and_probe }}
+          PROBE_RUNTIME_HOST: ${{ inputs.runtime_host }}
         run: |
           $probe = $env:PROBE_INSTALL -eq 'true'
-          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe
+          $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
+          if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
+          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost
       # No artifact upload, cache, screenshot, raw process/window title, tax data or secret input.

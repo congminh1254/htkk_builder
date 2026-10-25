@@ -1,11 +1,14 @@
 # No tax data, credentials, screenshots or installer logs are published.
 [CmdletBinding()]
-param([switch]$InstallAndProbe)
+param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original')
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 $report = [ordered]@{
   version = '5.8.1'; stage = 'started'; sourceHashesVerified = $false
+  runtimeHost = $RuntimeHost; customReferenceHost = $RuntimeHost -eq 'clr2-x86-reference'
+  referenceHostPreparation = $null; referenceHostResult = $null; originalSourcesUnmodified = $null
+  childEnvironmentPolicy = 'not-launched'; hostOutboundBlocked = $false; originalOutboundBlocked = $false
   officialCabMatchesMirror = $false; msiAuthenticodeValid = $false
   netFx35Present = $false; installExitCode = $null
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
@@ -27,7 +30,8 @@ $report = [ordered]@{
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
-$process = $null
+$process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
+$firewallNames = [Collections.Generic.List[string]]::new()
 function Assert-Hash([string]$Path, [string]$Expected) {
   if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Expected) { throw 'SOURCE_HASH_MISMATCH' }
 }
@@ -35,6 +39,38 @@ function Get-PinnedFile([string]$Url, [string]$Path, [string]$Expected) {
   # Public URLs only. No relay token, cookie, auth header or TLS override.
   Invoke-WebRequest -Uri $Url -OutFile $Path -TimeoutSec 120 -MaximumRedirection 8 -UserAgent 'HotroKeKhai-ReadinessProbe/1.0'
   Assert-Hash $Path $Expected
+}
+# Never forward runner/service/GitHub credentials to either launch mode.
+function Start-HtkkCleanProcess([string]$Executable,[string]$ProjectDirectory,[bool]$IsX86Reference) {
+  $info=[Diagnostics.ProcessStartInfo]::new()
+  $info.FileName=$Executable; $info.WorkingDirectory=$ProjectDirectory; $info.UseShellExecute=$false
+  $info.CreateNoWindow=$false; $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true
+  $info.Environment.Clear()
+  foreach($key in @('SystemRoot','WINDIR','SystemDrive','TEMP','TMP','PATH','APPDATA','LOCALAPPDATA','USERPROFILE','ProgramData','COMSPEC','PROCESSOR_ARCHITECTURE','PROCESSOR_ARCHITEW6432','NUMBER_OF_PROCESSORS')) {
+    $value=[Environment]::GetEnvironmentVariable($key)
+    if($null -ne $value) { $info.Environment[$key]=$value }
+  }
+  # Match the standard architecture variables that a native 32-bit launch sees.
+  if($IsX86Reference) {
+    $info.Environment['PROCESSOR_ARCHITECTURE']='x86'
+    if([Environment]::Is64BitOperatingSystem) { $nativeArchitecture=[Environment]::GetEnvironmentVariable('PROCESSOR_ARCHITECTURE'); if($nativeArchitecture) { $info.Environment['PROCESSOR_ARCHITEW6432']=$nativeArchitecture } }
+  }
+  return [Diagnostics.Process]::Start($info)
+}
+function Get-HtkkSafeReferenceResult([string]$ResultPath) {
+  $invalid=[ordered]@{ status='result-unavailable'; mode='custom-x86-clr2-reference-host' }
+  try {
+    if(-not (Test-Path -LiteralPath $ResultPath -PathType Leaf)) { return $invalid }
+    if((Get-Item -LiteralPath $ResultPath).Length -gt 4096) { $invalid.status='result-invalid'; return $invalid }
+    $result=Get-Content -LiteralPath $ResultPath -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
+    $statuses=@('unsupported-runtime','source-hash-mismatch','original-starting','original-exited','original-or-host-exception')
+    $categories=@('none','bitness-load','native-library-missing','type-initialization','type-load','file-not-found','assembly-load','directory-not-found','com-exception','access-denied','format','null-reference','access-violation','invalid-operation','argument','security','remoting','other-standard-or-unclassified')
+    if($result.format -ne 'htkk-x86-reference-host-v1' -or $result.mode -ne 'custom-x86-clr2-reference-host' -or $result.status -notin $statuses -or $result.runtime -notin @('clr2','unsupported') -or $result.bitness -notin @(32,64) -or $result.apartment -notin @('sta','unsupported') -or $result.launchMechanism -ne 'secondary-AppDomain.ExecuteAssembly' -or $result.exceptionCategory -notin $categories -or $result.outerExceptionCategory -notin $categories -or [string]$result.hresult -notmatch '^(?:none|unavailable|0x[0-9a-f]{8})$' -or $result.runtimeRoundTrip -ne $false) { $invalid.status='result-invalid'; return $invalid }
+    foreach($key in @('originalExeHashVerified','businessDllHashVerified','originalConfigHashVerified')) { if($result[$key] -isnot [bool]) { $invalid.status='result-invalid'; return $invalid } }
+    if(($result.originalExitCode -isnot [int] -and $result.originalExitCode -isnot [long]) -or $result.originalExitCode -lt [int]::MinValue -or $result.originalExitCode -gt [int]::MaxValue) { $invalid.status='result-invalid'; return $invalid }
+    # Reconstruct an allowlisted object; never return arbitrary fields from disk.
+    return [ordered]@{ status=$result.status; mode=$result.mode; runtime=$result.runtime; bitness=$result.bitness; apartment=$result.apartment; originalExeHashVerified=$result.originalExeHashVerified; businessDllHashVerified=$result.businessDllHashVerified; originalConfigHashVerified=$result.originalConfigHashVerified; launchMechanism=$result.launchMechanism; exceptionCategory=$result.exceptionCategory; outerExceptionCategory=$result.outerExceptionCategory; hresult=$result.hresult; originalExitCode=$result.originalExitCode; runtimeRoundTrip=$false }
+  } catch { $invalid.status='result-invalid'; return $invalid }
 }
 # Only aggregate native GUI counts are exposed: no titles, class names, handles or identifiers.
 function Initialize-WindowDiagnostics {
@@ -139,7 +175,7 @@ public static class HtkkWindowDiagnostics {
 }
 # Read a bounded local Application log window. Event text/XML stays in memory
 # and is never returned, written to files or sent to the public console.
-function Get-HtkkSafeApplicationEvents([datetime]$ApplicationStartTime) {
+function Get-HtkkSafeApplicationEvents([datetime]$ApplicationStartTime,[string]$ReferenceHostName='') {
   $safe = [ordered]@{ status = 'not-queried'; queriedCount = 0; matchedEventCount = 0; providerQueryFailureCount = 0; bounded = $false; providers = @(); eventIds = @(); categories = @(); hresults = @() }
   $providerGroups = @{
     '.NET Runtime' = 'dotnet-runtime'
@@ -200,7 +236,10 @@ function Get-HtkkSafeApplicationEvents([datetime]$ApplicationStartTime) {
       $privateText = $message + "`n" + $xml
       # Exclude unrelated events even from the allowlisted providers. Matching
       # only the executable name is intentional; no path or username is emitted.
-      if ($privateText -notmatch '(?i)(?<![A-Za-z0-9_])HTKK\.exe(?![A-Za-z0-9_])') { continue }
+      $matchesOriginal=$privateText -match '(?i)(?<![A-Za-z0-9_])HTKK\.exe(?![A-Za-z0-9_])'
+      $matchesReference=$false
+      if($ReferenceHostName -match '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$') { $matchesReference=$privateText -match ('(?i)(?<![A-Za-z0-9_])'+[regex]::Escape($ReferenceHostName)+'(?![A-Za-z0-9_])') }
+      if(-not ($matchesOriginal -or $matchesReference)) { continue }
       if ($matchedCount -ge 10) { $safe.bounded = $true; break }
       foreach ($entry in $categoryPatterns.GetEnumerator()) {
         if ($privateText -match $entry.Value) { $categories.Add([string]$entry.Key) | Out-Null }
@@ -464,22 +503,52 @@ try {
   Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
   . (Join-Path $PSScriptRoot 'Test-HtkkTaxIdOracle.ps1')
   $report.taxIdOracle = Invoke-HtkkTaxIdOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
-  # Prevent the application from contacting its legacy update endpoint during the startup probe.
-  New-NetFirewallRule -DisplayName 'HTKK readiness probe outbound block' -Direction Outbound -Program $exe -Action Block | Out-Null
+  # Both modes block the original image; the reference mode additionally
+  # blocks its own new host before any original code executes inside that host.
+  $originalFirewall='HTKK readiness original '+[guid]::NewGuid().ToString('N')
+  New-NetFirewallRule -DisplayName $originalFirewall -Direction Outbound -Program $exe -Action Block | Out-Null
+  $firewallNames.Add($originalFirewall); $report.originalOutboundBlocked=$true
+  $launchExecutable=$exe
+  if($RuntimeHost -eq 'clr2-x86-reference') {
+    $report.stage='prepare-x86-reference-host'
+    . (Join-Path $PSScriptRoot 'New-HtkkX86ReferenceHost.ps1')
+    $referencePreparation=New-HtkkX86ReferenceHost -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+    $safeCompilerCodes=@($referencePreparation.compilerErrorCodes | Where-Object { $_ -match '^CS[0-9]{4}$' } | Select-Object -First 10)
+    $report.referenceHostPreparation=[ordered]@{ status=$referencePreparation.status; mode='custom-x86-clr2-reference-host'; hostSha256=$null; originalExeHashVerified=$referencePreparation.originalExeHashVerified; businessDllHashVerified=$referencePreparation.businessDllHashVerified; originalConfigHashVerified=$referencePreparation.originalConfigHashVerified; compilerTrustVerified=$referencePreparation.compilerTrustVerified; compilerExitCode=$referencePreparation.compilerExitCode; compilerErrorCodes=$safeCompilerCodes; originalExecutableModified=$false; originalConfigurationModified=$false }
+    if($referencePreparation.status -ne 'prepared') { throw 'X86_REFERENCE_HOST_PREPARATION_FAILED' }
+    $projectFull=[IO.Path]::GetFullPath((Split-Path $exe)).TrimEnd('\')
+    $hostFull=[IO.Path]::GetFullPath($referencePreparation.hostPath)
+    $hostLeaf=[IO.Path]::GetFileName($hostFull)
+    if([IO.Path]::GetDirectoryName($hostFull).TrimEnd('\') -ne $projectFull -or $hostLeaf -notmatch '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$' -or $referencePreparation.hostSha256 -notmatch '^[a-f0-9]{64}$' -or @($referencePreparation.arguments).Count -ne 0 -or $referencePreparation.hostConfigPath -ne ($hostFull+'.config') -or $referencePreparation.resultPath -ne ($hostFull+'.result.json')) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
+    $referenceOwnedFiles=@($hostFull,($hostFull+'.config'),($hostFull+'.result.json'))
+    Assert-Hash $hostFull $referencePreparation.hostSha256
+    $expectedHostConfig='<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>'
+    if((Get-Content -LiteralPath ($hostFull+'.config') -Raw -Encoding ASCII).Trim() -cne $expectedHostConfig) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
+    $report.referenceHostPreparation.hostSha256=$referencePreparation.hostSha256
+    $referenceHostName=$hostLeaf
+    $hostFirewall='HTKK readiness x86 reference '+[guid]::NewGuid().ToString('N')
+    New-NetFirewallRule -DisplayName $hostFirewall -Direction Outbound -Program $hostFull -Action Block | Out-Null
+    $firewallNames.Add($hostFirewall); $report.hostOutboundBlocked=$true
+    $launchExecutable=$hostFull
+  }
   $report.stage = 'startup'
   $preexistingHtkk = @(Get-Process -Name HTKK -ErrorAction SilentlyContinue)
   $report.preexistingHtkkProcessCount = $preexistingHtkk.Count
   $runnerSession = [Diagnostics.Process]::GetCurrentProcess().SessionId
   foreach ($existing in $preexistingHtkk) { try { if ($existing.SessionId -eq $runnerSession) { $report.preexistingHtkkSameSessionCount++ } } catch { } }
   $applicationStartTime = Get-Date
-  $process = Start-Process -FilePath $exe -WorkingDirectory (Split-Path $exe) -PassThru
+  $process = Start-HtkkCleanProcess -Executable $launchExecutable -ProjectDirectory (Split-Path $exe) -IsX86Reference ($RuntimeHost -eq 'clr2-x86-reference')
+  $null=$process.Handle
+  # Drain privately so no application output can reach the public log or block it.
+  $applicationStdout=$process.StandardOutput.ReadToEndAsync(); $applicationStderr=$process.StandardError.ReadToEndAsync()
+  $report.childEnvironmentPolicy='os-essentials-only'
   $report.processStarted = $true
   Initialize-WindowDiagnostics
   $report.runnerSessionId = [System.Diagnostics.Process]::GetCurrentProcess().SessionId
-  $report.appSessionId = $process.SessionId
+  try { $report.appSessionId = $process.SessionId } catch { $report.appSessionId=$null }
   $report.threadDesktop = [HtkkWindowDiagnostics]::DesktopKind()
   try { $report.appArchitecture = [HtkkWindowDiagnostics]::Architecture($process.Handle) } catch { $report.appArchitecture = 'unknown' }
-  $rootStartTime = $process.StartTime
+  try { $rootStartTime = $process.StartTime } catch { $rootStartTime=$applicationStartTime }
   $startupClock = [System.Diagnostics.Stopwatch]::StartNew()
   do {
     $process.Refresh()
@@ -499,7 +568,8 @@ try {
     Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, [Math]::Ceiling(45 - $startupClock.Elapsed.TotalSeconds))))
   } while ($true)
   $startupClock.Stop()
-  $report.applicationEvents = Get-HtkkSafeApplicationEvents -ApplicationStartTime $applicationStartTime
+  if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation) { $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath }
+  $report.applicationEvents = Get-HtkkSafeApplicationEvents -ApplicationStartTime $applicationStartTime -ReferenceHostName $referenceHostName
   $report.ownedWindowKinds = [HtkkWindowDiagnostics]::OwnedWindowKinds($process.Id, [int[]]$children)
   $report.nativeDialogCueCounts = [HtkkWindowDiagnostics]::FixedDialogCues($process.Id, [int[]]$children)
   $report.startupContext = if ($report.windowObserved) { 'visible-app-or-child-window' }
@@ -552,12 +622,26 @@ try {
   $report.stage = 'startup-window-observed'
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
 } finally {
-  if ($null -ne $process -and -not $process.HasExited) { Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue }
+  if($null -ne $process) {
+    try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null } } catch { }
+    $process.Dispose()
+  }
+  if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {
+    try {
+      $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath
+      Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
+      Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Business.dll') '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
+      Assert-Hash ($exe+'.config') 'b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
+      $report.originalSourcesUnmodified=$true
+    } catch { $report.originalSourcesUnmodified=$false; $report.stage='blocked'; $report['blockedReason']='ORIGINAL_SOURCE_CHANGED' }
+  }
+  foreach($rule in $firewallNames) { Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue }
+  foreach($owned in $referenceOwnedFiles) { Remove-Item -LiteralPath $owned -Force -ErrorAction SilentlyContinue }
   $safe = $report | ConvertTo-Json -Depth 3
   Write-Output $safe
   if ($env:GITHUB_STEP_SUMMARY) { Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Value ('```json' + "`n" + $safe + "`n" + '```') }
