@@ -116,7 +116,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
-  if(matched&&mode=="gtgt-export-inspect"){StartOriginalGtgtExport(forms[0]);return;}
+  if(matched&&(mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect")){StartOriginalGtgtExport(forms[0]);return;}
   finished=true;stage=matched?"gtgt-sheet-inspected":"gtgt-sheet-contract-not-matched";Record();
  }
  private void InspectMoneyZero(object sheet){

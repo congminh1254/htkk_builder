@@ -40,11 +40,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"exportSchemaPinnedVerified"+q+":"+Bool(exportSchemaPinnedVerified));
   json.Append(","+q+"exportFilenameKeyboardCommitted"+q+":"+Bool(exportFilenameKeyboardCommitted)+","+q+"exportFilenameParentKind"+q+":"+q+exportFilenameParentKind+q);
   json.Append(","+q+"exportOriginalPathMatched"+q+":"+Bool(exportOriginalPathMatched)+","+q+"exportOriginalPathKind"+q+":"+q+exportOriginalPathKind+q+","+q+"exportScopedFileCount"+q+":"+exportScopedFileCount+","+q+"exportScopedXmlCount"+q+":"+exportScopedXmlCount);
-  json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);return json.ToString();
+  json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);return json.ToString()+RoundtripJson();
  }
  private static void FindExportSelectors(Control root,List<Form> found,ref int count){if(++count>512)return;Form form=root as Form;if(form!=null&&form.Visible&&form.GetType().FullName=="HTKK.frmWinSelectExport"&&!found.Contains(form))found.Add(form);foreach(Control child in root.Controls){if(count>=512)break;FindExportSelectors(child,found,ref count);}}
  private void StartOriginalGtgtExport(Form owner){
-  if(exportStarted)return;exportStarted=true;
+  if(exportStarted)return;exportStarted=true;roundtripOwner=owner;
   if(!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtIdentity||!gtgtSigner||!gtgtZero||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
   string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd");
   string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
@@ -59,13 +59,25 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void ObserveOriginalExport(){
   if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing)return;
+  if(roundtripPhase!="not-started"&&roundtripPhase!="reexporting"){ContinueOriginalRoundtrip();return;}
   foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
    if(labels[0].Text!="Kết xuất tờ khai xml thành công."){stage="gtgt-export-original-message-rejected";finished=true;Record();exportWatcher.Stop();return;}
    stage="gtgt-export-success-file-checking";InspectOriginalExportDestination();Record();if(!exportOriginalPathMatched)throw new InvalidOperationException();
    ReadOriginalExport();if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
    Control[] closeControls=form.Controls.Find("btn_2",true);if(form.Text.Trim()!="Thông Báo"||closeControls.Length!=1||CountVisibleButtons(form)!=1)throw new InvalidOperationException();Button close=closeControls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
-   exportSuccessAcknowledged=true;stage="gtgt-export-inspected";finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
+   exportSuccessAcknowledged=true;
+   if(mode=="gtgt-roundtrip-inspect"&&roundtripPhase=="not-started"){
+    firstExportPath=exportPath;firstExportSha256=exportSha256;firstExportBytes=exportBytes;
+    roundtripPhase="waiting-import-ready";stage="gtgt-import-ready-waiting";Record();close.PerformClick();return;
+   }
+   if(roundtripPhase=="reexporting"){
+    roundtripReexportBytes=exportBytes;roundtripReexportSha256=exportSha256;roundtripReexportSucceeded=true;
+    if(Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();
+    roundtripXmlExactMatched=ReadBoundedOriginalXml(firstExportPath).DocumentElement.OuterXml==ReadBoundedOriginalXml(exportPath).DocumentElement.OuterXml;
+    exportBytes=firstExportBytes;exportSha256=firstExportSha256;stage="gtgt-roundtrip-inspected";
+   }else stage="gtgt-export-inspected";
+   finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
   }
   if(!exportButtonInvoked){List<Form> selectors=new List<Form>();int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors(top,selectors,ref count);if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
    RadioButton xml=Named(selector,"radKetXuatXML") as RadioButton,excel=Named(selector,"radKetXuatExcel") as RadioButton;Button button=Named(selector,"btnExport") as Button;
@@ -73,29 +85,39 @@ public sealed partial class HtkkGuiReferenceAutomation {
    exportSelectorMatched=true;exportButtonInvoked=true;stage="gtgt-export-file-dialog-waiting";Record();selector.BeginInvoke(new MethodInvoker(delegate{try{button.PerformClick();}catch(Exception error){Failure(error);}}));return;
   }
   if(exportDialogSubmitted)return;
+  TrySubmitOriginalFileDialog(expectedSaveTitle,exportPath,false);
+ }
+ private bool TrySubmitOriginalFileDialog(string expectedTitle,string desiredPath,bool opening){
   List<IntPtr> dialogs=new List<IntPtr>();uint own=(uint)Process.GetCurrentProcess().Id;
   EnumWindows(delegate(IntPtr window,IntPtr unused){uint pid;GetWindowThreadProcessId(window,out pid);if(pid==own&&IsWindowVisible(window)&&NativeText(window,true)=="#32770")dialogs.Add(window);return true;},IntPtr.Zero);
-  if(dialogs.Count==0)return;if(dialogs.Count!=1)throw new InvalidOperationException();IntPtr dialog=dialogs[0];if(NativeText(dialog,false)!=expectedSaveTitle)throw new InvalidOperationException();
+  if(dialogs.Count==0)return false;if(dialogs.Count!=1)throw new InvalidOperationException();IntPtr dialog=dialogs[0];if(NativeText(dialog,false)!=expectedTitle)throw new InvalidOperationException();
   IntPtr ownerWindow=GetWindow(dialog,4);uint ownerPid;if(ownerWindow==IntPtr.Zero||GetWindowThreadProcessId(ownerWindow,out ownerPid)==0||ownerPid!=own)throw new InvalidOperationException();
   List<IntPtr> edits=new List<IntPtr>();EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused){int id=GetDlgCtrlID(child);if(IsWindowVisible(child)&&IsWindowEnabled(child)&&NativeText(child,true)=="Edit"&&(id==1001||id==1148))edits.Add(child);return true;},IntPtr.Zero);
   IntPtr save=GetDlgItem(dialog,1);if(edits.Count!=1||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
-  if(File.Exists(exportPath)||new DirectoryInfo(Path.GetDirectoryName(exportPath)).GetFileSystemInfos().Length!=0)throw new InvalidOperationException();
+  if(opening){if(!File.Exists(desiredPath)||Hash(desiredPath)!=firstExportSha256)throw new InvalidOperationException();}
+  else{
+   if(File.Exists(desiredPath))throw new InvalidOperationException();
+   FileSystemInfo[] contents=new DirectoryInfo(Path.GetDirectoryName(desiredPath)).GetFileSystemInfos();
+   if(roundtripPhase=="reexporting"){if(contents.Length!=1||!(contents[0] is FileInfo)||!String.Equals(contents[0].FullName,firstExportPath,StringComparison.OrdinalIgnoreCase)||Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();}
+   else if(contents.Length!=0)throw new InvalidOperationException();
+  }
   IntPtr edit=edits[0],parent=GetParent(edit);string parentClass=NativeText(parent,true);
   exportFilenameParentKind=parentClass=="ComboBox"?"combobox":parentClass=="ComboBoxEx32"?"combobox-ex":"other";Record();
   // Filename editors belong to the verified common-dialog combo. A search edit
   // or unrelated child must never receive keyboard input.
   if(parent==IntPtr.Zero||(parentClass!="ComboBox"&&parentClass!="ComboBoxEx32"))throw new InvalidOperationException();
-  exportDialogMatched=true;exportFilenameEditing=true;exportWatcher.Stop();stage="gtgt-export-filename-keyboard-editing";Record();
+  if(opening)roundtripImportDialogMatched=true;else exportDialogMatched=true;exportFilenameEditing=true;exportWatcher.Stop();stage=opening?"gtgt-import-filename-keyboard-editing":"gtgt-export-filename-keyboard-editing";Record();
   try{
    SetForegroundWindow(dialog);SetFocus(edit);if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
    SendKeys.SendWait("^a");if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
-   SendKeys.SendWait(EscapeSendKeys(exportPath));if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=exportPath)throw new InvalidOperationException();
-   exportFilenameKeyboardCommitted=true;
+   SendKeys.SendWait(EscapeSendKeys(desiredPath));if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=desiredPath)throw new InvalidOperationException();
+   if(opening)roundtripImportKeyboardCommitted=true;else exportFilenameKeyboardCommitted=true;
    // Common-dialog change notifications may rebuild controls. Resolve the
    // original Save button again in the SAME verified dialog after real typing.
-   save=GetDlgItem(dialog,1);if(NativeText(dialog,false)!=expectedSaveTitle||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
-   exportDialogSubmitted=true;stage="gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+   save=GetDlgItem(dialog,1);if(NativeText(dialog,false)!=expectedTitle||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
+   if(opening)roundtripImportDialogSubmitted=true;else exportDialogSubmitted=true;stage=opening?"gtgt-import-original-reading":"gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
   }finally{exportFilenameEditing=false;if(!finished)exportWatcher.Start();}
+  return true;
  }
  private static string EscapeSendKeys(string value){StringBuilder escaped=new StringBuilder();foreach(char character in value){if("+^%~(){}[]".IndexOf(character)>=0)escaped.Append("{"+character+"}");else escaped.Append(character);}return escaped.ToString();}
  private void InspectOriginalExportDestination(){
