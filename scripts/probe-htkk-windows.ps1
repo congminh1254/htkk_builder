@@ -1,6 +1,6 @@
 # No tax data, credentials, screenshots or installer logs are published.
 [CmdletBinding()]
-param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original')
+param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration)
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
@@ -13,6 +13,8 @@ $report = [ordered]@{
   netFx35Present = $false; installExitCode = $null
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
   runnerSessionId = $null; appSessionId = $null; userInteractive = [Environment]::UserInteractive
+  registrationAcknowledgementEnabled = [bool]$AcknowledgeRegistration; registrationDialogPosts = 0; registrationProcessesTracked = 0
+  registrationExitCodes = @(); registrationNonzeroExitCount = 0; registrationUnverifiedExitCount = 0; registrationPostFailureCount = 0; registrationAcknowledgementLimitReached = $false
   appArchitecture = 'unknown'; preexistingHtkkProcessCount = 0; preexistingHtkkSameSessionCount = 0
   descendantScope = 'created-at-or-after-root-start'; verifiedMicrosoftChildImages = @(); unknownChildImageInspectionFailures = 0
   threadDesktop = 'unavailable'; desktopWindowScope = 'current-thread-desktop'
@@ -32,6 +34,8 @@ $report = [ordered]@{
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
 $firewallNames = [Collections.Generic.List[string]]::new()
+$registrationProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
+$registrationKeys = [Collections.Generic.HashSet[string]]::new()
 function Assert-Hash([string]$Path, [string]$Expected) {
   if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Expected) { throw 'SOURCE_HASH_MISMATCH' }
 }
@@ -84,6 +88,26 @@ public static class HtkkWindowDiagnostics {
   [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc callback, IntPtr unused);
   [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder value, int size);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetWindowText(IntPtr window, StringBuilder text, int size);
+  [DllImport("user32.dll", SetLastError=true)] private static extern bool PostMessage(IntPtr window, uint message, IntPtr wParam, IntPtr lParam);
+  // Called only for a retained, verified Microsoft regsvr32 process created by this probe.
+  // Return 0=no exact dialog, 1=exact dialog only, 2=IDOK was posted. No text or HWND is returned.
+  public static int RegistrationDialog(int approvedProcess, bool acknowledge) {
+    int outcome=0;
+    EnumProc callback=(window,unused)=> {
+      uint owner; GetWindowThreadProcessId(window,out owner);
+      if (owner!=(uint)approvedProcess || !IsWindowVisible(window)) return true;
+      var cls=new StringBuilder(64); GetClassName(window,cls,cls.Capacity);
+      if (!String.Equals(cls.ToString(),"#32770",StringComparison.Ordinal)) return true;
+      var caption=new StringBuilder(64); GetWindowText(window,caption,caption.Capacity);
+      if (!String.Equals(caption.ToString(),"RegSvr32",StringComparison.OrdinalIgnoreCase)) return true;
+      outcome=1;
+      // WM_COMMAND with IDOK=1, never IDYES, WM_CLOSE or a generic default button.
+      if (acknowledge && PostMessage(window,0x0111,new IntPtr(1),IntPtr.Zero)) outcome=2;
+      return false;
+    };
+    EnumWindows(callback,IntPtr.Zero); GC.KeepAlive(callback); return outcome;
+  }
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
   [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr parent, EnumProc callback, IntPtr unused);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern IntPtr SendMessageTimeout(IntPtr window, uint message, UIntPtr count, StringBuilder text, uint flags, uint timeout, out UIntPtr result);
@@ -313,6 +337,55 @@ function Get-VerifiedMicrosoftImageBasename([int]$ProcessId) {
   $originalName = [IO.Path]::GetFileName([Diagnostics.FileVersionInfo]::GetVersionInfo($fullPath).OriginalFilename)
   if (-not [string]::Equals($basename,$originalName,[StringComparison]::OrdinalIgnoreCase)) { return $null }
   return $basename.ToLowerInvariant()
+}
+# Optional acknowledgement is confined to freshly scoped Microsoft regsvr32 descendants.
+# A matching caption is not a success claim: every posted process must subsequently exit 0.
+function Invoke-HtkkRegistrationAcknowledgement([int[]]$DescendantIds,[int]$AppProcessId,[datetime]$RootStartTime) {
+  foreach ($candidateId in @($DescendantIds | Select-Object -First 64)) {
+    $candidate = $null; $retained = $false
+    try {
+      $candidate = Get-Process -Id $candidateId -ErrorAction Stop
+      $null = $candidate.Handle # Retain identity/exit information before touching a dialog.
+      if ($candidate.HasExited -or $candidate.StartTime.ToUniversalTime() -lt $RootStartTime.ToUniversalTime()) { continue }
+      $fresh = @(Get-DescendantProcessIds -AppProcessId $AppProcessId -RootStartTime $RootStartTime)
+      if ($candidate.Id -notin $fresh) { continue }
+      $key = [string]$candidate.Id + ':' + [string]$candidate.StartTime.ToUniversalTime().Ticks
+      if ($registrationKeys.Contains($key)) { continue }
+      $imagePath = [IO.Path]::GetFullPath($candidate.Path)
+      $system32 = [IO.Path]::GetFullPath((Join-Path $env:WINDIR 'System32\regsvr32.exe'))
+      $syswow64 = [IO.Path]::GetFullPath((Join-Path $env:WINDIR 'SysWOW64\regsvr32.exe'))
+      if (-not ([string]::Equals($imagePath,$system32,[StringComparison]::OrdinalIgnoreCase) -or [string]::Equals($imagePath,$syswow64,[StringComparison]::OrdinalIgnoreCase))) { continue }
+      if ((Get-VerifiedMicrosoftImageBasename -ProcessId $candidate.Id) -ne 'regsvr32.exe' -or $candidate.HasExited) { continue }
+      if ($report.registrationDialogPosts -ge 16) {
+        if ([HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$false) -eq 1) { $report.registrationAcknowledgementLimitReached = $true }
+        continue
+      }
+      $outcome = [HtkkWindowDiagnostics]::RegistrationDialog($candidate.Id,$true)
+      if ($outcome -eq 2) {
+        $registrationKeys.Add($key) | Out-Null
+        $registrationProcesses.Add($candidate); $retained = $true
+        $report.registrationDialogPosts++; $report.registrationProcessesTracked = $registrationProcesses.Count
+        # Bounded wait only; a still-running process remains retained for later checks.
+        $candidate.WaitForExit(1000) | Out-Null
+      } elseif ($outcome -eq 1) { $report.registrationPostFailureCount++ }
+    } catch { } # No path, PID, caption, error text or command line is published.
+    finally { if ($null -ne $candidate -and -not $retained) { $candidate.Dispose() } }
+  }
+}
+function Update-HtkkRegistrationResults([int]$WaitMilliseconds=0) {
+  $codes = [Collections.Generic.List[int]]::new()
+  $nonzero = 0; $unverified = 0
+  foreach ($registration in $registrationProcesses) {
+    try {
+      if (-not $registration.HasExited -and $WaitMilliseconds -gt 0) { $registration.WaitForExit([Math]::Min($WaitMilliseconds,1000)) | Out-Null }
+      if (-not $registration.HasExited) { $unverified++; continue }
+      $code = $registration.ExitCode
+      if ($code -ge 0 -and $code -le 5) { $codes.Add([int]$code); if ($code -ne 0) { $nonzero++ } }
+      else { $unverified++ }
+    } catch { $unverified++ }
+  }
+  $report.registrationExitCodes = @($codes.ToArray())
+  $report.registrationNonzeroExitCount = $nonzero; $report.registrationUnverifiedExitCount = $unverified
 }
 # Isolated Windows PowerShell helper: UIAutomation is a desktop .NET Framework assembly.
 # Only process-scoped UIA controls are inspected, never ValuePattern or arbitrary names in output.
@@ -555,6 +628,11 @@ try {
     $report.processAliveAfterWait = -not $process.HasExited
     $report.mainWindowHandlePresent = $report.processAliveAfterWait -and ($process.MainWindowHandle -ne [IntPtr]::Zero)
     $children = @(Get-DescendantProcessIds -AppProcessId $process.Id -RootStartTime $rootStartTime)
+    if ($AcknowledgeRegistration) {
+      Invoke-HtkkRegistrationAcknowledgement -DescendantIds ([int[]]$children) -AppProcessId $process.Id -RootStartTime $rootStartTime
+      Update-HtkkRegistrationResults
+      $children = @(Get-DescendantProcessIds -AppProcessId $process.Id -RootStartTime $rootStartTime)
+    }
     $report.childProcessCount = $children.Count
     $counts = [HtkkWindowDiagnostics]::Counts($process.Id, [int[]]$children)
     $report.allVisibleWindowCount = $counts[0]
@@ -568,6 +646,7 @@ try {
     Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, [Math]::Ceiling(45 - $startupClock.Elapsed.TotalSeconds))))
   } while ($true)
   $startupClock.Stop()
+  if ($AcknowledgeRegistration) { Update-HtkkRegistrationResults -WaitMilliseconds 1000 }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation) { $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath }
   $report.applicationEvents = Get-HtkkSafeApplicationEvents -ApplicationStartTime $applicationStartTime -ReferenceHostName $referenceHostName
   $report.ownedWindowKinds = [HtkkWindowDiagnostics]::OwnedWindowKinds($process.Id, [int[]]$children)
@@ -579,7 +658,11 @@ try {
     elseif ($report.allVisibleWindowCount -eq 0) { 'no-visible-windows-on-current-desktop' }
     elseif (($report.appHiddenWindowCount + $report.childHiddenWindowCount) -gt 0) { 'only-hidden-app-windows' }
     else { 'no-app-windows-on-current-desktop' }
-  if (-not $report.windowObserved) { throw 'STARTUP_WINDOW_NOT_OBSERVED' }
+  if (-not $report.windowObserved) {
+    if ($AcknowledgeRegistration -and $report.registrationNonzeroExitCount -gt 0) { throw 'REGISTRATION_PROCESS_FAILED' }
+    if ($AcknowledgeRegistration -and $report.registrationUnverifiedExitCount -gt 0) { throw 'REGISTRATION_RESULT_NOT_VERIFIED' }
+    throw 'STARTUP_WINDOW_NOT_OBSERVED'
+  }
   # Read-only classification of descendant processes; arbitrary process names are never emitted.
   $verifiedChildImages = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
   $unknownInspections = 0
@@ -618,11 +701,17 @@ try {
     $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
     $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory
   } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
+  if ($AcknowledgeRegistration) {
+    Update-HtkkRegistrationResults
+    if ($report.registrationNonzeroExitCount -gt 0) { throw 'REGISTRATION_PROCESS_FAILED' }
+    if ($report.registrationUnverifiedExitCount -gt 0) { throw 'REGISTRATION_RESULT_NOT_VERIFIED' }
+    if ($report.registrationAcknowledgementLimitReached) { throw 'REGISTRATION_ACKNOWLEDGEMENT_LIMIT' }
+  }
   if ($report.taxIdOracle.status -ne 'matched') { throw 'TAX_ID_ORACLE_NOT_VERIFIED' }
   $report.stage = 'startup-window-observed'
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
@@ -640,6 +729,7 @@ try {
       $report.originalSourcesUnmodified=$true
     } catch { $report.originalSourcesUnmodified=$false; $report.stage='blocked'; $report['blockedReason']='ORIGINAL_SOURCE_CHANGED' }
   }
+  foreach($registration in $registrationProcesses) { try { $registration.Dispose() } catch { } }
   foreach($rule in $firewallNames) { Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue }
   foreach($owned in $referenceOwnedFiles) { Remove-Item -LiteralPath $owned -Force -ErrorAction SilentlyContinue }
   $safe = $report | ConvertTo-Json -Depth 3
