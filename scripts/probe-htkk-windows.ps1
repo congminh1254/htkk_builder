@@ -16,6 +16,7 @@ $report = [ordered]@{
   mainWindowHandlePresent = $false; startupWaitSeconds = 0; startupContext = 'not-probed'
   uiaStatus = 'not-probed'; uiaWindowCount = 0; uiaControlCount = 0; loginReady = $false
   uiaControlTypeCounts = @{}; uiaAllowedControlIds = @(); uiaStaticLabels = @()
+  uiaHelperEncoding = 'utf8-bom'; uiaHelperExitCode = $null; uiaHelperParseErrorCount = 0; uiaHelperFailureCategory = 'not-probed'
   descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; other = 0 }
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
@@ -137,19 +138,47 @@ try {
   $result.status = if ($queue.Count -gt 0) { 'bounded-partial' } else { 'scanned' }
 } catch { $result.status = 'uia-unavailable' }
 $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encoding UTF8
-'@ | Set-Content -LiteralPath $helper -Encoding UTF8
+'@ | Set-Content -LiteralPath $helper -Encoding utf8BOM
+  $diagnostics = @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); helperEncoding = 'utf8-bom'; helperExitCode = $null; helperParseErrorCount = 0; helperFailureCategory = 'none' }
+  # Parse before execution; only the count is public, never source snippets or parser messages.
+  $helperTokens = $null; $helperParseErrors = $null
+  [System.Management.Automation.Language.Parser]::ParseFile($helper, [ref]$helperTokens, [ref]$helperParseErrors) | Out-Null
+  $diagnostics.helperParseErrorCount = if ($null -eq $helperParseErrors) { 0 } else { @($helperParseErrors).Count }
+  if ($diagnostics.helperParseErrorCount -gt 0) {
+    $diagnostics.helperFailureCategory = 'preflight-parser-error'
+    return $diagnostics
+  }
   $legacy = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
   $ownerList = (@($AppProcessId) + @($Descendants)) -join ','
-  $arguments = @('-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',"`"$helper`"",'-ProcessIds',$ownerList,'-OutputFile',"`"$resultPath`"")
+  $arguments = @('-STA','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',"`"$helper`"",'-ProcessIds',$ownerList,'-OutputFile',"`"$resultPath`"")
   $helperProcess = Start-Process -FilePath $legacy -ArgumentList $arguments -PassThru -RedirectStandardOutput (Join-Path $TemporaryDirectory 'uia-private.stdout') -RedirectStandardError (Join-Path $TemporaryDirectory 'uia-private.stderr')
+  # Retain the process handle before waiting so ExitCode remains available after a fast exit.
+  $null = $helperProcess.Handle
   if (-not $helperProcess.WaitForExit(15000)) {
     Stop-Process -Id $helperProcess.Id -Force -ErrorAction SilentlyContinue
-    return @{ status = 'uia-timeout'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @() }
+    $diagnostics.status = 'uia-timeout'; $diagnostics.helperFailureCategory = 'helper-timeout'
+    return $diagnostics
   }
-  if ($helperProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $resultPath)) {
-    return @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @() }
+  $diagnostics.helperExitCode = $helperProcess.ExitCode
+  if ($helperProcess.ExitCode -ne 0) {
+    # Inspect stderr privately only to choose a fixed enum. Never emit its content.
+    $privateError = Get-Content -LiteralPath (Join-Path $TemporaryDirectory 'uia-private.stderr') -Raw -ErrorAction SilentlyContinue
+    $diagnostics.helperFailureCategory = if ($privateError -match 'ParserError') { 'legacy-parser-error' } else { 'helper-nonzero-exit' }
+    return $diagnostics
   }
-  return Get-Content -LiteralPath $resultPath -Raw | ConvertFrom-Json -AsHashtable
+  if (-not (Test-Path -LiteralPath $resultPath)) {
+    $diagnostics.helperFailureCategory = 'helper-result-missing'
+    return $diagnostics
+  }
+  try {
+    $safeUi = Get-Content -LiteralPath $resultPath -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
+    foreach ($key in @('helperEncoding','helperExitCode','helperParseErrorCount','helperFailureCategory')) { $safeUi[$key] = $diagnostics[$key] }
+    if ($safeUi.status -eq 'uia-unavailable') { $safeUi.helperFailureCategory = 'uia-provider-unavailable' }
+    return $safeUi
+  } catch {
+    $diagnostics.helperFailureCategory = 'helper-result-invalid'
+    return $diagnostics
+  }
 }
 
 try {
@@ -250,7 +279,9 @@ try {
     $report.uiaStatus = $uia.status; $report.uiaWindowCount = $uia.windows; $report.uiaControlCount = $uia.controls
     $report.uiaControlTypeCounts = $uia.types; $report.uiaAllowedControlIds = @($uia.ids); $report.uiaStaticLabels = @($uia.labels)
     $report.loginReady = $uia.loginReady
-  } catch { $report.uiaStatus = 'uia-helper-failed' }
+    $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
+    $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory
+  } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
   $report.stage = 'startup-window-observed'
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.

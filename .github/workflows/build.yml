@@ -31,6 +31,8 @@ jobs:
         with:
           path: builder
           persist-credentials: false
+      - name: Test public runner contract
+        run: python3 builder/scripts/test_builder.py
       - name: Validate source request
         env:
           SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
