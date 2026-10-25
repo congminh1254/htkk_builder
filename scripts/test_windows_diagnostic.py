@@ -8,6 +8,23 @@ class PrivateDiagnosticTests(unittest.TestCase):
   png=b'\x89PNG\r\n\x1a\n'+struct.pack('>I',13)+b'IHDR'+struct.pack('>II',100,80)+b'\x08\x06\x00\x00\x00'+b'0000'
   metadata={'format':'htkk-registration-diagnostic-v1','runId':'123','runtimeHost':'original','scope':'verified-microsoft-regsvr32-window-only','width':100,'height':80,'pngSha256':hashlib.sha256(png).hexdigest(),'taxDataUsed':False,'publicScreenshot':False}
   (root/'regsvr32-window.png').write_bytes(png);(root/'diagnostic.json').write_text(json.dumps(metadata));return metadata
+ def synthetic_files(self,root):
+  metadata=self.files(root);(root/'regsvr32-window.png').rename(root/'synthetic-login-window.png')
+  metadata={'format':'htkk-synthetic-login-diagnostic-v1','runId':'123','runtimeHost':'original','scope':'verified-original-htkk-root-after-synthetic-login','width':100,'height':80,'pngSha256':metadata['pngSha256'],'originalExecutableSha256':'411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938','newIdClicked':True,'fixtureDirectoryPreexisting':False,'syntheticInputVerified':True,'loginClicked':True,'loginHidden':True,'freshFixtureDirectoryCreated':True,'realTaxpayerDataUsed':False,'sourceDefaultsMayBeVisible':True,'publicScreenshot':False}
+  (root/'diagnostic.json').write_text(json.dumps(metadata));return metadata
+ def test_scoped_synthetic_login_pair_allowed(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=pathlib.Path(folder);self.synthetic_files(root)
+   self.assertEqual(set(diag.read_diagnostic(root,'123')),{'synthetic-login-window.png','diagnostic.json'})
+ def test_synthetic_capture_requires_all_gates_original_source_and_private_scope(self):
+  for field,value in [('runtimeHost','clr2-x86-reference'),('scope','desktop'),('syntheticInputVerified',False),('loginClicked',False),('loginHidden',False),('freshFixtureDirectoryCreated',False),('realTaxpayerDataUsed',True),('sourceDefaultsMayBeVisible',False),('originalExecutableSha256','0'*64),('publicScreenshot',True),('loginHidden',1)]:
+   with self.subTest(field=field,value=value),tempfile.TemporaryDirectory() as folder:
+    root=pathlib.Path(folder);metadata=self.synthetic_files(root);metadata[field]=value;(root/'diagnostic.json').write_text(json.dumps(metadata))
+    with self.assertRaises(ValueError):diag.read_diagnostic(root,'123')
+ def test_synthetic_scope_cannot_be_uploaded_as_registration_image(self):
+  with tempfile.TemporaryDirectory() as folder:
+   root=pathlib.Path(folder);self.synthetic_files(root);(root/'synthetic-login-window.png').rename(root/'regsvr32-window.png')
+   with self.assertRaises(ValueError):diag.read_diagnostic(root,'123')
  def test_exact_pair_and_run_identity_only(self):
   with tempfile.TemporaryDirectory() as folder:
    root=pathlib.Path(folder);self.files(root)

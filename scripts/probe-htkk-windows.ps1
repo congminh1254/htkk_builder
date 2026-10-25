@@ -28,6 +28,7 @@ $report = [ordered]@{
   ownedWindowKinds = @{}; nativeDialogCueCounts = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
   uiaLegacyRoleCounts = @{}; uiaLegacyPatternAvailable = $false; uiaProviderProcessMismatchCount = 0; uiaViews = @()
   applicationEvents = $null
+  privateSyntheticLoginDiagnostic = $null
   privateRegistrationDiagnostic = $null
   syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
   profileAliasOracle = $null
@@ -763,6 +764,14 @@ try {
         $report.privateRegistrationDiagnostic=Save-HtkkRegistrationDiagnostic -RootProcessId $process.Id -OwnedProcessIds ([int[]]$owned) -RootStartTime $rootStartTime -RuntimeHost $RuntimeHost -RunId $env:GITHUB_RUN_ID
       }
     } catch { $report.privateRegistrationDiagnostic=@{status='capture-unavailable';captured=$false;taxDataUsed=$false;publicScreenshot=$false} }
+  }
+  if($RuntimeHost -eq 'original' -and $SyntheticLogin -and $report.stage -eq 'blocked' -and $null -ne $report.syntheticLogin -and $report.syntheticLogin.status -ne 'synthetic-profile-window-observed' -and $null -ne $process -and $null -ne $rootStartTime) {
+    try {
+      if(-not $process.HasExited) {
+        . (Join-Path $PSScriptRoot 'Save-HtkkSyntheticWindowDiagnostic.ps1')
+        $report.privateSyntheticLoginDiagnostic=Save-HtkkSyntheticWindowDiagnostic -RootProcessId $process.Id -RootStartTime $rootStartTime -ExpectedHtkkExecutable $exe -LoginReport $report.syntheticLogin -RunId $env:GITHUB_RUN_ID
+      }
+    } catch { $report.privateSyntheticLoginDiagnostic=@{status='capture-unavailable';captured=$false;realTaxpayerDataUsed=$false;sourceDefaultsMayBeVisible=$true;publicScreenshot=$false} }
   }
   if($null -ne $process) {
     try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null } } catch { }
