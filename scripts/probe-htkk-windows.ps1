@@ -17,7 +17,8 @@ $report = [ordered]@{
   uiaStatus = 'not-probed'; uiaWindowCount = 0; uiaControlCount = 0; loginReady = $false
   uiaControlTypeCounts = @{}; uiaAllowedControlIds = @(); uiaStaticLabels = @()
   uiaHelperEncoding = 'utf8-bom'; uiaHelperExitCode = $null; uiaHelperParseErrorCount = 0; uiaHelperFailureCategory = 'not-probed'
-  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; other = 0 }
+  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; console = 0; shell = 0; browser = 0; updater = 0; other = 0 }
+  ownedWindowKinds = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
@@ -41,6 +42,7 @@ public static class HtkkWindowDiagnostics {
   private delegate bool EnumProc(IntPtr window, IntPtr unused);
   [DllImport("user32.dll")] private static extern bool EnumWindows(EnumProc callback, IntPtr unused);
   [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder value, int size);
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
   [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
   [DllImport("user32.dll")] private static extern IntPtr GetThreadDesktop(uint thread);
@@ -53,6 +55,28 @@ public static class HtkkWindowDiagnostics {
     if (String.Equals(name.ToString(), "Default", StringComparison.OrdinalIgnoreCase)) return "default";
     if (String.Equals(name.ToString(), "Winlogon", StringComparison.OrdinalIgnoreCase)) return "winlogon";
     return "other";
+  }
+  // Class names are inspected only to return these fixed public categories.
+  // Neither raw names, handles nor process identifiers leave this method.
+  public static Dictionary<string,int> OwnedWindowKinds(int appProcess, int[] descendants) {
+    var owners = new HashSet<int>(descendants); owners.Add(appProcess);
+    var kinds = new Dictionary<string,int>();
+    EnumProc callback = (window, unused) => {
+      uint owner; GetWindowThreadProcessId(window, out owner);
+      if (!owners.Contains((int)owner) || !IsWindowVisible(window)) return true;
+      var text = new StringBuilder(256); GetClassName(window, text, text.Capacity);
+      var name = text.ToString(); string kind = "other";
+      if (name == "ConsoleWindowClass" || name == "CASCADIA_HOSTING_WINDOW_CLASS") kind = "console";
+      else if (name.StartsWith("WindowsForms10.", StringComparison.Ordinal)) kind = "winforms";
+      else if (name.StartsWith("Chrome_WidgetWin_", StringComparison.Ordinal) || name == "IEFrame") kind = "browser";
+      else if (name == "#32770") kind = "win32-dialog";
+      else if (name.StartsWith("HwndWrapper", StringComparison.Ordinal)) kind = "wpf";
+      else if (name == "ApplicationFrameWindow") kind = "application-frame";
+      if (!kinds.ContainsKey(kind)) kinds[kind] = 0; kinds[kind]++;
+      return true;
+    };
+    if (!EnumWindows(callback, IntPtr.Zero)) throw new InvalidOperationException("WINDOW_ENUMERATION_FAILED");
+    GC.KeepAlive(callback); return kinds;
   }
   // all-visible, app-visible, app-hidden, descendant-visible, descendant-hidden
   public static int[] Counts(int appProcess, int[] descendants) {
@@ -94,7 +118,7 @@ function Get-HtkkSafeUiDiagnostics([int]$AppProcessId, [int[]]$Descendants, [str
 param([string]$ProcessIds, [string]$OutputFile)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @() }
+$result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); categories = @() }
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
@@ -102,6 +126,7 @@ try {
   foreach ($item in $ProcessIds.Split(',')) { $owners.Add([int]$item) | Out-Null }
   $ids = [System.Collections.Generic.HashSet[string]]::new()
   $labels = [System.Collections.Generic.HashSet[string]]::new()
+  $categories = [System.Collections.Generic.HashSet[string]]::new()
   $allowedIds = @('cboMaSoThue','btnMaSoMoi','btnDongY','btnThoat','frmFormStart','txtMst','txtYear','chkTKQuy','OptTKThang','cboCQTCuc','cboCQTChiCuc','cmdImportXML','cmdExport','btnExport','radKetXuatXML','radKetXuatExcel')
   $allowedTypes = @('Button','Calendar','CheckBox','ComboBox','Edit','Hyperlink','Image','ListItem','List','Menu','MenuBar','MenuItem','ProgressBar','RadioButton','ScrollBar','Slider','Spinner','StatusBar','Tab','TabItem','Text','ToolBar','ToolTip','Tree','TreeItem','Custom','Group','Thumb','DataGrid','DataItem','Document','SplitButton','Window','Pane','Header','HeaderItem','Table','TitleBar','Separator')
   $staticNames = @{ 'Mã số thuế' = 'Mã số thuế'; 'Đăng nhập' = 'Đăng nhập'; 'Đăng nhập vào hệ thống' = 'Đăng nhập'; 'Mã số mới' = 'Mã số mới'; 'HTKK' = 'HTKK' }
@@ -122,7 +147,13 @@ try {
       if ($id -in $allowedIds) { $ids.Add($id) | Out-Null }
       # Names are read only for exact matching against a fixed public label allowlist.
       # Never output Name, Current.Value, title, HWND, PID, path, exception or a raw UIA node.
-      $name = ([string]$element.Current.Name).Replace('&', '').Trim()
+      $name = ([string]$element.Current.Name).Replace('&', '').Trim().TrimEnd(':').Trim()
+      # Inspect fixed error/update cues without exposing the original text.
+      if ($name -match '(?i)run-time error|runtime error|application error|lỗi thời gian chạy') { $categories.Add('runtime-error') | Out-Null }
+      if ($name -match '(?i)class not registered|0x80040154|ActiveX') { $categories.Add('com-or-activex') | Out-Null }
+      if ($name -match '(?i)\.NET Framework|CLR error') { $categories.Add('dotnet-runtime') | Out-Null }
+      if ($name -match '(?i)program compatibility|compatibility assistant') { $categories.Add('compatibility') | Out-Null }
+      if ($name -match '(?i)check for updates|cập nhật|nâng cấp') { $categories.Add('updater') | Out-Null }
       if ($staticNames.ContainsKey($name)) { $labels.Add($staticNames[$name]) | Out-Null }
       $type = $element.Current.ControlType.ProgrammaticName.Replace('ControlType.', '')
       if ($type -notin $allowedTypes) { $type = 'Other' }
@@ -134,6 +165,7 @@ try {
   }
   $result.ids = @($ids | Sort-Object)
   $result.labels = @($labels | Sort-Object)
+  $result.categories = @($categories | Sort-Object)
   $result.loginReady = ($ids.Contains('cboMaSoThue') -and ($ids.Contains('btnMaSoMoi') -or $labels.Contains('Mã số thuế'))) -or ($labels.Contains('Mã số thuế') -and $labels.Contains('Đăng nhập') -and $labels.Contains('Mã số mới'))
   $result.status = if ($queue.Count -gt 0) { 'bounded-partial' } else { 'scanned' }
 } catch { $result.status = 'uia-unavailable' }
@@ -251,10 +283,13 @@ try {
     $report.childVisibleWindowCount = $counts[3]; $report.childHiddenWindowCount = $counts[4]
     $report.windowObserved = ($counts[1] + $counts[3]) -gt 0
     $report.startupWaitSeconds = [int][Math]::Floor($startupClock.Elapsed.TotalSeconds)
-    if ($report.windowObserved -or $startupClock.Elapsed.TotalSeconds -ge 45) { break }
+    $report.rootAppWindowObserved = $counts[1] -gt 0
+    # A console/browser child is not evidence that the HTKK login is ready.
+    if ($report.rootAppWindowObserved -or $startupClock.Elapsed.TotalSeconds -ge 45) { break }
     Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, [Math]::Ceiling(45 - $startupClock.Elapsed.TotalSeconds))))
   } while ($true)
   $startupClock.Stop()
+  $report.ownedWindowKinds = [HtkkWindowDiagnostics]::OwnedWindowKinds($process.Id, [int[]]$children)
   $report.startupContext = if ($report.windowObserved) { 'visible-app-or-child-window' }
     elseif ($report.appSessionId -ne $report.runnerSessionId) { 'different-process-session' }
     elseif ($report.runnerSessionId -eq 0) { 'session-zero' }
@@ -269,7 +304,12 @@ try {
       $name = (Get-Process -Id $childId -ErrorAction Stop).ProcessName
       $kind = switch ($name.ToLowerInvariant()) {
         'htkk' { 'HTKK' }; 'msiexec' { 'msiexec' }; 'werfault' { 'WerFault' }
-        'rundll32' { 'rundll32' }; 'dllhost' { 'dllhost' }; default { 'other' }
+        'rundll32' { 'rundll32' }; 'dllhost' { 'dllhost' }
+        'conhost' { 'console' }; 'openconsole' { 'console' }; 'windowsterminal' { 'console' }
+        'cmd' { 'shell' }; 'powershell' { 'shell' }; 'pwsh' { 'shell' }
+        'msedge' { 'browser' }; 'msedgewebview2' { 'browser' }; 'chrome' { 'browser' }; 'firefox' { 'browser' }; 'iexplore' { 'browser' }
+        'updater' { 'updater' }; 'autoupdate' { 'updater' }; 'htkkupdate' { 'updater' }
+        default { 'other' }
       }
       $report.descendantProcessKinds[$kind]++
     } catch { $report.descendantProcessKinds.other++ }
@@ -279,6 +319,7 @@ try {
     $report.uiaStatus = $uia.status; $report.uiaWindowCount = $uia.windows; $report.uiaControlCount = $uia.controls
     $report.uiaControlTypeCounts = $uia.types; $report.uiaAllowedControlIds = @($uia.ids); $report.uiaStaticLabels = @($uia.labels)
     $report.loginReady = $uia.loginReady
+    $report.uiaWindowCategories = if ($uia.ContainsKey('categories')) { @($uia.categories) } else { @() }
     $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
     $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory
   } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
