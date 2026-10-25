@@ -81,7 +81,7 @@ jobs:
           sha=os.environ['COMMIT_SHA']
           if not re.fullmatch('[0-9a-f]{40}',sha): raise SystemExit('Invalid source SHA.')
           state='success' if os.environ['BUILD_RESULT']=='success' else 'failure'
-          payload=json.dumps({'state':state,'context':'htkk-builder','description':'Builder '+state}).encode()
+          payload=json.dumps({'state':state,'context':'htkk-builder','description':'Builder '+state,'target_url':os.environ['GITHUB_SERVER_URL']+'/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']}).encode()
           request=urllib.request.Request('https://api.github.com/repos/congminh1254/htkk_web/statuses/'+sha,data=payload,headers={'Authorization':'Bearer '+os.environ['SOURCE_STATUS_TOKEN'],'Accept':'application/vnd.github+json'},method='POST')
           try:
               with urllib.request.urlopen(request,timeout=30) as response: response.read()
