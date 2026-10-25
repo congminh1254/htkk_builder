@@ -17,8 +17,9 @@ $report = [ordered]@{
   uiaStatus = 'not-probed'; uiaWindowCount = 0; uiaControlCount = 0; loginReady = $false
   uiaControlTypeCounts = @{}; uiaAllowedControlIds = @(); uiaStaticLabels = @()
   uiaHelperEncoding = 'utf8-bom'; uiaHelperExitCode = $null; uiaHelperParseErrorCount = 0; uiaHelperFailureCategory = 'not-probed'
-  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; console = 0; shell = 0; browser = 0; updater = 0; other = 0 }
-  ownedWindowKinds = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
+  descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; console = 0; shell = 0; browser = 0; updater = 0; debugger = 0; other = 0 }
+  ownedWindowKinds = @{}; nativeDialogCueCounts = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
+  uiaLegacyRoleCounts = @{}; uiaLegacyPatternAvailable = $false; uiaProviderProcessMismatchCount = 0; uiaViews = @()
   taxIdOracle = $null
   runtimeRoundTrip = $false; taxDataUsed = $false; screenshotsPublished = $false
 }
@@ -45,6 +46,8 @@ public static class HtkkWindowDiagnostics {
   [DllImport("user32.dll")] private static extern bool IsWindowVisible(IntPtr window);
   [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern int GetClassName(IntPtr window, StringBuilder value, int size);
   [DllImport("user32.dll")] private static extern uint GetWindowThreadProcessId(IntPtr window, out uint process);
+  [DllImport("user32.dll")] private static extern bool EnumChildWindows(IntPtr parent, EnumProc callback, IntPtr unused);
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] private static extern IntPtr SendMessageTimeout(IntPtr window, uint message, UIntPtr count, StringBuilder text, uint flags, uint timeout, out UIntPtr result);
   [DllImport("kernel32.dll")] private static extern uint GetCurrentThreadId();
   [DllImport("user32.dll")] private static extern IntPtr GetThreadDesktop(uint thread);
   [DllImport("user32.dll", CharSet=CharSet.Unicode, SetLastError=true)]
@@ -78,6 +81,36 @@ public static class HtkkWindowDiagnostics {
     };
     if (!EnumWindows(callback, IntPtr.Zero)) throw new InvalidOperationException("WINDOW_ENUMERATION_FAILED");
     GC.KeepAlive(callback); return kinds;
+  }
+  // Native dialog labels are classified in memory only. Never read edit/combo
+  // controls or return text, titles, handles, class names or identifiers.
+  public static Dictionary<string,int> FixedDialogCues(int appProcess, int[] descendants) {
+    var owners = new HashSet<int>(descendants); owners.Add(appProcess);
+    var cues = new Dictionary<string,int>(); var clock = System.Diagnostics.Stopwatch.StartNew(); int inspected = 0;
+    Action<IntPtr> inspect = window => {
+      if (inspected++ >= 100 || clock.Elapsed.TotalSeconds >= 5) return;
+      var className = new StringBuilder(256); GetClassName(window, className, className.Capacity);
+      var cls = className.ToString();
+      if (cls != "#32770" && cls != "Static" && cls != "Button" && cls != "SysLink") return;
+      var text = new StringBuilder(2048); UIntPtr unused;
+      if (SendMessageTimeout(window, 0x000D, new UIntPtr((uint)text.Capacity), text, 3, 100, out unused) == IntPtr.Zero) return;
+      var name = text.ToString().ToLowerInvariant(); var matches = new List<string>();
+      if (name.Contains("just-in-time") || name.Contains("jit debugger") || name.Contains("choose debugger")) matches.Add("jit-debugger");
+      if (name.Contains("unhandled exception") || name.Contains("unhandled microsoft .net")) matches.Add("unhandled-exception");
+      if (name.Contains("class not registered") || name.Contains("0x80040154") || name.Contains("comexception") || name.Contains("activex")) matches.Add("com-or-activex");
+      if (name.Contains("badimageformatexception") || name.Contains("0x8007000b") || name.Contains("incorrect format")) matches.Add("bitness-load");
+      if (name.Contains("could not load file or assembly") || name.Contains("filenotfoundexception") || name.Contains("fileloadexception") || name.Contains("typeloadexception")) matches.Add("assembly-load");
+      if (name.Contains(".net framework") || name.Contains("clr error")) matches.Add("dotnet-runtime");
+      if (name.Contains("program compatibility") || name.Contains("compatibility assistant")) matches.Add("compatibility");
+      foreach (var cue in matches) { if (!cues.ContainsKey(cue)) cues[cue] = 0; cues[cue]++; }
+    };
+    EnumProc child = (window, unused) => { inspect(window); return inspected < 100 && clock.Elapsed.TotalSeconds < 5; };
+    EnumProc top = (window, unused) => {
+      uint owner; GetWindowThreadProcessId(window, out owner);
+      if (owners.Contains((int)owner) && IsWindowVisible(window)) { inspect(window); EnumChildWindows(window, child, IntPtr.Zero); }
+      return inspected < 100 && clock.Elapsed.TotalSeconds < 5;
+    };
+    EnumWindows(top, IntPtr.Zero); GC.KeepAlive(top); GC.KeepAlive(child); return cues;
   }
   // all-visible, app-visible, app-hidden, descendant-visible, descendant-hidden
   public static int[] Counts(int appProcess, int[] descendants) {
@@ -119,10 +152,16 @@ function Get-HtkkSafeUiDiagnostics([int]$AppProcessId, [int[]]$Descendants, [str
 param([string]$ProcessIds, [string]$OutputFile)
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
-$result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); categories = @() }
+$result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); categories = @(); legacyRoles = @{}; providerProcessMismatchCount = 0; legacyPatternAvailable = $false; views = @('children','raw-walker','control-walker','native-static-dialog') }
 try {
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
+  # Classic UIA assemblies may not expose LegacyIAccessiblePattern; never let
+  # an unavailable optional pattern stop the raw/control child traversal.
+  $legacyPatternType = [Type]::GetType('System.Windows.Automation.LegacyIAccessiblePattern, UIAutomationClient', $false)
+  $legacyPatternField = if ($null -ne $legacyPatternType) { $legacyPatternType.GetField('Pattern') } else { $null }
+  $legacyPattern = if ($null -ne $legacyPatternField) { $legacyPatternField.GetValue($null) } else { $null }
+  $result.legacyPatternAvailable = $null -ne $legacyPattern
   $owners = [System.Collections.Generic.HashSet[int]]::new()
   foreach ($item in $ProcessIds.Split(',')) { $owners.Add([int]$item) | Out-Null }
   $ids = [System.Collections.Generic.HashSet[string]]::new()
@@ -132,6 +171,7 @@ try {
   $allowedTypes = @('Button','Calendar','CheckBox','ComboBox','Edit','Hyperlink','Image','ListItem','List','Menu','MenuBar','MenuItem','ProgressBar','RadioButton','ScrollBar','Slider','Spinner','StatusBar','Tab','TabItem','Text','ToolBar','ToolTip','Tree','TreeItem','Custom','Group','Thumb','DataGrid','DataItem','Document','SplitButton','Window','Pane','Header','HeaderItem','Table','TitleBar','Separator')
   $staticNames = @{ 'Mã số thuế' = 'Mã số thuế'; 'Đăng nhập' = 'Đăng nhập'; 'Đăng nhập vào hệ thống' = 'Đăng nhập'; 'Mã số mới' = 'Mã số mới'; 'HTKK' = 'HTKK' }
   $queue = [System.Collections.Generic.Queue[System.Windows.Automation.AutomationElement]]::new()
+  $visited = [System.Collections.Generic.HashSet[string]]::new()
   $top = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
   foreach ($window in $top) {
     try {
@@ -142,16 +182,37 @@ try {
   while ($queue.Count -gt 0 -and $result.controls -lt 2000 -and $clock.Elapsed.TotalSeconds -lt 10) {
     $element = $queue.Dequeue()
     try {
-      if (-not $owners.Contains($element.Current.ProcessId)) { continue }
+      # Top-level windows were scoped to known owners above. Proxy/MSAA child
+      # providers can report process 0 or another host; do not discard their
+      # descendants solely on that property. Never traverse another top-level.
+      $runtimeId = ($element.GetRuntimeId() -join ',')
+      if (-not $visited.Add($runtimeId)) { continue }
+      if (-not $owners.Contains($element.Current.ProcessId)) { $result.providerProcessMismatchCount++ }
       $result.controls++
       $id = $element.Current.AutomationId
       if ($id -in $allowedIds) { $ids.Add($id) | Out-Null }
       # Names are read only for exact matching against a fixed public label allowlist.
       # Never output Name, Current.Value, title, HWND, PID, path, exception or a raw UIA node.
       $name = ([string]$element.Current.Name).Replace('&', '').Trim().TrimEnd(':').Trim()
+      if ($staticNames.ContainsKey($name)) { $labels.Add($staticNames[$name]) | Out-Null }
+      $legacy = $null
+      try {
+      if ($null -ne $legacyPattern -and $element.TryGetCurrentPattern($legacyPattern, [ref]$legacy)) {
+        $legacyName = ([string]$legacy.Current.Name).Replace('&', '').Trim().TrimEnd(':').Trim()
+        if ($staticNames.ContainsKey($legacyName)) { $labels.Add($staticNames[$legacyName]) | Out-Null }
+        # Names are used only by the same fixed classifiers, never emitted.
+        $name = $name + ' ' + $legacyName
+        $role = switch ([int]$legacy.Current.Role) { 9 {'window'}; 10 {'client'}; 41 {'text'}; 42 {'edit'}; 43 {'button'}; 46 {'combo'}; default {'other'} }
+        if (-not $result.legacyRoles.ContainsKey($role)) { $result.legacyRoles[$role] = 0 }; $result.legacyRoles[$role]++
+      }
+      } catch { }
       # Inspect fixed error/update cues without exposing the original text.
+      if ($name -match '(?i)just-in-time|jit debugger|choose debugger') { $categories.Add('jit-debugger') | Out-Null }
+      if ($name -match '(?i)unhandled exception|unhandled Microsoft \.NET') { $categories.Add('unhandled-exception') | Out-Null }
+      if ($name -match '(?i)BadImageFormatException|0x8007000B|incorrect format') { $categories.Add('bitness-load') | Out-Null }
+      if ($name -match '(?i)could not load file or assembly|FileNotFoundException|FileLoadException|TypeLoadException') { $categories.Add('assembly-load') | Out-Null }
       if ($name -match '(?i)run-time error|runtime error|application error|lỗi thời gian chạy') { $categories.Add('runtime-error') | Out-Null }
-      if ($name -match '(?i)class not registered|0x80040154|ActiveX') { $categories.Add('com-or-activex') | Out-Null }
+      if ($name -match '(?i)class not registered|0x80040154|COMException|ActiveX') { $categories.Add('com-or-activex') | Out-Null }
       if ($name -match '(?i)\.NET Framework|CLR error') { $categories.Add('dotnet-runtime') | Out-Null }
       if ($name -match '(?i)program compatibility|compatibility assistant') { $categories.Add('compatibility') | Out-Null }
       if ($name -match '(?i)check for updates|cập nhật|nâng cấp') { $categories.Add('updater') | Out-Null }
@@ -162,6 +223,13 @@ try {
       $result.types[$type]++
       $children = $element.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
       foreach ($child in $children) { if ($queue.Count -lt 2000) { $queue.Enqueue($child) } }
+      foreach ($walker in @([System.Windows.Automation.TreeWalker]::RawViewWalker, [System.Windows.Automation.TreeWalker]::ControlViewWalker)) {
+        $walked = 0
+        $child = $walker.GetFirstChild($element)
+        while ($null -ne $child -and $walked -lt 200 -and $queue.Count -lt 2000 -and $clock.Elapsed.TotalSeconds -lt 10) {
+          $queue.Enqueue($child); $walked++; $child = $walker.GetNextSibling($child)
+        }
+      }
     } catch { }
   }
   $result.ids = @($ids | Sort-Object)
@@ -293,6 +361,7 @@ try {
   } while ($true)
   $startupClock.Stop()
   $report.ownedWindowKinds = [HtkkWindowDiagnostics]::OwnedWindowKinds($process.Id, [int[]]$children)
+  $report.nativeDialogCueCounts = [HtkkWindowDiagnostics]::FixedDialogCues($process.Id, [int[]]$children)
   $report.startupContext = if ($report.windowObserved) { 'visible-app-or-child-window' }
     elseif ($report.appSessionId -ne $report.runnerSessionId) { 'different-process-session' }
     elseif ($report.runnerSessionId -eq 0) { 'session-zero' }
@@ -312,6 +381,7 @@ try {
         'cmd' { 'shell' }; 'powershell' { 'shell' }; 'pwsh' { 'shell' }
         'msedge' { 'browser' }; 'msedgewebview2' { 'browser' }; 'chrome' { 'browser' }; 'firefox' { 'browser' }; 'iexplore' { 'browser' }
         'updater' { 'updater' }; 'autoupdate' { 'updater' }; 'htkkupdate' { 'updater' }
+        'vsjitdebugger' { 'debugger' }; 'vsdebugconsole' { 'debugger' }; 'devenv' { 'debugger' }; 'vsdebugeng' { 'debugger' }; 'dbghost' { 'debugger' }; 'dbgsvc' { 'debugger' }; 'dw20' { 'debugger' }
         default { 'other' }
       }
       $report.descendantProcessKinds[$kind]++
@@ -323,6 +393,10 @@ try {
     $report.uiaControlTypeCounts = $uia.types; $report.uiaAllowedControlIds = @($uia.ids); $report.uiaStaticLabels = @($uia.labels)
     $report.loginReady = $uia.loginReady
     $report.uiaWindowCategories = if ($uia.ContainsKey('categories')) { @($uia.categories) } else { @() }
+    $report.uiaLegacyRoleCounts = if ($uia.ContainsKey('legacyRoles')) { $uia.legacyRoles } else { @{} }
+    $report.uiaLegacyPatternAvailable = if ($uia.ContainsKey('legacyPatternAvailable')) { $uia.legacyPatternAvailable } else { $false }
+    $report.uiaProviderProcessMismatchCount = if ($uia.ContainsKey('providerProcessMismatchCount')) { $uia.providerProcessMismatchCount } else { 0 }
+    $report.uiaViews = if ($uia.ContainsKey('views')) { @($uia.views) } else { @() }
     $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
     $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory
   } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
