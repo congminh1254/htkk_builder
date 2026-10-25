@@ -819,8 +819,9 @@ try {
     $report.privateSyntheticLoginDiagnostic=Save-HtkkSyntheticWindowDiagnostic -RootProcessId $process.Id -RootStartTime $rootStartTime -ExpectedHtkkExecutable $exe -LoginReport $report.syntheticLogin -RunId $env:GITHUB_RUN_ID -ReferenceExecutable $referencePreparation.hostPath -ReferenceSha256 $referencePreparation.hostSha256 -GuiReport $report.guiReferenceAutomation
    }}catch{$report.privateSyntheticLoginDiagnostic=@{status='capture-unavailable';captured=$false;realTaxpayerDataUsed=$false;publicScreenshot=$false}}
   }
+  $supplierStopped=$false
   if($null -ne $process) {
-    try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null } } catch { }
+    try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null }; $supplierStopped=$process.HasExited } catch { }
     $process.Dispose()
   }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {
@@ -829,8 +830,37 @@ try {
       Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
       Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Business.dll') '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
       Assert-Hash ($exe+'.config') 'b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
+      if($GuiAutomation -eq 'gtgt-export-inspect') {
+        Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Utilities.dll') 'ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec'
+        Assert-Hash (Join-Path (Split-Path $exe) 'FarPoint.Win.Spread.dll') '2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'
+        Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.ComputeHash.dll') 'd9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5'
+      }
       $report.originalSourcesUnmodified=$true
     } catch { $report.originalSourcesUnmodified=$false; $report.stage='blocked'; $report['blockedReason']='ORIGINAL_SOURCE_CHANGED' }
+  }
+  if($GuiAutomation -eq 'gtgt-export-inspect' -and $report.stage -eq 'synthetic-original-gtgt-export-inspected') {
+    $evidenceCreated=$false
+    try {
+      $gui=$report.guiReferenceAutomation
+      if(-not $supplierStopped -or -not $report.originalSourcesUnmodified -or $gui.status -cne 'matched' -or $env:GITHUB_REPOSITORY -cne 'congminh1254/htkk_builder' -or $env:GITHUB_SHA -cnotmatch '^[0-9a-f]{40}$' -or $env:GITHUB_RUN_ID -notmatch '^[0-9]{1,20}$') { throw 'STAGING_NOT_VERIFIED' }
+      foreach($flag in @('exportSchemaPinnedVerified','exportCommandInvoked','exportSelectorMatched','exportButtonInvoked','exportDialogMatched','exportDestinationFresh','exportFilenameKeyboardCommitted','exportDialogSubmitted','exportFileExists','exportXmlRootMatched','exportSyntheticIdentityMatched','exportSuccessAcknowledged','exportOriginalPathMatched')) { if($gui[$flag] -isnot [bool] -or -not $gui[$flag]) { throw 'STAGING_NOT_VERIFIED' } }
+      $original=Join-Path (Split-Path $exe) 'DataFiles/9999999997/reference-output/01GTGT.xml'
+      $originalFile=Get-Item -LiteralPath $original
+      foreach($directory in @($originalFile.Directory,$originalFile.Directory.Parent,$originalFile.Directory.Parent.Parent)) { if($directory.Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'STAGING_NOT_VERIFIED' } }
+      if($originalFile.Attributes -band [IO.FileAttributes]::ReparsePoint -or $originalFile.Length -lt 1 -or $originalFile.Length -gt 262144 -or $originalFile.Length -ne $gui.exportBytes) { throw 'STAGING_NOT_VERIFIED' }
+      Assert-Hash $original $gui.exportSha256
+      $evidence=Join-Path $env:RUNNER_TEMP 'htkk-gtgt-export-evidence'
+      if(Test-Path -LiteralPath $evidence) { throw 'STAGING_NOT_VERIFIED' }
+      New-Item -ItemType Directory -Path $evidence | Out-Null
+      $evidenceCreated=$true
+      Copy-Item -LiteralPath $original -Destination (Join-Path $evidence '01GTGT.xml')
+      Assert-Hash (Join-Path $evidence '01GTGT.xml') $gui.exportSha256
+      [ordered]@{format='htkk-gtgt-export-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';originalSourcesUnmodified=$true;inputsSynthetic=$true;guiExportInvoked=$true;originalExportSucceeded=$true;originalExporterValidatedSchema=$true;fullRoundTrip=$false;originalOutputSha256=$gui.exportSha256;originalOutputBytes=[int]$originalFile.Length} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $evidence 'provenance.json') -Encoding utf8NoBOM
+      $report.privateGtgtExportEvidence=@{status='staged';rawBytesPreserved=$true;fullRoundTrip=$false}
+    } catch {
+      if($evidenceCreated) { Remove-Item -LiteralPath $evidence -Recurse -Force -ErrorAction SilentlyContinue }
+      $report.privateGtgtExportEvidence=@{status='not-staged';rawBytesPreserved=$false;fullRoundTrip=$false}
+    }
   }
   foreach($registration in $registrationProcesses) { try { $registration.Dispose() } catch { } }
   foreach($rule in $firewallNames) { Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue }

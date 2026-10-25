@@ -11,7 +11,7 @@ using System.Windows.Forms;
 using System.Xml;
 public sealed partial class HtkkGuiReferenceAutomation {
  private bool exportStarted=false,exportCommandInvoked=false,exportSelectorMatched=false,exportButtonInvoked=false,exportDialogMatched=false,exportDestinationFresh=false,exportDialogSubmitted=false,exportFileExists=false,exportXmlRootMatched=false,exportSyntheticIdentityMatched=false,exportSuccessAcknowledged=false;
- private bool exportFilenameEditing=false,exportFilenameKeyboardCommitted=false;private string exportFilenameParentKind="not-observed";private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
+ private bool exportFilenameEditing=false,exportFilenameKeyboardCommitted=false;private string exportFilenameParentKind="not-observed";private bool exportSchemaPinnedVerified=false;private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
  private int exportBytes=0;private string exportSha256="",exportPath="",expectedSaveTitle="";
  private System.Windows.Forms.Timer exportWatcher=null;
  private delegate bool WindowVisitor(IntPtr window,IntPtr parameter);
@@ -37,6 +37,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"exportCommandInvoked","exportSelectorMatched","exportButtonInvoked","exportDialogMatched","exportDestinationFresh","exportDialogSubmitted","exportFileExists","exportXmlRootMatched","exportSyntheticIdentityMatched","exportSuccessAcknowledged"};
   bool[] values=new bool[]{exportCommandInvoked,exportSelectorMatched,exportButtonInvoked,exportDialogMatched,exportDestinationFresh,exportDialogSubmitted,exportFileExists,exportXmlRootMatched,exportSyntheticIdentityMatched,exportSuccessAcknowledged};StringBuilder json=new StringBuilder();string q=((char)34).ToString();
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
+  json.Append(","+q+"exportSchemaPinnedVerified"+q+":"+Bool(exportSchemaPinnedVerified));
   json.Append(","+q+"exportFilenameKeyboardCommitted"+q+":"+Bool(exportFilenameKeyboardCommitted)+","+q+"exportFilenameParentKind"+q+":"+q+exportFilenameParentKind+q);
   json.Append(","+q+"exportOriginalPathMatched"+q+":"+Bool(exportOriginalPathMatched)+","+q+"exportOriginalPathKind"+q+":"+q+exportOriginalPathKind+q+","+q+"exportScopedFileCount"+q+":"+exportScopedFileCount+","+q+"exportScopedXmlCount"+q+":"+exportScopedXmlCount);
   json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);return json.ToString();
@@ -45,6 +46,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void StartOriginalGtgtExport(Form owner){
   if(exportStarted)return;exportStarted=true;
   if(!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtIdentity||!gtgtSigner||!gtgtZero||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
+  string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd");
+  string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
+  exportSchemaPinnedVerified=!String.IsNullOrEmpty(originalSchema)&&String.Equals(Path.GetFullPath(originalSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)&&Hash(schema)=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003"&&Hash(Path.Combine(project,"TAX.HTKK.ComputeHash.dll"))=="d9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5";
+  if(!exportSchemaPinnedVerified)throw new InvalidOperationException();
   string directory=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),"reference-output");if(Directory.Exists(directory)||File.Exists(directory))throw new InvalidOperationException();Directory.CreateDirectory(directory);exportPath=Path.Combine(directory,"01GTGT.xml");exportDestinationFresh=!File.Exists(exportPath);
   Assembly utilities=null;foreach(Assembly loaded in AppDomain.CurrentDomain.GetAssemblies())if(loaded.GetName().Name=="TAX.HTKK.Utilities")utilities=loaded;if(utilities==null)throw new InvalidOperationException();
   Type configuration=utilities.GetType("TAX.HTKK.Utilities.Core.HTKKConfig",true);PropertyInfo temporary=configuration.GetProperty("PATH_TEMP",BindingFlags.Public|BindingFlags.Static);if(temporary==null)throw new InvalidOperationException();expectedSaveTitle="Tệp XML kết xuất tới thư mục "+Convert.ToString(temporary.GetValue(null,null),CultureInfo.InvariantCulture);

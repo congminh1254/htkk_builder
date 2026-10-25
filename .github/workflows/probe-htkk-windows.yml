@@ -43,6 +43,9 @@ jobs:
       - name: Check safe reference-result boundary
         shell: pwsh
         run: ./scripts/Test-HtkkSafeGuiReferenceResult.ps1
+      - name: Test private GUI XML evidence boundaries without network
+        shell: pwsh
+        run: python -m unittest discover -s scripts -p test_gtgt_export_evidence.py
       - name: Kiểm tra nguồn và điều kiện Windows
         shell: pwsh
         env:
@@ -72,5 +75,11 @@ jobs:
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-common-header-evidence.py
+      - name: Retain verified synthetic GTGT export privately
+        if: always() && inputs.install_and_probe && inputs.gui_automation == 'gtgt-export-inspect'
+        shell: pwsh
+        env:
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/publish-gtgt-export-evidence.py
       # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
       # Only bounded verified supplier windows may enter the fixed PRIVATE diagnostic branch.
