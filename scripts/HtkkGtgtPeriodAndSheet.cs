@@ -98,7 +98,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   foreach(Control child in root.Controls){if(visited>=512)break;FindWorksheets(child,forms,ref visited);}
  }
  private void InspectOriginalGtgtSheet(){
-  if(finished)return;
+  if(finished||exportStarted)return;
   List<Form> forms=new List<Form>();int visited=0;foreach(Form top in Application.OpenForms){if(visited>=512)break;if(top.Visible&&!top.IsDisposed)FindWorksheets(top,forms,ref visited);}
   if(forms.Count!=1){stage="waiting-gtgt-sheet";Record();return;}
   List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){stage="waiting-gtgt-sheet";Record();return;}
@@ -116,6 +116,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
+  if(matched&&mode=="gtgt-export-inspect"){StartOriginalGtgtExport(forms[0]);return;}
   finished=true;stage=matched?"gtgt-sheet-inspected":"gtgt-sheet-contract-not-matched";Record();
  }
  private void InspectMoneyZero(object sheet){
