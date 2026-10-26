@@ -24,6 +24,9 @@ jobs:
   build:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
     timeout-minutes: 60
     steps:
       - name: Checkout trusted builder
@@ -57,6 +60,19 @@ jobs:
           BUILD_MODE: ${{ inputs.mode }}
           ADSENSE_ENABLED: ${{ vars.ADSENSE_ENABLED }}
         run: python3 builder/scripts/build.py
+      - name: Publish fixed synthetic native inputs privately
+        if: inputs.mode == 'release'
+        env:
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: python3 builder/scripts/publish-htkk-web-inputs.py
+      - name: Dispatch immutable native regression cases
+        if: inputs.mode == 'release'
+        env:
+          BUILDER_ACTIONS_TOKEN: ${{ github.token }}
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: python3 builder/scripts/dispatch-native-cases.py
       - name: Publish static output to private source repository
         if: inputs.mode == 'release'
         env:
@@ -65,7 +81,7 @@ jobs:
         run: python3 builder/scripts/publish.py
       - name: Remove local source and diagnostic files
         if: always()
-        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output"
+        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output" "$RUNNER_TEMP/htkk-web-reference-zero-input" "$RUNNER_TEMP/htkk-web-reference-sale10-input" "$RUNNER_TEMP/htkk-web-input-publication.json"
   report:
     if: always() && github.ref == 'refs/heads/main'
     needs: build

@@ -131,16 +131,21 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
  try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),datetime.date(2026,10,25))
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
  return {'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False}
-def download(token,fetch=None,today=None,expected_source=None,expected_case=None):
+def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None):
+ if artifact_commit is not None:git_sha(artifact_commit,'SOURCE_COMMIT')
  if expected_case is not None and expected_case not in CASES:raise InputError('MANIFEST')
  if expected_source is not None:git_sha(expected_source,'SOURCE_COMMIT')
  if not isinstance(token,str) or not token:raise InputError('AUTH')
  fetch=fetch or api
  info=fetch('',token)
  if not isinstance(info,dict) or info.get('private') is not True or info.get('full_name')!=REPO:raise InputError('PRIVATE_REPO')
- ref=fetch('/git/ref/heads/'+BRANCH,token)
- if not isinstance(ref,dict) or ref.get('ref')!='refs/heads/'+BRANCH or not isinstance(ref.get('object'),dict) or ref['object'].get('type')!='commit':raise InputError('API_SHAPE')
- artifact_commit=git_sha(ref['object'].get('sha'))
+ if artifact_commit is None:
+  ref=fetch('/git/ref/heads/'+BRANCH,token)
+  if not isinstance(ref,dict) or ref.get('ref')!='refs/heads/'+BRANCH or not isinstance(ref.get('object'),dict) or ref['object'].get('type')!='commit':raise InputError('API_SHAPE')
+  artifact_commit=git_sha(ref['object'].get('sha'))
+ else:
+  pinned=fetch('/git/commits/'+artifact_commit,token)
+  if not isinstance(pinned,dict) or pinned.get('sha')!=artifact_commit:raise InputError('SOURCE_COMMIT')
  query='?ref='+artifact_commit
  manifest_body=content_file(fetch('/contents/manifest.json'+query,token),'manifest.json',MAX_MANIFEST)
  manifest=validate_manifest(manifest_body)
@@ -177,7 +182,8 @@ def main():
   expected=git_sha(os.environ.get('EXPECTED_WEB_SOURCE_SHA'),'SOURCE_COMMIT')
   case=os.environ.get('EXPECTED_WEB_CASE_ID')
   if case not in CASES:raise InputError('MANIFEST')
-  files=download(token,expected_source=expected,expected_case=case);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
+  artifact=os.environ.get('WEB_ARTIFACT_COMMIT') or None
+  files=download(token,expected_source=expected,expected_case=case,artifact_commit=artifact);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
   print(json.dumps({'format':'htkk-web-reference-input-fetch-status-v1','status':'staged','bytes':manifest['bytes'],'xmlSha256':manifest['xmlSha256'],'sourceCommit':manifest['sourceCommit']},separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')));raise SystemExit('Private synthetic web input unavailable; no XML, path, token or raw remote error published.')

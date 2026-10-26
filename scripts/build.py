@@ -20,6 +20,16 @@ try:
  env['CHROMIUM_PATH']=browser
  run(['npm','run','test:e2e'])
  if os.environ['BUILD_MODE']=='release':
+  # Actual source producer runs only after all CI checks, without credentials.
+  # These two directories contain fixed synthetic XML only; trusted publication
+  # independently revalidates the entire allowlist before any authenticated I/O.
+  reference_env=dict(env);reference_env['TMPDIR']=os.environ['RUNNER_TEMP']
+  for case,suffix in (('zero','zero'),('sale10','sale10')):
+   destination=pathlib.Path(os.environ['RUNNER_TEMP'])/('htkk-web-reference-'+suffix+'-input')
+   if destination.exists() or destination.is_symlink():raise RuntimeError()
+   with log.open('ab') as output:
+    result=subprocess.run(['node','scripts/generate-htkk-web-reference.mjs','--case',case,str(destination)],cwd=source,env=reference_env,stdout=output,stderr=subprocess.STDOUT)
+   if result.returncode:raise RuntimeError()
   # Public provenance only; no source files or diagnostics enter this manifest.
   sha=subprocess.run(['git','rev-parse','HEAD'],cwd=source,env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True).stdout.decode().strip()
   version=json.loads((source/'package.json').read_text())['version']

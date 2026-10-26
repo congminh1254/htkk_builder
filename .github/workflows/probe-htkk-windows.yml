@@ -19,6 +19,10 @@ on:
         options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026]
         default: 01GTGT-zero-M10-2026
         required: true
+      web_artifact_commit:
+        description: Immutable private synthetic artifact commit (optional for manual legacy input)
+        type: string
+        required: false
       web_source_sha:
         description: Private source commit required for the synthetic web XML import case
         type: string
@@ -66,11 +70,13 @@ jobs:
         if: inputs.install_and_probe && inputs.gui_automation == 'gtgt-web-import-inspect'
         shell: pwsh
         env:
+          WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
         run: python ./scripts/fetch-htkk-web-input.py
       - name: Kiểm tra nguồn và điều kiện Windows
+        id: native_probe
         shell: pwsh
         env:
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
@@ -107,5 +113,14 @@ jobs:
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-gtgt-export-evidence.py
+      - name: Report fixed native-case status privately
+        if: always() && inputs.install_and_probe && inputs.gui_automation == 'gtgt-web-import-inspect'
+        shell: pwsh
+        env:
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          COMMIT_SHA: ${{ inputs.web_source_sha }}
+          WEB_CASE_ID: ${{ inputs.web_case_id }}
+          PROBE_RESULT: ${{ steps.native_probe.outcome }}
+        run: python ./scripts/report-native-case.py
       # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
       # Only bounded verified supplier windows may enter the fixed PRIVATE diagnostic branch.
