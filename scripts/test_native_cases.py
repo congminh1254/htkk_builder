@@ -72,3 +72,14 @@ class NativeWorkflowCredentials(unittest.TestCase):
     self.assertFalse(enabled(name,mode,install=False));self.assertFalse(enabled(name,mode,safe='false'))
   self.assertFalse(enabled(raw,'gtgt-web-import-inspect',stopped='false'))
   self.assertFalse(enabled(raw,'gtgt-web-import-inspect',artifact=''))
+
+class NativeManifestFormatRouting(unittest.TestCase):
+ def test_powershell_staging_routes_every_fixed_case_to_its_exact_manifest(self):
+  reader=load('native_manifest_reader_test','fetch-htkk-web-input.py')
+  script=(ROOT/'probe-htkk-windows.ps1').read_text()
+  table=re.search(r'\$expectedFormats=@\{(.*?)\n      \}',script,re.S)
+  self.assertIsNotNone(table)
+  pairs=re.findall(r"'([^']+)'='([^']+)'",table.group(1))
+  self.assertEqual(len(pairs),len(reader.CASES))
+  self.assertEqual(dict(pairs),reader.CASES)
+  self.assertIn('$expectedFormat=$expectedFormats[$env:EXPECTED_WEB_CASE_ID]',script)
