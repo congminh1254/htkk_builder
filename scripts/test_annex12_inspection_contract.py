@@ -33,3 +33,15 @@ class AnnexInspectionContract(unittest.TestCase):
   guarded=set(re.findall(r"'([^']+)'",re.search(r'\$guiAutomation -notin @\(([^)]+)\)',workflow).group(1)))
   self.assertEqual(declared,{'none',*MODES})
   self.assertEqual(guarded,declared)
+
+ def test_annex_selector_uses_both_original_checkbox_captions_not_a_label_column(self):
+  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  expression=re.search(r'bool Annex12CaptionMatched\([^)]*\)\{return ([^;]+);\}',source).group(1).replace('&&',' and ')
+  tree=ast.parse(expression,mode='eval')
+  for node in ast.walk(tree):self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.And,ast.Compare,ast.Eq,ast.Name,ast.Load,ast.Constant))
+  valid={'typeName':'FarPoint.Win.Spread.CellType.CheckBoxCellType','uncheckedText':'01-2/GTGT','checkedText':'01-2/GTGT'}
+  self.assertTrue(eval(compile(tree,'<real annex selector>','eval'),{'__builtins__':{}},valid))
+  for key in valid:
+   bad={**valid,key:'unmatched'}
+   self.assertFalse(eval(compile(tree,'<real annex selector>','eval'),{'__builtins__':{}},bad))
+  self.assertIn('columnCount<1||columnCount>16',source)

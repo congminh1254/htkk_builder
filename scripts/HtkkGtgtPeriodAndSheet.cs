@@ -30,14 +30,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int[] counts=new int[]{annex12SelectionActionCount,annex12SheetRows,annex12SheetColumns,annex12NumericCount,annex12NumericEmptyMask,annex12NumericNonzeroMask,annex12GroupCount,annex12FirstGroupId,annex12FirstGroupRows};
   for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString();
  }
+ private static bool Annex12CaptionMatched(string typeName,string uncheckedText,string checkedText){return typeName=="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&uncheckedText=="01-2/GTGT"&&checkedText=="01-2/GTGT";}
  private void SelectOriginalAnnex12(Control grid,object sheet){
   if(mode!="gtgt-annex12-inspect"||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   string root=Path.GetDirectoryName(project);
   annex12SourcePinsMatched=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_283.xml"))=="9512dcfef9551892d132fd905250427c580a1320f77318ab048d6d26fd3a32e5"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_xml_283.xml"))=="9dafb55263fa2729383cf57bc73f3b97cf48dc9a28632a596806ad0afe8f17d3"&&Hash(Path.Combine(root,"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd"))=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003";
   if(!annex12SourcePinsMatched)throw new InvalidOperationException();
   int rowCount=Convert.ToInt32(Get(sheet,"RowCount")),columnCount=Convert.ToInt32(Get(sheet,"ColumnCount")),target=-1;
-  if(rowCount<1||rowCount>512||columnCount<2||columnCount>16)throw new InvalidOperationException();
-  for(int row=0;row<rowCount;row++){bool rowMatched=false;for(int column=1;column<columnCount;column++)if(CellText(sheet,row,column).Trim()=="01-2/GTGT")rowMatched=true;if(rowMatched){if(target>=0)throw new InvalidOperationException();target=row;}}
+  if(rowCount<1||rowCount>512||columnCount<1||columnCount>16)throw new InvalidOperationException();
+  for(int row=0;row<rowCount;row++){object selector=Get(Cell(sheet,row,0),"CellType");bool rowMatched=selector!=null&&Annex12CaptionMatched(selector.GetType().FullName,Convert.ToString(Get(selector,"TextFalse"),CultureInfo.InvariantCulture),Convert.ToString(Get(selector,"TextTrue"),CultureInfo.InvariantCulture));if(rowMatched){if(target>=0)throw new InvalidOperationException();target=row;}}
   if(target<0||!RowVisible(sheet,target)||Selected(Get(Cell(sheet,target,0),"Value"))||Convert.ToBoolean(Get(Cell(sheet,target,0),"Locked")))throw new InvalidOperationException();
   object type=Get(Cell(sheet,target,0),"CellType");if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")throw new InvalidOperationException();
   grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{target,0});
