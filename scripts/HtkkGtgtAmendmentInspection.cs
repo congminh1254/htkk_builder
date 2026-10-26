@@ -21,8 +21,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"amendmentPriorFileBytes"+q+":"+amendmentPriorFileBytes+","+q+"amendmentPriorFileSha256"+q+":"+q+amendmentPriorFileSha256+q+","+q+"amendmentLifecycleVerified"+q+":false");return json.ToString();
  }
  // GetFileNameBySheet060000A2 monthlyD1 + GetNameNopTheoTinhCQT060000A3:
- // source menu NopTheoTinhCQT=3 => CQTQL10129; TieuMuc1701; M10/2026; XML2.8.3.
- private const string OriginalPriorFileName="01_GTGT_TT80_CQTQL10129_1701_102026_283.xml";
+ // source menu NopTheoTinhCQT=3 => CQTQL10129; TieuMucHachToanVal00 (internal activity); M10/2026; XML2.8.3.
+ private const string OriginalPriorFileName="01_GTGT_TT80_CQTQL10129_00_102026_283.xml";
  private FileInfo[] OriginalPriorCandidates(){
   DirectoryInfo directory=new DirectoryInfo(amendmentPriorDirectory);if(!directory.Exists||(directory.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException();
   FileInfo[] all=directory.GetFiles("*.xml",SearchOption.TopDirectoryOnly);if(all.Length>64)throw new InvalidOperationException();List<FileInfo> found=new List<FileInfo>();
@@ -35,6 +35,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // periodNoAnnexMatched and annexSelected==0 (native run40419346023).
   if(mode!="gtgt-amendment-inspect"||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));if(!gtgtBusinessInstanceMatched||!gtgtAutoCalculationReady)throw new InvalidOperationException();
+  // GetPeriodInfo060004E2 (KieuKy19,1356-137C) sets this misleadingly named
+  // internal field from cboNganhKD.SelectedValue00, not exported accounting1701.
+  object priorPeriod=Global("TTPeriodInfo");
+  if(Convert.ToString(Get(priorPeriod,"TieuMucHachToanVal"),CultureInfo.InvariantCulture)!="00"||Convert.ToString(Get(priorPeriod,"maCQTQuanLy"),CultureInfo.InvariantCulture)!="10129"||Convert.ToString(Get(Global("ToKhaiInfo"),"VersionXML"),CultureInfo.InvariantCulture)!="2.8.3")throw new InvalidOperationException();
   amendmentPriorDirectory=Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst));
   if(OriginalPriorCandidates().Length!=0)throw new InvalidOperationException();
   ReadSavedHeader();if(!headerMatched||headerChecks!=8||headerMismatchMask!=0)throw new InvalidOperationException();

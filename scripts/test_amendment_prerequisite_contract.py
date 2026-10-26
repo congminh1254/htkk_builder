@@ -73,12 +73,13 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
   actual=re.search(r'OriginalPriorFileName="([^"]+)"',source).group(1)
   # Source060000A3 maps NopTheoTinhCQT3 to CQTQL+authority;060000A2
-  # monthlyD1 concatenates code, tax item, month+year and dotless XMLversion.
-  expected='01_GTGT_TT80'+'_CQTQL'+'10129'+'_'+'1701'+'_'+'10'+'2026'+'_'+'2.8.3'.replace('.','')+'.xml'
+  # monthlyD1 concatenates code, internal activity00, month+year and dotless XMLversion.
+  # GetPeriodInfo060004E2 at1356-137C uses cboNganhKD.SelectedValue, not XML1701.
+  expected='01_GTGT_TT80'+'_CQTQL'+'10129'+'_'+'00'+'_'+'10'+'2026'+'_'+'2.8.3'.replace('.','')+'.xml'
   self.assertEqual(actual,expected)
   self.assertIn('String.Equals(file.Name,OriginalPriorFileName,StringComparison.Ordinal)',source)
   self.assertNotIn('Regex.IsMatch(file.Name',source)
-  for wrong in ('01_GTGT_TT80_1701_102026_283.xml',expected.replace('10129','10100'),expected.replace('_102026_','_092026_'),'bs1_'+expected,expected+'.bak'):
+  for wrong in ('01_GTGT_TT80_1701_102026_283.xml',expected.replace('10129','10100'),expected.replace('_102026_','_092026_'),expected.replace('_00_','_1701_'),'bs1_'+expected,expected+'.bak'):
    self.assertNotEqual(actual,wrong)
 
  def test_all_emitted_fixed_amendment_stages_are_accepted_by_actual_reader(self):
@@ -89,3 +90,10 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   emitted=set(re.findall(r'"([^"]+)"',assignments))
   self.assertGreater(len(emitted),10)
   self.assertFalse(emitted-allowed,'Reader would hide diagnostic stage: '+str(emitted-allowed))
+
+ def test_saved_filename_internal_activity_is_verified_independently_of_exported_accounting(self):
+  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  self.assertIn('Get(priorPeriod,"TieuMucHachToanVal"),CultureInfo.InvariantCulture)!="00"',source)
+  self.assertIn('Get(priorPeriod,"maCQTQuanLy"),CultureInfo.InvariantCulture)!="10129"',source)
+  self.assertLess(source.index('object priorPeriod=Global("TTPeriodInfo")'),source.index('OriginalPriorCandidates().Length!=0'))
+  self.assertNotIn('01_GTGT_TT80_CQTQL10129_1701_102026_283.xml',source)
