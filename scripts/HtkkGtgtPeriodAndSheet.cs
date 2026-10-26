@@ -102,23 +102,23 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Fixed synthetic input scenario, separate from the already proved row-only mode.
  // These methods edit public ORIGINAL controls. Hidden codes and computed totals
  // are read afterwards; they are never assigned by the reference host.
- private bool annex12InputIdentityMatched=false,annex12InputTypesMatched=false,annex12InputGeographyMatched=false,annex12InputTaxAuthoritiesMatched=false,annex12InputPercentagesMatched=false,annex12InputZeroTaxMatched=false;
+ private bool annex12InputReadOnlyIdentityMatched=false,annex12InputIdentityMatched=false,annex12InputTypesMatched=false,annex12InputGeographyMatched=false,annex12InputTaxAuthoritiesMatched=false,annex12InputPercentagesMatched=false,annex12InputZeroTaxMatched=false;
  private int annex12InputActionCount=0;
  private string Annex12InputJson(){
   string q=((char)34).ToString();StringBuilder result=new StringBuilder();
-  string[] names=new string[]{"annex12InputIdentityMatched","annex12InputTypesMatched","annex12InputGeographyMatched","annex12InputTaxAuthoritiesMatched","annex12InputPercentagesMatched","annex12InputZeroTaxMatched"};
-  bool[] flags=new bool[]{annex12InputIdentityMatched,annex12InputTypesMatched,annex12InputGeographyMatched,annex12InputTaxAuthoritiesMatched,annex12InputPercentagesMatched,annex12InputZeroTaxMatched};
+  string[] names=new string[]{"annex12InputReadOnlyIdentityMatched","annex12InputIdentityMatched","annex12InputTypesMatched","annex12InputGeographyMatched","annex12InputTaxAuthoritiesMatched","annex12InputPercentagesMatched","annex12InputZeroTaxMatched"};
+  bool[] flags=new bool[]{annex12InputReadOnlyIdentityMatched,annex12InputIdentityMatched,annex12InputTypesMatched,annex12InputGeographyMatched,annex12InputTaxAuthoritiesMatched,annex12InputPercentagesMatched,annex12InputZeroTaxMatched};
   for(int index=0;index<names.Length;index++)result.Append(","+q+names[index]+q+":"+Bool(flags[index]));
   return result.ToString()+","+q+"annex12InputActionCount"+q+":"+annex12InputActionCount.ToString(CultureInfo.InvariantCulture);
  }
  private void Annex12InputOwner(Control grid,object annex){
   Form owner=grid.FindForm();uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
-  if(mode!="gtgt-annex12-input-inspect"||Global("InstanceClass")==null||Global("InstanceClass").GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(annex,"AutoCalculation"))||!annex12RowAfterMatched||annex12InputActionCount<0||annex12InputActionCount>16||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||!grid.ContainsFocus||Get(grid,"ActiveSheet")!=annex||pid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible()||Convert.ToInt32(Get(annex,"RowCount"))!=67||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)throw new InvalidOperationException();
+  if(mode!="gtgt-annex12-input-inspect"||Global("InstanceClass")==null||Global("InstanceClass").GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(annex,"AutoCalculation"))||!annex12RowAfterMatched||annex12InputActionCount<0||annex12InputActionCount>14||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||!grid.ContainsFocus||Get(grid,"ActiveSheet")!=annex||pid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible()||Convert.ToInt32(Get(annex,"RowCount"))!=67||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)throw new InvalidOperationException();
  }
  private void EditAnnex12FixedInput(Control grid,object annex,int index){
   // Source template locations, zero based. Parent tax remains its source default 0.
-  int[,] locations=new int[,]{{42,4},{42,9},{43,2},{43,4},{43,12},{43,16},{43,17},{43,18},{43,20},{44,2},{44,4},{44,12},{44,16},{44,17},{44,18},{44,20}};
-  string[] inputs=new string[]{"NHA MAY GIA LAP - KHONG NOP","9999999997-001","Nơi có văn phòng điều hành nhà máy","VAN PHONG GIA LAP - KHONG NOP","Thành phố Hà Nội","Phường Sơn Tây","Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","50","Nơi có nhà máy thủy điện (khác nơi có văn phòng điều hành)","DIA BAN GIA LAP - KHONG NOP","Thành phố Hà Nội","Phường Sơn Tây","Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","50"};
+  int[,] locations=new int[,]{{42,4},{42,9},{43,2},{43,12},{43,16},{43,17},{43,18},{43,20},{44,2},{44,12},{44,16},{44,17},{44,18},{44,20}};
+  string[] inputs=new string[]{"NHA MAY GIA LAP - KHONG NOP","9999999997-001","Nơi có văn phòng điều hành nhà máy","Thành phố Hà Nội","Phường Sơn Tây","Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","50","Nơi có nhà máy thủy điện (khác nơi có văn phòng điều hành)","Thành phố Hà Nội","Phường Sơn Tây","Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","50"};
   if(index<0||index>=inputs.Length||index!=annex12InputActionCount)throw new InvalidOperationException();
   int row=locations[index,0],column=locations[index,1];string value=inputs[index];bool combo=column==2||column==12||column==16||column==17||column==18;
   grid.Focus();Annex12InputOwner(grid,annex);if(Convert.ToBoolean(Get(Cell(annex,row,column),"Locked")))throw new InvalidOperationException();
@@ -144,8 +144,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static bool Annex12NumberMatched(object sheet,int row,int column,decimal expected){decimal actual;return Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)&&actual==expected;}
  private void InspectOriginalAnnex12Inputs(Control grid,object annex){
   if(annex12InputActionCount!=0)throw new InvalidOperationException();
-  for(int index=0;index<16;index++)EditAnnex12FixedInput(grid,annex,index);
+  for(int index=0;index<14;index++)EditAnnex12FixedInput(grid,annex,index);
   annex12InputIdentityMatched=CellText(annex,42,4)=="NHA MAY GIA LAP - KHONG NOP"&&CellText(annex,42,9)=="9999999997-001";
+  annex12InputReadOnlyIdentityMatched=true;
+  for(int row=43;row<=44;row++)foreach(int column in new int[]{4,9})if(!Convert.ToBoolean(Get(Cell(annex,row,column),"Locked"))||CellText(annex,row,column)!=String.Empty)annex12InputReadOnlyIdentityMatched=false;
   annex12InputTypesMatched=CellText(annex,43,32)=="01"&&CellText(annex,44,32)=="02";
   annex12InputGeographyMatched=true;annex12InputTaxAuthoritiesMatched=true;
   for(int row=43;row<=44;row++){

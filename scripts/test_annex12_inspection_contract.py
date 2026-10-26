@@ -98,7 +98,7 @@ class AnnexFixedInputsInspectionContract(unittest.TestCase):
   block=source[source.index(' private void EditAnnex12FixedInput('):source.index(' private static bool Annex12NumberMatched(')]
   coordinates=re.search(r'int\[,] locations=new int\[,]\{([^;]+)\};',block).group(1)
   pairs=[tuple(map(int,pair)) for pair in re.findall(r'\{(\d+),(\d+)\}',coordinates)]
-  self.assertEqual(pairs,[(42,4),(42,9),(43,2),(43,4),(43,12),(43,16),(43,17),(43,18),(43,20),(44,2),(44,4),(44,12),(44,16),(44,17),(44,18),(44,20)])
+  self.assertEqual(pairs,[(42,4),(42,9),(43,2),(43,12),(43,16),(43,17),(43,18),(43,20),(44,2),(44,12),(44,16),(44,17),(44,18),(44,20)])
   # No ct10, computed subtotal, hidden code, XML or runtime model is assigned.
   self.assertNotIn('SetValue',block);self.assertNotIn('editor.Text=',block)
   self.assertNotRegex(block,r'SetPublic\([^,]+,"(?:Value|Text|Formula|Locked)"')
@@ -112,12 +112,22 @@ class AnnexFixedInputsInspectionContract(unittest.TestCase):
   self.assertNotIn('Export',block);self.assertNotIn('Save',block)
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
   line=next(x for x in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-input-inspect'){$matched=" in x)
-  for term in ('annex12InputActionCount -eq 16','annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):self.assertIn(term,line)
+  for term in ('annex12InputActionCount -eq 14','annex12InputReadOnlyIdentityMatched','annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):self.assertIn(term,line)
  def test_input_report_is_bounded_and_rejected_outside_its_own_mode(self):
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
-  self.assertIn('annex12InputActionCount=16;',reader)
-  for key in ('annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):
+  self.assertIn('annex12InputActionCount=14;',reader)
+  for key in ('annex12InputReadOnlyIdentityMatched','annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):
    self.assertIn(key+'=$false;',fixture)
   self.assertIn("$ExpectedMode -cne 'gtgt-annex12-input-inspect'",reader)
-  self.assertIn("@('annex12InputActionCount',17)",fixture)
+  self.assertIn("@('annex12InputActionCount',15)",fixture)
   self.assertLess(fixture.index('$inputCase=[ordered]'),fixture.index('}finally{'))
+
+ def test_source_locked_child_identity_is_observed_without_unlock_or_input(self):
+  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  block=source[source.index(' private void InspectOriginalAnnex12Inputs('):source.index(' private static bool Annex12CaptionMatched')]
+  self.assertIn('for(int row=43;row<=44;row++)foreach(int column in new int[]{4,9})',block)
+  self.assertIn('!Convert.ToBoolean(Get(Cell(annex,row,column),"Locked"))||CellText(annex,row,column)!=String.Empty',block)
+  self.assertIn('annex12InputReadOnlyIdentityMatched=false',block)
+  self.assertNotIn('SetPublic',block);self.assertNotIn('SetValue',block)
+  documentation=(ROOT.parent/'ANNEX12-INPUT-PROBE.md').read_text()
+  self.assertIn('E44:H44 (ct05)',documentation);self.assertIn('J44:L44',documentation)
