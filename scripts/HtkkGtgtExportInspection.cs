@@ -46,7 +46,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void StartOriginalGtgtExport(Form owner){
   if(exportStarted)return;exportStarted=true;roundtripOwner=owner;
   if(mode=="gtgt-web-import-inspect"){stage="gtgt-web-input-checking";Record();VerifyOwnWebInput();}
-  if(!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtIdentity||!gtgtSigner||!gtgtZero||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
+  if(!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtIdentity||!gtgtSigner||!gtgtCaseMoneyMatched||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
   string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd");
   string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
   exportSchemaPinnedVerified=!String.IsNullOrEmpty(originalSchema)&&String.Equals(Path.GetFullPath(originalSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)&&Hash(schema)=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003"&&Hash(Path.Combine(project,"TAX.HTKK.ComputeHash.dll"))=="d9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5";

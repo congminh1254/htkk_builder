@@ -65,7 +65,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object sheets=Get(grids[0],"Sheets");PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object sheet=item.GetValue(sheets,new object[]{0});
   if(Convert.ToInt32(Get(sheet,"RowCount"))!=72||Convert.ToInt32(Get(sheet,"ColumnCount"))!=24||CellText(sheet,9,3)!=FakeName||CellText(sheet,10,3).Replace("-",String.Empty)!=Mst||CellText(sheet,63,10)!=FakeSigner)return false;
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!="D1"||Convert.ToString(Get(Global("ToKhaiInfo"),"VersionXML"),CultureInfo.InvariantCulture)!="2.8.3")return false;
-  InspectMoneyZero(sheet);roundtripImportCheckedMoneyCount=27-gtgtEmptyMoney;return gtgtZero&&roundtripImportCheckedMoneyCount==27;
+  InspectMoneyZero(sheet);InspectCaseMoney(sheet);roundtripImportCheckedMoneyCount=27-gtgtEmptyMoney;return gtgtCaseMoneyMatched&&roundtripImportCheckedMoneyCount==27;
  }
  private static XmlDocument ReadBoundedOriginalXml(string path){
   FileInfo file=new FileInfo(path);if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length<1||file.Length>262144)throw new InvalidOperationException();

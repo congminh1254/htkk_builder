@@ -125,7 +125,8 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
   }
  }
- private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage){
+ private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage){Edit(spread,sheet,row,column,value,isCombo,nextStage,true);}
+ private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage,bool profileInput){
   stage=nextStage;Record();spread.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{row,column});
   spread.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(spread,new object[]{EventArgs.Empty,false});
   Control editor=Get(spread,"EditingControl") as Control;if(editor==null)throw new InvalidOperationException();
@@ -150,7 +151,8 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    }
   }else{editorKind=editor is TextBoxBase?"text-box":"other-control";editor.Text=value;}
   spread.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(spread,null);
-  if(CellText(sheet,row,column)!=value)throw new InvalidOperationException();inputCount++;Record();
+  if(profileInput){if(CellText(sheet,row,column)!=value)throw new InvalidOperationException();inputCount++;}
+  else{decimal actual,expected;if(!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)throw new InvalidOperationException();webCaseEditCount++;}Record();
  }
  private static void SetPublic(object target,string name,object value){PropertyInfo p=target.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance);if(p==null||!p.CanWrite)throw new InvalidOperationException();p.SetValue(target,value,null);}
  private static Control FindVendorCombo(Control root,int depth){

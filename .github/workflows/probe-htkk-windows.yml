@@ -13,6 +13,12 @@ on:
         options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-export-inspect, gtgt-roundtrip-inspect, gtgt-web-import-inspect]
         default: none
         required: true
+      web_case_id:
+        description: Fixed synthetic declaration case (no user data)
+        type: choice
+        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026]
+        default: 01GTGT-zero-M10-2026
+        required: true
       web_source_sha:
         description: Private source commit required for the synthetic web XML import case
         type: string
@@ -61,11 +67,13 @@ jobs:
         shell: pwsh
         env:
           SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
         run: python ./scripts/fetch-htkk-web-input.py
       - name: Kiểm tra nguồn và điều kiện Windows
         shell: pwsh
         env:
+          EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
           PROBE_INSTALL: ${{ inputs.install_and_probe }}
           PROBE_RUNTIME_HOST: ${{ inputs.runtime_host }}

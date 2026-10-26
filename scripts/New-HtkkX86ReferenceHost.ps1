@@ -16,7 +16,7 @@ function New-HtkkX86ReferenceHost {
     compilerTrustVerified=$false; compilerExitCode=$null; compilerErrorCodes=@()
     hostPath=$null; hostSha256=$null; hostConfigPath=$null; resultPath=$null
     arguments=@(); createdPaths=@(); compilerDirectory=$null
-    webImportInputPath=$null; webImportInputHashPath=$null; webImportSourceShaPath=$null
+    webImportInputPath=$null; webImportInputHashPath=$null; webImportCasePath=$null; webImportSourceShaPath=$null
     guiAutomationMode=$GuiAutomation; guiAutomationResultPath=$null; guiAutomationPermitPath=$null
     originalExecutableModified=$false; originalConfigurationModified=$false
     secondaryDomainUsesOriginalConfiguration=$true; runtimeRoundTrip=$false
@@ -54,8 +54,8 @@ function New-HtkkX86ReferenceHost {
     $automationPermitFile=$program+'.gui-automation.allow'
     $candidates=@($program,$hostConfig,$resultFile,$automationResultFile,$automationPermitFile)
     if($GuiAutomation -eq 'gtgt-web-import-inspect'){
-      $safe.webImportInputPath=$program+'.web-input.xml';$safe.webImportInputHashPath=$program+'.web-input.sha256';$safe.webImportSourceShaPath=$program+'.web-source.sha'
-      $candidates+=@($safe.webImportInputPath,$safe.webImportInputHashPath,$safe.webImportSourceShaPath)
+      $safe.webImportCasePath=$program+'.web-case.id';$safe.webImportInputPath=$program+'.web-input.xml';$safe.webImportInputHashPath=$program+'.web-input.sha256';$safe.webImportSourceShaPath=$program+'.web-source.sha'
+      $candidates+=@($safe.webImportInputPath,$safe.webImportInputHashPath,$safe.webImportSourceShaPath,$safe.webImportCasePath)
     }
     foreach($path in $candidates) { if(Test-Path -LiteralPath $path) { $safe.status='owned-path-already-exists'; return $safe } }
     # Claim only the previously absent unique names; a refusal above must never

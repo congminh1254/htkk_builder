@@ -11,6 +11,10 @@ def web_fixture():
  for child in service:child.text=w.SERVICE[child.tag[len(ns):]]
  for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text='2026-10-25'
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
+def sale_fixture():
+ root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
+ for name,value in w.SALE10.items():root.find('.//'+ns+name).text=value
+ return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def manifest(body):return {'format':'htkk-web-zero-input-v1','sourceRepository':w.REPO,'sourceCommit':'a'*40,'sourceVersion':'0.9.2','caseId':'01GTGT-zero-M10-2026','inputsSynthetic':True,'exporter':'lib/htkk-xml.ts','producerSha256':'c'*64,'xmlSha256':hashlib.sha256(body).hexdigest(),'bytes':len(body)}
 def envelope(body,name):return {'type':'file','name':name,'path':name,'encoding':'base64','size':len(body),'content':base64.encodebytes(body).decode(),'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
 def fake_fetch(body,metadata=None,info=None):
@@ -54,6 +58,21 @@ class PrivacyTests(unittest.TestCase):
   self.reject(self.body.replace(b'2026-10-01',b'2026-10-02'),'XML_PRIVACY')
  def test_size_and_utf8_rejected(self):
   self.reject(b'x'*(w.MAX_XML+1),'XML_SIZE');self.reject(b'\xff','XML_ENCODING')
+class SaleCaseTests(unittest.TestCase):
+ def test_sale_case_exact_numbers_allowed_without_changing_original_bytes(self):
+  body=sale_fixture();digest=hashlib.sha256(body).hexdigest()
+  self.assertTrue(w.validate_web_xml(body,datetime.date(2027,10,25),'01GTGT-sale10-M10-2026')['privacyValuesVerified'])
+  self.assertEqual(hashlib.sha256(body).hexdigest(),digest)
+ def test_cases_cannot_be_mixed_or_arbitrary_amounts_inserted(self):
+  for body,case in ((sale_fixture(),'01GTGT-zero-M10-2026'),(web_fixture(),'01GTGT-sale10-M10-2026'),(sale_fixture().replace(b'<ct40>100000</ct40>',b'<ct40>100001</ct40>'),'01GTGT-sale10-M10-2026'),(sale_fixture().replace(b'<ct42>0</ct42>',b'<ct42>1</ct42>'),'01GTGT-sale10-M10-2026')):
+   with self.assertRaises(w.InputError):w.validate_web_xml(body,TODAY,case)
+ def test_manifest_case_format_pair_and_requested_case_are_pinned(self):
+  body=sale_fixture();metadata=manifest(body);metadata.update(caseId='01GTGT-sale10-M10-2026',format='htkk-web-sale10-input-v1')
+  fetch,_=fake_fetch(body,metadata)
+  self.assertEqual(w.download('synthetic-token',fetch,TODAY,expected_case='01GTGT-sale10-M10-2026')['01GTGT-web.xml'],body)
+  with self.assertRaises(w.InputError):w.download('synthetic-token',fetch,TODAY,expected_case='01GTGT-zero-M10-2026')
+  metadata['format']='htkk-web-zero-input-v1'
+  with self.assertRaises(w.InputError):w.validate_manifest(json.dumps(metadata).encode())
 class ReadAndStageTests(unittest.TestCase):
  def setUp(self):self.body=web_fixture()
  def test_private_download_pins_artifact_commit_checks_source_and_preserves_bytes(self):

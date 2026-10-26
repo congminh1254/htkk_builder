@@ -9,6 +9,8 @@ REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
 BRANCH='gtgt-web-reference-input'
 NAMES=('01GTGT-web.xml','manifest.json')
+CASES={'01GTGT-zero-M10-2026':'htkk-web-zero-input-v1','01GTGT-sale10-M10-2026':'htkk-web-sale10-input-v1'}
+SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
 MAX_XML=262144
 MAX_MANIFEST=16384
 MAX_API=600000
@@ -75,7 +77,9 @@ def content_file(envelope,name,maximum):
 def validate_manifest(body):
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_MANIFEST:raise InputError('MANIFEST')
  manifest=json_object(body,'MANIFEST')
- fixed={'format':'htkk-web-zero-input-v1','sourceRepository':REPO,'sourceVersion':'0.9.2','caseId':'01GTGT-zero-M10-2026','inputsSynthetic':True,'exporter':'lib/htkk-xml.ts'}
+ case=manifest.get('caseId')
+ if not isinstance(case,str) or case not in CASES:raise InputError('MANIFEST')
+ fixed={'format':CASES[case],'sourceRepository':REPO,'sourceVersion':'0.9.2','caseId':case,'inputsSynthetic':True,'exporter':'lib/htkk-xml.ts'}
  if set(manifest)!=set(fixed)|{'sourceCommit','producerSha256','xmlSha256','bytes'}:raise InputError('MANIFEST')
  if any(type(manifest[key]) is not type(value) or manifest[key]!=value for key,value in fixed.items()):raise InputError('MANIFEST')
  git_sha(manifest['sourceCommit'],'MANIFEST')
@@ -83,7 +87,8 @@ def validate_manifest(body):
   if not isinstance(manifest[key],str) or not re.fullmatch('[0-9a-f]{64}',manifest[key]):raise InputError('MANIFEST')
  if type(manifest['bytes']) is not int or not 0<manifest['bytes']<=MAX_XML:raise InputError('MANIFEST')
  return manifest
-def validate_web_xml(body,today=None):
+def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
+ if case_id not in CASES:raise InputError('MANIFEST')
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
  except UnicodeError:raise InputError('XML_ENCODING') from None
@@ -109,6 +114,13 @@ def validate_web_xml(body,today=None):
  if [child.tag for child in service]!=[ns+name for name in SERVICE]:raise InputError('XML_SERVICE')
  for child,(name,value) in zip(service,SERVICE.items()):
   if child.attrib or len(child) or child.text!=value:raise InputError('XML_SERVICE')
+ # Exact fixed monetary case adapter; no arbitrary taxpayer amounts accepted.
+ # Replacements occur ONLY in the in-memory privacy copy, never staged bytes.
+ if case_id=='01GTGT-sale10-M10-2026':
+  for name,value in SALE10.items():
+   nodes=root.findall('.//'+ns+name)
+   if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=value:raise InputError('XML_PRIVACY')
+   nodes[0].text='0'
  # Only four already-verified service leaf values are changed IN MEMORY to
  # reuse the existing complete zero-case privacy allowlist. Original bytes stay
  # untouched and are the sole bytes consumed by the Windows import probe.
@@ -119,7 +131,8 @@ def validate_web_xml(body,today=None):
  try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),datetime.date(2026,10,25))
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
  return {'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False}
-def download(token,fetch=None,today=None,expected_source=None):
+def download(token,fetch=None,today=None,expected_source=None,expected_case=None):
+ if expected_case is not None and expected_case not in CASES:raise InputError('MANIFEST')
  if expected_source is not None:git_sha(expected_source,'SOURCE_COMMIT')
  if not isinstance(token,str) or not token:raise InputError('AUTH')
  fetch=fetch or api
@@ -131,18 +144,19 @@ def download(token,fetch=None,today=None,expected_source=None):
  query='?ref='+artifact_commit
  manifest_body=content_file(fetch('/contents/manifest.json'+query,token),'manifest.json',MAX_MANIFEST)
  manifest=validate_manifest(manifest_body)
+ if expected_case is not None and manifest['caseId']!=expected_case:raise InputError('MANIFEST')
  if expected_source is not None and manifest['sourceCommit']!=expected_source:raise InputError('SOURCE_COMMIT')
  source=fetch('/git/commits/'+manifest['sourceCommit'],token)
  if not isinstance(source,dict) or source.get('sha')!=manifest['sourceCommit']:raise InputError('SOURCE_COMMIT')
  body=content_file(fetch('/contents/01GTGT-web.xml'+query,token),'01GTGT-web.xml',MAX_XML)
  if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
- validate_web_xml(body,today)
+ validate_web_xml(body,today,manifest['caseId'])
  return {'01GTGT-web.xml':body,'manifest.json':manifest_body}
 def stage(files,runner_temp,today=None):
  if set(files)!=set(NAMES) or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
  manifest=validate_manifest(files['manifest.json'])
  if manifest['bytes']!=len(files['01GTGT-web.xml']) or manifest['xmlSha256']!=hashlib.sha256(files['01GTGT-web.xml']).hexdigest():raise InputError('HASH')
- validate_web_xml(files['01GTGT-web.xml'],today)
+ validate_web_xml(files['01GTGT-web.xml'],today,manifest['caseId'])
  parent=pathlib.Path(runner_temp);destination=parent/'htkk-web-reference-input'
  if parent.is_symlink() or not parent.is_dir() or destination.exists() or destination.is_symlink():raise InputError('STAGING')
  temporary=pathlib.Path(tempfile.mkdtemp(prefix='.htkk-web-reference-input-',dir=parent))
@@ -161,7 +175,9 @@ def main():
   token=os.environ.get('SOURCE_READ_TOKEN')
   if not token:raise InputError('AUTH')
   expected=git_sha(os.environ.get('EXPECTED_WEB_SOURCE_SHA'),'SOURCE_COMMIT')
-  files=download(token,expected_source=expected);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
+  case=os.environ.get('EXPECTED_WEB_CASE_ID')
+  if case not in CASES:raise InputError('MANIFEST')
+  files=download(token,expected_source=expected,expected_case=case);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
   print(json.dumps({'format':'htkk-web-reference-input-fetch-status-v1','status':'staged','bytes':manifest['bytes'],'xmlSha256':manifest['xmlSha256'],'sourceCommit':manifest['sourceCommit']},separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')));raise SystemExit('Private synthetic web input unavailable; no XML, path, token or raw remote error published.')
