@@ -80,3 +80,12 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertNotIn('Regex.IsMatch(file.Name',source)
   for wrong in ('01_GTGT_TT80_1701_102026_283.xml',expected.replace('10129','10100'),expected.replace('_102026_','_092026_'),'bs1_'+expected,expected+'.bak'):
    self.assertNotEqual(actual,wrong)
+
+ def test_all_emitted_fixed_amendment_stages_are_accepted_by_actual_reader(self):
+  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  allowed=set(re.findall(r"'([^']+)'",re.search(r'\$stages=@\(([^\n]+)\)',reader).group(1)))
+  assignments=' '.join(re.findall(r'\bstage\s*=\s*([^;]+);',source))
+  emitted=set(re.findall(r'"([^"]+)"',assignments))
+  self.assertGreater(len(emitted),10)
+  self.assertFalse(emitted-allowed,'Reader would hide diagnostic stage: '+str(emitted-allowed))
