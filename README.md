@@ -43,3 +43,5 @@ The three newly configured `[21]` cases are pending original Windows verificatio
 The next fixed case `01GTGT-zero-Q4-2026` selects the original quarter controls and expects Q4/2026 calendar bounds 01/10/2026–31/12/2026. Its producer name is `quarter-zero`; its independent input/native privacy adapters require the four exact quarter leaves before adapting only an in-memory copy to the historical monthly allowlist. Native quarterly runtime proof remains pending.
 
 A separate pending `gtgt-annex12-inspect` workflow mode observes the original 01-2/GTGT annex selection, sheet structure and bounded group metadata. It does not export XML or establish annex compatibility; see WINDOWS-PROBE.md.
+
+A thirteenth fixed `native-import-sale10` case exercises the application's pinned original-XML import followed by web export before the Windows reference import/reexport. It has separate artifact branches/status even when its final tax values match the direct sale case. Runtime proof is pending; see WINDOWS-PROBE.md.

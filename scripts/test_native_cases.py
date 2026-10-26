@@ -5,9 +5,9 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7'))]}
+def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8'))]}
 class NativeCases(unittest.TestCase):
- def test_fixed_twelve_cases_and_separate_tokens_pending_before_dispatch(self):
+ def test_fixed_thirteen_cases_and_separate_tokens_pending_before_dispatch(self):
   value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[]
   d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args))
   self.assertEqual(len(calls),2*len(d.CASES))
@@ -91,3 +91,16 @@ class NativeEditorCountBoundary(unittest.TestCase):
   maximum=int(re.search(r'webCaseEditCount=(\d+)',boundary).group(1))
   rejected=int(re.search(r"@\{key='webCaseEditCount';value=(\d+)\}",fixtures).group(1))
   self.assertEqual(rejected,maximum+1)
+
+class NativeImportDispatchIdentity(unittest.TestCase):
+ def test_import_case_never_reuses_direct_sale_context_or_artifact_branch(self):
+  reader=load('native_import_identity_reader','fetch-htkk-web-input.py')
+  publisher=load('native_import_identity_publisher','publish-htkk-web-inputs.py')
+  output=load('native_import_identity_output','publish-htkk-web-native-output.py')
+  case='01GTGT-native-import-sale10-M10-2026';sale='01GTGT-sale10-M10-2026'
+  self.assertIn(case,d.CASES);self.assertEqual(d.CONTEXTS[case],'htkk-native/native-import-sale10');self.assertNotEqual(d.CONTEXTS[case],d.CONTEXTS[sale])
+  self.assertEqual(reader.CASES[case],'htkk-web-native-import-sale10-input-v1')
+  cases={entry[0]:entry[1:] for entry in publisher.CASES}
+  self.assertEqual(cases[case],('htkk-web-reference-native-import-sale10-input','gtgt-web-reference-native-import-sale10-input'))
+  self.assertNotEqual(cases[case],cases[sale]);self.assertNotEqual(output.BRANCHES[case],output.BRANCHES[sale])
+  self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));self.assertEqual(set(output.BRANCHES),set(d.CASES))

@@ -217,3 +217,16 @@ class ReadAndStageTests(unittest.TestCase):
   self.assertEqual(error.exception.code,'API_SIZE')
   self.assertNotIn('PRIVATE',json.dumps(w.safe_failure(ValueError('PRIVATE XML PATH TOKEN'))))
 if __name__=='__main__':unittest.main()
+
+class NativeImportProducerCaseTests(unittest.TestCase):
+ def test_import_export_case_has_its_own_exact_manifest_and_fixed_sale_vector(self):
+  case='01GTGT-native-import-sale10-M10-2026';body=sale_fixture(case)
+  self.assertEqual(w.CASE_MONEY[case],w.SALE10);self.assertEqual(w.CASE_CHECKBOX[case],'0')
+  self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
+  metadata=manifest(body);metadata.update(caseId=case,format='htkk-web-native-import-sale10-input-v1')
+  self.assertEqual(w.validate_manifest(json.dumps(metadata).encode())['caseId'],case)
+  metadata['format']='htkk-web-sale10-input-v1'
+  with self.assertRaises(w.InputError):w.validate_manifest(json.dumps(metadata).encode())
+  for name,value in w.SALE10.items():
+   changed=body.replace(('<'+name+'>'+value+'</'+name+'>').encode(),('<'+name+'>7</'+name+'>').encode())
+   with self.subTest(field=name),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,case)

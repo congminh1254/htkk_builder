@@ -2,8 +2,8 @@
 import json,os,pathlib,re,urllib.request,urllib.error
 REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
-CASES=('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026','01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026','01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026','01GTGT-noactivity-cancel-sale10-M10-2026','01GTGT-noactivity-uncheck-sale10-M10-2026','01GTGT-noactivity-keep-credit-M10-2026','01GTGT-zero-Q4-2026')
-CONTEXTS=dict(zip(CASES,('htkk-native/zero','htkk-native/sale10','htkk-native/sale10-half','htkk-native/sale10-manual','htkk-native/sale5-half','htkk-native/sale5-manual','htkk-native/noactivity-zero','htkk-native/noactivity-reset-sale10','htkk-native/noactivity-cancel-sale10','htkk-native/noactivity-uncheck-sale10','htkk-native/noactivity-keep-credit','htkk-native/quarter-zero')))
+CASES=('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026','01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026','01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026','01GTGT-noactivity-cancel-sale10-M10-2026','01GTGT-noactivity-uncheck-sale10-M10-2026','01GTGT-noactivity-keep-credit-M10-2026','01GTGT-zero-Q4-2026','01GTGT-native-import-sale10-M10-2026')
+CONTEXTS=dict(zip(CASES,('htkk-native/zero','htkk-native/sale10','htkk-native/sale10-half','htkk-native/sale10-manual','htkk-native/sale5-half','htkk-native/sale5-manual','htkk-native/noactivity-zero','htkk-native/noactivity-reset-sale10','htkk-native/noactivity-cancel-sale10','htkk-native/noactivity-uncheck-sale10','htkk-native/noactivity-keep-credit','htkk-native/quarter-zero','htkk-native/native-import-sale10')))
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 def sha(value):
