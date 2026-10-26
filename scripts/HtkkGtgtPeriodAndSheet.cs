@@ -18,14 +18,22 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool gtgtSheetInspectionBusy=false,gtgtAutoCalculationReady=false,gtgtBusinessInstanceMatched=false;
  private bool gtgtCaseMoneyMatched=false,gtgtCt42Locked=false,webCaseEdited=false;private int gtgtCaseMoneyCount=0,gtgtCaseMismatchMask=0,gtgtCaseNonzeroMask=0;private Stopwatch webCaseEditClock=null;
  private Stopwatch gtgtObservationClock=null;
- private bool noActivityCheckboxActivated=false,gtgtCt21CaseMatched=false,gtgtCt21ConfirmationMatched=false,gtgtCt21LocksMatched=false,gtgtCt21BeforeExportMatched=false,gtgtCt21AfterImportMatched=false;
- private bool NoActivityCase(){return webCaseId=="01GTGT-noactivity-zero-M10-2026"||webCaseId=="01GTGT-noactivity-reset-sale10-M10-2026";}
+ private bool noActivityCheckboxActivated=false,gtgtCt21CaseMatched=false,gtgtCt21ConfirmationMatched=false,gtgtCt21LocksMatched=false,gtgtCt21BeforeExportMatched=false,gtgtCt21AfterImportMatched=false,gtgtCt21UncheckMatched=false;
+ private bool NoActivityCase(){return webCaseId=="01GTGT-noactivity-zero-M10-2026"||webCaseId=="01GTGT-noactivity-reset-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-cancel-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-uncheck-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-keep-credit-M10-2026";}
+ private bool CancelCt21Case(){return webCaseId=="01GTGT-noactivity-cancel-sale10-M10-2026";}
+ private bool UncheckCt21Case(){return webCaseId=="01GTGT-noactivity-uncheck-sale10-M10-2026";}
+ private bool CreditCt21Case(){return webCaseId=="01GTGT-noactivity-keep-credit-M10-2026";}
+ private bool SaleBeforeCt21Case(){return webCaseId=="01GTGT-noactivity-reset-sale10-M10-2026"||CancelCt21Case()||UncheckCt21Case();}
+ private bool InspectCt21State(object sheet,bool selected,bool locked){
+  gtgtCt21CaseMatched=Selected(Get(Cell(sheet,35,8),"Value"))==selected;gtgtCt21LocksMatched=true;
+  int[,] cells=new int[,] {{39,9},{39,11},{40,9},{40,11},{41,11},{43,9},{45,9},{46,9},{46,11},{47,9},{47,11},{48,9}};
+  for(int index=0;index<cells.GetLength(0);index++)if(Convert.ToBoolean(Get(Cell(sheet,cells[index,0],cells[index,1]),"Locked"))!=locked)gtgtCt21LocksMatched=false;
+  return gtgtCt21CaseMatched&&gtgtCt21LocksMatched;
+ }
  private bool InspectCt21Case(object sheet){
   if(!NoActivityCase())return true;
-  gtgtCt21CaseMatched=Selected(Get(Cell(sheet,35,8),"Value"));gtgtCt21LocksMatched=true;
-  int[,] locked=new int[,] {{39,9},{39,11},{40,9},{40,11},{41,11},{43,9},{45,9},{46,9},{46,11},{47,9},{47,11},{48,9}};
-  for(int index=0;index<locked.GetLength(0);index++)if(!Convert.ToBoolean(Get(Cell(sheet,locked[index,0],locked[index,1]),"Locked")))gtgtCt21LocksMatched=false;
-  return gtgtCt21CaseMatched&&gtgtCt21LocksMatched&&gtgtCt21ConfirmationMatched;
+  bool selected=!CancelCt21Case()&&!UncheckCt21Case();
+  return InspectCt21State(sheet,selected,selected)&&gtgtCt21ConfirmationMatched&&(!UncheckCt21Case()||gtgtCt21UncheckMatched);
  }
  private void ActivateOriginalCt21(Control grid,object sheet){
   if(!NoActivityCase()||noActivityCheckboxActivated||!webInputVerified||!gtgtCt21||Selected(Get(Cell(sheet,35,8),"Value"))||Convert.ToBoolean(Get(Cell(sheet,35,8),"Locked"))||!grid.Visible||!grid.Enabled||grid.FindForm()==null||grid.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
@@ -33,20 +41,30 @@ public sealed partial class HtkkGuiReferenceAutomation {
   noActivityCheckboxActivated=true;stage="gtgt-noactivity-checkbox-activating";Record();
   grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{35,8});
   uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
-  Exception modalFailure=null;Stopwatch clock=Stopwatch.StartNew();
+  Exception modalFailure=null;Stopwatch clock=Stopwatch.StartNew();bool selected=!CancelCt21Case();
   using(System.Windows.Forms.Timer observer=new System.Windows.Forms.Timer()){
-   observer.Interval=50;observer.Tick+=delegate(object sender,EventArgs args){try{if(clock.Elapsed.TotalSeconds>5)throw new InvalidOperationException();AcknowledgeOriginalCt21Yes();}catch(Exception error){modalFailure=error;observer.Stop();}};
+   observer.Interval=50;observer.Tick+=delegate(object sender,EventArgs args){try{if(clock.Elapsed.TotalSeconds>5)throw new InvalidOperationException();AcknowledgeOriginalCt21Choice();}catch(Exception error){modalFailure=error;observer.Stop();}};
    observer.Start();try{
-    // SPACE is handled by the original FarPoint checkbox and subscribed original
-    // ButtonClick_0. The observer operates inside its synchronous MessageBox loop.
+    // SPACE runs the original checkbox event; only the exact owned Yes/No
+    // dialog is acknowledged. The case fixes the choice before original input.
     SendKeys.SendWait(" ");
-    while((!gtgtCt21ConfirmationMatched||!InspectCt21Case(sheet))&&modalFailure==null&&clock.Elapsed.TotalSeconds<5){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+    while((!gtgtCt21ConfirmationMatched||!InspectCt21State(sheet,selected,selected))&&modalFailure==null&&clock.Elapsed.TotalSeconds<5){Application.DoEvents();System.Threading.Thread.Sleep(10);}
    }finally{observer.Stop();}
   }
-  if(modalFailure!=null||!gtgtCt21ConfirmationMatched||!InspectCt21Case(sheet))throw new InvalidOperationException();
+  if(modalFailure!=null||!gtgtCt21ConfirmationMatched||!InspectCt21State(sheet,selected,selected))throw new InvalidOperationException();
   webCaseEditCount++;webCaseEditClock=Stopwatch.StartNew();Record();
  }
- private void AcknowledgeOriginalCt21Yes(){
+ private void UncheckOriginalCt21(Control grid,object sheet){
+  if(!UncheckCt21Case()||gtgtCt21UncheckMatched||webCaseEditCount!=2||!gtgtCt21ConfirmationMatched||!InspectCt21State(sheet,true,true)||OriginalMessageVisible()||!grid.Enabled||!grid.Visible||grid.FindForm()==null||!grid.FindForm().Enabled||grid.FindForm().GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
+  object type=Get(Cell(sheet,35,8),"CellType");if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(Cell(sheet,35,8),"Locked")))throw new InvalidOperationException();
+  grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{35,8});
+  uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
+  stage="gtgt-noactivity-checkbox-unchecking";Record();SendKeys.SendWait(" ");
+  Stopwatch clock=Stopwatch.StartNew();while(!InspectCt21State(sheet,false,false)&&clock.Elapsed.TotalSeconds<2){if(OriginalMessageVisible())throw new InvalidOperationException();Application.DoEvents();System.Threading.Thread.Sleep(10);}
+  if(!InspectCt21State(sheet,false,false)||OriginalMessageVisible())throw new InvalidOperationException();
+  gtgtCt21UncheckMatched=true;webCaseEditCount++;webCaseEditClock=Stopwatch.StartNew();Record();
+ }
+ private void AcknowledgeOriginalCt21Choice(){
   if(gtgtCt21ConfirmationMatched)return;
   const string expected="NNT chỉ được kê khai các chỉ tiêu: [22], [37], [38], [39a], [40b], [42]. Các chỉ tiêu còn lại khóa không cho kê khai. Bạn có tiếp tục thực hiện không?";
   List<IntPtr> dialogs=new List<IntPtr>();uint own=(uint)Process.GetCurrentProcess().Id;
@@ -56,14 +74,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int messages=0,buttons=0;EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused){if(IsWindowVisible(child)){if(NativeText(child,true)=="Static"&&NativeText(child,false)==expected)messages++;if(NativeText(child,true)=="Button")buttons++;}return true;},IntPtr.Zero);
   IntPtr yes=GetDlgItem(dialog,6),no=GetDlgItem(dialog,7);
   if(messages!=1||buttons!=2||yes==IntPtr.Zero||no==IntPtr.Zero||NativeText(yes,true)!="Button"||NativeText(no,true)!="Button"||!IsWindowVisible(yes)||!IsWindowEnabled(yes)||!IsWindowVisible(no)||!IsWindowEnabled(no))throw new InvalidOperationException();
-  gtgtCt21ConfirmationMatched=true;stage="gtgt-noactivity-confirming";Record();if(!PostMessage(yes,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+  gtgtCt21ConfirmationMatched=true;stage="gtgt-noactivity-confirming";Record();if(!PostMessage(CancelCt21Case()?no:yes,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
  }
  private string SheetJson(){
   string q=((char)34).ToString();string[] names=new string[]{"periodYearMonthMatched","periodFirstDeclarationMatched","periodActivityMatched","periodGeographyMatched","periodNoAnnexMatched","periodConfirmInvoked","gtgtWorkbookPinsVerified","gtgtMenuVersionMatched","gtgtPeriodModelMatched","gtgtSheetObserved","gtgtSheetNameMatched","gtgtDimensionsMatched","gtgtIdentityMatched","gtgtCt21Ready","gtgtSignatureReady","gtgtMonetaryZero"};
   bool[] values=new bool[]{periodDateMatched,periodFirstMatched,periodActivityMatched,periodGeographyMatched,periodNoAnnexMatched,periodConfirmInvoked,gtgtPins,gtgtVersion,gtgtPeriod,gtgtSheet,gtgtName,gtgtDimensions,gtgtIdentity,gtgtCt21,gtgtSigner,gtgtZero};StringBuilder json=new StringBuilder();
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
   json.Append(","+q+"gtgtCt42BeforeExportObserved"+q+":"+Bool(gtgtCt42BeforeExportObserved)+","+q+"gtgtCt42LockedBeforeExport"+q+":"+Bool(gtgtCt42LockedBeforeExport)+","+q+"gtgtCt42AfterImportObserved"+q+":"+Bool(gtgtCt42AfterImportObserved)+","+q+"gtgtCt42LockedAfterImport"+q+":"+Bool(gtgtCt42LockedAfterImport));
-  json.Append(","+q+"gtgtCt21CaseMatched"+q+":"+Bool(gtgtCt21CaseMatched)+","+q+"gtgtCt21ConfirmationMatched"+q+":"+Bool(gtgtCt21ConfirmationMatched)+","+q+"gtgtCt21LocksMatched"+q+":"+Bool(gtgtCt21LocksMatched)+","+q+"gtgtCt21BeforeExportMatched"+q+":"+Bool(gtgtCt21BeforeExportMatched)+","+q+"gtgtCt21AfterImportMatched"+q+":"+Bool(gtgtCt21AfterImportMatched));
+  json.Append(","+q+"gtgtCt21CaseMatched"+q+":"+Bool(gtgtCt21CaseMatched)+","+q+"gtgtCt21ConfirmationMatched"+q+":"+Bool(gtgtCt21ConfirmationMatched)+","+q+"gtgtCt21LocksMatched"+q+":"+Bool(gtgtCt21LocksMatched)+","+q+"gtgtCt21BeforeExportMatched"+q+":"+Bool(gtgtCt21BeforeExportMatched)+","+q+"gtgtCt21AfterImportMatched"+q+":"+Bool(gtgtCt21AfterImportMatched)+","+q+"gtgtCt21UncheckMatched"+q+":"+Bool(gtgtCt21UncheckMatched));
   json.Append(","+q+"gtgtAutoCalculationReady"+q+":"+Bool(gtgtAutoCalculationReady)+","+q+"gtgtBusinessInstanceMatched"+q+":"+Bool(gtgtBusinessInstanceMatched));
   json.Append(","+q+"gtgtCaseMoneyMatched"+q+":"+Bool(gtgtCaseMoneyMatched)+","+q+"gtgtCt42Locked"+q+":"+Bool(gtgtCt42Locked)+","+q+"gtgtCaseMoneyCount"+q+":"+gtgtCaseMoneyCount+","+q+"gtgtCaseMismatchMask"+q+":"+gtgtCaseMismatchMask+","+q+"gtgtCaseNonzeroMask"+q+":"+gtgtCaseNonzeroMask);
   json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString();
@@ -172,18 +190,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
    if(webCaseId!="01GTGT-zero-M10-2026"&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!webCaseEdited){
     if(!gtgtZero||gtgtEmptyMoney!=0||gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,caseRow,9),"Locked")))throw new InvalidOperationException();
-    webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,caseRow,9,webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",false,"gtgt-case-editing",false);return;
+    webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();if(CreditCt21Case()){Edit(grid,sheet,36,11,"7",false,"gtgt-case-editing",false);return;}Edit(grid,sheet,caseRow,9,webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",false,"gtgt-case-editing",false);return;
    }
    if((webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")&&webCaseEditCount==1){
     decimal suggested;if(Convert.ToBoolean(Get(Cell(sheet,caseRow,11),"Locked"))||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,caseRow,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out suggested)||suggested!=(fivePercent?50000:100000)){if(webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
     webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,caseRow,11,"7",false,"gtgt-case-editing",false);return;
    }
    if(NoActivityCase()&&!noActivityCheckboxActivated){
-    if(webCaseId=="01GTGT-noactivity-reset-sale10-M10-2026"){
+    if(SaleBeforeCt21Case()){
      decimal baseValue,taxValue;if(webCaseEditCount!=1||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,9),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out baseValue)||baseValue!=1000000||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out taxValue)||taxValue!=100000){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
-    }else if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0)throw new InvalidOperationException();
+    }else if(CreditCt21Case()){decimal credit;if(webCaseEditCount!=1||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,36,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out credit)||credit!=7)throw new InvalidOperationException();}
+    else if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0)throw new InvalidOperationException();
     ActivateOriginalCt21(grid,sheet);return;
    }
+   if(UncheckCt21Case()&&!gtgtCt21UncheckMatched){UncheckOriginalCt21(grid,sheet);return;}
    if(!InspectCt21Case(sheet))throw new InvalidOperationException();if(NoActivityCase())gtgtCt21BeforeExportMatched=true;
    InspectCaseMoney(sheet);
    if(!gtgtCaseMoneyMatched){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
@@ -200,7 +220,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   gtgtCaseMoneyMatched=true;gtgtCaseMoneyCount=0;gtgtCaseMismatchMask=0;gtgtCaseNonzeroMask=0;gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
   for(int index=0;index<coordinates.GetLength(0);index++){
    int row=coordinates[index,0],column=coordinates[index,1];decimal expected=Decimal.Zero;
-   if(webCaseId!="01GTGT-zero-M10-2026"&&!NoActivityCase()){
+   if(CreditCt21Case()&&column==11&&(row==36||row==59||row==61))expected=7;
+   if(webCaseId!="01GTGT-zero-M10-2026"&&(!NoActivityCase()||CancelCt21Case())){
     bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
     if(column==9&&(row==44||row==caseRow||row==49))expected=webCaseId=="01GTGT-sale5-half-M10-2026"?10:webCaseId=="01GTGT-sale10-half-M10-2026"?5:1000000;
     if(column==11&&(row==44||row==caseRow||row==49||row==50||row==56||row==58))expected=(webCaseId=="01GTGT-sale10-half-M10-2026"||webCaseId=="01GTGT-sale5-half-M10-2026")?1:(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")?7:100000;

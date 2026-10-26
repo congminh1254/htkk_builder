@@ -35,7 +35,7 @@ def fake_api(info=None,main=SHA,existing=True):
    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
   if path=='/git/trees':return {'sha':'c'*40}
   if path=='/git/commits':
-   self_sha=('d','e','f','1','2','3','4','5')[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
+   self_sha=('d','e','f','1','2','3','4','5','6','7','8')[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
   if path.startswith('/git/ref/heads/'):
    if not existing:raise urllib.error.HTTPError('https://api.github.com/',404,'PRIVATE REMOTE TEXT',{},None)
    return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':'f'*40}}
@@ -96,7 +96,7 @@ class StagingTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
  def test_orphan_private_publication_preserves_bytes_and_metadata_only_result(self):
   inputs=fixtures();fetch,calls,commits=fake_api();result=p.publish(inputs,SHA,'synthetic-token',fetch)
-  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,('d','e','f','1','2','3','4','5'))]})
+  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,('d','e','f','1','2','3','4','5','6','7','8'))]})
   self.assertTrue(all(item['parents']==[] for item in commits));self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
   blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
   self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.NAMES])

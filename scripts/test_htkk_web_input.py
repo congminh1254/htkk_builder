@@ -55,6 +55,17 @@ class PrivacyTests(unittest.TestCase):
    for changed,target in ((body,'01GTGT-zero-M10-2026'),(web_fixture(),case),(body.replace(b'<ct32>0</ct32>',b'<ct32>1</ct32>'),case)):
     with self.subTest(case=case,target=target),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,target)
 
+ def test_remaining_checkbox_cases_require_exact_checkbox_and_credit_vector(self):
+  for case in ('01GTGT-noactivity-cancel-sale10-M10-2026','01GTGT-noactivity-uncheck-sale10-M10-2026','01GTGT-noactivity-keep-credit-M10-2026'):
+   body=sale_fixture(case);self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
+   root=ET.fromstring(body);ns='{'+w.privacy.NS+'}'
+   root.find('.//'+ns+'ct21').text='0' if w.CASE_CHECKBOX[case]=='1' else '1'
+   with self.subTest(case=case),self.assertRaises(w.InputError):w.validate_web_xml((w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode(),TODAY,case)
+  case='01GTGT-noactivity-keep-credit-M10-2026'
+  for name in ('ct22','ct41','ct43','ct32'):
+   root=ET.fromstring(sale_fixture(case));root.find('.//{'+w.privacy.NS+'}'+name).text='8'
+   with self.subTest(field=name),self.assertRaises(w.InputError):w.validate_web_xml((w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode(),TODAY,case)
+
  def setUp(self):self.body=web_fixture()
  def reject(self,body,code):
   with self.assertRaises(w.InputError) as error:w.validate_web_xml(body,TODAY)

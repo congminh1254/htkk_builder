@@ -81,7 +81,7 @@ jobs:
         run: python3 builder/scripts/publish.py
       - name: Remove local source and diagnostic files
         if: always()
-        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output" "$RUNNER_TEMP/htkk-web-reference-zero-input" "$RUNNER_TEMP/htkk-web-reference-sale10-input" "$RUNNER_TEMP/htkk-web-reference-sale10-half-input" "$RUNNER_TEMP/htkk-web-reference-sale10-manual-input" "$RUNNER_TEMP/htkk-web-reference-sale5-half-input" "$RUNNER_TEMP/htkk-web-reference-sale5-manual-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-zero-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-reset-sale10-input" "$RUNNER_TEMP/htkk-web-input-publication.json"
+        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output" "$RUNNER_TEMP/htkk-web-reference-zero-input" "$RUNNER_TEMP/htkk-web-reference-sale10-input" "$RUNNER_TEMP/htkk-web-reference-sale10-half-input" "$RUNNER_TEMP/htkk-web-reference-sale10-manual-input" "$RUNNER_TEMP/htkk-web-reference-sale5-half-input" "$RUNNER_TEMP/htkk-web-reference-sale5-manual-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-zero-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-reset-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-cancel-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-uncheck-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-keep-credit-input" "$RUNNER_TEMP/htkk-web-input-publication.json"
   report:
     if: always() && github.ref == 'refs/heads/main'
     needs: build

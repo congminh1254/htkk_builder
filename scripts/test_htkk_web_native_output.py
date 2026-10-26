@@ -54,6 +54,15 @@ class NativePrivacyTests(unittest.TestCase):
    for name in (('ct31' if 'sale5-' in case else 'ct33'),'ct40'):
     with self.subTest(case=case,field=name),self.assertRaises(n.OutputError):n.validate_native(changed(native,name,'0'),case,TODAY)
 
+ def test_cancel_uncheck_and_preserved_credit_native_privacy_are_exact(self):
+  for case in ('01GTGT-noactivity-cancel-sale10-M10-2026','01GTGT-noactivity-uncheck-sale10-M10-2026','01GTGT-noactivity-keep-credit-M10-2026'):
+   _,native,_,_=fixture(case);self.assertTrue(n.validate_native(native,case,TODAY)['privacyValuesVerified'])
+   wrong='0' if n.reader.CASE_CHECKBOX[case]=='1' else '1'
+   with self.subTest(case=case),self.assertRaises(n.OutputError):n.validate_native(changed(native,'ct21',wrong),case,TODAY)
+  case='01GTGT-noactivity-keep-credit-M10-2026';_,native,_,_=fixture(case)
+  for name in ('ct22','ct41','ct43','ct32'):
+   with self.subTest(field=name),self.assertRaises(n.OutputError):n.validate_native(changed(native,name,'8'),case,TODAY)
+
  def test_noactivity_native_checkbox_is_explicit_and_all_money_zero(self):
   for case in ('01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026'):
    _,native,_,_=fixture(case)
