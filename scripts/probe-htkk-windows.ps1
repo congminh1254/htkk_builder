@@ -1,6 +1,6 @@
 # No tax data, credentials, public screenshots or installer logs are published.
 [CmdletBinding()]
-param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin,[ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect')][string]$GuiAutomation='none')
+param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin,[ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none')
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
@@ -631,6 +631,23 @@ try {
     $hostLeaf=[IO.Path]::GetFileName($hostFull)
     if([IO.Path]::GetDirectoryName($hostFull).TrimEnd('\') -ne $projectFull -or $hostLeaf -notmatch '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$' -or $referencePreparation.hostSha256 -notmatch '^[a-f0-9]{64}$' -or @($referencePreparation.arguments).Count -ne 0 -or $referencePreparation.hostConfigPath -ne ($hostFull+'.config') -or $referencePreparation.resultPath -ne ($hostFull+'.result.json') -or $referencePreparation.guiAutomationResultPath -ne ($hostFull+'.gui-automation.json') -or $referencePreparation.guiAutomationPermitPath -ne ($hostFull+'.gui-automation.allow') -or $referencePreparation.guiAutomationMode -cne $GuiAutomation) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
     $referenceOwnedFiles=@($hostFull,($hostFull+'.config'),($hostFull+'.result.json'),($hostFull+'.gui-automation.json'),($hostFull+'.gui-automation.allow'))
+    if($GuiAutomation -eq 'gtgt-web-import-inspect') {
+      $inputPath=$hostFull+'.web-input.xml';$hashPath=$hostFull+'.web-input.sha256';$shaPath=$hostFull+'.web-source.sha'
+      if($referencePreparation.webImportInputPath -cne $inputPath -or $referencePreparation.webImportInputHashPath -cne $hashPath -or $referencePreparation.webImportSourceShaPath -cne $shaPath -or $env:EXPECTED_WEB_SOURCE_SHA -cnotmatch '^[a-f0-9]{40}$'){throw 'WEB_REFERENCE_INPUT_INVALID'}
+      $referenceOwnedFiles+=@($inputPath,$hashPath,$shaPath)
+      foreach($path in @($inputPath,$hashPath,$shaPath)){if(Test-Path -LiteralPath $path){throw 'WEB_REFERENCE_INPUT_INVALID'}}
+      $stage=Join-Path $env:RUNNER_TEMP 'htkk-web-reference-input'
+      $xml=Join-Path $stage '01GTGT-web.xml';$manifestPath=Join-Path $stage 'manifest.json'
+      foreach($path in @($stage,$xml,$manifestPath)) {if(-not (Test-Path -LiteralPath $path) -or ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'WEB_REFERENCE_INPUT_INVALID'}}
+      if((Get-Item -LiteralPath $manifestPath).Length -gt 16384){throw 'WEB_REFERENCE_INPUT_INVALID'}
+      $manifest=Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+      if($manifest.format -cne 'htkk-web-zero-input-v1' -or $manifest.sourceRepository -cne 'congminh1254/htkk_web' -or $manifest.inputsSynthetic -ne $true -or $manifest.sourceCommit -cne $env:EXPECTED_WEB_SOURCE_SHA -or $manifest.xmlSha256 -cnotmatch '^[a-f0-9]{64}$' -or $manifest.bytes -le 0 -or $manifest.bytes -gt 262144 -or (Get-Item -LiteralPath $xml).Length -ne $manifest.bytes){throw 'WEB_REFERENCE_INPUT_INVALID'}
+      Assert-Hash $xml $manifest.xmlSha256
+      [IO.File]::WriteAllBytes($inputPath,[IO.File]::ReadAllBytes($xml))
+      Assert-Hash $inputPath $manifest.xmlSha256
+      [IO.File]::WriteAllText($hashPath,$manifest.xmlSha256,[Text.Encoding]::ASCII)
+      [IO.File]::WriteAllText($shaPath,$manifest.sourceCommit,[Text.Encoding]::ASCII)
+    }
     Assert-Hash $hostFull $referencePreparation.hostSha256
     $expectedHostConfig='<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>'
     if((Get-Content -LiteralPath ($hostFull+'.config') -Raw -Encoding ASCII).Trim() -cne $expectedHostConfig) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
@@ -754,18 +771,18 @@ try {
   }
   if($GuiAutomation -ne 'none') {
     . (Join-Path $PSScriptRoot 'Get-HtkkSafeGuiReferenceResult.ps1')
-    if($GuiAutomation -in @('profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect')) {
+    if($GuiAutomation -in @('profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')) {
       # Only now authorize mutation: the independent original GUI login/profile
       # transition and fresh synthetic directory have already been verified above.
       [IO.File]::WriteAllText($referencePreparation.guiAutomationPermitPath,'profile-save',[Text.Encoding]::ASCII)
     }
-    $automationLimit=if($GuiAutomation -eq 'gtgt-roundtrip-inspect'){60}else{30}
+    $automationLimit=if($GuiAutomation -in @('gtgt-roundtrip-inspect','gtgt-web-import-inspect')){60}else{30}
     $automationClock=[Diagnostics.Stopwatch]::StartNew();$lastGui=$null;$terminal=$false;$automationRootExited=$false
     do {
       $nextGui=Get-HtkkSafeGuiReferenceResult -ResultPath $referencePreparation.guiAutomationResultPath -ExpectedMode $GuiAutomation
       if($nextGui.status -eq 'valid') {
         $lastGui=$nextGui
-        $terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in @('source-or-runtime-not-matched','fixture-preexists','initialization-unavailable','profile-wait-timeout','profile-dimensions-unmatched','fresh-synthetic-profile-not-established','editing-api-unavailable','profile-province-code-unmatched','profile-ward-code-unmatched','profile-taxhead-code-unmatched','profile-taxlocal-code-unmatched','original-profile-saved-verified','original-profile-save-not-verified','gtgt-profile-preconditions-not-matched','gtgt-profile-owner-not-matched','gtgt-menu-id-not-unique','gtgt-menu-target-hidden','gtgt-period-inspected','gtgt-period-inputs-not-matched','gtgt-sheet-inspected','gtgt-sheet-contract-not-matched','gtgt-export-inspected','gtgt-export-original-message-rejected','gtgt-roundtrip-inspected','gtgt-import-original-message-rejected') -or ($GuiAutomation -eq 'inspect' -and $nextGui.stage -eq 'profile-inspected')
+        $terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in @('source-or-runtime-not-matched','fixture-preexists','initialization-unavailable','profile-wait-timeout','profile-dimensions-unmatched','fresh-synthetic-profile-not-established','editing-api-unavailable','profile-province-code-unmatched','profile-ward-code-unmatched','profile-taxhead-code-unmatched','profile-taxlocal-code-unmatched','original-profile-saved-verified','original-profile-save-not-verified','gtgt-profile-preconditions-not-matched','gtgt-profile-owner-not-matched','gtgt-menu-id-not-unique','gtgt-menu-target-hidden','gtgt-period-inspected','gtgt-period-inputs-not-matched','gtgt-sheet-inspected','gtgt-sheet-contract-not-matched','gtgt-export-inspected','gtgt-export-original-message-rejected','gtgt-roundtrip-inspected','gtgt-web-import-inspected','gtgt-import-original-message-rejected') -or ($GuiAutomation -eq 'inspect' -and $nextGui.stage -eq 'profile-inspected')
         if($terminal){break}
       }
       if($process.HasExited){$automationRootExited=$true;break}
@@ -776,12 +793,13 @@ try {
     if($GuiAutomation -eq 'inspect'){$matched=$matched -and $lastGui.stage -eq 'profile-inspected' -and -not $lastGui.originalSaveInvoked -and $lastGui.performedInputCount -eq 0}
     else{
       $matched=$matched -and $lastGui.originalSaveInvoked -and $lastGui.savedHeaderExists -and $lastGui.savedHeaderChecksMatched -and $lastGui.savedHeaderCheckedFieldCount -eq 8 -and $lastGui.performedInputCount -eq 7 -and $lastGui.savedHeaderMismatchMask -eq 0 -and $lastGui.saveDialogKind -eq 'success-0002'
-      if($GuiAutomation -in @('gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect')){
+      if($GuiAutomation -in @('gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')){
         $matched=$matched -and $lastGui.profileClosed -and $lastGui.mainMenuObserved -and $lastGui.d1MenuClicked -and $lastGui.gtgtPeriodObserved -and $lastGui.periodControlCount -gt 0
-        if($GuiAutomation -in @('gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect')){$matched=$matched -and $lastGui.stage -eq $(if($GuiAutomation -eq 'gtgt-roundtrip-inspect'){'gtgt-roundtrip-inspected'}elseif($GuiAutomation -eq 'gtgt-export-inspect'){'gtgt-export-inspected'}else{'gtgt-sheet-inspected'}) -and $lastGui.periodYearMonthMatched -and $lastGui.periodFirstDeclarationMatched -and $lastGui.periodActivityMatched -and $lastGui.periodGeographyMatched -and $lastGui.periodNoAnnexMatched -and $lastGui.periodConfirmInvoked -and $lastGui.gtgtWorkbookPinsVerified -and $lastGui.gtgtMenuVersionMatched -and $lastGui.gtgtPeriodModelMatched -and $lastGui.gtgtSheetObserved -and $lastGui.gtgtSheetNameMatched -and $lastGui.gtgtDimensionsMatched -and $lastGui.gtgtIdentityMatched -and $lastGui.gtgtCt21Ready}
+        if($GuiAutomation -in @('gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')){$matched=$matched -and $lastGui.stage -eq $(if($GuiAutomation -eq 'gtgt-web-import-inspect'){'gtgt-web-import-inspected'}elseif($GuiAutomation -eq 'gtgt-roundtrip-inspect'){'gtgt-roundtrip-inspected'}elseif($GuiAutomation -eq 'gtgt-export-inspect'){'gtgt-export-inspected'}else{'gtgt-sheet-inspected'}) -and $lastGui.periodYearMonthMatched -and $lastGui.periodFirstDeclarationMatched -and $lastGui.periodActivityMatched -and $lastGui.periodGeographyMatched -and $lastGui.periodNoAnnexMatched -and $lastGui.periodConfirmInvoked -and $lastGui.gtgtWorkbookPinsVerified -and $lastGui.gtgtMenuVersionMatched -and $lastGui.gtgtPeriodModelMatched -and $lastGui.gtgtSheetObserved -and $lastGui.gtgtSheetNameMatched -and $lastGui.gtgtDimensionsMatched -and $lastGui.gtgtIdentityMatched -and $lastGui.gtgtCt21Ready}
         else{$matched=$matched -and $lastGui.stage -eq 'gtgt-period-inspected'}
-        if($GuiAutomation -in @('gtgt-export-inspect','gtgt-roundtrip-inspect')){$matched=$matched -and $lastGui.exportSchemaPinnedVerified -and $lastGui.exportOriginalPathMatched -and $lastGui.exportCommandInvoked -and $lastGui.exportSelectorMatched -and $lastGui.exportButtonInvoked -and $lastGui.exportDialogMatched -and $lastGui.exportDestinationFresh -and $lastGui.exportDialogSubmitted -and $lastGui.exportFilenameKeyboardCommitted -and $lastGui.exportFileExists -and $lastGui.exportXmlRootMatched -and $lastGui.exportSyntheticIdentityMatched -and $lastGui.exportSuccessAcknowledged -and $lastGui.exportBytes -gt 0 -and $lastGui.exportSha256 -cmatch '^[0-9a-f]{64}$'}
-        if($GuiAutomation -eq 'gtgt-roundtrip-inspect'){$matched=$matched -and $lastGui.roundtripImportCommandInvoked -and $lastGui.roundtripImportDialogMatched -and $lastGui.roundtripImportKeyboardCommitted -and $lastGui.roundtripImportDialogSubmitted -and $lastGui.roundtripImportPathMatched -and $lastGui.roundtripImportSheetMatched -and $lastGui.roundtripImportSucceeded -and $lastGui.roundtripImportCheckedMoneyCount -eq 27 -and $lastGui.roundtripReexportCommandInvoked -and $lastGui.roundtripReexportSucceeded -and $lastGui.roundtripReexportBytes -gt 0 -and $lastGui.roundtripReexportSha256 -cmatch '^[0-9a-f]{64}$' -and $lastGui.roundtripXmlExactMatched}
+        if($GuiAutomation -in @('gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')){$matched=$matched -and $lastGui.exportSchemaPinnedVerified -and $lastGui.exportOriginalPathMatched -and $lastGui.exportCommandInvoked -and $lastGui.exportSelectorMatched -and $lastGui.exportButtonInvoked -and $lastGui.exportDialogMatched -and $lastGui.exportDestinationFresh -and $lastGui.exportDialogSubmitted -and $lastGui.exportFilenameKeyboardCommitted -and $lastGui.exportFileExists -and $lastGui.exportXmlRootMatched -and $lastGui.exportSyntheticIdentityMatched -and $lastGui.exportSuccessAcknowledged -and $lastGui.exportBytes -gt 0 -and $lastGui.exportSha256 -cmatch '^[0-9a-f]{64}$'}
+        if($GuiAutomation -eq 'gtgt-web-import-inspect'){$matched=$matched -and $lastGui.webInputVerified -and $lastGui.webSourceSha -ceq $env:EXPECTED_WEB_SOURCE_SHA -and $lastGui.webImportInputSha256 -cmatch '^[a-f0-9]{64}$'}
+        if($GuiAutomation -in @('gtgt-roundtrip-inspect','gtgt-web-import-inspect')){$matched=$matched -and $lastGui.roundtripImportCommandInvoked -and $lastGui.roundtripImportDialogMatched -and $lastGui.roundtripImportKeyboardCommitted -and $lastGui.roundtripImportDialogSubmitted -and $lastGui.roundtripImportPathMatched -and $lastGui.roundtripImportSheetMatched -and $lastGui.roundtripImportSucceeded -and $lastGui.roundtripImportCheckedMoneyCount -eq 27 -and $lastGui.roundtripReexportCommandInvoked -and $lastGui.roundtripReexportSucceeded -and $lastGui.roundtripReexportBytes -gt 0 -and $lastGui.roundtripReexportSha256 -cmatch '^[0-9a-f]{64}$' -and $lastGui.roundtripXmlExactMatched}
       }else{$matched=$matched -and $lastGui.stage -eq 'original-profile-saved-verified'}
     }
     $lastGui.status=if($matched){'matched'}elseif($terminal){'failed'}elseif($automationRootExited){'root-exited'}else{'timed-out'}
@@ -789,10 +807,10 @@ try {
     $report.guiReferenceAutomation=$lastGui
     if(-not $matched){throw 'GUI_REFERENCE_AUTOMATION_NOT_VERIFIED'}
   }
-  $report.stage = if($GuiAutomation -eq 'gtgt-roundtrip-inspect'){'synthetic-original-gtgt-roundtrip-inspected'}elseif($GuiAutomation -eq 'gtgt-export-inspect'){'synthetic-original-gtgt-export-inspected'}elseif($GuiAutomation -eq 'gtgt-sheet-inspect'){'synthetic-original-gtgt-sheet-inspected'}elseif($GuiAutomation -eq 'gtgt-inspect'){'synthetic-original-gtgt-period-inspected'}elseif($GuiAutomation -eq 'profile-save'){'synthetic-original-profile-saved-verified'}elseif($GuiAutomation -eq 'inspect'){'synthetic-profile-managed-controls-inspected'}elseif ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
+  $report.stage = if($GuiAutomation -eq 'gtgt-web-import-inspect'){'synthetic-original-gtgt-web-import-inspected'}elseif($GuiAutomation -eq 'gtgt-roundtrip-inspect'){'synthetic-original-gtgt-roundtrip-inspected'}elseif($GuiAutomation -eq 'gtgt-export-inspect'){'synthetic-original-gtgt-export-inspected'}elseif($GuiAutomation -eq 'gtgt-sheet-inspect'){'synthetic-original-gtgt-sheet-inspected'}elseif($GuiAutomation -eq 'gtgt-inspect'){'synthetic-original-gtgt-period-inspected'}elseif($GuiAutomation -eq 'profile-save'){'synthetic-original-profile-saved-verified'}elseif($GuiAutomation -eq 'inspect'){'synthetic-profile-managed-controls-inspected'}elseif ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('WEB_REFERENCE_INPUT_INVALID','GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
@@ -833,7 +851,7 @@ try {
       Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
       Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Business.dll') '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
       Assert-Hash ($exe+'.config') 'b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
-      if($GuiAutomation -in @('gtgt-export-inspect','gtgt-roundtrip-inspect')) {
+      if($GuiAutomation -in @('gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')) {
         Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Utilities.dll') 'ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec'
         Assert-Hash (Join-Path (Split-Path $exe) 'FarPoint.Win.Spread.dll') '2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'
         Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.ComputeHash.dll') 'd9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5'

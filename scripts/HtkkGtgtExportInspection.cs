@@ -45,6 +45,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static void FindExportSelectors(Control root,List<Form> found,ref int count){if(++count>512)return;Form form=root as Form;if(form!=null&&form.Visible&&form.GetType().FullName=="HTKK.frmWinSelectExport"&&!found.Contains(form))found.Add(form);foreach(Control child in root.Controls){if(count>=512)break;FindExportSelectors(child,found,ref count);}}
  private void StartOriginalGtgtExport(Form owner){
   if(exportStarted)return;exportStarted=true;roundtripOwner=owner;
+  if(mode=="gtgt-web-import-inspect"){stage="gtgt-web-input-checking";Record();VerifyOwnWebInput();}
   if(!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtIdentity||!gtgtSigner||!gtgtZero||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
   string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd");
   string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
@@ -67,15 +68,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
    ReadOriginalExport();if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
    Control[] closeControls=form.Controls.Find("btn_2",true);if(form.Text.Trim()!="Thông Báo"||closeControls.Length!=1||CountVisibleButtons(form)!=1)throw new InvalidOperationException();Button close=closeControls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
    exportSuccessAcknowledged=true;
-   if(mode=="gtgt-roundtrip-inspect"&&roundtripPhase=="not-started"){
+   if((mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&roundtripPhase=="not-started"){
     firstExportPath=exportPath;firstExportSha256=exportSha256;firstExportBytes=exportBytes;
-    roundtripPhase="waiting-import-ready";stage="gtgt-import-ready-waiting";Record();close.PerformClick();return;
+    roundtripPhase="waiting-import-ready";stage=mode=="gtgt-web-import-inspect"?"gtgt-web-import-ready-waiting":"gtgt-import-ready-waiting";Record();close.PerformClick();return;
    }
    if(roundtripPhase=="reexporting"){
     roundtripReexportBytes=exportBytes;roundtripReexportSha256=exportSha256;roundtripReexportSucceeded=true;
     if(Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();
     roundtripXmlExactMatched=ReadBoundedOriginalXml(firstExportPath).DocumentElement.OuterXml==ReadBoundedOriginalXml(exportPath).DocumentElement.OuterXml;
-    exportBytes=firstExportBytes;exportSha256=firstExportSha256;stage="gtgt-roundtrip-inspected";
+    exportBytes=firstExportBytes;exportSha256=firstExportSha256;if(mode=="gtgt-web-import-inspect"&&Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();stage=mode=="gtgt-web-import-inspect"?"gtgt-web-import-inspected":"gtgt-roundtrip-inspected";
    }else stage="gtgt-export-inspected";
    finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
   }
@@ -94,7 +95,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   IntPtr ownerWindow=GetWindow(dialog,4);uint ownerPid;if(ownerWindow==IntPtr.Zero||GetWindowThreadProcessId(ownerWindow,out ownerPid)==0||ownerPid!=own)throw new InvalidOperationException();
   List<IntPtr> edits=new List<IntPtr>();EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused){int id=GetDlgCtrlID(child);if(IsWindowVisible(child)&&IsWindowEnabled(child)&&NativeText(child,true)=="Edit"&&(id==1001||id==1148))edits.Add(child);return true;},IntPtr.Zero);
   IntPtr save=GetDlgItem(dialog,1);if(edits.Count!=1||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
-  if(opening){if(!File.Exists(desiredPath)||Hash(desiredPath)!=firstExportSha256)throw new InvalidOperationException();}
+  if(opening){if(!File.Exists(desiredPath)||Hash(desiredPath)!=RoundtripInputHash())throw new InvalidOperationException();}
   else{
    if(File.Exists(desiredPath))throw new InvalidOperationException();
    FileSystemInfo[] contents=new DirectoryInfo(Path.GetDirectoryName(desiredPath)).GetFileSystemInfos();

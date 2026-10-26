@@ -10,9 +10,13 @@ on:
       gui_automation:
         description: 'Automation THAM CHIẾU riêng: chỉ custom CLR2/x86 + synthetic login'
         type: choice
-        options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-export-inspect, gtgt-roundtrip-inspect]
+        options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-export-inspect, gtgt-roundtrip-inspect, gtgt-web-import-inspect]
         default: none
         required: true
+      web_source_sha:
+        description: Private source commit required for the synthetic web XML import case
+        type: string
+        required: false
       synthetic_login:
         description: 'Đăng nhập bằng MST giả lập; xuất/nhập chỉ theo chế độ tham chiếu đã chọn'
         type: boolean
@@ -46,9 +50,20 @@ jobs:
       - name: Test private GUI XML evidence boundaries without network
         shell: pwsh
         run: python -m unittest discover -s scripts -p test_gtgt_export_evidence.py
+      - name: Test private synthetic web input boundaries without network
+        shell: pwsh
+        run: python -m unittest discover -s scripts -p test_htkk_web_input.py
+      - name: Fetch fixed synthetic web XML privately
+        if: inputs.install_and_probe && inputs.gui_automation == 'gtgt-web-import-inspect'
+        shell: pwsh
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+        run: python ./scripts/fetch-htkk-web-input.py
       - name: Kiểm tra nguồn và điều kiện Windows
         shell: pwsh
         env:
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
           PROBE_INSTALL: ${{ inputs.install_and_probe }}
           PROBE_RUNTIME_HOST: ${{ inputs.runtime_host }}
           PROBE_GUI_AUTOMATION: ${{ inputs.gui_automation }}
@@ -59,7 +74,7 @@ jobs:
           $syntheticLogin = $env:PROBE_SYNTHETIC_LOGIN -eq 'true'
           $ackRegistration = $env:PROBE_ACK_REGISTRATION -eq 'true'
           $guiAutomation = if ([string]::IsNullOrEmpty($env:PROBE_GUI_AUTOMATION)) { 'none' } else { $env:PROBE_GUI_AUTOMATION }
-          if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect')) { throw 'Invalid reference GUI automation mode.' }
+          if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')) { throw 'Invalid reference GUI automation mode.' }
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation

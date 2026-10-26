@@ -16,7 +16,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"roundtripImportCommandInvoked","roundtripImportDialogMatched","roundtripImportKeyboardCommitted","roundtripImportDialogSubmitted","roundtripImportPathMatched","roundtripImportSheetMatched","roundtripImportSucceeded","roundtripReexportCommandInvoked","roundtripReexportSucceeded","roundtripXmlExactMatched"};
   bool[] values=new bool[]{roundtripImportCommandInvoked,roundtripImportDialogMatched,roundtripImportKeyboardCommitted,roundtripImportDialogSubmitted,roundtripImportPathMatched,roundtripImportSheetMatched,roundtripImportSucceeded,roundtripReexportCommandInvoked,roundtripReexportSucceeded,roundtripXmlExactMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  json.Append(","+q+"roundtripImportCheckedMoneyCount"+q+":"+roundtripImportCheckedMoneyCount+","+q+"roundtripReexportBytes"+q+":"+roundtripReexportBytes+","+q+"roundtripReexportSha256"+q+":"+q+roundtripReexportSha256+q);return json.ToString();
+  json.Append(","+q+"roundtripImportCheckedMoneyCount"+q+":"+roundtripImportCheckedMoneyCount+","+q+"roundtripReexportBytes"+q+":"+roundtripReexportBytes+","+q+"roundtripReexportSha256"+q+":"+q+roundtripReexportSha256+q);return json.ToString()+WebInputJson();
  }
  private bool OriginalMessageVisible(){foreach(Form form in Application.OpenForms)if(form.Visible&&form.GetType().FullName=="TAX.HTKK.Utilities.Control.frmMessage")return true;return false;}
  private bool OriginalRoundtripOwnerReady(){
@@ -24,7 +24,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return roundtripOwner.Visible&&roundtripOwner.Enabled&&!OriginalMessageVisible();
  }
  private void ContinueOriginalRoundtrip(){
-  if(mode!="gtgt-roundtrip-inspect"||!exportSuccessAcknowledged||String.IsNullOrEmpty(firstExportPath)||Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();
+  if((mode!="gtgt-roundtrip-inspect"&&mode!="gtgt-web-import-inspect")||!exportSuccessAcknowledged||String.IsNullOrEmpty(firstExportPath)||Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();
+  if(mode=="gtgt-web-import-inspect"&&(!webInputVerified||Hash(webInputPath)!=webImportInputSha256))throw new InvalidOperationException();
   if(roundtripPhase=="waiting-import-ready"){
    if(!OriginalRoundtripOwnerReady())return;
    Button import=Named(roundtripOwner,"cmdImportXML") as Button;if(import==null||import.FindForm()!=roundtripOwner||import.Text.Replace("&",String.Empty).Trim()!="Nhập từ XML"||roundtripImportCommandInvoked)throw new InvalidOperationException();
@@ -38,13 +39,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
     stage="gtgt-import-success-sheet-checking";
     FieldInfo loading=OriginalAssembly().GetType("HTKK.frmWinToKhai",true).GetField("FileNameLoading",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);
     if(loading==null||loading.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)loading.GetValue(null);
-    roundtripImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(firstExportPath),StringComparison.OrdinalIgnoreCase);Record();
+    roundtripImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(RoundtripInputPath()),StringComparison.OrdinalIgnoreCase);Record();
     if(!roundtripImportCommandInvoked||!roundtripImportDialogMatched||!roundtripImportKeyboardCommitted||!roundtripImportDialogSubmitted||!roundtripImportPathMatched)throw new InvalidOperationException();
     roundtripImportSheetMatched=InspectOriginalImportedSheet();Record();if(!roundtripImportSheetMatched)throw new InvalidOperationException();
     Control[] controls=message.Controls.Find("btn_2",true);if(message.Text.Trim()!="Thông Báo"||controls.Length!=1||CountVisibleButtons(message)!=1)throw new InvalidOperationException();Button close=controls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
     roundtripImportSucceeded=true;roundtripPhase="waiting-reexport-ready";stage="gtgt-reexport-ready-waiting";Record();close.PerformClick();return;
    }
-   if(!roundtripImportDialogSubmitted)TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",firstExportPath,true);
+   if(!roundtripImportDialogSubmitted)TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",RoundtripInputPath(),true);
    return;
   }
   if(roundtripPhase=="waiting-reexport-ready"){

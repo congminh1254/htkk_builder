@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   $safe = [ordered]@{
@@ -16,6 +16,7 @@ function New-HtkkX86ReferenceHost {
     compilerTrustVerified=$false; compilerExitCode=$null; compilerErrorCodes=@()
     hostPath=$null; hostSha256=$null; hostConfigPath=$null; resultPath=$null
     arguments=@(); createdPaths=@(); compilerDirectory=$null
+    webImportInputPath=$null; webImportInputHashPath=$null; webImportSourceShaPath=$null
     guiAutomationMode=$GuiAutomation; guiAutomationResultPath=$null; guiAutomationPermitPath=$null
     originalExecutableModified=$false; originalConfigurationModified=$false
     secondaryDomainUsesOriginalConfiguration=$true; runtimeRoundTrip=$false
@@ -52,6 +53,10 @@ function New-HtkkX86ReferenceHost {
     $automationResultFile=$program+'.gui-automation.json'
     $automationPermitFile=$program+'.gui-automation.allow'
     $candidates=@($program,$hostConfig,$resultFile,$automationResultFile,$automationPermitFile)
+    if($GuiAutomation -eq 'gtgt-web-import-inspect'){
+      $safe.webImportInputPath=$program+'.web-input.xml';$safe.webImportInputHashPath=$program+'.web-input.sha256';$safe.webImportSourceShaPath=$program+'.web-source.sha'
+      $candidates+=@($safe.webImportInputPath,$safe.webImportInputHashPath,$safe.webImportSourceShaPath)
+    }
     foreach($path in $candidates) { if(Test-Path -LiteralPath $path) { $safe.status='owned-path-already-exists'; return $safe } }
     # Claim only the previously absent unique names; a refusal above must never
     # delete an existing file in the installed project.
@@ -178,6 +183,8 @@ internal static class HtkkX86ReferenceHost {
     [IO.File]::WriteAllText($navigationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtReferenceNavigation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $periodSource=Join-Path $directory 'HtkkGtgtPeriodAndSheet.cs'
     [IO.File]::WriteAllText($periodSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtPeriodAndSheet.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
+    $webInputSource=Join-Path $directory 'HtkkWebInputReference.cs'
+    [IO.File]::WriteAllText($webInputSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWebInputReference.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $roundtripSource=Join-Path $directory 'HtkkGtgtRoundtripInspection.cs'
     [IO.File]::WriteAllText($roundtripSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtRoundtripInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $exportSource=Join-Path $directory 'HtkkGtgtExportInspection.cs'
@@ -186,7 +193,7 @@ internal static class HtkkX86ReferenceHost {
     $info.FileName=$compiler; $info.WorkingDirectory=$directory; $info.UseShellExecute=$false; $info.CreateNoWindow=$true
     $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true; $info.Environment.Clear()
     foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $info.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource)) { $info.ArgumentList.Add($argument) }
+    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource)) { $info.ArgumentList.Add($argument) }
     $compilerProcess=[Diagnostics.Process]::Start($info)
     $null=$compilerProcess.Handle
     $stdout=$compilerProcess.StandardOutput.ReadToEndAsync(); $stderr=$compilerProcess.StandardError.ReadToEndAsync()
