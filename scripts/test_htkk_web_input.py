@@ -16,6 +16,8 @@ def sale_fixture(case="01GTGT-sale10-M10-2026"):
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  root.find('.//'+ns+'ct21').text=w.CASE_CHECKBOX[case]
+ if case=='01GTGT-zero-Q4-2026':
+  for name,(_,expected) in w.PERIOD_FIELDS.items():root.find('.//'+ns+name).text=expected
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def manifest(body):return {'format':'htkk-web-zero-input-v1','sourceRepository':w.REPO,'sourceCommit':'a'*40,'sourceVersion':'0.9.2','caseId':'01GTGT-zero-M10-2026','inputsSynthetic':True,'exporter':'lib/htkk-xml.ts','producerSha256':'c'*64,'xmlSha256':hashlib.sha256(body).hexdigest(),'bytes':len(body)}
 def envelope(body,name):return {'type':'file','name':name,'path':name,'encoding':'base64','size':len(body),'content':base64.encodebytes(body).decode(),'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
@@ -65,6 +67,15 @@ class PrivacyTests(unittest.TestCase):
   for name in ('ct22','ct41','ct43','ct32'):
    root=ET.fromstring(sale_fixture(case));root.find('.//{'+w.privacy.NS+'}'+name).text='8'
    with self.subTest(field=name),self.assertRaises(w.InputError):w.validate_web_xml((w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode(),TODAY,case)
+
+ def test_quarter_requires_its_exact_period_and_cannot_accept_monthly_input(self):
+  case='01GTGT-zero-Q4-2026';body=sale_fixture(case)
+  self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
+  for content,target in ((web_fixture(),case),(body,'01GTGT-zero-M10-2026')):
+   with self.assertRaises(w.InputError):w.validate_web_xml(content,TODAY,target)
+  for name,(baseline,expected) in w.PERIOD_FIELDS.items():
+   changed=body.replace(('<'+name+'>'+expected+'</'+name+'>').encode(),('<'+name+'>invalid</'+name+'>').encode())
+   with self.subTest(field=name),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,case)
 
  def setUp(self):self.body=web_fixture()
  def reject(self,body,code):

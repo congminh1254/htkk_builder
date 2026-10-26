@@ -47,6 +47,14 @@ def fake_api(web,manifest,info=None,existing=True):
  return fetch,calls
 
 class NativePrivacyTests(unittest.TestCase):
+ def test_quarter_native_privacy_requires_exact_period_before_in_memory_adaptation(self):
+  case='01GTGT-zero-Q4-2026';_,native,_,_=fixture(case)
+  self.assertTrue(n.validate_native(native,case,TODAY)['privacyValuesVerified'])
+  for body,target in ((fixture()[1],case),(native,'01GTGT-zero-M10-2026')):
+   with self.assertRaises((n.OutputError,n.privacy.EvidenceError)):n.validate_native(body,target,TODAY)
+  for name in n.reader.PERIOD_FIELDS:
+   with self.subTest(field=name),self.assertRaises(n.OutputError):n.validate_native(changed(native,name,'invalid'),case,TODAY)
+
  def test_rounding_and_manual_native_outputs_reject_wrong_tax_or_wrong_case(self):
   for case in ('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026'):
    _,native,_,_=fixture(case)

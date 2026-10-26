@@ -19,6 +19,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool gtgtCaseMoneyMatched=false,gtgtCt42Locked=false,webCaseEdited=false;private int gtgtCaseMoneyCount=0,gtgtCaseMismatchMask=0,gtgtCaseNonzeroMask=0;private Stopwatch webCaseEditClock=null;
  private Stopwatch gtgtObservationClock=null;
  private bool noActivityCheckboxActivated=false,gtgtCt21CaseMatched=false,gtgtCt21ConfirmationMatched=false,gtgtCt21LocksMatched=false,gtgtCt21BeforeExportMatched=false,gtgtCt21AfterImportMatched=false,gtgtCt21UncheckMatched=false;
+ private bool QuarterCase(){return webCaseId=="01GTGT-zero-Q4-2026";}
  private bool NoActivityCase(){return webCaseId=="01GTGT-noactivity-zero-M10-2026"||webCaseId=="01GTGT-noactivity-reset-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-cancel-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-uncheck-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-keep-credit-M10-2026";}
  private bool CancelCt21Case(){return webCaseId=="01GTGT-noactivity-cancel-sale10-M10-2026";}
  private bool UncheckCt21Case(){return webCaseId=="01GTGT-noactivity-uncheck-sale10-M10-2026";}
@@ -131,10 +132,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void ConfigureOriginalGtgtPeriod(Control period){
   stage="gtgt-period-configuring";Record();
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!="D1")throw new InvalidOperationException();
-  SetCheck(Named(period,"chkTkhaiThang"),true);SetCheck(Named(period,"OptChinhthuc"),true);
+  if(mode=="gtgt-web-import-inspect"&&!webInputVerified)VerifyOwnWebInput();
+  SetCheck(Named(period,QuarterCase()?"chkTKQuy":"chkTkhaiThang"),true);SetCheck(Named(period,"OptChinhthuc"),true);
   periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&!CheckValue(ReadableNamed(period,"OptBosung"));
-  SetText(period,"mskYear","2026");SetText(period,"mskMonth","10");
-  periodDateMatched=Named(period,"mskYear").Text=="2026"&&Named(period,"mskMonth").Text=="10"&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy"));
+  SetText(period,"mskYear","2026");if(QuarterCase()){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact("4");if(index<0)throw new InvalidOperationException();quarter.SelectedIndex=index;if(Convert.ToString(quarter.SelectedItem,CultureInfo.InvariantCulture)!="4")throw new InvalidOperationException();}else SetText(period,"mskMonth","10");
+  periodDateMatched=Named(period,"mskYear").Text=="2026"&&(QuarterCase()?CheckValue(Named(period,"chkTKQuy"))&&!CheckValue(ReadableNamed(period,"chkTkhaiThang")):Named(period,"mskMonth").Text=="10"&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy")));
   periodDescriptions.Clear();periodControlCount=0;int currentControlCount=0;DescribePeriod(period,ref currentControlCount);
   stage="gtgt-period-province-selecting";Record();bool provinceMatched=SelectGeography(period,"cboTinh","101","Thành phố Hà Nội","MaTinh","TenTinh");
   stage="gtgt-period-ward-selecting";Record();bool wardMatched=SelectGeography(period,"cboXa","10129087","Phường Sơn Tây","MaXa","TenXa");
@@ -174,7 +176,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string root=Path.GetDirectoryName(project);
   gtgtPins=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_283.xml"))=="40f5d6f711f7acb69dcc4098e3e3bb0b1849224d1c185902a50b8cae6fc50aae"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml"))=="7ba334067c52ea22cd744dcf2c0ff444190d6661f6b3e9b3ea08e5ead574830c";
   gtgtVersion=Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)=="D1"&&Convert.ToString(Get(Global("ToKhaiInfo"),"VersionXML"),CultureInfo.InvariantCulture)=="2.8.3";
-  object currentPeriod=Global("TTPeriodInfo");gtgtPeriod=Convert.ToString(Get(currentPeriod,"KieuKy"),CultureInfo.InvariantCulture)=="M"&&Convert.ToString(Get(currentPeriod,"Nam"),CultureInfo.InvariantCulture)=="2026"&&Convert.ToString(Get(currentPeriod,"Thang"),CultureInfo.InvariantCulture)=="10"&&Convert.ToString(Get(currentPeriod,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C";
+  object currentPeriod=Global("TTPeriodInfo");gtgtPeriod=Convert.ToString(Get(currentPeriod,"KieuKy"),CultureInfo.InvariantCulture)==(QuarterCase()?"Q":"M")&&Convert.ToString(Get(currentPeriod,"Nam"),CultureInfo.InvariantCulture)=="2026"&&Convert.ToString(Get(currentPeriod,QuarterCase()?"Quy":"Thang"),CultureInfo.InvariantCulture)==(QuarterCase()?"4":"10")&&Convert.ToString(Get(currentPeriod,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C";
   gtgtIdentity=CellText(sheet,9,3)==FakeName&&CellText(sheet,10,3).Replace("-",String.Empty)==Mst;gtgtSigner=CellText(sheet,63,10)==FakeSigner;
   object checkbox=Cell(sheet,35,8),cellType=Get(checkbox,"CellType");if(!noActivityCheckboxActivated)gtgtCt21=cellType!=null&&cellType.GetType().FullName=="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&!Convert.ToBoolean(Get(checkbox,"Locked"))&&!Selected(Get(checkbox,"Value"));
   InspectMoneyZero(sheet);
@@ -188,7 +190,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!webInputVerified)VerifyOwnWebInput();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
-   if(webCaseId!="01GTGT-zero-M10-2026"&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!webCaseEdited){
+   if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!webCaseEdited){
     if(!gtgtZero||gtgtEmptyMoney!=0||gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,caseRow,9),"Locked")))throw new InvalidOperationException();
     webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();if(CreditCt21Case()){Edit(grid,sheet,36,11,"7",false,"gtgt-case-editing",false);return;}Edit(grid,sheet,caseRow,9,webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",false,"gtgt-case-editing",false);return;
    }
@@ -221,7 +223,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<coordinates.GetLength(0);index++){
    int row=coordinates[index,0],column=coordinates[index,1];decimal expected=Decimal.Zero;
    if(CreditCt21Case()&&column==11&&(row==36||row==59||row==61))expected=7;
-   if(webCaseId!="01GTGT-zero-M10-2026"&&(!NoActivityCase()||CancelCt21Case())){
+   if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&(!NoActivityCase()||CancelCt21Case())){
     bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
     if(column==9&&(row==44||row==caseRow||row==49))expected=webCaseId=="01GTGT-sale5-half-M10-2026"?10:webCaseId=="01GTGT-sale10-half-M10-2026"?5:1000000;
     if(column==11&&(row==44||row==caseRow||row==49||row==50||row==56||row==58))expected=(webCaseId=="01GTGT-sale10-half-M10-2026"||webCaseId=="01GTGT-sale5-half-M10-2026")?1:(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")?7:100000;

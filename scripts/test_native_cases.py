@@ -5,9 +5,9 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6'))]}
+def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7'))]}
 class NativeCases(unittest.TestCase):
- def test_fixed_eleven_cases_and_separate_tokens_pending_before_dispatch(self):
+ def test_fixed_twelve_cases_and_separate_tokens_pending_before_dispatch(self):
   value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[]
   d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args))
   self.assertEqual(len(calls),2*len(d.CASES))

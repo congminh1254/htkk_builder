@@ -1,4 +1,4 @@
-"""Privately retain byte-exact native reexports of eleven fixed synthetic web cases.
+"""Privately retain byte-exact native reexports of twelve fixed synthetic web cases.
 
 Privacy adapters operate only on an in-memory copy. Original output bytes are
 never rewritten. Neither this publisher nor its fixtures establish filing-wide
@@ -16,7 +16,7 @@ REPO=reader.REPO
 BUILDER=reader.BUILDER
 DIRECTORY='htkk-web-native-output'
 NAMES=('01GTGT-native.xml','provenance.json')
-BRANCHES={'01GTGT-zero-M10-2026':'gtgt-web-native-zero-output','01GTGT-sale10-M10-2026':'gtgt-web-native-sale10-output','01GTGT-sale10-half-M10-2026':'gtgt-web-native-sale10-half-output','01GTGT-sale10-manual-M10-2026':'gtgt-web-native-sale10-manual-output','01GTGT-sale5-half-M10-2026':'gtgt-web-native-sale5-half-output','01GTGT-sale5-manual-M10-2026':'gtgt-web-native-sale5-manual-output','01GTGT-noactivity-zero-M10-2026':'gtgt-web-native-noactivity-zero-output','01GTGT-noactivity-reset-sale10-M10-2026':'gtgt-web-native-noactivity-reset-sale10-output','01GTGT-noactivity-cancel-sale10-M10-2026':'gtgt-web-native-noactivity-cancel-sale10-output','01GTGT-noactivity-uncheck-sale10-M10-2026':'gtgt-web-native-noactivity-uncheck-sale10-output','01GTGT-noactivity-keep-credit-M10-2026':'gtgt-web-native-noactivity-keep-credit-output'}
+BRANCHES={'01GTGT-zero-M10-2026':'gtgt-web-native-zero-output','01GTGT-sale10-M10-2026':'gtgt-web-native-sale10-output','01GTGT-sale10-half-M10-2026':'gtgt-web-native-sale10-half-output','01GTGT-sale10-manual-M10-2026':'gtgt-web-native-sale10-manual-output','01GTGT-sale5-half-M10-2026':'gtgt-web-native-sale5-half-output','01GTGT-sale5-manual-M10-2026':'gtgt-web-native-sale5-manual-output','01GTGT-noactivity-zero-M10-2026':'gtgt-web-native-noactivity-zero-output','01GTGT-noactivity-reset-sale10-M10-2026':'gtgt-web-native-noactivity-reset-sale10-output','01GTGT-noactivity-cancel-sale10-M10-2026':'gtgt-web-native-noactivity-cancel-sale10-output','01GTGT-noactivity-uncheck-sale10-M10-2026':'gtgt-web-native-noactivity-uncheck-sale10-output','01GTGT-noactivity-keep-credit-M10-2026':'gtgt-web-native-noactivity-keep-credit-output','01GTGT-zero-Q4-2026':'gtgt-web-native-quarter-zero-output'}
 PINS={**privacy.PINS,'Project/FarPoint.Win.Spread.dll':'2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'}
 MONEY=('ct22','ct23','ct24','ct23a','ct24a','ct25','ct26','ct27','ct28','ct29','ct30','ct31','ct32','ct33','ct32a','ct34','ct35','ct36','ct37','ct38','ct39a','ct40a','ct40b','ct40','ct41','ct42','ct43')
 SERVICE={'maDVu':'HTKK','tenDVu':'HỖ TRỢ KÊ KHAI THUẾ','pbanDVu':'5.8.1'}
@@ -76,6 +76,11 @@ def validate_native(body,case_id,today=None):
  # validator's freshness policy, after independently checking its exact value.
  # This is NOT a comparison normalization and never changes published bytes.
  signed.text=created.text
+ if case_id=='01GTGT-zero-Q4-2026':
+  for name,(baseline,expected) in reader.PERIOD_FIELDS.items():
+   node=leaf(root,PREFIX+'KyKKhaiThue/'+name)
+   if node.text!=expected:fail('XML_PRIVACY')
+   node.text=baseline
  checkbox=leaf(root,'HSoKhaiThue/CTieuTKhaiChinh/ct21')
  if checkbox.text!=reader.CASE_CHECKBOX[case_id]:fail('XML_PRIVACY')
  checkbox.text='0'
