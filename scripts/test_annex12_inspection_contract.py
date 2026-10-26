@@ -1,7 +1,7 @@
 """Mode routing and bounded metadata contracts; no synthetic test is native proof."""
 import ast,pathlib,re,unittest
 ROOT=pathlib.Path(__file__).parent
-MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-annex12-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')
+MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')
 class AnnexInspectionContract(unittest.TestCase):
  def test_actual_csharp_start_rejects_unknown_modes_and_accepts_every_existing_mode(self):
   text=(ROOT/'HtkkGuiReferenceAutomation.cs').read_text()
@@ -20,9 +20,9 @@ class AnnexInspectionContract(unittest.TestCase):
   self.assertIn("$annex.mode='gtgt-annex12-inspect'",fixture);self.assertIn("@('annex12FirstGroupId',10001)",fixture)
  def test_annex_mode_is_inspection_only_with_separate_period_predicate(self):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
-  line=next(line for line in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-inspect'){$matched=" in line)
+  line=next(line for line in probe.splitlines() if "if($GuiAutomation -in @('gtgt-annex12-inspect','gtgt-annex12-row-inspect')){$matched=" in line)
   for term in ('$lastGui.annexSelectedCount -eq 1','$lastGui.annex12SelectionActionCount -eq 1','$lastGui.annex12StructureMatched','-not $lastGui.exportCommandInvoked','-not $lastGui.webInputVerified'):self.assertIn(term,line)
-  self.assertIn("if($GuiAutomation -eq 'gtgt-annex12-inspect'){$lastGui.periodAnnex12Matched}else{$lastGui.periodNoAnnexMatched}",probe)
+  self.assertIn("if($GuiAutomation -in @('gtgt-annex12-inspect','gtgt-annex12-row-inspect')){$lastGui.periodAnnex12Matched}else{$lastGui.periodNoAnnexMatched}",probe)
   for line in probe.splitlines():
    if '$nativeEvidenceCreated=' in line or "if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $report.stage" in line:self.assertNotIn('gtgt-annex12-inspect',line)
 
@@ -45,3 +45,29 @@ class AnnexInspectionContract(unittest.TestCase):
    bad={**valid,key:'unmatched'}
    self.assertFalse(eval(compile(tree,'<real annex selector>','eval'),{'__builtins__':{}},bad))
   self.assertIn('columnCount<1||columnCount>16',source)
+
+class AnnexRowInspectionContract(unittest.TestCase):
+ def test_scalar_powershell_comparisons_never_receive_comma_separated_mode_literals(self):
+  for file in ('probe-htkk-windows.ps1','New-HtkkX86ReferenceHost.ps1','Get-HtkkSafeGuiReferenceResult.ps1'):
+   text=(ROOT/file).read_text()
+   self.assertIsNone(re.search(r"-(?:c?eq|c?ne)\s+'[^']+'\s*,\s*'",text),file)
+ def test_row_mode_has_bounded_real_f5_and_keeps_the_original_inspection_branch(self):
+  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  self.assertIn('mode=="gtgt-annex12-row-inspect"',source)
+  self.assertIn('owner.Controls.Find("pnF5",true)',source)
+  self.assertIn('SendKeys.SendWait("{F5}")',source)
+  block=source[source.index(' private void InspectOriginalAnnex12Row('):source.index(' private static bool Annex12CaptionMatched')]
+  self.assertNotIn('GetMethod("InsertTable',block);self.assertNotIn('SetValue',block)
+  for term in ('GetForegroundWindow()','grid.ContainsFocus','OriginalMessageVisible()','annex12RowBeforeRows==66','annex12RowAfterRows==67','annex12RowBeforeGroupRows==1','annex12RowAfterGroupRows==2','annex12RowInsertActionCount==1'):
+   self.assertIn(term,block)
+  self.assertIn('finished=true;stage="gtgt-annex12-inspected";Record();',source)
+ def test_row_metadata_is_exactly_typed_bounded_and_required_by_success_predicate(self):
+  reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text();probe=(ROOT/'probe-htkk-windows.ps1').read_text()
+  keys=re.findall(r"'([^']+)'",re.search(r'\$keys=@\(([^\n]+)\)',reader).group(1));self.assertEqual(len(keys),len(set(keys)))
+  for key in ('annex12F5Visible','annex12F5Invoked','annex12RowBeforeMatched','annex12RowAfterMatched','annex12RowSttMatched','annex12RowLocksMatched'):
+   self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
+  for key,maximum in {'annex12RowBeforeRows':10000,'annex12RowAfterRows':10000,'annex12RowBeforeGroupRows':10000,'annex12RowAfterGroupRows':10000,'annex12RowAfterGroupId':10000,'annex12RowInsertActionCount':1}.items():
+   self.assertIn(key,keys);self.assertIn(key+'=0;',fixture);self.assertIn(key+'='+str(maximum)+';',reader)
+  line=next(line for line in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-row-inspect'){$matched=" in line)
+  for term in ('$lastGui.annex12F5Visible','$lastGui.annex12F5Invoked','$lastGui.annex12RowBeforeMatched','$lastGui.annex12RowAfterMatched','$lastGui.annex12RowAfterRows -eq 67','$lastGui.annex12RowAfterGroupRows -eq 2','$lastGui.annex12RowInsertActionCount -eq 1'):self.assertIn(term,line)
+  self.assertIn("@('annex12RowInsertActionCount',2)",fixture);self.assertIn("$row.mode='gtgt-annex12-row-inspect'",fixture)

@@ -35,7 +35,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
  public void Start(string requestedMode){
-  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect")throw new ArgumentException();
+  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-annex12-row-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect")throw new ArgumentException();
   mode=requestedMode;string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
   try{
    pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
@@ -72,7 +72,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private static object Cell(object sheet,int row,int column){object cells=Get(sheet,"Cells");PropertyInfo item=cells.GetType().GetProperty("Item",new Type[]{typeof(int),typeof(int)});if(item==null)throw new InvalidOperationException();return item.GetValue(cells,new object[]{row,column});}
  private static string CellText(object sheet,int row,int column){object value=Get(Cell(sheet,row,column),"Text");return value==null?String.Empty:Convert.ToString(value,CultureInfo.InvariantCulture);}
  private void InspectAndMaybeSave(){
-  if((mode=="gtgt-inspect"||mode=="gtgt-sheet-inspect"||mode=="gtgt-annex12-inspect"||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&navigationPhase!="not-started"){ContinueGtgtNavigation();return;}
+  if((mode=="gtgt-inspect"||mode=="gtgt-sheet-inspect"||(mode=="gtgt-annex12-inspect"||mode=="gtgt-annex12-row-inspect")||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&navigationPhase!="not-started"){ContinueGtgtNavigation();return;}
   forms=0;
   foreach(Form form in Application.OpenForms){
    if(!form.Visible||form.IsDisposed)continue;forms++;
@@ -111,7 +111,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
     acknowledgement.Start();try{saves[0].PerformClick();}finally{acknowledgement.Stop();}
    }
    ReadSavedHeader();
-   if((mode=="gtgt-inspect"||mode=="gtgt-sheet-inspect"||mode=="gtgt-annex12-inspect"||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&headerMatched&&headerChecks==8&&headerMismatchMask==0&&successAcknowledged){
+   if((mode=="gtgt-inspect"||mode=="gtgt-sheet-inspect"||(mode=="gtgt-annex12-inspect"||mode=="gtgt-annex12-row-inspect")||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&headerMatched&&headerChecks==8&&headerMismatchMask==0&&successAcknowledged){
     // Original forms can be embedded with TopLevel=false. FindForm on the actual
     // worksheet controls identifies the owner; the outer main frame stays visible.
     Form profileOwner=closes[0].FindForm();
