@@ -14,3 +14,5 @@ Chỉ công bố cờ boolean, kích thước và hash; không đưa đường d
 Đây là điều kiện cần cho bước bổ sung sau này: `CheckPeriodKhbs` (`060004F4`) yêu cầu tệp tờ khai chính tồn tại; thiếu tệp báo `0107`, thiếu lần bổ sung trước báo `0296`. `cmdSave_Click` gốc là `060003A1`, `WinDoWorkSheetSave` là `06000090`; hàm dựng tên nội bộ là `GetFileNameBySheet` `060000A2`. Không gọi trực tiếp các hàm nghiệp vụ/lưu này trong reference host.
 
 Bước tiếp theo cần đóng worksheet sạch, mở lại D1 cùng kỳ bằng menu gốc, chọn bổ sung, kiểm lần 1/ngày lập và các sheet KHBS gốc theo nhánh DIA_BAN. Chỉ sau bằng chứng runtime riêng mới được khẳng định những bước đó đạt.
+
+Run40419346023 dừng trước nút Ghi vì guard nhầm số sheet được nạp với số phụ lục được chọn. Workbook nguồn luôn nạp11 sheet, kể cả khi chọn0 phụ lục. Guard đã sửa thành đúng11 sheet và vẫn đồng thời bắt buộc `periodNoAnnexMatched=true`, `annexSelected=0`; chưa coi bước Ghi đã đạt cho đến lượt Windows mới.

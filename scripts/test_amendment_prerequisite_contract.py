@@ -53,6 +53,9 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertIn("$ExpectedMode -cne 'gtgt-amendment-inspect'",text)
  def test_original_save_uses_button_and_read_only_bounded_internal_file_observation(self):
   source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  # Loaded workbook sheets are not selected annexes: the real no-annex D1 has11.
+  self.assertIn('gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0',source)
+  self.assertNotIn('gtgtSheets!=1||',source)
   self.assertIn('Named(owner,"cmdSave")',source);self.assertIn('save.PerformClick();',source)
   self.assertIn('Đã ghi dữ liệu thành công!',source);self.assertIn('isDataChanged',source)
   self.assertIn('OriginalPriorCandidates().Length!=0',source);self.assertIn('files.Length!=1',source)

@@ -29,7 +29,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void StartOriginalAmendmentPriorSave(Form owner,Control grid,object sheet){
   if(amendmentPriorSaveInvoked)return;
-  if(mode!="gtgt-amendment-inspect"||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||gtgtSheets!=1||!periodNoAnnexMatched||annexSelected!=0||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  // Source XLS loads all eleven worksheets; selection is separately proved by
+  // periodNoAnnexMatched and annexSelected==0 (native run40419346023).
+  if(mode!="gtgt-amendment-inspect"||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));if(!gtgtBusinessInstanceMatched||!gtgtAutoCalculationReady)throw new InvalidOperationException();
   amendmentPriorDirectory=Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst));
   if(OriginalPriorCandidates().Length!=0)throw new InvalidOperationException();
