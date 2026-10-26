@@ -30,6 +30,12 @@ class PrivacyTests(unittest.TestCase):
   self.assertEqual(error.exception.code,code)
  def test_exact_web_identity_comment_and_zero_case_accepted(self):
   result=w.validate_web_xml(self.body,TODAY);self.assertEqual(result,{'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False})
+ def test_historical_case_is_repeatable_but_created_and_signing_dates_are_fixed(self):
+  self.assertTrue(w.validate_web_xml(self.body,datetime.date(2027,10,25))['privacyValuesVerified'])
+  for name in ('ngayLapTKhai','ngayKy'):
+   old=('<'+name+'>2026-10-25</'+name+'>').encode()
+   for date in ('2026-10-24','2026-10-26','2027-10-25'):
+    self.reject(self.body.replace(old,('<'+name+'>'+date+'</'+name+'>').encode()),'XML_PRIVACY')
  def test_native_service_impersonation_and_modified_service_rejected(self):
   for name,value in (('maDVu','HTKK'),('ttinNhaCCapDVu','0'*32),('pbanDVu','0.9.3'),('tenDVu','PRIVATE')):
    before=w.SERVICE[name].encode();self.reject(self.body.replace(before,value.encode(),1),'XML_SERVICE')

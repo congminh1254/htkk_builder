@@ -3,7 +3,7 @@
 Original downloaded bytes are staged unchanged. In-memory service replacement is
 only a privacy-allowlist adapter, never native provenance or filing validation.
 """
-import base64,hashlib,importlib.util,io,json,os,pathlib,re,shutil,tempfile,urllib.error,urllib.parse,urllib.request
+import base64,datetime,hashlib,importlib.util,io,json,os,pathlib,re,shutil,tempfile,urllib.error,urllib.parse,urllib.request
 import xml.etree.ElementTree as ET
 REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
@@ -98,6 +98,11 @@ def validate_web_xml(body,today=None):
   root=ET.fromstring(no_comment)
  except ET.ParseError:raise InputError('XML_PARSE') from None
  ns='{'+privacy.NS+'}'
+ # This producer is a fixed historical fixture, not a daily native export.
+ # Validate both business dates exactly before reusing the zero-case allowlist.
+ for name in ('ngayLapTKhai','ngayKy'):
+  nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name)
+  if len(nodes)!=1 or nodes[0].text!='2026-10-25':raise InputError('XML_PRIVACY')
  services=root.findall('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinDVu')
  if len(services)!=1:raise InputError('XML_SERVICE')
  service=services[0]
@@ -111,7 +116,7 @@ def validate_web_xml(body,today=None):
   local=child.tag[len(ns):]
   child.text='0'*32 if local=='ttinNhaCCapDVu' else privacy.BASE_HEADER['TTinDVu/'+local]
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
- try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),today)
+ try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),datetime.date(2026,10,25))
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
  return {'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False}
 def download(token,fetch=None,today=None,expected_source=None):
