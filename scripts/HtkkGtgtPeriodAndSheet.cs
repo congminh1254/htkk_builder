@@ -19,6 +19,59 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool gtgtCaseMoneyMatched=false,gtgtCt42Locked=false,webCaseEdited=false;private int gtgtCaseMoneyCount=0,gtgtCaseMismatchMask=0,gtgtCaseNonzeroMask=0;private Stopwatch webCaseEditClock=null;
  private Stopwatch gtgtObservationClock=null;
  private bool noActivityCheckboxActivated=false,gtgtCt21CaseMatched=false,gtgtCt21ConfirmationMatched=false,gtgtCt21LocksMatched=false,gtgtCt21BeforeExportMatched=false,gtgtCt21AfterImportMatched=false,gtgtCt21UncheckMatched=false;
+ private bool periodAnnex12Matched=false,annex12SourcePinsMatched=false,annex12SheetObserved=false,annex12StructureMatched=false,annex12GroupMetadataMatched=false,annex12SttMatched=false,annex12LocksMatched=false;
+ private int annex12SelectionActionCount=0,annex12SheetRows=0,annex12SheetColumns=0,annex12NumericCount=0,annex12NumericEmptyMask=0,annex12NumericNonzeroMask=0,annex12GroupCount=0,annex12FirstGroupId=0,annex12FirstGroupRows=0;
+ private string Annex12Json(){
+  string q=((char)34).ToString();StringBuilder value=new StringBuilder();
+  string[] names=new string[]{"periodAnnex12Matched","annex12SourcePinsMatched","annex12SheetObserved","annex12StructureMatched","annex12GroupMetadataMatched","annex12SttMatched","annex12LocksMatched"};
+  bool[] flags=new bool[]{periodAnnex12Matched,annex12SourcePinsMatched,annex12SheetObserved,annex12StructureMatched,annex12GroupMetadataMatched,annex12SttMatched,annex12LocksMatched};
+  for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+Bool(flags[index]));
+  names=new string[]{"annex12SelectionActionCount","annex12SheetRows","annex12SheetColumns","annex12NumericCount","annex12NumericEmptyMask","annex12NumericNonzeroMask","annex12GroupCount","annex12FirstGroupId","annex12FirstGroupRows"};
+  int[] counts=new int[]{annex12SelectionActionCount,annex12SheetRows,annex12SheetColumns,annex12NumericCount,annex12NumericEmptyMask,annex12NumericNonzeroMask,annex12GroupCount,annex12FirstGroupId,annex12FirstGroupRows};
+  for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString();
+ }
+ private void SelectOriginalAnnex12(Control grid,object sheet){
+  if(mode!="gtgt-annex12-inspect"||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  string root=Path.GetDirectoryName(project);
+  annex12SourcePinsMatched=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_283.xml"))=="9512dcfef9551892d132fd905250427c580a1320f77318ab048d6d26fd3a32e5"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_xml_283.xml"))=="9dafb55263fa2729383cf57bc73f3b97cf48dc9a28632a596806ad0afe8f17d3"&&Hash(Path.Combine(root,"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd"))=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003";
+  if(!annex12SourcePinsMatched)throw new InvalidOperationException();
+  int rowCount=Convert.ToInt32(Get(sheet,"RowCount")),columnCount=Convert.ToInt32(Get(sheet,"ColumnCount")),target=-1;
+  if(rowCount<1||rowCount>512||columnCount<2||columnCount>16)throw new InvalidOperationException();
+  for(int row=0;row<rowCount;row++){bool rowMatched=false;for(int column=1;column<columnCount;column++)if(CellText(sheet,row,column).Trim()=="01-2/GTGT")rowMatched=true;if(rowMatched){if(target>=0)throw new InvalidOperationException();target=row;}}
+  if(target<0||!RowVisible(sheet,target)||Selected(Get(Cell(sheet,target,0),"Value"))||Convert.ToBoolean(Get(Cell(sheet,target,0),"Locked")))throw new InvalidOperationException();
+  object type=Get(Cell(sheet,target,0),"CellType");if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")throw new InvalidOperationException();
+  grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{target,0});
+  uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
+  SendKeys.SendWait(" ");if(OriginalMessageVisible())throw new InvalidOperationException();
+  annexSelected=0;for(int row=0;row<rowCount;row++)if(Selected(Get(Cell(sheet,row,0),"Value")))annexSelected++;
+  periodAnnex12Matched=annexSelected==1&&Selected(Get(Cell(sheet,target,0),"Value"));periodNoAnnexMatched=false;
+  if(!periodAnnex12Matched)throw new InvalidOperationException();annex12SelectionActionCount++;Record();
+ }
+ private void InspectOriginalAnnex12(Control grid){
+  if(!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||mode!="gtgt-annex12-inspect"||!periodAnnex12Matched||!annex12SourcePinsMatched||annexSelected!=1||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  object business=Global("InstanceClass");if(business==null||business.GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(Get(grid,"ActiveSheet"),"AutoCalculation"))){stage="waiting-gtgt-sheet";Record();return;}
+  object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count!=11)throw new InvalidOperationException();
+  PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();int found=-1;object annex=null;
+  for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(found>=0)throw new InvalidOperationException();found=index;annex=candidate;}}
+  if(found<0)throw new InvalidOperationException();
+  PropertyInfo active=grid.GetType().GetProperty("ActiveSheetIndex");if(active==null||!active.CanWrite)throw new InvalidOperationException();if(Convert.ToInt32(active.GetValue(grid,null))!=found)active.SetValue(grid,found,null);
+  if(Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible())throw new InvalidOperationException();
+  annex12SheetRows=Convert.ToInt32(Get(annex,"RowCount"));annex12SheetColumns=Convert.ToInt32(Get(annex,"ColumnCount"));if(annex12SheetRows<46||annex12SheetRows>10000||annex12SheetColumns<43||annex12SheetColumns>512)throw new InvalidOperationException();annex12SheetObserved=true;
+  annex12SttMatched=CellText(annex,42,1)=="1"&&CellText(annex,43,1)=="1.1";annex12LocksMatched=true;
+  int[,] cells=new int[,]{{42,4},{42,9},{42,19},{42,20},{42,23},{43,19},{43,20},{43,23},{45,19},{45,23}};bool[] locks=new bool[]{false,false,false,true,true,true,false,true,true,true};
+  for(int index=0;index<cells.GetLength(0);index++)if(Convert.ToBoolean(Get(Cell(annex,cells[index,0],cells[index,1]),"Locked"))!=locks[index])annex12LocksMatched=false;
+  cells=new int[,]{{42,19},{42,20},{42,23},{43,19},{43,20},{43,23},{45,19},{45,23}};annex12NumericCount=0;annex12NumericEmptyMask=0;annex12NumericNonzeroMask=0;
+  for(int index=0;index<cells.GetLength(0);index++){object raw=Get(Cell(annex,cells[index,0],cells[index,1]),"Value");decimal number;annex12NumericCount++;if(raw==null||raw==DBNull.Value||Convert.ToString(raw,CultureInfo.InvariantCulture)==String.Empty){annex12NumericEmptyMask|=1<<index;continue;}if(!Decimal.TryParse(Convert.ToString(raw,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number))throw new InvalidOperationException();if(number!=Decimal.Zero)annex12NumericNonzeroMask|=1<<index;}
+  System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)throw new InvalidOperationException();object info=null;
+  foreach(object candidate in infos)if(Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)throw new InvalidOperationException();info=candidate;}
+  if(info==null)throw new InvalidOperationException();System.Collections.IList tables=Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count<1||tables.Count>512)throw new InvalidOperationException();annex12GroupCount=tables.Count;
+  object first=tables[0];string id=Convert.ToString(Get(first,"TableID"),CultureInfo.InvariantCulture);if(id.Length<1||id.Length>5)throw new InvalidOperationException();foreach(char character in id)if(character<'0'||character>'9')throw new InvalidOperationException();if(!Int32.TryParse(id,NumberStyles.None,CultureInfo.InvariantCulture,out annex12FirstGroupId)||annex12FirstGroupId<1||annex12FirstGroupId>10000||id!=annex12FirstGroupId.ToString(CultureInfo.InvariantCulture))throw new InvalidOperationException();
+  System.Collections.IList values=Get(first,"RowsValues") as System.Collections.IList;if(values==null||values.Count>10000)throw new InvalidOperationException();annex12FirstGroupRows=values.Count;
+  annex12GroupMetadataMatched=Selected(Get(info,"Active"))&&Convert.ToString(Get(first,"TableName"),CultureInfo.InvariantCulture)=="01_2_GTGT"&&Convert.ToString(Get(first,"TablePath"),CultureInfo.InvariantCulture)=="PLuc_01_2_GTGT/TenNhaMay";
+  annex12StructureMatched=annex12SttMatched&&annex12LocksMatched&&annex12NumericCount==8&&annex12NumericNonzeroMask==0&&annex12GroupMetadataMatched;
+  finished=true;stage="gtgt-annex12-inspected";Record();
+ }
+
  private bool QuarterCase(){return webCaseId=="01GTGT-zero-Q4-2026";}
  private bool NoActivityCase(){return webCaseId=="01GTGT-noactivity-zero-M10-2026"||webCaseId=="01GTGT-noactivity-reset-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-cancel-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-uncheck-sale10-M10-2026"||webCaseId=="01GTGT-noactivity-keep-credit-M10-2026";}
  private bool CancelCt21Case(){return webCaseId=="01GTGT-noactivity-cancel-sale10-M10-2026";}
@@ -85,7 +138,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"gtgtCt21CaseMatched"+q+":"+Bool(gtgtCt21CaseMatched)+","+q+"gtgtCt21ConfirmationMatched"+q+":"+Bool(gtgtCt21ConfirmationMatched)+","+q+"gtgtCt21LocksMatched"+q+":"+Bool(gtgtCt21LocksMatched)+","+q+"gtgtCt21BeforeExportMatched"+q+":"+Bool(gtgtCt21BeforeExportMatched)+","+q+"gtgtCt21AfterImportMatched"+q+":"+Bool(gtgtCt21AfterImportMatched)+","+q+"gtgtCt21UncheckMatched"+q+":"+Bool(gtgtCt21UncheckMatched));
   json.Append(","+q+"gtgtAutoCalculationReady"+q+":"+Bool(gtgtAutoCalculationReady)+","+q+"gtgtBusinessInstanceMatched"+q+":"+Bool(gtgtBusinessInstanceMatched));
   json.Append(","+q+"gtgtCaseMoneyMatched"+q+":"+Bool(gtgtCaseMoneyMatched)+","+q+"gtgtCt42Locked"+q+":"+Bool(gtgtCt42Locked)+","+q+"gtgtCaseMoneyCount"+q+":"+gtgtCaseMoneyCount+","+q+"gtgtCaseMismatchMask"+q+":"+gtgtCaseMismatchMask+","+q+"gtgtCaseNonzeroMask"+q+":"+gtgtCaseNonzeroMask);
-  json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString();
+  json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString()+Annex12Json();
  }
  private static Control ReadableNamed(Control root,string name){Control[] controls=root.Controls.Find(name,true);if(controls.Length!=1||!controls[0].Visible)throw new InvalidOperationException();return controls[0];}
  private static Control Named(Control root,string name){Control control=ReadableNamed(root,name);if(!control.Enabled)throw new InvalidOperationException();return control;}
@@ -149,7 +202,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Control annex=ReadableNamed(period,"axfpsPhuLuc");if(!IsSpread(annex))throw new InvalidOperationException();object annexSheet=Get(annex,"ActiveSheet");int annexRows=Convert.ToInt32(Get(annexSheet,"RowCount"));if(annexRows<0||annexRows>512)throw new InvalidOperationException();annexSelected=0;
   for(int row=0;row<annexRows;row++)if(Selected(Get(Cell(annexSheet,row,0),"Value")))annexSelected++;
   periodNoAnnexMatched=annexSelected==0&&!CheckValue(all);
-  if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!periodNoAnnexMatched){stage="gtgt-period-inputs-not-matched";finished=true;Record();return;}
+  if(mode=="gtgt-annex12-inspect")SelectOriginalAnnex12(annex,annexSheet);
+  if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(mode=="gtgt-annex12-inspect"?periodAnnex12Matched:periodNoAnnexMatched)){stage="gtgt-period-inputs-not-matched";finished=true;Record();return;}
   Button confirm=Named(period,"btnDongY") as Button;if(confirm==null||confirm.Text.Replace("&",String.Empty).Trim()!="Đồng ý")throw new InvalidOperationException();
   navigationPhase="waiting-gtgt-sheet";stage="gtgt-period-confirm-invoking";periodConfirmInvoked=true;Record();
   // Original OpenToKhai uses ShowDialog. This timer observes its real sheet inside
@@ -184,6 +238,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
+  if(matched&&mode=="gtgt-annex12-inspect"){InspectOriginalAnnex12(grid);return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
    if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){stage="waiting-gtgt-sheet";Record();return;}

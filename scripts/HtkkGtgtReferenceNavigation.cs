@@ -88,7 +88,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(periods.Count!=1){stage="waiting-gtgt-period";Record();return;}
    periodDescriptions.Clear();periodControlCount=0;visited=0;DescribePeriod(periods[0],ref visited);
    periodObserved=true;
-   if(mode=="gtgt-sheet-inspect"||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect"){ConfigureOriginalGtgtPeriod(periods[0]);return;}
+   if(mode=="gtgt-sheet-inspect"||mode=="gtgt-annex12-inspect"||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect"){ConfigureOriginalGtgtPeriod(periods[0]);return;}
    stage="gtgt-period-inspected";finished=true;Record();return;
   }
   List<Control> grids=new List<Control>();int nodes=0;GatherSpreads(main,grids,ref nodes);

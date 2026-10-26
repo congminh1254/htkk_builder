@@ -10,7 +10,7 @@ on:
       gui_automation:
         description: 'Automation THAM CHIẾU riêng: chỉ custom CLR2/x86 + synthetic login'
         type: choice
-        options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-export-inspect, gtgt-roundtrip-inspect, gtgt-web-import-inspect]
+        options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-annex12-inspect, gtgt-export-inspect, gtgt-roundtrip-inspect, gtgt-web-import-inspect]
         default: none
         required: true
       web_case_id:

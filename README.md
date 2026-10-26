@@ -41,3 +41,5 @@ The two `[21]` cases passed original Windows runs [40299540748](https://github.c
 The three newly configured `[21]` cases are pending original Windows verification. Their parser/transport contracts and exact synthetic vectors pass offline tests, but they do not yet add native compatibility evidence.
 
 The next fixed case `01GTGT-zero-Q4-2026` selects the original quarter controls and expects Q4/2026 calendar bounds 01/10/2026–31/12/2026. Its producer name is `quarter-zero`; its independent input/native privacy adapters require the four exact quarter leaves before adapting only an in-memory copy to the historical monthly allowlist. Native quarterly runtime proof remains pending.
+
+A separate pending `gtgt-annex12-inspect` workflow mode observes the original 01-2/GTGT annex selection, sheet structure and bounded group metadata. It does not export XML or establish annex compatibility; see WINDOWS-PROBE.md.

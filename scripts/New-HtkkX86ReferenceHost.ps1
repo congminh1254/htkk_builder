@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-annex12-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   $safe = [ordered]@{
