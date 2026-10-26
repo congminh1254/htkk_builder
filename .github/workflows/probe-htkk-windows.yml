@@ -81,6 +81,7 @@ jobs:
         env:
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           PROBE_INSTALL: ${{ inputs.install_and_probe }}
           PROBE_RUNTIME_HOST: ${{ inputs.runtime_host }}
           PROBE_GUI_AUTOMATION: ${{ inputs.gui_automation }}
@@ -96,25 +97,34 @@ jobs:
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation
       - name: Publish supplier startup window privately
-        if: always() && inputs.install_and_probe
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-windows-diagnostic.py
       - name: Retain synthetic common-header reference privately
-        if: always() && inputs.install_and_probe
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-common-header-evidence.py
       - name: Retain verified synthetic GTGT export privately
-        if: always() && inputs.install_and_probe && inputs.gui_automation == 'gtgt-export-inspect'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation == 'gtgt-export-inspect'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-gtgt-export-evidence.py
+      - name: Retain verified raw native web reexport privately
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect' && inputs.web_artifact_commit != '' && steps.native_probe.outputs.supplier_stopped == 'true'
+        shell: pwsh
+        env:
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
+          WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/publish-htkk-web-native-output.py
       - name: Report fixed native-case status privately
-        if: always() && inputs.install_and_probe && inputs.gui_automation == 'gtgt-web-import-inspect'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect'
         shell: pwsh
         env:
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}

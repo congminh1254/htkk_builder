@@ -31,6 +31,7 @@ $report = [ordered]@{
   privateSyntheticLoginDiagnostic = $null
   privateRegistrationDiagnostic = $null
   privateGtgtExportEvidence = $null
+  privateWebNativeOutputEvidence = $null
   syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
   guiReferenceAutomationMode = $GuiAutomation; guiReferenceAutomation = $null
   commonHeaderOracle = $null
@@ -847,6 +848,11 @@ try {
     try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null }; $supplierStopped=$process.HasExited } catch { }
     $process.Dispose()
   }
+  if($null -ne $process -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
+  if($env:GITHUB_OUTPUT){
+    $credentialsSafe=$null -eq $process -or $supplierStopped
+    [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
+  }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {
     try {
       $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath
@@ -889,6 +895,42 @@ try {
     } catch {
       if($evidenceCreated) { Remove-Item -LiteralPath $evidence -Recurse -Force -ErrorAction SilentlyContinue }
       $report.privateGtgtExportEvidence=@{status='not-staged';stage=$evidenceStage;supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$false;fullRoundTrip=$false}
+    }
+  }
+  if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $report.stage -eq 'synthetic-original-gtgt-web-import-inspected') {
+    $nativeEvidenceCreated=$false;$nativeEvidenceStage='preconditions'
+    try {
+      $gui=$report.guiReferenceAutomation
+      if(-not $supplierStopped -or -not $report.originalSourcesUnmodified -or $gui.status -cne 'matched' -or $env:GITHUB_REPOSITORY -cne 'congminh1254/htkk_builder' -or $env:GITHUB_SHA -cnotmatch '^[0-9a-f]{40}$' -or $env:GITHUB_RUN_ID -cnotmatch '^[0-9]{1,20}$' -or $env:WEB_ARTIFACT_COMMIT -cnotmatch '^[0-9a-f]{40}$' -or $env:EXPECTED_WEB_SOURCE_SHA -cnotmatch '^[0-9a-f]{40}$' -or $gui.webSourceSha -cne $env:EXPECTED_WEB_SOURCE_SHA -or $gui.webCaseId -cne $env:EXPECTED_WEB_CASE_ID -or $gui.webCaseId -cnotin @('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026') -or $gui.webTaxLeafCount -ne 70 -or $gui.gtgtCaseMoneyCount -ne 27 -or $gui.gtgtCaseMismatchMask -ne 0 -or $gui.webImportInputSha256 -cnotmatch '^[0-9a-f]{64}$' -or $gui.roundtripReexportSha256 -cnotmatch '^[0-9a-f]{64}$') { throw 'STAGING_NOT_VERIFIED' }
+      foreach($flag in @('sourcePinsVerified','webInputVerified','gtgtCaseMoneyMatched','webTaxValuesMatched','webCreationDateMatchedNativeBaseline','webServiceIdentityMatched','exportSchemaPinnedVerified','exportCommandInvoked','exportSelectorMatched','exportButtonInvoked','exportDialogMatched','exportDestinationFresh','exportFilenameKeyboardCommitted','exportDialogSubmitted','exportFileExists','exportXmlRootMatched','exportSyntheticIdentityMatched','exportSuccessAcknowledged','exportOriginalPathMatched','roundtripImportCommandInvoked','roundtripImportDialogMatched','roundtripImportKeyboardCommitted','roundtripImportDialogSubmitted','roundtripImportPathMatched','roundtripImportSheetMatched','roundtripImportSucceeded','roundtripReexportCommandInvoked','roundtripReexportSucceeded')) { if($gui[$flag] -isnot [bool] -or -not $gui[$flag]) { throw 'STAGING_NOT_VERIFIED' } }
+      $nativeEvidenceStage='input-provenance'
+      $inputDirectory=Join-Path $env:RUNNER_TEMP 'htkk-web-reference-input'
+      $inputManifestPath=Join-Path $inputDirectory 'manifest.json'
+      foreach($path in @($inputDirectory,$inputManifestPath)) {if(-not (Test-Path -LiteralPath $path) -or ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'STAGING_NOT_VERIFIED'}}
+      if((Get-Item -LiteralPath $inputManifestPath).Length -gt 16384){throw 'STAGING_NOT_VERIFIED'}
+      $inputManifest=Get-Content -LiteralPath $inputManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+      if($inputManifest.sourceRepository -cne 'congminh1254/htkk_web' -or $inputManifest.sourceCommit -cne $gui.webSourceSha -or $inputManifest.caseId -cne $gui.webCaseId -or $inputManifest.xmlSha256 -cne $gui.webImportInputSha256 -or $inputManifest.inputsSynthetic -isnot [bool] -or -not $inputManifest.inputsSynthetic){throw 'STAGING_NOT_VERIFIED'}
+      $nativeEvidenceStage='source-file'
+      $nativeOriginal=Join-Path (Split-Path (Split-Path $exe)) 'DataFiles/9999999997/reference-output/01GTGT-roundtrip.xml'
+      $nativeFile=Get-Item -LiteralPath $nativeOriginal
+      foreach($directory in @($nativeFile.Directory,$nativeFile.Directory.Parent,$nativeFile.Directory.Parent.Parent)) {if($directory.Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'STAGING_NOT_VERIFIED'}}
+      if($nativeFile.Attributes -band [IO.FileAttributes]::ReparsePoint -or $nativeFile.Length -lt 1 -or $nativeFile.Length -gt 262144 -or $nativeFile.Length -ne $gui.roundtripReexportBytes){throw 'STAGING_NOT_VERIFIED'}
+      Assert-Hash $nativeOriginal $gui.roundtripReexportSha256
+      $nativeEvidenceStage='fresh-destination'
+      $nativeEvidence=Join-Path $env:RUNNER_TEMP 'htkk-web-native-output'
+      if((Get-Item -LiteralPath $env:RUNNER_TEMP).Attributes -band [IO.FileAttributes]::ReparsePoint -or (Test-Path -LiteralPath $nativeEvidence)){throw 'STAGING_NOT_VERIFIED'}
+      New-Item -ItemType Directory -Path $nativeEvidence | Out-Null;$nativeEvidenceCreated=$true
+      $nativeEvidenceStage='copy-original'
+      Copy-Item -LiteralPath $nativeOriginal -Destination (Join-Path $nativeEvidence '01GTGT-native.xml')
+      Assert-Hash (Join-Path $nativeEvidence '01GTGT-native.xml') $gui.roundtripReexportSha256
+      Assert-Hash $nativeOriginal $gui.roundtripReexportSha256
+      if((Get-Item -LiteralPath (Join-Path $nativeEvidence '01GTGT-native.xml')).Length -ne $gui.roundtripReexportBytes){throw 'STAGING_NOT_VERIFIED'}
+      $nativeEvidenceStage='provenance'
+      [ordered]@{format='htkk-web-native-output-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='congminh1254/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=70;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
+      $report.privateWebNativeOutputEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
+    } catch {
+      if($nativeEvidenceCreated){Remove-Item -LiteralPath $nativeEvidence -Recurse -Force -ErrorAction SilentlyContinue}
+      $report.privateWebNativeOutputEvidence=@{status='not-staged';stage=$nativeEvidenceStage;supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$false;fullRoundTrip=$false}
     }
   }
   foreach($registration in $registrationProcesses) { try { $registration.Dispose() } catch { } }
