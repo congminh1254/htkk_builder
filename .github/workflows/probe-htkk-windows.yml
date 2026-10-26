@@ -47,6 +47,9 @@ jobs:
       - name: Check safe reference-result boundary
         shell: pwsh
         run: ./scripts/Test-HtkkSafeGuiReferenceResult.ps1
+      - name: Check actual C# web-tax comparison boundaries
+        shell: pwsh
+        run: ./scripts/Test-HtkkWebTaxComparison.ps1
       - name: Test private GUI XML evidence boundaries without network
         shell: pwsh
         run: python -m unittest discover -s scripts -p test_gtgt_export_evidence.py

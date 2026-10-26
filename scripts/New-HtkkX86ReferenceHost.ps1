@@ -183,6 +183,8 @@ internal static class HtkkX86ReferenceHost {
     [IO.File]::WriteAllText($navigationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtReferenceNavigation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $periodSource=Join-Path $directory 'HtkkGtgtPeriodAndSheet.cs'
     [IO.File]::WriteAllText($periodSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtPeriodAndSheet.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
+    $webComparisonSource=Join-Path $directory 'HtkkWebTaxComparison.cs'
+    [IO.File]::WriteAllText($webComparisonSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWebTaxComparison.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $webInputSource=Join-Path $directory 'HtkkWebInputReference.cs'
     [IO.File]::WriteAllText($webInputSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWebInputReference.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $roundtripSource=Join-Path $directory 'HtkkGtgtRoundtripInspection.cs'
@@ -193,7 +195,7 @@ internal static class HtkkX86ReferenceHost {
     $info.FileName=$compiler; $info.WorkingDirectory=$directory; $info.UseShellExecute=$false; $info.CreateNoWindow=$true
     $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true; $info.Environment.Clear()
     foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $info.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource)) { $info.ArgumentList.Add($argument) }
+    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource)) { $info.ArgumentList.Add($argument) }
     $compilerProcess=[Diagnostics.Process]::Start($info)
     $null=$compilerProcess.Handle
     $stdout=$compilerProcess.StandardOutput.ReadToEndAsync(); $stderr=$compilerProcess.StandardError.ReadToEndAsync()

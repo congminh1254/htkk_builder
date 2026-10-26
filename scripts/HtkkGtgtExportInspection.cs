@@ -76,6 +76,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
     roundtripReexportBytes=exportBytes;roundtripReexportSha256=exportSha256;roundtripReexportSucceeded=true;
     if(Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();
     roundtripXmlExactMatched=ReadBoundedOriginalXml(firstExportPath).DocumentElement.OuterXml==ReadBoundedOriginalXml(exportPath).DocumentElement.OuterXml;
+    if(mode=="gtgt-web-import-inspect"){
+     XmlDocument input=ReadBoundedOriginalXml(webInputPath),baseline=ReadBoundedOriginalXml(firstExportPath),output=ReadBoundedOriginalXml(exportPath);
+     webCreationDateMatchedNativeBaseline=HtkkWebTaxComparison.CreationDateMatchesNativeBaseline(baseline,output);webServiceIdentityMatched=HtkkWebTaxComparison.NativeIdentity(baseline,output);webTaxValuesMatched=HtkkWebTaxComparison.Compare(input,baseline,output,out webTaxLeafCount);
+    }
     exportBytes=firstExportBytes;exportSha256=firstExportSha256;if(mode=="gtgt-web-import-inspect"&&Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();stage=mode=="gtgt-web-import-inspect"?"gtgt-web-import-inspected":"gtgt-roundtrip-inspected";
    }else stage="gtgt-export-inspected";
    finished=true;Record();exportWatcher.Stop();close.PerformClick();return;

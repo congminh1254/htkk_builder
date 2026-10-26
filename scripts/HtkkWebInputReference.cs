@@ -6,8 +6,9 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 public sealed partial class HtkkGuiReferenceAutomation {
+ private bool webTaxValuesMatched=false,webCreationDateMatchedNativeBaseline=false,webServiceIdentityMatched=false;private int webTaxLeafCount=0;
  private bool webInputVerified=false;private string webInputPath="",webImportInputSha256="",webSourceSha="";
- private string WebInputJson(){string q=((char)34).ToString();return ","+q+"webInputVerified"+q+":"+Bool(webInputVerified)+","+q+"webImportInputSha256"+q+":"+q+webImportInputSha256+q+","+q+"webSourceSha"+q+":"+q+webSourceSha+q;}
+ private string WebInputJson(){string q=((char)34).ToString();return ","+q+"webTaxValuesMatched"+q+":"+Bool(webTaxValuesMatched)+","+q+"webCreationDateMatchedNativeBaseline"+q+":"+Bool(webCreationDateMatchedNativeBaseline)+","+q+"webServiceIdentityMatched"+q+":"+Bool(webServiceIdentityMatched)+","+q+"webTaxLeafCount"+q+":"+webTaxLeafCount+","+q+"webInputVerified"+q+":"+Bool(webInputVerified)+","+q+"webImportInputSha256"+q+":"+q+webImportInputSha256+q+","+q+"webSourceSha"+q+":"+q+webSourceSha+q;}
  private string RoundtripInputPath(){return mode=="gtgt-web-import-inspect"?webInputPath:firstExportPath;}
  private string RoundtripInputHash(){return mode=="gtgt-web-import-inspect"?webImportInputSha256:firstExportSha256;}
  private static string ReadOwnHexSidecar(string path,int count){
