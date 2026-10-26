@@ -62,3 +62,9 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertIn('SearchOption.TopDirectoryOnly',source);self.assertIn('settings.ProhibitDtd=true;settings.XmlResolver=null',source)
   for forbidden in ('File.Write','File.Create','SetValue(','WinDoWorkSave','Invoke('):self.assertNotIn(forbidden,source)
   self.assertIn('amendmentLifecycleVerified',source);self.assertIn('gtgt-original-declaration-saved-inspected',source)
+
+ def test_diagnostics_are_fixed_stages_without_native_message_or_path_content(self):
+  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  for stage in ('save-modal-observed','save-modal-content-checking','save-modal-button-checking','save-modal-matched','prior-file-enumerating','prior-file-missing','prior-file-not-unique','prior-file-size-checking','prior-file-parsing','prior-money-checking'):
+   self.assertIn('"gtgt-amendment-'+stage+'"',source)
+  self.assertNotRegex(source,r'stage\s*=\s*(form|file|labels|amendmentPriorDirectory)\b')

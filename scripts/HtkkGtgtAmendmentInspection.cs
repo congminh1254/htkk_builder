@@ -46,11 +46,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
   try{
    if(mode!="gtgt-amendment-inspect"||!amendmentPriorSaveInvoked||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||amendmentPriorOwner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
    foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
+    stage="gtgt-amendment-save-modal-observed";Record();
     if(form.Text.Trim()!="Thông Báo"&&form.Text.Trim()!="Thông báo")throw new InvalidOperationException();
     if(GetForegroundWindow()!=form.Handle)return;
     Control[] labels=form.Controls.Find("lblThongBao",true),buttons=form.Controls.Find("btn_2",true);
+    stage="gtgt-amendment-save-modal-content-checking";Record();
     if(amendmentPriorSaveSuccessAcknowledged||labels.Length!=1||labels[0].Text!="Đã ghi dữ liệu thành công!"||buttons.Length!=1||CountVisibleButtons(form)!=1)throw new InvalidOperationException();
+    stage="gtgt-amendment-save-modal-button-checking";Record();
     Button close=buttons[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
+    stage="gtgt-amendment-save-modal-matched";Record();
     InspectOriginalPriorFile();amendmentPriorSaveSuccessAcknowledged=true;stage="gtgt-original-declaration-save-success";Record();close.PerformClick();return;
    }
    if(!amendmentPriorSaveSuccessAcknowledged)return;
@@ -63,11 +67,17 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }finally{amendmentPriorObservationBusy=false;}
  }
  private void InspectOriginalPriorFile(){
-  FileInfo[] files=OriginalPriorCandidates();if(files.Length!=1||files[0].Length<2||files[0].Length>262144)throw new InvalidOperationException();
+  stage="gtgt-amendment-prior-file-enumerating";Record();
+  FileInfo[] files=OriginalPriorCandidates();
+  if(files.Length!=1){stage=files.Length==0?"gtgt-amendment-prior-file-missing":"gtgt-amendment-prior-file-not-unique";Record();throw new InvalidOperationException();}
+  stage="gtgt-amendment-prior-file-size-checking";Record();
+  if(files[0].Length<2||files[0].Length>262144)throw new InvalidOperationException();
   string hash=Hash(files[0].FullName);if(amendmentPriorFileSha256.Length>0&&amendmentPriorFileSha256!=hash)throw new InvalidOperationException();
+  stage="gtgt-amendment-prior-file-parsing";Record();
   XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
   using(XmlReader reader=XmlReader.Create(files[0].FullName,settings)){document.Load(reader);}amendmentPriorXmlParsed=document.DocumentElement!=null&&document.DocumentElement.Name=="Sections";
   string[] money=new string[]{"ct22","ct23","ct24","ct23a","ct24a","ct25","ct26","ct27","ct28","ct29","ct30","ct31","ct32","ct33","ct32a","ct34","ct35","ct36","ct37","ct38","ct39a","ct40a","ct40b","ct40","ct41","ct42","ct43"};
+  stage="gtgt-amendment-prior-money-checking";Record();
   amendmentPriorSavedMoneyCount=0;amendmentPriorSavedMoneyZero=true;XmlNodeList cells=document.SelectNodes("/Sections/Section/Cells/Cell[@Path]");
   if(cells==null||cells.Count>512)throw new InvalidOperationException();
   foreach(string code in money){int matched=0;foreach(XmlNode cell in cells){XmlAttribute path=cell.Attributes["Path"];if(path!=null&&path.Value.EndsWith("/"+code,StringComparison.Ordinal)){matched++;if(cell.Attributes["Value"]==null||cell.Attributes["Value"].Value!="0")amendmentPriorSavedMoneyZero=false;}}if(matched!=1)amendmentPriorSavedMoneyZero=false;else amendmentPriorSavedMoneyCount++;}
