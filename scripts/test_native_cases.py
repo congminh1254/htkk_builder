@@ -1,5 +1,5 @@
 """Offline trusted dispatch/callback contracts; no network or native evidence."""
-import importlib.util,pathlib,json,unittest,urllib.error
+import ast,importlib.util,pathlib,json,re,unittest,urllib.error
 from unittest.mock import patch
 ROOT=pathlib.Path(__file__).parent
 def load(name,file):
@@ -46,3 +46,29 @@ class NativeCases(unittest.TestCase):
   with patch.object(d.urllib.request,'build_opener',return_value=Opener()) as build:d.post('https://api.github.com/repos/'+d.BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches','fake-token',{})
   self.assertIsInstance(build.call_args.args[0],d.NoRedirect);self.assertIsNone(d.NoRedirect().redirect_request(None,None,None,None,None))
   with self.assertRaises(ValueError):d.post('https://api.github.com/','',{})
+
+
+class NativeWorkflowCredentials(unittest.TestCase):
+ def test_parallel_web_cases_skip_shared_references_but_keep_scoped_raw_and_status(self):
+  # Exercise the workflow conditions, including their process/credential gates.
+  # This verifies the real publication routing rather than a duplicated helper.
+  text=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
+  conditions=dict(re.findall(r"      - name: ([^\n]+)\n        if: ([^\n]+)",text))
+  def enabled(name,mode,install=True,safe='true',stopped='true',artifact='a'*40):
+   expression=conditions[name].replace('always()','True').replace('&&',' and ')
+   values={'inputs.install_and_probe':install,'inputs.gui_automation':mode,'steps.native_probe.outputs.credentials_safe':safe,'steps.native_probe.outputs.supplier_stopped':stopped,'inputs.web_artifact_commit':artifact}
+   for key,value in values.items():expression=expression.replace(key,repr(value))
+   parsed=ast.parse(expression,mode='eval')
+   for node in ast.walk(parsed):
+    self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.And,ast.Compare,ast.Eq,ast.NotEq,ast.Constant))
+   return eval(compile(parsed,'<fixed workflow condition>','eval'),{'__builtins__':{}},{})
+  shared=('Publish supplier startup window privately','Retain synthetic common-header reference privately')
+  raw='Retain verified raw native web reexport privately';status='Report fixed native-case status privately'
+  for mode in ('none','profile-save','gtgt-export-inspect','gtgt-web-import-inspect'):
+   web=mode=='gtgt-web-import-inspect'
+   for name in shared:self.assertEqual(enabled(name,mode),not web)
+   self.assertEqual(enabled(raw,mode),web);self.assertEqual(enabled(status,mode),web)
+   for name in (*shared,raw,status):
+    self.assertFalse(enabled(name,mode,install=False));self.assertFalse(enabled(name,mode,safe='false'))
+  self.assertFalse(enabled(raw,'gtgt-web-import-inspect',stopped='false'))
+  self.assertFalse(enabled(raw,'gtgt-web-import-inspect',artifact=''))

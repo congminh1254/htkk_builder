@@ -96,14 +96,16 @@ jobs:
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation
+      # Native web regressions retain only their dedicated per-case output; shared
+      # startup/common-header references remain available in manual reference modes.
       - name: Publish supplier startup window privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation != 'gtgt-web-import-inspect'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-windows-diagnostic.py
       - name: Retain synthetic common-header reference privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation != 'gtgt-web-import-inspect'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}

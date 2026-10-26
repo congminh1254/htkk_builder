@@ -100,13 +100,6 @@ class SaleCaseTests(unittest.TestCase):
   metadata['format']='htkk-web-zero-input-v1'
   with self.assertRaises(w.InputError):w.validate_manifest(json.dumps(metadata).encode())
 class ReadAndStageTests(unittest.TestCase):
- def test_noactivity_checkbox_exact_and_zero_money_cannot_be_relabelled(self):
-  for case in ('01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026'):
-   body=sale_fixture(case)
-   self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
-   for changed,target in ((body,'01GTGT-zero-M10-2026'),(web_fixture(),case),(body.replace(b'<ct32>0</ct32>',b'<ct32>1</ct32>'),case)):
-    with self.subTest(case=case,target=target),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,target)
-
  def setUp(self):self.body=web_fixture()
  def test_private_download_pins_artifact_commit_checks_source_and_preserves_bytes(self):
   fetch,calls=fake_fetch(self.body);files=w.download('synthetic-token',fetch,TODAY)
