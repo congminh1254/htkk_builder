@@ -208,7 +208,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"gtgtCt21CaseMatched"+q+":"+Bool(gtgtCt21CaseMatched)+","+q+"gtgtCt21ConfirmationMatched"+q+":"+Bool(gtgtCt21ConfirmationMatched)+","+q+"gtgtCt21LocksMatched"+q+":"+Bool(gtgtCt21LocksMatched)+","+q+"gtgtCt21BeforeExportMatched"+q+":"+Bool(gtgtCt21BeforeExportMatched)+","+q+"gtgtCt21AfterImportMatched"+q+":"+Bool(gtgtCt21AfterImportMatched)+","+q+"gtgtCt21UncheckMatched"+q+":"+Bool(gtgtCt21UncheckMatched));
   json.Append(","+q+"gtgtAutoCalculationReady"+q+":"+Bool(gtgtAutoCalculationReady)+","+q+"gtgtBusinessInstanceMatched"+q+":"+Bool(gtgtBusinessInstanceMatched));
   json.Append(","+q+"gtgtCaseMoneyMatched"+q+":"+Bool(gtgtCaseMoneyMatched)+","+q+"gtgtCt42Locked"+q+":"+Bool(gtgtCt42Locked)+","+q+"gtgtCaseMoneyCount"+q+":"+gtgtCaseMoneyCount+","+q+"gtgtCaseMismatchMask"+q+":"+gtgtCaseMismatchMask+","+q+"gtgtCaseNonzeroMask"+q+":"+gtgtCaseNonzeroMask);
-  json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString()+Annex12Json();
+  json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString()+Annex12Json()+AmendmentJson();
  }
  private static Control ReadableNamed(Control root,string name){Control[] controls=root.Controls.Find(name,true);if(controls.Length!=1||!controls[0].Visible)throw new InvalidOperationException();return controls[0];}
  private static Control Named(Control root,string name){Control control=ReadableNamed(root,name);if(!control.Enabled)throw new InvalidOperationException();return control;}
@@ -308,6 +308,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
+  if(matched&&mode=="gtgt-amendment-inspect"){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12InspectionMode()){InspectOriginalAnnex12(grid);return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
