@@ -9,6 +9,7 @@ TODAY=datetime.date(2026,10,25)
 def web_fixture():
  root=ET.fromstring(n.parser_fixture());ns='{'+w.privacy.NS+'}';service=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinDVu')
  for child in service:child.text=w.SERVICE[child.tag[len(ns):]]
+ for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text='2026-10-25'
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def manifest(body):return {'format':'htkk-web-zero-input-v1','sourceRepository':w.REPO,'sourceCommit':'a'*40,'sourceVersion':'0.9.2','caseId':'01GTGT-zero-M10-2026','inputsSynthetic':True,'exporter':'lib/htkk-xml.ts','producerSha256':'c'*64,'xmlSha256':hashlib.sha256(body).hexdigest(),'bytes':len(body)}
 def envelope(body,name):return {'type':'file','name':name,'path':name,'encoding':'base64','size':len(body),'content':base64.encodebytes(body).decode(),'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
