@@ -14,12 +14,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool periodDateMatched=false,periodFirstMatched=false,periodActivityMatched=false,periodGeographyMatched=false,periodNoAnnexMatched=false,periodConfirmInvoked=false;
  private bool gtgtPins=false,gtgtVersion=false,gtgtPeriod=false,gtgtSheet=false,gtgtName=false,gtgtDimensions=false,gtgtIdentity=false,gtgtCt21=false,gtgtSigner=false,gtgtZero=false;
  private int annexSelected=0,gtgtRows=0,gtgtColumns=0,gtgtSheets=0,gtgtEmptyMoney=0;
+ private bool gtgtCt42BeforeExportObserved=false,gtgtCt42LockedBeforeExport=false,gtgtCt42AfterImportObserved=false,gtgtCt42LockedAfterImport=false;
+ private bool gtgtSheetInspectionBusy=false,gtgtAutoCalculationReady=false,gtgtBusinessInstanceMatched=false;
  private bool gtgtCaseMoneyMatched=false,gtgtCt42Locked=false,webCaseEdited=false;private int gtgtCaseMoneyCount=0,gtgtCaseMismatchMask=0,gtgtCaseNonzeroMask=0;private Stopwatch webCaseEditClock=null;
  private Stopwatch gtgtObservationClock=null;
  private string SheetJson(){
   string q=((char)34).ToString();string[] names=new string[]{"periodYearMonthMatched","periodFirstDeclarationMatched","periodActivityMatched","periodGeographyMatched","periodNoAnnexMatched","periodConfirmInvoked","gtgtWorkbookPinsVerified","gtgtMenuVersionMatched","gtgtPeriodModelMatched","gtgtSheetObserved","gtgtSheetNameMatched","gtgtDimensionsMatched","gtgtIdentityMatched","gtgtCt21Ready","gtgtSignatureReady","gtgtMonetaryZero"};
   bool[] values=new bool[]{periodDateMatched,periodFirstMatched,periodActivityMatched,periodGeographyMatched,periodNoAnnexMatched,periodConfirmInvoked,gtgtPins,gtgtVersion,gtgtPeriod,gtgtSheet,gtgtName,gtgtDimensions,gtgtIdentity,gtgtCt21,gtgtSigner,gtgtZero};StringBuilder json=new StringBuilder();
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
+  json.Append(","+q+"gtgtCt42BeforeExportObserved"+q+":"+Bool(gtgtCt42BeforeExportObserved)+","+q+"gtgtCt42LockedBeforeExport"+q+":"+Bool(gtgtCt42LockedBeforeExport)+","+q+"gtgtCt42AfterImportObserved"+q+":"+Bool(gtgtCt42AfterImportObserved)+","+q+"gtgtCt42LockedAfterImport"+q+":"+Bool(gtgtCt42LockedAfterImport));
+  json.Append(","+q+"gtgtAutoCalculationReady"+q+":"+Bool(gtgtAutoCalculationReady)+","+q+"gtgtBusinessInstanceMatched"+q+":"+Bool(gtgtBusinessInstanceMatched));
   json.Append(","+q+"gtgtCaseMoneyMatched"+q+":"+Bool(gtgtCaseMoneyMatched)+","+q+"gtgtCt42Locked"+q+":"+Bool(gtgtCt42Locked)+","+q+"gtgtCaseMoneyCount"+q+":"+gtgtCaseMoneyCount+","+q+"gtgtCaseMismatchMask"+q+":"+gtgtCaseMismatchMask+","+q+"gtgtCaseNonzeroMask"+q+":"+gtgtCaseNonzeroMask);
   json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString();
  }
@@ -99,7 +103,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(++visited>512)return;Form form=root as Form;if(form!=null&&form.Visible&&!form.IsDisposed&&form.GetType().FullName=="HTKK.frmWinToKhai"&&!forms.Contains(form))forms.Add(form);
   foreach(Control child in root.Controls){if(visited>=512)break;FindWorksheets(child,forms,ref visited);}
  }
- private void InspectOriginalGtgtSheet(){
+ private void InspectOriginalGtgtSheet(){if(gtgtSheetInspectionBusy)return;gtgtSheetInspectionBusy=true;try{InspectOriginalGtgtSheetCore();}finally{gtgtSheetInspectionBusy=false;}}
+ private void InspectOriginalGtgtSheetCore(){
   if(finished||exportStarted)return;
   List<Form> forms=new List<Form>();int visited=0;foreach(Form top in Application.OpenForms){if(visited>=512)break;if(top.Visible&&!top.IsDisposed)FindWorksheets(top,forms,ref visited);}
   if(forms.Count!=1){stage="waiting-gtgt-sheet";Record();return;}
@@ -119,7 +124,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
-   if(!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){stage="waiting-gtgt-sheet";Record();return;}
+   gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
+   if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){stage="waiting-gtgt-sheet";Record();return;}
    if(!webInputVerified)VerifyOwnWebInput();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    if(webCaseId=="01GTGT-sale10-M10-2026"&&!webCaseEdited){
@@ -149,6 +155,6 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(value==null||value==DBNull.Value||!Decimal.TryParse(Convert.ToString(value,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number)){gtgtCaseMoneyMatched=false;gtgtCaseMismatchMask|=1<<index;continue;}
    gtgtCaseMoneyCount++;if(number!=0)gtgtCaseNonzeroMask|=1<<index;if(number!=expected){gtgtCaseMoneyMatched=false;gtgtCaseMismatchMask|=1<<index;}
   }
-  if(gtgtCaseMoneyCount!=27||gtgtCt42Locked!=(webCaseId=="01GTGT-sale10-M10-2026"))gtgtCaseMoneyMatched=false;
+  if(gtgtCaseMoneyCount!=27)gtgtCaseMoneyMatched=false;
  }
 }

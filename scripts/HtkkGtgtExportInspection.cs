@@ -44,7 +44,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private static void FindExportSelectors(Control root,List<Form> found,ref int count){if(++count>512)return;Form form=root as Form;if(form!=null&&form.Visible&&form.GetType().FullName=="HTKK.frmWinSelectExport"&&!found.Contains(form))found.Add(form);foreach(Control child in root.Controls){if(count>=512)break;FindExportSelectors(child,found,ref count);}}
  private void StartOriginalGtgtExport(Form owner){
-  if(exportStarted)return;exportStarted=true;roundtripOwner=owner;
+  if(exportStarted)return;gtgtCt42BeforeExportObserved=true;gtgtCt42LockedBeforeExport=gtgtCt42Locked;exportStarted=true;roundtripOwner=owner;
   if(mode=="gtgt-web-import-inspect"){stage="gtgt-web-input-checking";Record();VerifyOwnWebInput();}
   if(!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtIdentity||!gtgtSigner||!gtgtCaseMoneyMatched||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
   string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd");
