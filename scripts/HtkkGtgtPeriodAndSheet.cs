@@ -122,7 +122,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!webInputVerified)VerifyOwnWebInput();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    if(webCaseId=="01GTGT-sale10-M10-2026"&&!webCaseEdited){
-    if(!gtgtZero||gtgtEmptyMoney!=0||!gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,47,9),"Locked")))throw new InvalidOperationException();
+    if(!gtgtZero||gtgtEmptyMoney!=0||gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,47,9),"Locked")))throw new InvalidOperationException();
     webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,47,9,"1000000",false,"gtgt-case-editing",false);return;
    }
    InspectCaseMoney(sheet);
@@ -148,6 +148,6 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(value==null||value==DBNull.Value||!Decimal.TryParse(Convert.ToString(value,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number)){gtgtCaseMoneyMatched=false;continue;}
    gtgtCaseMoneyCount++;if(number!=expected)gtgtCaseMoneyMatched=false;
   }
-  if(gtgtCaseMoneyCount!=27||!gtgtCt42Locked)gtgtCaseMoneyMatched=false;
+  if(gtgtCaseMoneyCount!=27||gtgtCt42Locked!=(webCaseId=="01GTGT-sale10-M10-2026"))gtgtCaseMoneyMatched=false;
  }
 }
