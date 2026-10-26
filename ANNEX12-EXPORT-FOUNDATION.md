@@ -1,8 +1,9 @@
 # Fixed original annex export foundation
 
-This is a preparation contract, not an enabled native-export mode. The current
-14-input native scenario still needs to pass. No workflow, existing exporter,
-13-case producer, status context, publisher or application is changed here.
+The candidate contract is now used by the separate original-export probe in
+ANNEX12-EXPORT-PROBE.md. The 14-input scenario passed native Windows run
+40420603838; first export execution is still pending. The thirteen web/native
+cases and their publishers remain unchanged.
 
 `htkk_annex12_fixed_export.validate_candidate` accepts only the source-predicted
 synthetic C0/M10/2026 case `01GTGT-annex12-zero-two-locations-M10-2026`:
@@ -28,7 +29,7 @@ checked separately first. UTF-8, namespaces, declaration, size, depth and node
 count are bounded. Parser tests are synthetic and cannot establish native or
 XSD compatibility. All returned proof/compatibility flags remain false.
 
-## Next native implementation, after input success
+## Export implementation boundaries
 
 1. Add a separate fixed `gtgt-annex12-export-inspect` mode rather than extending
    the thirteen web input cases. Preserve the input-only and row-only modes.

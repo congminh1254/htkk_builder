@@ -51,7 +51,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
   exportSchemaPinnedVerified=!String.IsNullOrEmpty(originalSchema)&&String.Equals(Path.GetFullPath(originalSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)&&Hash(schema)=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003"&&Hash(Path.Combine(project,"TAX.HTKK.ComputeHash.dll"))=="d9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5";
   if(!exportSchemaPinnedVerified)throw new InvalidOperationException();
-  string directory=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),"reference-output");if(Directory.Exists(directory)||File.Exists(directory))throw new InvalidOperationException();Directory.CreateDirectory(directory);exportPath=Path.Combine(directory,"01GTGT.xml");exportDestinationFresh=!File.Exists(exportPath);
+  string directory=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),mode=="gtgt-annex12-export-inspect"?"reference-annex12-output":"reference-output");if(Directory.Exists(directory)||File.Exists(directory))throw new InvalidOperationException();Directory.CreateDirectory(directory);exportPath=Path.Combine(directory,"01GTGT.xml");exportDestinationFresh=!File.Exists(exportPath);
   Assembly utilities=null;foreach(Assembly loaded in AppDomain.CurrentDomain.GetAssemblies())if(loaded.GetName().Name=="TAX.HTKK.Utilities")utilities=loaded;if(utilities==null)throw new InvalidOperationException();
   Type configuration=utilities.GetType("TAX.HTKK.Utilities.Core.HTKKConfig",true);PropertyInfo temporary=configuration.GetProperty("PATH_TEMP",BindingFlags.Public|BindingFlags.Static);if(temporary==null)throw new InvalidOperationException();expectedSaveTitle="Tệp XML kết xuất tới thư mục "+Convert.ToString(temporary.GetValue(null,null),CultureInfo.InvariantCulture);
   Button command=Named(owner,"cmdExport") as Button;if(command==null||command.FindForm()!=owner||command.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
@@ -65,7 +65,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    Control[] labels=form.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
    if(labels[0].Text!="Kết xuất tờ khai xml thành công."){stage="gtgt-export-original-message-rejected";finished=true;Record();exportWatcher.Stop();return;}
    stage="gtgt-export-success-file-checking";InspectOriginalExportDestination();Record();if(!exportOriginalPathMatched)throw new InvalidOperationException();
-   ReadOriginalExport();if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
+   ReadOriginalExport();if(mode=="gtgt-annex12-export-inspect")ValidateOriginalAnnex12Export();if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
    Control[] closeControls=form.Controls.Find("btn_2",true);if(form.Text.Trim()!="Thông Báo"||closeControls.Length!=1||CountVisibleButtons(form)!=1)throw new InvalidOperationException();Button close=closeControls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
    exportSuccessAcknowledged=true;
    if((mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&roundtripPhase=="not-started"){
@@ -81,7 +81,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      webCreationDateMatchedNativeBaseline=HtkkWebTaxComparison.CreationDateMatchesNativeBaseline(baseline,output);webServiceIdentityMatched=HtkkWebTaxComparison.NativeIdentity(baseline,output);webTaxValuesMatched=HtkkWebTaxComparison.Compare(input,baseline,output,out webTaxLeafCount);
     }
     exportBytes=firstExportBytes;exportSha256=firstExportSha256;if(mode=="gtgt-web-import-inspect"&&Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();stage=mode=="gtgt-web-import-inspect"?"gtgt-web-import-inspected":"gtgt-roundtrip-inspected";
-   }else stage="gtgt-export-inspected";
+   }else stage=mode=="gtgt-annex12-export-inspect"?"gtgt-annex12-export-inspected":"gtgt-export-inspected";
    finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
   }
   if(!exportButtonInvoked){List<Form> selectors=new List<Form>();int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors(top,selectors,ref count);if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
