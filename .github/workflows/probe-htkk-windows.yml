@@ -16,7 +16,7 @@ on:
       web_case_id:
         description: Fixed synthetic declaration case (no user data)
         type: choice
-        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026, 01GTGT-sale10-half-M10-2026, 01GTGT-sale10-manual-M10-2026, 01GTGT-sale5-half-M10-2026, 01GTGT-sale5-manual-M10-2026]
+        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026, 01GTGT-sale10-half-M10-2026, 01GTGT-sale10-manual-M10-2026, 01GTGT-sale5-half-M10-2026, 01GTGT-sale5-manual-M10-2026, 01GTGT-noactivity-zero-M10-2026, 01GTGT-noactivity-reset-sale10-M10-2026]
         default: 01GTGT-zero-M10-2026
         required: true
       web_artifact_commit:

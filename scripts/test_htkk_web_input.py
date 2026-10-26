@@ -9,11 +9,13 @@ TODAY=datetime.date(2026,10,25)
 def web_fixture():
  root=ET.fromstring(n.parser_fixture());ns='{'+w.privacy.NS+'}';service=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinDVu')
  for child in service:child.text=w.SERVICE[child.tag[len(ns):]]
+ root.find('.//'+ns+'ct21').text='0'
  for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text='2026-10-25'
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def sale_fixture(case="01GTGT-sale10-M10-2026"):
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
+ root.find('.//'+ns+'ct21').text=w.CASE_CHECKBOX[case]
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def manifest(body):return {'format':'htkk-web-zero-input-v1','sourceRepository':w.REPO,'sourceCommit':'a'*40,'sourceVersion':'0.9.2','caseId':'01GTGT-zero-M10-2026','inputsSynthetic':True,'exporter':'lib/htkk-xml.ts','producerSha256':'c'*64,'xmlSha256':hashlib.sha256(body).hexdigest(),'bytes':len(body)}
 def envelope(body,name):return {'type':'file','name':name,'path':name,'encoding':'base64','size':len(body),'content':base64.encodebytes(body).decode(),'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
@@ -45,6 +47,13 @@ class PrivacyTests(unittest.TestCase):
   for five,ten in (('01GTGT-sale5-half-M10-2026','01GTGT-sale10-half-M10-2026'),('01GTGT-sale5-manual-M10-2026','01GTGT-sale10-manual-M10-2026')):
    for source,target in ((five,ten),(ten,five)):
     with self.subTest(source=source,target=target),self.assertRaises(w.InputError):w.validate_web_xml(sale_fixture(source),TODAY,target)
+
+ def test_noactivity_checkbox_exact_and_zero_money_cannot_be_relabelled(self):
+  for case in ('01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026'):
+   body=sale_fixture(case)
+   self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
+   for changed,target in ((body,'01GTGT-zero-M10-2026'),(web_fixture(),case),(body.replace(b'<ct32>0</ct32>',b'<ct32>1</ct32>'),case)):
+    with self.subTest(case=case,target=target),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,target)
 
  def setUp(self):self.body=web_fixture()
  def reject(self,body,code):
@@ -91,6 +100,13 @@ class SaleCaseTests(unittest.TestCase):
   metadata['format']='htkk-web-zero-input-v1'
   with self.assertRaises(w.InputError):w.validate_manifest(json.dumps(metadata).encode())
 class ReadAndStageTests(unittest.TestCase):
+ def test_noactivity_checkbox_exact_and_zero_money_cannot_be_relabelled(self):
+  for case in ('01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026'):
+   body=sale_fixture(case)
+   self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
+   for changed,target in ((body,'01GTGT-zero-M10-2026'),(web_fixture(),case),(body.replace(b'<ct32>0</ct32>',b'<ct32>1</ct32>'),case)):
+    with self.subTest(case=case,target=target),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,target)
+
  def setUp(self):self.body=web_fixture()
  def test_private_download_pins_artifact_commit_checks_source_and_preserves_bytes(self):
   fetch,calls=fake_fetch(self.body);files=w.download('synthetic-token',fetch,TODAY)

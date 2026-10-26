@@ -13,7 +13,7 @@ BUILDER_SHA='c'*40
 
 def fixture(case='01GTGT-zero-M10-2026'):
  root=ET.fromstring(f.sale_fixture(case) if case!='01GTGT-zero-M10-2026' else f.web_fixture());ns='{'+n.privacy.NS+'}'
- root.find('.//'+ns+'ct21').text='0'
+ root.find('.//'+ns+'ct21').text=n.reader.CASE_CHECKBOX[case]
  web=(n.reader.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
  for name,value in n.SERVICE.items():root.find('.//'+ns+name).text=value
  root.find('.//'+ns+'ttinNhaCCapDVu').text='A'*32
@@ -53,6 +53,13 @@ class NativePrivacyTests(unittest.TestCase):
    self.assertTrue(n.validate_native(native,case,TODAY)['privacyValuesVerified'])
    for name in (('ct31' if 'sale5-' in case else 'ct33'),'ct40'):
     with self.subTest(case=case,field=name),self.assertRaises(n.OutputError):n.validate_native(changed(native,name,'0'),case,TODAY)
+
+ def test_noactivity_native_checkbox_is_explicit_and_all_money_zero(self):
+  for case in ('01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026'):
+   _,native,_,_=fixture(case)
+   self.assertTrue(n.validate_native(native,case,TODAY)['privacyValuesVerified'])
+   for body,target in ((native,'01GTGT-zero-M10-2026'),(changed(native,'ct21','0'),case),(changed(native,'ct32','1'),case)):
+    with self.subTest(case=case,target=target),self.assertRaises(n.OutputError):n.validate_native(body,target,TODAY)
 
  def test_five_percent_raw_bytes_cannot_be_relabelled_as_ten_percent(self):
   for five,ten in (('01GTGT-sale5-half-M10-2026','01GTGT-sale10-half-M10-2026'),('01GTGT-sale5-manual-M10-2026','01GTGT-sale10-manual-M10-2026')):

@@ -9,13 +9,14 @@ REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
 BRANCH='gtgt-web-reference-input'
 NAMES=('01GTGT-web.xml','manifest.json')
-CASES={'01GTGT-zero-M10-2026':'htkk-web-zero-input-v1','01GTGT-sale10-M10-2026':'htkk-web-sale10-input-v1','01GTGT-sale10-half-M10-2026':'htkk-web-sale10-half-input-v1','01GTGT-sale10-manual-M10-2026':'htkk-web-sale10-manual-input-v1','01GTGT-sale5-half-M10-2026':'htkk-web-sale5-half-input-v1','01GTGT-sale5-manual-M10-2026':'htkk-web-sale5-manual-input-v1'}
+CASES={'01GTGT-zero-M10-2026':'htkk-web-zero-input-v1','01GTGT-sale10-M10-2026':'htkk-web-sale10-input-v1','01GTGT-sale10-half-M10-2026':'htkk-web-sale10-half-input-v1','01GTGT-sale10-manual-M10-2026':'htkk-web-sale10-manual-input-v1','01GTGT-sale5-half-M10-2026':'htkk-web-sale5-half-input-v1','01GTGT-sale5-manual-M10-2026':'htkk-web-sale5-manual-input-v1','01GTGT-noactivity-zero-M10-2026':'htkk-web-noactivity-zero-input-v1','01GTGT-noactivity-reset-sale10-M10-2026':'htkk-web-noactivity-reset-sale10-input-v1'}
 SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
 SALE10_HALF={key:('5' if key in ('ct32','ct27','ct34') else '1') for key in SALE10}
 SALE10_MANUAL={key:('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}
 SALE5_HALF={('ct30' if key=='ct32' else 'ct31' if key=='ct33' else key):('10' if key in ('ct32','ct27','ct34') else '1') for key in SALE10}
 SALE5_MANUAL={('ct30' if key=='ct32' else 'ct31' if key=='ct33' else key):('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}
-CASE_MONEY={'01GTGT-zero-M10-2026':{},'01GTGT-sale10-M10-2026':SALE10,'01GTGT-sale10-half-M10-2026':SALE10_HALF,'01GTGT-sale10-manual-M10-2026':SALE10_MANUAL,'01GTGT-sale5-half-M10-2026':SALE5_HALF,'01GTGT-sale5-manual-M10-2026':SALE5_MANUAL}
+CASE_MONEY={'01GTGT-zero-M10-2026':{},'01GTGT-sale10-M10-2026':SALE10,'01GTGT-sale10-half-M10-2026':SALE10_HALF,'01GTGT-sale10-manual-M10-2026':SALE10_MANUAL,'01GTGT-sale5-half-M10-2026':SALE5_HALF,'01GTGT-sale5-manual-M10-2026':SALE5_MANUAL,'01GTGT-noactivity-zero-M10-2026':{},'01GTGT-noactivity-reset-sale10-M10-2026':{}}
+CASE_CHECKBOX={case:('1' if case in ('01GTGT-noactivity-zero-M10-2026', '01GTGT-noactivity-reset-sale10-M10-2026') else '0') for case in CASES}
 MAX_XML=262144
 MAX_MANIFEST=16384
 MAX_API=600000
@@ -119,6 +120,10 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
  if [child.tag for child in service]!=[ns+name for name in SERVICE]:raise InputError('XML_SERVICE')
  for child,(name,value) in zip(service,SERVICE.items()):
   if child.attrib or len(child) or child.text!=value:raise InputError('XML_SERVICE')
+ # Verify the fixed checkbox before adapting only the in-memory privacy copy.
+ nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'CTieuTKhaiChinh/'+ns+'ct21')
+ if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=CASE_CHECKBOX[case_id]:raise InputError('XML_PRIVACY')
+ nodes[0].text='0'
  # Exact fixed monetary case adapter; no arbitrary taxpayer amounts accepted.
  # Replacements occur ONLY in the in-memory privacy copy, never staged bytes.
  if CASE_MONEY[case_id]:
