@@ -1,7 +1,7 @@
 """Mode routing and bounded metadata contracts; no synthetic test is native proof."""
 import ast,pathlib,re,unittest
 ROOT=pathlib.Path(__file__).parent
-MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')
+MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')
 class AnnexInspectionContract(unittest.TestCase):
  def test_actual_csharp_start_rejects_unknown_modes_and_accepts_every_existing_mode(self):
   text=(ROOT/'HtkkGuiReferenceAutomation.cs').read_text()
@@ -20,9 +20,9 @@ class AnnexInspectionContract(unittest.TestCase):
   self.assertIn("$annex.mode='gtgt-annex12-inspect'",fixture);self.assertIn("@('annex12FirstGroupId',10001)",fixture)
  def test_annex_mode_is_inspection_only_with_separate_period_predicate(self):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
-  line=next(line for line in probe.splitlines() if "if($GuiAutomation -in @('gtgt-annex12-inspect','gtgt-annex12-row-inspect')){$matched=" in line)
+  line=next(line for line in probe.splitlines() if "if($GuiAutomation -in @('gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect')){$matched=" in line)
   for term in ('$lastGui.annexSelectedCount -eq 1','$lastGui.annex12SelectionActionCount -eq 1','$lastGui.annex12StructureMatched','-not $lastGui.exportCommandInvoked','-not $lastGui.webInputVerified'):self.assertIn(term,line)
-  self.assertIn("if($GuiAutomation -in @('gtgt-annex12-inspect','gtgt-annex12-row-inspect')){$lastGui.periodAnnex12Matched}else{$lastGui.periodNoAnnexMatched}",probe)
+  self.assertIn("if($GuiAutomation -in @('gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect')){$lastGui.periodAnnex12Matched}else{$lastGui.periodNoAnnexMatched}",probe)
   for line in probe.splitlines():
    if '$nativeEvidenceCreated=' in line or "if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $report.stage" in line:self.assertNotIn('gtgt-annex12-inspect',line)
 
@@ -68,7 +68,7 @@ class AnnexRowInspectionContract(unittest.TestCase):
    self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
   for key,maximum in {'annex12RowBeforeRows':10000,'annex12RowAfterRows':10000,'annex12RowBeforeGroupRows':10000,'annex12RowAfterGroupRows':10000,'annex12RowAfterGroupId':10000,'annex12RowInsertActionCount':1}.items():
    self.assertIn(key,keys);self.assertIn(key+'=0;',fixture);self.assertIn(key+'='+str(maximum)+';',reader)
-  line=next(line for line in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-row-inspect'){$matched=" in line)
+  line=next(line for line in probe.splitlines() if "if($GuiAutomation -in @('gtgt-annex12-row-inspect','gtgt-annex12-input-inspect')){$matched=" in line)
   for term in ('$lastGui.annex12F5Visible','$lastGui.annex12F5Invoked','$lastGui.annex12RowBeforeMatched','$lastGui.annex12RowAfterMatched','$lastGui.annex12RowAfterRows -eq 67','$lastGui.annex12RowAfterGroupRows -eq 2','$lastGui.annex12RowInsertActionCount -eq 1'):self.assertIn(term,line)
   self.assertIn("@('annex12RowInsertActionCount',2)",fixture);self.assertIn("$row.mode='gtgt-annex12-row-inspect'",fixture)
 
@@ -89,5 +89,35 @@ class AnnexOriginalTabClickContract(unittest.TestCase):
   self.assertLess(row.index('ClickOriginalAnnex12Tab(grid,annex,owner)'),row.index('new object[]{43,20}'))
   self.assertLess(row.index('new object[]{43,20}'),row.index('owner.Controls.Find("pnF5",true)'))
   self.assertLess(row.index('owner.Controls.Find("pnF5",true)'),row.index('SendKeys.SendWait("{F5}")'))
-  probe=(ROOT/'probe-htkk-windows.ps1').read_text();line=next(line for line in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-row-inspect'){$matched=" in line)
+  probe=(ROOT/'probe-htkk-windows.ps1').read_text();line=next(line for line in probe.splitlines() if "if($GuiAutomation -in @('gtgt-annex12-row-inspect','gtgt-annex12-input-inspect')){$matched=" in line)
   self.assertIn('$lastGui.annex12RowTabClickInvoked',line)
+
+class AnnexFixedInputsInspectionContract(unittest.TestCase):
+ def test_input_edits_are_fixed_fake_ui_inputs_without_hidden_or_derived_assignment(self):
+  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  block=source[source.index(' private void EditAnnex12FixedInput('):source.index(' private static bool Annex12NumberMatched(')]
+  coordinates=re.search(r'int\[,] locations=new int\[,]\{([^;]+)\};',block).group(1)
+  pairs=[tuple(map(int,pair)) for pair in re.findall(r'\{(\d+),(\d+)\}',coordinates)]
+  self.assertEqual(pairs,[(42,4),(42,9),(43,2),(43,4),(43,12),(43,16),(43,17),(43,18),(43,20),(44,2),(44,4),(44,12),(44,16),(44,17),(44,18),(44,20)])
+  # No ct10, computed subtotal, hidden code, XML or runtime model is assigned.
+  self.assertNotIn('SetValue',block);self.assertNotIn('editor.Text=',block)
+  self.assertNotRegex(block,r'SetPublic\([^,]+,"(?:Value|Text|Formula|Locked)"')
+  for term in ('9999999997-001','NHA MAY GIA LAP - KHONG NOP','FindVendorCombo(editor,0)','SetPublic(vendor,"SelectedIndex",selected)','EscapeSendKeys(value)','SendKeys.SendWait(keys)','annex12InputActionCount++','index!=annex12InputActionCount','"Locked"','!editor.ContainsFocus'):
+   self.assertIn(term,block)
+ def test_input_observations_are_independent_reads_and_do_not_enable_export(self):
+  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  block=source[source.index(' private void InspectOriginalAnnex12Inputs('):source.index(' private static bool Annex12CaptionMatched')]
+  for term in ('CellText(annex,43,32)=="01"','CellText(annex,44,32)=="02"','CellText(annex,row,33)!="101"','CellText(annex,row,42)!="10129087"','CellText(annex,row,35)!="10100"','CellText(annex,row,36)!="10129"','Annex12NumberMatched(annex,42,20,100)','stage="gtgt-annex12-input-inspected"'):
+   self.assertIn(term,block)
+  self.assertNotIn('Export',block);self.assertNotIn('Save',block)
+  probe=(ROOT/'probe-htkk-windows.ps1').read_text()
+  line=next(x for x in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-input-inspect'){$matched=" in x)
+  for term in ('annex12InputActionCount -eq 16','annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):self.assertIn(term,line)
+ def test_input_report_is_bounded_and_rejected_outside_its_own_mode(self):
+  reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
+  self.assertIn('annex12InputActionCount=16;',reader)
+  for key in ('annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):
+   self.assertIn(key+'=$false;',fixture)
+  self.assertIn("$ExpectedMode -cne 'gtgt-annex12-input-inspect'",reader)
+  self.assertIn("@('annex12InputActionCount',17)",fixture)
+  self.assertLess(fixture.index('$inputCase=[ordered]'),fixture.index('}finally{'))

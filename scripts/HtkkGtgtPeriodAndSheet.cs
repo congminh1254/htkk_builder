@@ -28,9 +28,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+Bool(flags[index]));
   names=new string[]{"annex12SelectionActionCount","annex12SheetRows","annex12SheetColumns","annex12NumericCount","annex12NumericEmptyMask","annex12NumericNonzeroMask","annex12GroupCount","annex12FirstGroupId","annex12FirstGroupRows"};
   int[] counts=new int[]{annex12SelectionActionCount,annex12SheetRows,annex12SheetColumns,annex12NumericCount,annex12NumericEmptyMask,annex12NumericNonzeroMask,annex12GroupCount,annex12FirstGroupId,annex12FirstGroupRows};
-  for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString()+Annex12RowJson();
+  for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString()+Annex12RowJson()+Annex12InputJson();
  }
- private bool Annex12InspectionMode(){return mode=="gtgt-annex12-inspect"||mode=="gtgt-annex12-row-inspect";}
+ private bool Annex12InspectionMode(){return mode=="gtgt-annex12-inspect"||(mode=="gtgt-annex12-row-inspect"||mode=="gtgt-annex12-input-inspect");}
  private bool annex12RowTabClickInvoked=false,annex12F5Visible=false,annex12F5Invoked=false,annex12RowBeforeMatched=false,annex12RowAfterMatched=false,annex12RowSttMatched=false,annex12RowLocksMatched=false;
  private int annex12RowBeforeRows=0,annex12RowAfterRows=0,annex12RowBeforeGroupRows=0,annex12RowAfterGroupRows=0,annex12RowAfterGroupId=0,annex12RowInsertActionCount=0;
  private string Annex12RowJson(){
@@ -50,7 +50,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   System.Collections.IList rows=Get(first,"RowsValues") as System.Collections.IList;if(rows==null||rows.Count>10000)throw new InvalidOperationException();return rows.Count;
  }
  private void ClickOriginalAnnex12Tab(Control grid,object annex,Form owner){
-  if(mode!="gtgt-annex12-row-inspect"||annex12RowTabClickInvoked||annex12F5Invoked||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||grid.FindForm()!=owner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||Convert.ToInt32(Get(grid,"ActiveSheetIndex"))!=1||OriginalMessageVisible())throw new InvalidOperationException();
+  if((mode!="gtgt-annex12-row-inspect"&&mode!="gtgt-annex12-input-inspect")||annex12RowTabClickInvoked||annex12F5Invoked||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||grid.FindForm()!=owner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||Convert.ToInt32(Get(grid,"ActiveSheetIndex"))!=1||OriginalMessageVisible())throw new InvalidOperationException();
   string name=Convert.ToString(Get(annex,"SheetName"),CultureInfo.InvariantCulture);if(name!="01_2"&&name!="01-2/GTGT")throw new InvalidOperationException();
   grid.Focus();uint pid,controlPid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);GetWindowThreadProcessId(grid.Handle,out controlPid);if(pid!=(uint)Process.GetCurrentProcess().Id||controlPid!=pid||!grid.ContainsFocus)throw new InvalidOperationException();
   stage="gtgt-annex12-tab-clicking";Record();
@@ -68,7 +68,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
 
  private void InspectOriginalAnnex12Row(Control grid,object annex){
-  if(mode!="gtgt-annex12-row-inspect"||annex12F5Invoked||annex12RowInsertActionCount!=0||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||!annex12GroupMetadataMatched||!annex12LocksMatched||!annex12SttMatched||annex12NumericCount!=8||annex12NumericEmptyMask!=0||annex12NumericNonzeroMask!=0)throw new InvalidOperationException();
+  if((mode!="gtgt-annex12-row-inspect"&&mode!="gtgt-annex12-input-inspect")||annex12F5Invoked||annex12RowInsertActionCount!=0||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||!annex12GroupMetadataMatched||!annex12LocksMatched||!annex12SttMatched||annex12NumericCount!=8||annex12NumericEmptyMask!=0||annex12NumericNonzeroMask!=0)throw new InvalidOperationException();
   annex12RowBeforeRows=annex12SheetRows;annex12RowBeforeGroupRows=annex12FirstGroupRows;
   annex12RowBeforeMatched=annex12RowBeforeRows==66&&annex12SheetColumns==45&&annex12GroupCount==1&&annex12FirstGroupId==1&&annex12RowBeforeGroupRows==1;
   Form owner=grid.FindForm();if(!annex12RowBeforeMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||Convert.ToInt32(Get(grid,"ActiveSheetIndex"))!=1||OriginalMessageVisible())throw new InvalidOperationException();
@@ -95,7 +95,67 @@ public sealed partial class HtkkGuiReferenceAutomation {
   bool[] locks=new bool[]{false,false,false,true,true,true,false,true,true,false,true,true,true};
   for(int index=0;index<cells.GetLength(0);index++)if(Convert.ToBoolean(Get(Cell(annex,cells[index,0],cells[index,1]),"Locked"))!=locks[index])annex12RowLocksMatched=false;
   annex12RowAfterMatched=annex12RowAfterRows==67&&annex12RowAfterGroupRows==2&&annex12RowAfterGroupId==1&&annex12RowInsertActionCount==1&&annex12RowSttMatched&&annex12RowLocksMatched;
+  if(mode=="gtgt-annex12-input-inspect"){if(!annex12RowAfterMatched)throw new InvalidOperationException();InspectOriginalAnnex12Inputs(grid,annex);return;}
   finished=true;stage="gtgt-annex12-row-inspected";Record();
+ }
+
+ // Fixed synthetic input scenario, separate from the already proved row-only mode.
+ // These methods edit public ORIGINAL controls. Hidden codes and computed totals
+ // are read afterwards; they are never assigned by the reference host.
+ private bool annex12InputIdentityMatched=false,annex12InputTypesMatched=false,annex12InputGeographyMatched=false,annex12InputTaxAuthoritiesMatched=false,annex12InputPercentagesMatched=false,annex12InputZeroTaxMatched=false;
+ private int annex12InputActionCount=0;
+ private string Annex12InputJson(){
+  string q=((char)34).ToString();StringBuilder result=new StringBuilder();
+  string[] names=new string[]{"annex12InputIdentityMatched","annex12InputTypesMatched","annex12InputGeographyMatched","annex12InputTaxAuthoritiesMatched","annex12InputPercentagesMatched","annex12InputZeroTaxMatched"};
+  bool[] flags=new bool[]{annex12InputIdentityMatched,annex12InputTypesMatched,annex12InputGeographyMatched,annex12InputTaxAuthoritiesMatched,annex12InputPercentagesMatched,annex12InputZeroTaxMatched};
+  for(int index=0;index<names.Length;index++)result.Append(","+q+names[index]+q+":"+Bool(flags[index]));
+  return result.ToString()+","+q+"annex12InputActionCount"+q+":"+annex12InputActionCount.ToString(CultureInfo.InvariantCulture);
+ }
+ private void Annex12InputOwner(Control grid,object annex){
+  Form owner=grid.FindForm();uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
+  if(mode!="gtgt-annex12-input-inspect"||Global("InstanceClass")==null||Global("InstanceClass").GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(annex,"AutoCalculation"))||!annex12RowAfterMatched||annex12InputActionCount<0||annex12InputActionCount>16||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||!grid.ContainsFocus||Get(grid,"ActiveSheet")!=annex||pid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible()||Convert.ToInt32(Get(annex,"RowCount"))!=67||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)throw new InvalidOperationException();
+ }
+ private void EditAnnex12FixedInput(Control grid,object annex,int index){
+  // Source template locations, zero based. Parent tax remains its source default 0.
+  int[,] locations=new int[,]{{42,4},{42,9},{43,2},{43,4},{43,12},{43,16},{43,17},{43,18},{43,20},{44,2},{44,4},{44,12},{44,16},{44,17},{44,18},{44,20}};
+  string[] inputs=new string[]{"NHA MAY GIA LAP - KHONG NOP","9999999997-001","Nơi có văn phòng điều hành nhà máy","VAN PHONG GIA LAP - KHONG NOP","Thành phố Hà Nội","Phường Sơn Tây","Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","50","Nơi có nhà máy thủy điện (khác nơi có văn phòng điều hành)","DIA BAN GIA LAP - KHONG NOP","Thành phố Hà Nội","Phường Sơn Tây","Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","50"};
+  if(index<0||index>=inputs.Length||index!=annex12InputActionCount)throw new InvalidOperationException();
+  int row=locations[index,0],column=locations[index,1];string value=inputs[index];bool combo=column==2||column==12||column==16||column==17||column==18;
+  grid.Focus();Annex12InputOwner(grid,annex);if(Convert.ToBoolean(Get(Cell(annex,row,column),"Locked")))throw new InvalidOperationException();
+  stage="gtgt-annex12-input-editing";Record();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
+  grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});
+  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
+  if(combo){
+   // Same public vendor combo selection mechanism used by the synthetic profile.
+   Control vendor=FindVendorCombo(editor,0);if(vendor==null)throw new InvalidOperationException();editorKind="combo";SetPublic(vendor,"DroppedDown",true);
+   object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
+   if(count<1||count>4096)throw new InvalidOperationException();PropertyInfo item=list.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null&&sequence==null)throw new InvalidOperationException();int selected=-1;
+   for(int offset=0;offset<count;offset++){object entry=sequence!=null?sequence[offset]:item.GetValue(list,new object[]{offset});if(entry!=null&&entry.ToString()==value){if(selected>=0)throw new InvalidOperationException();selected=offset;}}
+   if(selected<0)throw new InvalidOperationException();uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible())throw new InvalidOperationException();SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
+  }else{
+   editorKind=editor is TextBoxBase?"text-box":"other-control";editor.Focus();
+   foreach(string keys in new string[]{"^a",EscapeSendKeys(value),"{TAB}"}){Annex12InputOwner(grid,annex);if(!editor.ContainsFocus)throw new InvalidOperationException();SendKeys.SendWait(keys);}
+  }
+  grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();Annex12InputOwner(grid,annex);
+  if(combo||column!=20){if(CellText(annex,row,column)!=value)throw new InvalidOperationException();}
+  else{decimal actual;if(!Decimal.TryParse(Convert.ToString(Get(Cell(annex,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||actual!=50)throw new InvalidOperationException();}
+  annex12InputActionCount++;Record();
+ }
+ private static bool Annex12NumberMatched(object sheet,int row,int column,decimal expected){decimal actual;return Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)&&actual==expected;}
+ private void InspectOriginalAnnex12Inputs(Control grid,object annex){
+  if(annex12InputActionCount!=0)throw new InvalidOperationException();
+  for(int index=0;index<16;index++)EditAnnex12FixedInput(grid,annex,index);
+  annex12InputIdentityMatched=CellText(annex,42,4)=="NHA MAY GIA LAP - KHONG NOP"&&CellText(annex,42,9)=="9999999997-001";
+  annex12InputTypesMatched=CellText(annex,43,32)=="01"&&CellText(annex,44,32)=="02";
+  annex12InputGeographyMatched=true;annex12InputTaxAuthoritiesMatched=true;
+  for(int row=43;row<=44;row++){
+   if(CellText(annex,row,33)!="101"||CellText(annex,row,42)!="10129087"||CellText(annex,row,12)!="Thành phố Hà Nội"||CellText(annex,row,16)!="Phường Sơn Tây")annex12InputGeographyMatched=false;
+   if(CellText(annex,row,35)!="10100"||CellText(annex,row,36)!="10129"||CellText(annex,row,17)!="Thuế Thành phố Hà Nội"||CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội")annex12InputTaxAuthoritiesMatched=false;
+  }
+  annex12InputPercentagesMatched=Annex12NumberMatched(annex,43,20,50)&&Annex12NumberMatched(annex,44,20,50)&&Annex12NumberMatched(annex,42,20,100);
+  annex12InputZeroTaxMatched=true;int[,] zeros=new int[,]{{42,19},{42,23},{43,19},{43,23},{44,19},{44,23},{46,19},{46,23}};
+  for(int index=0;index<zeros.GetLength(0);index++)if(!Annex12NumberMatched(annex,zeros[index,0],zeros[index,1],0))annex12InputZeroTaxMatched=false;
+  finished=true;stage="gtgt-annex12-input-inspected";Record();
  }
 
  private static bool Annex12CaptionMatched(string typeName,string uncheckedText,string checkedText){return typeName=="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&uncheckedText=="01-2/GTGT"&&checkedText=="01-2/GTGT";}
@@ -103,6 +163,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(!Annex12InspectionMode()||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   string root=Path.GetDirectoryName(project);
   annex12SourcePinsMatched=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_283.xml"))=="9512dcfef9551892d132fd905250427c580a1320f77318ab048d6d26fd3a32e5"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_xml_283.xml"))=="9dafb55263fa2729383cf57bc73f3b97cf48dc9a28632a596806ad0afe8f17d3"&&Hash(Path.Combine(root,"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd"))=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003";
+  if(mode=="gtgt-annex12-input-inspect")annex12SourcePinsMatched=annex12SourcePinsMatched&&Hash(Path.Combine(root,"InterfaceIni/DM_DUNG_CHUNG.xml"))=="cff4311dff86113853b2a70ca43992d72f4f5dd7ac643041e3d4d9ac2b1ba0b0";
   if(!annex12SourcePinsMatched)throw new InvalidOperationException();
   int rowCount=Convert.ToInt32(Get(sheet,"RowCount")),columnCount=Convert.ToInt32(Get(sheet,"ColumnCount")),target=-1;
   if(rowCount<1||rowCount>512||columnCount<1||columnCount>16)throw new InvalidOperationException();
@@ -138,7 +199,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   stage="gtgt-annex12-row-metadata";Record();System.Collections.IList values=Get(first,"RowsValues") as System.Collections.IList;if(values==null||values.Count>10000)throw new InvalidOperationException();annex12FirstGroupRows=values.Count;
   annex12GroupMetadataMatched=Selected(Get(info,"Active"))&&Convert.ToString(Get(first,"TableName"),CultureInfo.InvariantCulture)=="01_2_GTGT"&&Convert.ToString(Get(first,"TablePath"),CultureInfo.InvariantCulture)=="PLuc_01_2_GTGT/TenNhaMay";
   annex12StructureMatched=annex12SttMatched&&annex12LocksMatched&&annex12NumericCount==8&&annex12NumericNonzeroMask==0&&annex12GroupMetadataMatched;
-  if(mode=="gtgt-annex12-row-inspect"){InspectOriginalAnnex12Row(grid,annex);return;}
+  if((mode=="gtgt-annex12-row-inspect"||mode=="gtgt-annex12-input-inspect")){InspectOriginalAnnex12Row(grid,annex);return;}
   finished=true;stage="gtgt-annex12-inspected";Record();
  }
 
