@@ -46,8 +46,8 @@ try {
   $copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-web-import-inspect).status -ne 'valid'){throw 'Safe web input metadata rejected'};$cases++
  }
- foreach($newCase in @('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026')){
-  $copy.webCaseId=$newCase;$copy.webCaseEditCount=if($newCase -ceq '01GTGT-sale10-manual-M10-2026'){2}else{1}
+ foreach($newCase in @('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026')){
+  $copy.webCaseId=$newCase;$copy.webCaseEditCount=if($newCase -cin @('01GTGT-sale10-manual-M10-2026','01GTGT-sale5-manual-M10-2026')){2}else{1}
   $copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-web-import-inspect).status -ne 'valid'){throw 'Safe bounded new-case edit count rejected'};$cases++
  }

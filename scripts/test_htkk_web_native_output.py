@@ -12,7 +12,7 @@ ARTIFACT='b'*40
 BUILDER_SHA='c'*40
 
 def fixture(case='01GTGT-zero-M10-2026'):
- root=ET.fromstring(f.sale_fixture(case) if 'sale10' in case else f.web_fixture());ns='{'+n.privacy.NS+'}'
+ root=ET.fromstring(f.sale_fixture(case) if case!='01GTGT-zero-M10-2026' else f.web_fixture());ns='{'+n.privacy.NS+'}'
  root.find('.//'+ns+'ct21').text='0'
  web=(n.reader.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
  for name,value in n.SERVICE.items():root.find('.//'+ns+name).text=value
@@ -48,11 +48,17 @@ def fake_api(web,manifest,info=None,existing=True):
 
 class NativePrivacyTests(unittest.TestCase):
  def test_rounding_and_manual_native_outputs_reject_wrong_tax_or_wrong_case(self):
-  for case in ('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026'):
+  for case in ('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026'):
    _,native,_,_=fixture(case)
    self.assertTrue(n.validate_native(native,case,TODAY)['privacyValuesVerified'])
-   for name in ('ct33','ct40'):
+   for name in (('ct31' if 'sale5-' in case else 'ct33'),'ct40'):
     with self.subTest(case=case,field=name),self.assertRaises(n.OutputError):n.validate_native(changed(native,name,'0'),case,TODAY)
+
+ def test_five_percent_raw_bytes_cannot_be_relabelled_as_ten_percent(self):
+  for five,ten in (('01GTGT-sale5-half-M10-2026','01GTGT-sale10-half-M10-2026'),('01GTGT-sale5-manual-M10-2026','01GTGT-sale10-manual-M10-2026')):
+   for source,target in ((five,ten),(ten,five)):
+    _,native,_,_=fixture(source)
+    with self.subTest(source=source,target=target),self.assertRaises(n.OutputError):n.validate_native(native,target,TODAY)
 
  def test_both_cases_original_identity_historical_signature_fresh_created(self):
   for case in n.BRANCHES:

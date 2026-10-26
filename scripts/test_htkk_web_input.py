@@ -30,7 +30,7 @@ def fake_fetch(body,metadata=None,info=None):
  return fetch,calls
 class PrivacyTests(unittest.TestCase):
  def test_round_half_and_manual_override_exact_cases_accept_only_known_amount_vectors(self):
-  for case in ('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026'):
+  for case in ('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026'):
    body=sale_fixture(case)
    self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
    for name,value in w.CASE_MONEY[case].items():
@@ -40,6 +40,11 @@ class PrivacyTests(unittest.TestCase):
   a='01GTGT-sale10-half-M10-2026';b='01GTGT-sale10-manual-M10-2026'
   for body,case in ((sale_fixture(a),b),(sale_fixture(b),a),(sale_fixture(a),'01GTGT-sale10-M10-2026')):
    with self.assertRaises(w.InputError):w.validate_web_xml(body,TODAY,case)
+
+ def test_five_percent_cases_reject_ten_percent_relabelling_and_unexpected_amounts(self):
+  for five,ten in (('01GTGT-sale5-half-M10-2026','01GTGT-sale10-half-M10-2026'),('01GTGT-sale5-manual-M10-2026','01GTGT-sale10-manual-M10-2026')):
+   for source,target in ((five,ten),(ten,five)):
+    with self.subTest(source=source,target=target),self.assertRaises(w.InputError):w.validate_web_xml(sale_fixture(source),TODAY,target)
 
  def setUp(self):self.body=web_fixture()
  def reject(self,body,code):

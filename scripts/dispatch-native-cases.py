@@ -2,8 +2,8 @@
 import json,os,pathlib,re,urllib.request,urllib.error
 REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
-CASES=('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026','01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026')
-CONTEXTS=dict(zip(CASES,('htkk-native/zero','htkk-native/sale10','htkk-native/sale10-half','htkk-native/sale10-manual')))
+CASES=('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026','01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026','01GTGT-sale5-half-M10-2026','01GTGT-sale5-manual-M10-2026')
+CONTEXTS=dict(zip(CASES,('htkk-native/zero','htkk-native/sale10','htkk-native/sale10-half','htkk-native/sale10-manual','htkk-native/sale5-half','htkk-native/sale5-manual')))
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 def sha(value):

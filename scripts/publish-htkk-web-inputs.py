@@ -1,4 +1,4 @@
-"""Publish four fixed synthetic inputs privately after trusted release checks.
+"""Publish six fixed synthetic inputs privately after trusted release checks.
 
 Never executes private code. XML and manifests remain byte-for-byte unchanged;
 the public output contains only bounded commit identifiers and fixed case names.
@@ -9,7 +9,7 @@ _spec=importlib.util.spec_from_file_location('htkk_web_input_reader',pathlib.Pat
 reader=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(reader)
 REPO=reader.REPO
 BUILDER=reader.BUILDER
-CASES=(('01GTGT-zero-M10-2026','htkk-web-reference-zero-input','gtgt-web-reference-zero-input'),('01GTGT-sale10-M10-2026','htkk-web-reference-sale10-input','gtgt-web-reference-sale10-input'),('01GTGT-sale10-half-M10-2026','htkk-web-reference-sale10-half-input','gtgt-web-reference-sale10-half-input'),('01GTGT-sale10-manual-M10-2026','htkk-web-reference-sale10-manual-input','gtgt-web-reference-sale10-manual-input'))
+CASES=(('01GTGT-zero-M10-2026','htkk-web-reference-zero-input','gtgt-web-reference-zero-input'),('01GTGT-sale10-M10-2026','htkk-web-reference-sale10-input','gtgt-web-reference-sale10-input'),('01GTGT-sale10-half-M10-2026','htkk-web-reference-sale10-half-input','gtgt-web-reference-sale10-half-input'),('01GTGT-sale10-manual-M10-2026','htkk-web-reference-sale10-manual-input','gtgt-web-reference-sale10-manual-input'),('01GTGT-sale5-half-M10-2026','htkk-web-reference-sale5-half-input','gtgt-web-reference-sale5-half-input'),('01GTGT-sale5-manual-M10-2026','htkk-web-reference-sale5-manual-input','gtgt-web-reference-sale5-manual-input'))
 OUTPUT='htkk-web-input-publication.json'
 PRODUCER='scripts/generate-htkk-web-reference.mjs'
 MAX_PRODUCER=262144
