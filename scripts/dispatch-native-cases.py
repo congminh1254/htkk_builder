@@ -2,8 +2,8 @@
 import json,os,pathlib,re,urllib.request,urllib.error
 REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
-CASES=('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026')
-CONTEXTS=dict(zip(CASES,('htkk-native/zero','htkk-native/sale10')))
+CASES=('01GTGT-zero-M10-2026','01GTGT-sale10-M10-2026','01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026')
+CONTEXTS=dict(zip(CASES,('htkk-native/zero','htkk-native/sale10','htkk-native/sale10-half','htkk-native/sale10-manual')))
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 def sha(value):
@@ -19,7 +19,7 @@ def publication(body,expected):
    value[key]=item
   return value
  value=json.loads(body.decode('utf-8'),object_pairs_hook=unique)
- if type(value) is not dict or set(value)!= {'format','sourceCommit','cases'} or value['format']!='htkk-web-input-publication-v1' or value['sourceCommit']!=expected or type(value['cases']) is not list or len(value['cases'])!=2:raise ValueError('PUBLICATION')
+ if type(value) is not dict or set(value)!= {'format','sourceCommit','cases'} or value['format']!='htkk-web-input-publication-v1' or value['sourceCommit']!=expected or type(value['cases']) is not list or len(value['cases'])!=len(CASES):raise ValueError('PUBLICATION')
  for item,case in zip(value['cases'],CASES):
   if type(item) is not dict or set(item)!={'caseId','artifactCommit'} or item['caseId']!=case:raise ValueError('PUBLICATION')
   sha(item['artifactCommit'])
@@ -47,6 +47,6 @@ def main():
   if path.is_symlink() or not path.is_file() or path.stat().st_size>16384:raise ValueError('PUBLICATION')
   value=publication(path.read_bytes(),os.environ['COMMIT_SHA'])
   dispatch(value,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'))
-  print('Two immutable synthetic native cases dispatched; results use separate commit statuses.')
+  print('Four immutable synthetic native cases dispatched; results use separate commit statuses.')
  except Exception:raise SystemExit('Native-case dispatch failed; no raw response, input, path or credential published.')
 if __name__=='__main__':main()

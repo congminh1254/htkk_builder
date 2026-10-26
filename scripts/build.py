@@ -21,10 +21,10 @@ try:
  run(['npm','run','test:e2e'])
  if os.environ['BUILD_MODE']=='release':
   # Actual source producer runs only after all CI checks, without credentials.
-  # These two directories contain fixed synthetic XML only; trusted publication
+  # These four directories contain fixed synthetic XML only; trusted publication
   # independently revalidates the entire allowlist before any authenticated I/O.
   reference_env=dict(env);reference_env['TMPDIR']=os.environ['RUNNER_TEMP']
-  for case,suffix in (('zero','zero'),('sale10','sale10')):
+  for case,suffix in (('zero','zero'),('sale10','sale10'),('sale10-half','sale10-half'),('sale10-manual','sale10-manual')):
    destination=pathlib.Path(os.environ['RUNNER_TEMP'])/('htkk-web-reference-'+suffix+'-input')
    if destination.exists() or destination.is_symlink():raise RuntimeError()
    with log.open('ab') as output:

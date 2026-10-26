@@ -153,7 +153,8 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    editorKind=editor is TextBoxBase?"text-box":"other-control";
    if(profileInput)editor.Text=value;
    else{
-    if(row!=47||column!=9||value!="1000000"||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
+    bool fixedInput=webInputVerified&&row==47&&((webCaseEditCount==0&&column==9&&value==(webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000")&&webCaseId!="01GTGT-zero-M10-2026")||(webCaseEditCount==1&&column==11&&value=="7"&&webCaseId=="01GTGT-sale10-manual-M10-2026"));
+    if(!fixedInput||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
     editor.Focus();if(!editor.ContainsFocus)throw new InvalidOperationException();
     foreach(string keys in new string[]{"^a",value,"{TAB}"}){uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
    }

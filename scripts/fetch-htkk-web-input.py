@@ -9,8 +9,11 @@ REPO='congminh1254/htkk_web'
 BUILDER='congminh1254/htkk_builder'
 BRANCH='gtgt-web-reference-input'
 NAMES=('01GTGT-web.xml','manifest.json')
-CASES={'01GTGT-zero-M10-2026':'htkk-web-zero-input-v1','01GTGT-sale10-M10-2026':'htkk-web-sale10-input-v1'}
+CASES={'01GTGT-zero-M10-2026':'htkk-web-zero-input-v1','01GTGT-sale10-M10-2026':'htkk-web-sale10-input-v1','01GTGT-sale10-half-M10-2026':'htkk-web-sale10-half-input-v1','01GTGT-sale10-manual-M10-2026':'htkk-web-sale10-manual-input-v1'}
 SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
+SALE10_HALF={key:('5' if key in ('ct32','ct27','ct34') else '1') for key in SALE10}
+SALE10_MANUAL={key:('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}
+CASE_MONEY={'01GTGT-zero-M10-2026':{},'01GTGT-sale10-M10-2026':SALE10,'01GTGT-sale10-half-M10-2026':SALE10_HALF,'01GTGT-sale10-manual-M10-2026':SALE10_MANUAL}
 MAX_XML=262144
 MAX_MANIFEST=16384
 MAX_API=600000
@@ -116,8 +119,8 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
   if child.attrib or len(child) or child.text!=value:raise InputError('XML_SERVICE')
  # Exact fixed monetary case adapter; no arbitrary taxpayer amounts accepted.
  # Replacements occur ONLY in the in-memory privacy copy, never staged bytes.
- if case_id=='01GTGT-sale10-M10-2026':
-  for name,value in SALE10.items():
+ if CASE_MONEY[case_id]:
+  for name,value in CASE_MONEY[case_id].items():
    nodes=root.findall('.//'+ns+name)
    if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=value:raise InputError('XML_PRIVACY')
    nodes[0].text='0'

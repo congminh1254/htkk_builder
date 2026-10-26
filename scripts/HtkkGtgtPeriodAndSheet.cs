@@ -128,9 +128,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){stage="waiting-gtgt-sheet";Record();return;}
    if(!webInputVerified)VerifyOwnWebInput();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
-   if(webCaseId=="01GTGT-sale10-M10-2026"&&!webCaseEdited){
+   if(webCaseId!="01GTGT-zero-M10-2026"&&!webCaseEdited){
     if(!gtgtZero||gtgtEmptyMoney!=0||gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,47,9),"Locked")))throw new InvalidOperationException();
-    webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,47,9,"1000000",false,"gtgt-case-editing",false);return;
+    webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,47,9,webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",false,"gtgt-case-editing",false);return;
+   }
+   if(webCaseId=="01GTGT-sale10-manual-M10-2026"&&webCaseEditCount==1){
+    decimal suggested;if(Convert.ToBoolean(Get(Cell(sheet,47,11),"Locked"))||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out suggested)||suggested!=100000){if(webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
+    webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,47,11,"7",false,"gtgt-case-editing",false);return;
    }
    InspectCaseMoney(sheet);
    if(!gtgtCaseMoneyMatched){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
@@ -147,9 +151,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   gtgtCaseMoneyMatched=true;gtgtCaseMoneyCount=0;gtgtCaseMismatchMask=0;gtgtCaseNonzeroMask=0;gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
   for(int index=0;index<coordinates.GetLength(0);index++){
    int row=coordinates[index,0],column=coordinates[index,1];decimal expected=Decimal.Zero;
-   if(webCaseId=="01GTGT-sale10-M10-2026"){
-    if(column==9&&(row==44||row==47||row==49))expected=1000000;
-    if(column==11&&(row==44||row==47||row==49||row==50||row==56||row==58))expected=100000;
+   if(webCaseId!="01GTGT-zero-M10-2026"){
+    if(column==9&&(row==44||row==47||row==49))expected=webCaseId=="01GTGT-sale10-half-M10-2026"?5:1000000;
+    if(column==11&&(row==44||row==47||row==49||row==50||row==56||row==58))expected=webCaseId=="01GTGT-sale10-half-M10-2026"?1:webCaseId=="01GTGT-sale10-manual-M10-2026"?7:100000;
    }
    object value=Get(Cell(sheet,row,column),"Value");decimal number;
    if(value==null||value==DBNull.Value||!Decimal.TryParse(Convert.ToString(value,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number)){gtgtCaseMoneyMatched=false;gtgtCaseMismatchMask|=1<<index;continue;}

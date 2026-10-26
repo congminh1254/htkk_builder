@@ -11,9 +11,9 @@ def web_fixture():
  for child in service:child.text=w.SERVICE[child.tag[len(ns):]]
  for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text='2026-10-25'
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
-def sale_fixture():
+def sale_fixture(case="01GTGT-sale10-M10-2026"):
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
- for name,value in w.SALE10.items():root.find('.//'+ns+name).text=value
+ for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def manifest(body):return {'format':'htkk-web-zero-input-v1','sourceRepository':w.REPO,'sourceCommit':'a'*40,'sourceVersion':'0.9.2','caseId':'01GTGT-zero-M10-2026','inputsSynthetic':True,'exporter':'lib/htkk-xml.ts','producerSha256':'c'*64,'xmlSha256':hashlib.sha256(body).hexdigest(),'bytes':len(body)}
 def envelope(body,name):return {'type':'file','name':name,'path':name,'encoding':'base64','size':len(body),'content':base64.encodebytes(body).decode(),'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
@@ -29,6 +29,18 @@ def fake_fetch(body,metadata=None,info=None):
   raise AssertionError('Unexpected fixed API path')
  return fetch,calls
 class PrivacyTests(unittest.TestCase):
+ def test_round_half_and_manual_override_exact_cases_accept_only_known_amount_vectors(self):
+  for case in ('01GTGT-sale10-half-M10-2026','01GTGT-sale10-manual-M10-2026'):
+   body=sale_fixture(case)
+   self.assertTrue(w.validate_web_xml(body,TODAY,case)['privacyValuesVerified'])
+   for name,value in w.CASE_MONEY[case].items():
+    changed=body.replace(('<'+name+'>'+value+'</'+name+'>').encode(),('<'+name+'>'+str(int(value)+1)+'</'+name+'>').encode())
+    with self.subTest(case=case,field=name),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,case)
+ def test_new_amount_cases_cannot_be_relabelled_as_each_other(self):
+  a='01GTGT-sale10-half-M10-2026';b='01GTGT-sale10-manual-M10-2026'
+  for body,case in ((sale_fixture(a),b),(sale_fixture(b),a),(sale_fixture(a),'01GTGT-sale10-M10-2026')):
+   with self.assertRaises(w.InputError):w.validate_web_xml(body,TODAY,case)
+
  def setUp(self):self.body=web_fixture()
  def reject(self,body,code):
   with self.assertRaises(w.InputError) as error:w.validate_web_xml(body,TODAY)

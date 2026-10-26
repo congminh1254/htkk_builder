@@ -9,10 +9,9 @@ SHA='a'*40
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 
 def fixtures():
- zero=f.web_fixture();sale=zero
- for key,value in p.reader.SALE10.items():sale=sale.replace(('<'+key+'>0</'+key+'>').encode(),('<'+key+'>'+value+'</'+key+'>').encode())
  result=[]
- for (case,_,branch),body in zip(p.CASES,(zero,sale)):
+ for case,_,branch in p.CASES:
+  body=f.web_fixture() if case=='01GTGT-zero-M10-2026' else f.sale_fixture(case)
   metadata=f.manifest(body);metadata.update(format=p.reader.CASES[case],caseId=case,producerSha256=hashlib.sha256(PRODUCER).hexdigest())
   files={'01GTGT-web.xml':body,'manifest.json':(json.dumps(metadata,ensure_ascii=False)+'\n').encode()}
   result.append((case,branch,files,metadata))
@@ -36,7 +35,7 @@ def fake_api(info=None,main=SHA,existing=True):
    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
   if path=='/git/trees':return {'sha':'c'*40}
   if path=='/git/commits':
-   self_sha=('d' if not commits else 'e')*40;commits.append(payload);return {'sha':self_sha}
+   self_sha=('d','e','f','1')[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
   if path.startswith('/git/ref/heads/'):
    if not existing:raise urllib.error.HTTPError('https://api.github.com/',404,'PRIVATE REMOTE TEXT',{},None)
    return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':'f'*40}}
@@ -97,16 +96,16 @@ class StagingTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
  def test_orphan_private_publication_preserves_bytes_and_metadata_only_result(self):
   inputs=fixtures();fetch,calls,commits=fake_api();result=p.publish(inputs,SHA,'synthetic-token',fetch)
-  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':p.CASES[0][0],'artifactCommit':'d'*40},{'caseId':p.CASES[1][0],'artifactCommit':'e'*40}]})
+  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,('d','e','f','1'))]})
   self.assertTrue(all(item['parents']==[] for item in commits));self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
   blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
-  self.assertEqual(blobs,[inputs[0][2][name] for name in p.reader.NAMES]+[inputs[1][2][name] for name in p.reader.NAMES])
+  self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.NAMES])
   patches=[(path,payload) for path,_,payload,method in calls if method=='PATCH']
   self.assertEqual([path for path,_ in patches],['/git/refs/heads/'+case[2] for case in p.CASES]);self.assertTrue(all(payload['force'] is True for _,payload in patches))
   self.assertNotIn('synthetic-token',json.dumps(result));self.assertNotIn('xml',json.dumps(result))
  def test_missing_branches_created_only_after_404(self):
   fetch,calls,_=fake_api(existing=False);p.publish(fixtures(),SHA,'synthetic-token',fetch)
-  self.assertEqual(len([path for path,_,_,_ in calls if path=='/git/refs']),2)
+  self.assertEqual(len([path for path,_,_,_ in calls if path=='/git/refs']),len(p.CASES))
   self.assertFalse(any(method=='PATCH' for _,_,_,method in calls))
   for case,_,branch in p.CASES:
    get_index=next(i for i,(path,_,_,_) in enumerate(calls) if path=='/git/ref/heads/'+branch)

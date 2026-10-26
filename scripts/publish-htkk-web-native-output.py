@@ -1,4 +1,4 @@
-"""Privately retain byte-exact native reexports of two fixed synthetic web cases.
+"""Privately retain byte-exact native reexports of four fixed synthetic web cases.
 
 Privacy adapters operate only on an in-memory copy. Original output bytes are
 never rewritten. Neither this publisher nor its fixtures establish filing-wide
@@ -16,7 +16,7 @@ REPO=reader.REPO
 BUILDER=reader.BUILDER
 DIRECTORY='htkk-web-native-output'
 NAMES=('01GTGT-native.xml','provenance.json')
-BRANCHES={'01GTGT-zero-M10-2026':'gtgt-web-native-zero-output','01GTGT-sale10-M10-2026':'gtgt-web-native-sale10-output'}
+BRANCHES={'01GTGT-zero-M10-2026':'gtgt-web-native-zero-output','01GTGT-sale10-M10-2026':'gtgt-web-native-sale10-output','01GTGT-sale10-half-M10-2026':'gtgt-web-native-sale10-half-output','01GTGT-sale10-manual-M10-2026':'gtgt-web-native-sale10-manual-output'}
 PINS={**privacy.PINS,'Project/FarPoint.Win.Spread.dll':'2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'}
 MONEY=('ct22','ct23','ct24','ct23a','ct24a','ct25','ct26','ct27','ct28','ct29','ct30','ct31','ct32','ct33','ct32a','ct34','ct35','ct36','ct37','ct38','ct39a','ct40a','ct40b','ct40','ct41','ct42','ct43')
 SERVICE={'maDVu':'HTKK','tenDVu':'HỖ TRỢ KÊ KHAI THUẾ','pbanDVu':'5.8.1'}
@@ -77,7 +77,7 @@ def validate_native(body,case_id,today=None):
  # This is NOT a comparison normalization and never changes published bytes.
  signed.text=created.text
  if leaf(root,'HSoKhaiThue/CTieuTKhaiChinh/ct21').text!='0':fail('XML_PRIVACY')
- expected=reader.SALE10 if case_id=='01GTGT-sale10-M10-2026' else {}
+ expected=reader.CASE_MONEY[case_id]
  for name in MONEY:
   values=root.findall('.//{'+privacy.NS+'}'+name)
   if len(values)!=1 or values[0].attrib or len(values[0]) or values[0].text!=expected.get(name,'0'):fail('XML_PRIVACY')

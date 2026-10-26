@@ -1,4 +1,4 @@
-"""Publish two fixed synthetic inputs privately after trusted release checks.
+"""Publish four fixed synthetic inputs privately after trusted release checks.
 
 Never executes private code. XML and manifests remain byte-for-byte unchanged;
 the public output contains only bounded commit identifiers and fixed case names.
@@ -9,7 +9,7 @@ _spec=importlib.util.spec_from_file_location('htkk_web_input_reader',pathlib.Pat
 reader=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(reader)
 REPO=reader.REPO
 BUILDER=reader.BUILDER
-CASES=(('01GTGT-zero-M10-2026','htkk-web-reference-zero-input','gtgt-web-reference-zero-input'),('01GTGT-sale10-M10-2026','htkk-web-reference-sale10-input','gtgt-web-reference-sale10-input'))
+CASES=(('01GTGT-zero-M10-2026','htkk-web-reference-zero-input','gtgt-web-reference-zero-input'),('01GTGT-sale10-M10-2026','htkk-web-reference-sale10-input','gtgt-web-reference-sale10-input'),('01GTGT-sale10-half-M10-2026','htkk-web-reference-sale10-half-input','gtgt-web-reference-sale10-half-input'),('01GTGT-sale10-manual-M10-2026','htkk-web-reference-sale10-manual-input','gtgt-web-reference-sale10-manual-input'))
 OUTPUT='htkk-web-input-publication.json'
 PRODUCER='scripts/generate-htkk-web-reference.mjs'
 MAX_PRODUCER=262144
@@ -95,7 +95,7 @@ def assert_current(fetch,token,source_commit):
 def publish(inputs,source_commit,token,fetch=None):
  sha(source_commit)
  if not isinstance(token,str) or not token:fail('AUTH')
- # Require callers to use the validated two-case order and unchanged bytes.
+ # Require callers to use the validated fixed-case order and unchanged bytes.
  if not isinstance(inputs,list) or len(inputs)!=len(CASES):fail('STAGING')
  for item,(case,_,branch) in zip(inputs,CASES):
   if not isinstance(item,tuple) or len(item)!=4 or item[0]!=case or item[1]!=branch or set(item[2])!=set(reader.NAMES):fail('STAGING')
