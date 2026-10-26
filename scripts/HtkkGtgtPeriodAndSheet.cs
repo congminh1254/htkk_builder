@@ -31,12 +31,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString()+Annex12RowJson();
  }
  private bool Annex12InspectionMode(){return mode=="gtgt-annex12-inspect"||mode=="gtgt-annex12-row-inspect";}
- private bool annex12F5Visible=false,annex12F5Invoked=false,annex12RowBeforeMatched=false,annex12RowAfterMatched=false,annex12RowSttMatched=false,annex12RowLocksMatched=false;
+ private bool annex12RowTabClickInvoked=false,annex12F5Visible=false,annex12F5Invoked=false,annex12RowBeforeMatched=false,annex12RowAfterMatched=false,annex12RowSttMatched=false,annex12RowLocksMatched=false;
  private int annex12RowBeforeRows=0,annex12RowAfterRows=0,annex12RowBeforeGroupRows=0,annex12RowAfterGroupRows=0,annex12RowAfterGroupId=0,annex12RowInsertActionCount=0;
  private string Annex12RowJson(){
   string q=((char)34).ToString();StringBuilder value=new StringBuilder();
-  string[] names=new string[]{"annex12F5Visible","annex12F5Invoked","annex12RowBeforeMatched","annex12RowAfterMatched","annex12RowSttMatched","annex12RowLocksMatched"};
-  bool[] flags=new bool[]{annex12F5Visible,annex12F5Invoked,annex12RowBeforeMatched,annex12RowAfterMatched,annex12RowSttMatched,annex12RowLocksMatched};
+  string[] names=new string[]{"annex12RowTabClickInvoked","annex12F5Visible","annex12F5Invoked","annex12RowBeforeMatched","annex12RowAfterMatched","annex12RowSttMatched","annex12RowLocksMatched"};
+  bool[] flags=new bool[]{annex12RowTabClickInvoked,annex12F5Visible,annex12F5Invoked,annex12RowBeforeMatched,annex12RowAfterMatched,annex12RowSttMatched,annex12RowLocksMatched};
   for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+Bool(flags[index]));
   names=new string[]{"annex12RowBeforeRows","annex12RowAfterRows","annex12RowBeforeGroupRows","annex12RowAfterGroupRows","annex12RowAfterGroupId","annex12RowInsertActionCount"};
   int[] counts=new int[]{annex12RowBeforeRows,annex12RowAfterRows,annex12RowBeforeGroupRows,annex12RowAfterGroupRows,annex12RowAfterGroupId,annex12RowInsertActionCount};
@@ -49,13 +49,34 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object first=tables[0];if(Convert.ToString(Get(first,"TableID"),CultureInfo.InvariantCulture)!="1"||Convert.ToString(Get(first,"TableName"),CultureInfo.InvariantCulture)!="01_2_GTGT"||Convert.ToString(Get(first,"TablePath"),CultureInfo.InvariantCulture)!="PLuc_01_2_GTGT/TenNhaMay")throw new InvalidOperationException();annex12RowAfterGroupId=1;
   System.Collections.IList rows=Get(first,"RowsValues") as System.Collections.IList;if(rows==null||rows.Count>10000)throw new InvalidOperationException();return rows.Count;
  }
+ private void ClickOriginalAnnex12Tab(Control grid,object annex,Form owner){
+  if(mode!="gtgt-annex12-row-inspect"||annex12RowTabClickInvoked||annex12F5Invoked||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||grid.FindForm()!=owner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||Convert.ToInt32(Get(grid,"ActiveSheetIndex"))!=1||OriginalMessageVisible())throw new InvalidOperationException();
+  string name=Convert.ToString(Get(annex,"SheetName"),CultureInfo.InvariantCulture);if(name!="01_2"&&name!="01-2/GTGT")throw new InvalidOperationException();
+  grid.Focus();uint pid,controlPid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);GetWindowThreadProcessId(grid.Handle,out controlPid);if(pid!=(uint)Process.GetCurrentProcess().Id||controlPid!=pid||!grid.ContainsFocus)throw new InvalidOperationException();
+  stage="gtgt-annex12-tab-clicking";Record();
+  MethodInfo geometry=grid.GetType().GetMethod("GetSheetTabRectangle",new Type[]{typeof(int)});if(geometry==null||!geometry.IsPublic)throw new InvalidOperationException();object tab=geometry.Invoke(grid,new object[]{1}),client=Get(grid,"ClientRectangle");if(tab==null||client==null||tab.GetType().FullName!="System.Drawing.Rectangle"||client.GetType().FullName!="System.Drawing.Rectangle")throw new InvalidOperationException();
+  int left=Convert.ToInt32(Get(tab,"X")),top=Convert.ToInt32(Get(tab,"Y")),width=Convert.ToInt32(Get(tab,"Width")),height=Convert.ToInt32(Get(tab,"Height")),clientWidth=Convert.ToInt32(Get(client,"Width")),clientHeight=Convert.ToInt32(Get(client,"Height"));
+  if(left<0||top<0||width<1||height<1||clientWidth<1||clientHeight<1||clientWidth>32767||clientHeight>32767||(long)left+width>clientWidth||(long)top+height>clientHeight)throw new InvalidOperationException();
+  int x=left+width/2,y=top+height/2;IntPtr point=new IntPtr((y<<16)|(x&65535));
+  GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();
+  // Real mouse messages hit the vendor's public tab rectangle and preserve
+  // ORIGINAL SheetTabClick/toolbar handlers. Do not invoke that private handler
+  // or set pnF5.Visible directly. Geometry and coordinates are never reported.
+  if(!PostMessage(grid.Handle,0x0201,new IntPtr(1),point)||!PostMessage(grid.Handle,0x0202,IntPtr.Zero,point))throw new InvalidOperationException();
+  annex12RowTabClickInvoked=true;Application.DoEvents();
+  if(Get(grid,"ActiveSheet")!=annex||!owner.Enabled||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+ }
+
  private void InspectOriginalAnnex12Row(Control grid,object annex){
   if(mode!="gtgt-annex12-row-inspect"||annex12F5Invoked||annex12RowInsertActionCount!=0||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||!annex12GroupMetadataMatched||!annex12LocksMatched||!annex12SttMatched||annex12NumericCount!=8||annex12NumericEmptyMask!=0||annex12NumericNonzeroMask!=0)throw new InvalidOperationException();
   annex12RowBeforeRows=annex12SheetRows;annex12RowBeforeGroupRows=annex12FirstGroupRows;
   annex12RowBeforeMatched=annex12RowBeforeRows==66&&annex12SheetColumns==45&&annex12GroupCount==1&&annex12FirstGroupId==1&&annex12RowBeforeGroupRows==1;
   Form owner=grid.FindForm();if(!annex12RowBeforeMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||Convert.ToInt32(Get(grid,"ActiveSheetIndex"))!=1||OriginalMessageVisible())throw new InvalidOperationException();
-  Control[] f5=owner.Controls.Find("pnF5",true);annex12F5Visible=f5.Length==1&&f5[0].Visible&&f5[0].Enabled;if(!annex12F5Visible||Convert.ToBoolean(Get(Cell(annex,43,20),"Locked")))throw new InvalidOperationException();
-  grid.Focus();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{43,20});
+  ClickOriginalAnnex12Tab(grid,annex,owner);
+  if(Convert.ToBoolean(Get(Cell(annex,43,20),"Locked")))throw new InvalidOperationException();
+  grid.Focus();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{43,20});Application.DoEvents();
+  if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=43||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=20||Get(grid,"ActiveSheet")!=annex||!owner.Enabled||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  Control[] f5=owner.Controls.Find("pnF5",true);annex12F5Visible=f5.Length==1&&f5[0].Visible&&f5[0].Enabled;if(!annex12F5Visible)throw new InvalidOperationException();
   uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus||Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible())throw new InvalidOperationException();
   annex12F5Invoked=true;stage="gtgt-annex12-f5-invoking";Record();
   // REAL F5 is routed through original frmWinToKhai.ProcessCmdKey. Never call

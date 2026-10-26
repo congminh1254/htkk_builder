@@ -64,10 +64,30 @@ class AnnexRowInspectionContract(unittest.TestCase):
  def test_row_metadata_is_exactly_typed_bounded_and_required_by_success_predicate(self):
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text();probe=(ROOT/'probe-htkk-windows.ps1').read_text()
   keys=re.findall(r"'([^']+)'",re.search(r'\$keys=@\(([^\n]+)\)',reader).group(1));self.assertEqual(len(keys),len(set(keys)))
-  for key in ('annex12F5Visible','annex12F5Invoked','annex12RowBeforeMatched','annex12RowAfterMatched','annex12RowSttMatched','annex12RowLocksMatched'):
+  for key in ('annex12RowTabClickInvoked','annex12F5Visible','annex12F5Invoked','annex12RowBeforeMatched','annex12RowAfterMatched','annex12RowSttMatched','annex12RowLocksMatched'):
    self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
   for key,maximum in {'annex12RowBeforeRows':10000,'annex12RowAfterRows':10000,'annex12RowBeforeGroupRows':10000,'annex12RowAfterGroupRows':10000,'annex12RowAfterGroupId':10000,'annex12RowInsertActionCount':1}.items():
    self.assertIn(key,keys);self.assertIn(key+'=0;',fixture);self.assertIn(key+'='+str(maximum)+';',reader)
   line=next(line for line in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-row-inspect'){$matched=" in line)
   for term in ('$lastGui.annex12F5Visible','$lastGui.annex12F5Invoked','$lastGui.annex12RowBeforeMatched','$lastGui.annex12RowAfterMatched','$lastGui.annex12RowAfterRows -eq 67','$lastGui.annex12RowAfterGroupRows -eq 2','$lastGui.annex12RowInsertActionCount -eq 1'):self.assertIn(term,line)
   self.assertIn("@('annex12RowInsertActionCount',2)",fixture);self.assertIn("$row.mode='gtgt-annex12-row-inspect'",fixture)
+
+class AnnexOriginalTabClickContract(unittest.TestCase):
+ def test_mouse_click_uses_guarded_public_tab_geometry_and_precedes_original_f5_context(self):
+  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  block=source[source.index(' private void ClickOriginalAnnex12Tab('):source.index(' private void InspectOriginalAnnex12Row(')]
+  for term in ('GetMethod("GetSheetTabRectangle",new Type[]{typeof(int)})','geometry.IsPublic','Get(grid,"ClientRectangle")','GetWindowThreadProcessId(grid.Handle','GetForegroundWindow()','grid.ContainsFocus','PostMessage(grid.Handle,0x0201','PostMessage(grid.Handle,0x0202','annex12RowTabClickInvoked=true;Application.DoEvents()'):
+   self.assertIn(term,block)
+  self.assertNotRegex(block,r'GetMethod\("(?:SheetTabClick|InsertTable)');self.assertNotIn('.Visible=true',block)
+  guard=re.search(r'if\((left<0[^;]+)\)throw new InvalidOperationException\(\)',block).group(1).replace('(long)','').replace('||',' or ')
+  parsed=ast.parse(guard,mode='eval')
+  for node in ast.walk(parsed):self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.Or,ast.Compare,ast.Lt,ast.Gt,ast.BinOp,ast.Add,ast.Name,ast.Load,ast.Constant))
+  base={'left':4,'top':4,'width':10,'height':12,'clientWidth':100,'clientHeight':100}
+  for mutate,rejected in (({},False),({'left':-1},True),({'top':-1},True),({'width':0},True),({'height':0},True),({'left':95},True),({'top':95},True),({'clientWidth':32768},True),({'left':2147483647},True)):
+   values={**base,**mutate};self.assertEqual(eval(compile(parsed,'<original tab geometry guard>','eval'),{'__builtins__':{}},values),rejected)
+  row=source[source.index(' private void InspectOriginalAnnex12Row('):source.index(' private static bool Annex12CaptionMatched')]
+  self.assertLess(row.index('ClickOriginalAnnex12Tab(grid,annex,owner)'),row.index('new object[]{43,20}'))
+  self.assertLess(row.index('new object[]{43,20}'),row.index('owner.Controls.Find("pnF5",true)'))
+  self.assertLess(row.index('owner.Controls.Find("pnF5",true)'),row.index('SendKeys.SendWait("{F5}")'))
+  probe=(ROOT/'probe-htkk-windows.ps1').read_text();line=next(line for line in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-annex12-row-inspect'){$matched=" in line)
+  self.assertIn('$lastGui.annex12RowTabClickInvoked',line)
