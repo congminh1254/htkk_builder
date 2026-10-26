@@ -38,7 +38,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(!annex12SourcePinsMatched)throw new InvalidOperationException();
   int rowCount=Convert.ToInt32(Get(sheet,"RowCount")),columnCount=Convert.ToInt32(Get(sheet,"ColumnCount")),target=-1;
   if(rowCount<1||rowCount>512||columnCount<1||columnCount>16)throw new InvalidOperationException();
-  for(int row=0;row<rowCount;row++){object selector=Get(Cell(sheet,row,0),"CellType");bool rowMatched=selector!=null&&Annex12CaptionMatched(selector.GetType().FullName,Convert.ToString(Get(selector,"TextFalse"),CultureInfo.InvariantCulture),Convert.ToString(Get(selector,"TextTrue"),CultureInfo.InvariantCulture));if(rowMatched){if(target>=0)throw new InvalidOperationException();target=row;}}
+  for(int row=0;row<rowCount;row++){object selector=Get(Cell(sheet,row,0),"CellType");if(selector==null||selector.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")continue;bool rowMatched=Annex12CaptionMatched(selector.GetType().FullName,Convert.ToString(Get(selector,"TextFalse"),CultureInfo.InvariantCulture),Convert.ToString(Get(selector,"TextTrue"),CultureInfo.InvariantCulture));if(rowMatched){if(target>=0)throw new InvalidOperationException();target=row;}}
   if(target<0||!RowVisible(sheet,target)||Selected(Get(Cell(sheet,target,0),"Value"))||Convert.ToBoolean(Get(Cell(sheet,target,0),"Locked")))throw new InvalidOperationException();
   object type=Get(Cell(sheet,target,0),"CellType");if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")throw new InvalidOperationException();
   grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{target,0});
