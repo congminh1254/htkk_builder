@@ -92,7 +92,7 @@ jobs:
           $syntheticLogin = $env:PROBE_SYNTHETIC_LOGIN -eq 'true'
           $ackRegistration = $env:PROBE_ACK_REGISTRATION -eq 'true'
           $guiAutomation = if ([string]::IsNullOrEmpty($env:PROBE_GUI_AUTOMATION)) { 'none' } else { $env:PROBE_GUI_AUTOMATION }
-          if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')) { throw 'Invalid reference GUI automation mode.' }
+          if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-annex12-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')) { throw 'Invalid reference GUI automation mode.' }
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation

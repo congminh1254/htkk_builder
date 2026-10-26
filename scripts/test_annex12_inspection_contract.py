@@ -25,3 +25,11 @@ class AnnexInspectionContract(unittest.TestCase):
   self.assertIn("if($GuiAutomation -eq 'gtgt-annex12-inspect'){$lastGui.periodAnnex12Matched}else{$lastGui.periodNoAnnexMatched}",probe)
   for line in probe.splitlines():
    if '$nativeEvidenceCreated=' in line or "if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $report.stage" in line:self.assertNotIn('gtgt-annex12-inspect',line)
+
+ def test_dispatch_choices_and_actual_workflow_entry_guard_accept_the_same_modes(self):
+  workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
+  choices=re.search(r'gui_automation:\n.*?options: \[([^\]]+)\]',workflow,re.S).group(1)
+  declared={item.strip() for item in choices.split(',')}
+  guarded=set(re.findall(r"'([^']+)'",re.search(r'\$guiAutomation -notin @\(([^)]+)\)',workflow).group(1)))
+  self.assertEqual(declared,{'none',*MODES})
+  self.assertEqual(guarded,declared)
