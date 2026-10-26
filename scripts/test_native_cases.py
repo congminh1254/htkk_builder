@@ -83,3 +83,11 @@ class NativeManifestFormatRouting(unittest.TestCase):
   self.assertEqual(len(pairs),len(reader.CASES))
   self.assertEqual(dict(pairs),reader.CASES)
   self.assertIn('$expectedFormat=$expectedFormats[$env:EXPECTED_WEB_CASE_ID]',script)
+
+class NativeEditorCountBoundary(unittest.TestCase):
+ def test_powershell_negative_fixture_exceeds_accepted_editor_count(self):
+  boundary=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  fixtures=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
+  maximum=int(re.search(r'webCaseEditCount=(\d+)',boundary).group(1))
+  rejected=int(re.search(r"@\{key='webCaseEditCount';value=(\d+)\}",fixtures).group(1))
+  self.assertEqual(rejected,maximum+1)
