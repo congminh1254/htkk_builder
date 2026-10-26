@@ -14,13 +14,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool periodDateMatched=false,periodFirstMatched=false,periodActivityMatched=false,periodGeographyMatched=false,periodNoAnnexMatched=false,periodConfirmInvoked=false;
  private bool gtgtPins=false,gtgtVersion=false,gtgtPeriod=false,gtgtSheet=false,gtgtName=false,gtgtDimensions=false,gtgtIdentity=false,gtgtCt21=false,gtgtSigner=false,gtgtZero=false;
  private int annexSelected=0,gtgtRows=0,gtgtColumns=0,gtgtSheets=0,gtgtEmptyMoney=0;
- private bool gtgtCaseMoneyMatched=false,gtgtCt42Locked=false,webCaseEdited=false;private int gtgtCaseMoneyCount=0;private Stopwatch webCaseEditClock=null;
+ private bool gtgtCaseMoneyMatched=false,gtgtCt42Locked=false,webCaseEdited=false;private int gtgtCaseMoneyCount=0,gtgtCaseMismatchMask=0,gtgtCaseNonzeroMask=0;private Stopwatch webCaseEditClock=null;
  private Stopwatch gtgtObservationClock=null;
  private string SheetJson(){
   string q=((char)34).ToString();string[] names=new string[]{"periodYearMonthMatched","periodFirstDeclarationMatched","periodActivityMatched","periodGeographyMatched","periodNoAnnexMatched","periodConfirmInvoked","gtgtWorkbookPinsVerified","gtgtMenuVersionMatched","gtgtPeriodModelMatched","gtgtSheetObserved","gtgtSheetNameMatched","gtgtDimensionsMatched","gtgtIdentityMatched","gtgtCt21Ready","gtgtSignatureReady","gtgtMonetaryZero"};
   bool[] values=new bool[]{periodDateMatched,periodFirstMatched,periodActivityMatched,periodGeographyMatched,periodNoAnnexMatched,periodConfirmInvoked,gtgtPins,gtgtVersion,gtgtPeriod,gtgtSheet,gtgtName,gtgtDimensions,gtgtIdentity,gtgtCt21,gtgtSigner,gtgtZero};StringBuilder json=new StringBuilder();
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  json.Append(","+q+"gtgtCaseMoneyMatched"+q+":"+Bool(gtgtCaseMoneyMatched)+","+q+"gtgtCt42Locked"+q+":"+Bool(gtgtCt42Locked)+","+q+"gtgtCaseMoneyCount"+q+":"+gtgtCaseMoneyCount);
+  json.Append(","+q+"gtgtCaseMoneyMatched"+q+":"+Bool(gtgtCaseMoneyMatched)+","+q+"gtgtCt42Locked"+q+":"+Bool(gtgtCt42Locked)+","+q+"gtgtCaseMoneyCount"+q+":"+gtgtCaseMoneyCount+","+q+"gtgtCaseMismatchMask"+q+":"+gtgtCaseMismatchMask+","+q+"gtgtCaseNonzeroMask"+q+":"+gtgtCaseNonzeroMask);
   json.Append(","+q+"annexSelectedCount"+q+":"+annexSelected+","+q+"gtgtSheetRows"+q+":"+gtgtRows+","+q+"gtgtSheetColumns"+q+":"+gtgtColumns+","+q+"gtgtSheetCount"+q+":"+gtgtSheets+","+q+"gtgtEmptyMonetaryCount"+q+":"+gtgtEmptyMoney);return json.ToString();
  }
  private static Control ReadableNamed(Control root,string name){Control[] controls=root.Controls.Find(name,true);if(controls.Length!=1||!controls[0].Visible)throw new InvalidOperationException();return controls[0];}
@@ -119,6 +119,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
+   if(!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){stage="waiting-gtgt-sheet";Record();return;}
    if(!webInputVerified)VerifyOwnWebInput();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    if(webCaseId=="01GTGT-sale10-M10-2026"&&!webCaseEdited){
@@ -137,7 +138,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void InspectCaseMoney(object sheet){
   int[,] coordinates=new int[,] {{36,11},{39,9},{39,11},{40,9},{40,11},{41,11},{43,9},{44,9},{44,11},{45,9},{46,9},{46,11},{47,9},{47,11},{48,9},{49,9},{49,11},{50,11},{52,11},{53,11},{54,11},{56,11},{57,11},{58,11},{59,11},{60,11},{61,11}};
-  gtgtCaseMoneyMatched=true;gtgtCaseMoneyCount=0;gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
+  gtgtCaseMoneyMatched=true;gtgtCaseMoneyCount=0;gtgtCaseMismatchMask=0;gtgtCaseNonzeroMask=0;gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
   for(int index=0;index<coordinates.GetLength(0);index++){
    int row=coordinates[index,0],column=coordinates[index,1];decimal expected=Decimal.Zero;
    if(webCaseId=="01GTGT-sale10-M10-2026"){
@@ -145,8 +146,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(column==11&&(row==44||row==47||row==49||row==50||row==56||row==58))expected=100000;
    }
    object value=Get(Cell(sheet,row,column),"Value");decimal number;
-   if(value==null||value==DBNull.Value||!Decimal.TryParse(Convert.ToString(value,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number)){gtgtCaseMoneyMatched=false;continue;}
-   gtgtCaseMoneyCount++;if(number!=expected)gtgtCaseMoneyMatched=false;
+   if(value==null||value==DBNull.Value||!Decimal.TryParse(Convert.ToString(value,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number)){gtgtCaseMoneyMatched=false;gtgtCaseMismatchMask|=1<<index;continue;}
+   gtgtCaseMoneyCount++;if(number!=0)gtgtCaseNonzeroMask|=1<<index;if(number!=expected){gtgtCaseMoneyMatched=false;gtgtCaseMismatchMask|=1<<index;}
   }
   if(gtgtCaseMoneyCount!=27||gtgtCt42Locked!=(webCaseId=="01GTGT-sale10-M10-2026"))gtgtCaseMoneyMatched=false;
  }

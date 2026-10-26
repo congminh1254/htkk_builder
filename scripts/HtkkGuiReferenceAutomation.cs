@@ -149,7 +149,15 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
     for(int index=0;index<count;index++){object entry=sequence!=null?sequence[index]:item.GetValue(list,new object[]{index});if(entry!=null&&entry.ToString()==value){if(selected>=0)throw new InvalidOperationException();selected=index;}}
     if(selected<0)throw new InvalidOperationException();SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
    }
-  }else{editorKind=editor is TextBoxBase?"text-box":"other-control";editor.Text=value;}
+  }else{
+   editorKind=editor is TextBoxBase?"text-box":"other-control";
+   if(profileInput)editor.Text=value;
+   else{
+    if(row!=47||column!=9||value!="1000000"||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
+    editor.Focus();if(!editor.ContainsFocus)throw new InvalidOperationException();
+    foreach(string keys in new string[]{"^a",value,"{TAB}"}){uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
+   }
+  }
   spread.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(spread,null);
   if(profileInput){if(CellText(sheet,row,column)!=value)throw new InvalidOperationException();inputCount++;}
   else{decimal actual,expected;if(!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)throw new InvalidOperationException();webCaseEditCount++;}Record();
