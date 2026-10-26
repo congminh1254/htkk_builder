@@ -37,8 +37,11 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/git/trees':return {'sha':'c'*40}
   if path=='/git/commits':
    self_sha=('d' if not commits else 'e')*40;commits.append(payload);return {'sha':self_sha}
-  if path.startswith('/git/refs/heads/'):
+  if path.startswith('/git/ref/heads/'):
    if not existing:raise urllib.error.HTTPError('https://api.github.com/',404,'PRIVATE REMOTE TEXT',{},None)
+   return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':'f'*40}}
+  if path.startswith('/git/refs/heads/'):
+   if not existing:raise AssertionError('Missing branch must be created after GET 404; never PATCH')
    return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':payload['sha']}}
   if path=='/git/refs':return {'ref':payload['ref'],'object':{'type':'commit','sha':payload['sha']}}
   raise AssertionError('Unexpected fixed GitHub path')
@@ -104,6 +107,38 @@ class PublicationTests(unittest.TestCase):
  def test_missing_branches_created_only_after_404(self):
   fetch,calls,_=fake_api(existing=False);p.publish(fixtures(),SHA,'synthetic-token',fetch)
   self.assertEqual(len([path for path,_,_,_ in calls if path=='/git/refs']),2)
+  self.assertFalse(any(method=='PATCH' for _,_,_,method in calls))
+  for case,_,branch in p.CASES:
+   get_index=next(i for i,(path,_,_,_) in enumerate(calls) if path=='/git/ref/heads/'+branch)
+   post_index=next(i for i,(path,_,body,_) in enumerate(calls) if path=='/git/refs' and body['ref']=='refs/heads/'+branch)
+   self.assertLess(get_index,post_index)
+ def test_get_ref_auth_or_validation_error_never_creates_or_patches(self):
+  for code in (401,403,422,500):
+   fetch,calls,_=fake_api()
+   def denied(path,token,payload=None,method=None):
+    if path=='/git/ref/heads/'+p.CASES[0][2]:
+     calls.append((path,token,payload,method));raise urllib.error.HTTPError('https://api.github.com/',code,'PRIVATE REMOTE TEXT',{},None)
+    return fetch(path,token,payload,method)
+   with self.subTest(code=code),self.assertRaises(urllib.error.HTTPError):p.publish(fixtures(),SHA,'synthetic-token',denied)
+   self.assertFalse(any(path=='/git/refs' or method=='PATCH' for path,_,_,method in calls))
+ def test_failed_patch_never_falls_back_to_create_or_retries(self):
+  for code in (401,403,404,422,500):
+   fetch,calls,_=fake_api()
+   def denied(path,token,payload=None,method=None):
+    if method=='PATCH':
+     calls.append((path,token,payload,method));raise urllib.error.HTTPError('https://api.github.com/',code,'PRIVATE REMOTE TEXT',{},None)
+    return fetch(path,token,payload,method)
+   with self.subTest(code=code),self.assertRaises(urllib.error.HTTPError):p.publish(fixtures(),SHA,'synthetic-token',denied)
+   self.assertEqual(len([1 for _,_,_,method in calls if method=='PATCH']),1)
+   self.assertFalse(any(path=='/git/refs' for path,_,_,_ in calls))
+ def test_malformed_existing_ref_rejected_without_mutation(self):
+  for value in (None,{'ref':'refs/heads/main','object':{'type':'commit','sha':'f'*40}},{'ref':'refs/heads/'+p.CASES[0][2],'object':{'type':'tag','sha':'f'*40}},{'ref':'refs/heads/'+p.CASES[0][2],'object':{'type':'commit','sha':'invalid'}}):
+   fetch,calls,_=fake_api()
+   def malformed(path,token,payload=None,method=None):
+    if path=='/git/ref/heads/'+p.CASES[0][2]:return value
+    return fetch(path,token,payload,method)
+   with self.subTest(value=value),self.assertRaises(p.PublicationError):p.publish(fixtures(),SHA,'synthetic-token',malformed)
+   self.assertFalse(any(path=='/git/refs' or method=='PATCH' for path,_,_,method in calls))
  def test_private_identity_checked_before_any_source_or_write(self):
   for info in ({'private':False,'full_name':p.REPO},{'private':True,'full_name':'other/repo'}):
    fetch,calls,_=fake_api(info=info)

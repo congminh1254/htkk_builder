@@ -136,11 +136,20 @@ def publish(inputs,source_commit,token,fetch=None):
   if not isinstance(commit,dict):fail('API_SHAPE')
   artifact=sha(commit.get('sha'))
   assert_current(fetch,token,source_commit)
-  path='/git/refs/heads/'+branch
-  try:updated=fetch(path,token,{'sha':artifact,'force':True},'PATCH')
+  # GitHub PATCH of a missing ref can return 422. Only an explicit GET 404
+  # establishes absence; never reinterpret a failed mutation as permission to
+  # create a ref or retry authorization/validation errors.
+  missing=False
+  try:existing=fetch('/git/ref/heads/'+branch,token)
   except urllib.error.HTTPError as error:
    if error.code!=404:raise
+   missing=True
+  if missing:
    updated=fetch('/git/refs',token,{'ref':'refs/heads/'+branch,'sha':artifact})
+  else:
+   if not isinstance(existing,dict) or existing.get('ref')!='refs/heads/'+branch or not isinstance(existing.get('object'),dict) or existing['object'].get('type')!='commit':fail('API_SHAPE')
+   sha(existing['object'].get('sha'))
+   updated=fetch('/git/refs/heads/'+branch,token,{'sha':artifact,'force':True},'PATCH')
   if not isinstance(updated,dict) or updated.get('ref')!='refs/heads/'+branch or not isinstance(updated.get('object'),dict) or updated['object'].get('type')!='commit' or updated['object'].get('sha')!=artifact:fail('API_SHAPE')
   cases.append({'caseId':case,'artifactCommit':artifact})
  assert_current(fetch,token,source_commit)
