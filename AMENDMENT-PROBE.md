@@ -6,7 +6,7 @@ Báo cáo chỉ đạt giai đoạn `gtgt-original-declaration-saved-inspected` 
 
 - Hộp thông báo gốc `0002` có nội dung “Đã ghi dữ liệu thành công!”, đúng loại form, tiêu đề và một nút Đóng. Chỉ hộp này được xác nhận.
 - Có đúng một tệp XML khai chính mới trong thư mục DataFiles của MST giả lập `9999999997`; trước bấm Ghi chưa có tệp tương ứng. Không tự tạo tệp khai trước đó.
-- Tệp nằm trực tiếp trong thư mục giả lập, không reparse point, tên có tiền tố `01_GTGT_TT80_`, nội dung được HTKK tự ghi, root `Sections`, tối đa 256 KiB; SHA-256 không đổi trong các lần quan sát.
+- Tệp nằm trực tiếp trong thư mục giả lập, không reparse point, tên chính xác của ca nguồn `01_GTGT_TT80_CQTQL10129_1701_102026_283.xml`, nội dung được HTKK tự ghi, root `Sections`, tối đa 256 KiB; SHA-256 không đổi trong các lần quan sát.
 - `isDataChanged` của worksheet gốc đã trở về false sau khi hộp thành công đóng; 27 ô tiền trên worksheet và 27 thuộc tính Value theo Path của tệp được ghi đều bằng 0; tám trường HEADER giả lập vẫn đúng.
 
 Chỉ công bố cờ boolean, kích thước và hash; không đưa đường dẫn, tên tệp cụ thể, XML nội bộ hay văn bản ô bất kỳ vào báo cáo. `amendmentLifecycleVerified=false` và `runtimeRoundTrip=false` luôn giữ nguyên, kể cả khi bước Ghi đạt. Các mode cũ có toàn bộ metadata mới mặc định false/0/rỗng.
@@ -16,3 +16,5 @@ Chỉ công bố cờ boolean, kích thước và hash; không đưa đường d
 Bước tiếp theo cần đóng worksheet sạch, mở lại D1 cùng kỳ bằng menu gốc, chọn bổ sung, kiểm lần 1/ngày lập và các sheet KHBS gốc theo nhánh DIA_BAN. Chỉ sau bằng chứng runtime riêng mới được khẳng định những bước đó đạt.
 
 Run40419346023 dừng trước nút Ghi vì guard nhầm số sheet được nạp với số phụ lục được chọn. Workbook nguồn luôn nạp11 sheet, kể cả khi chọn0 phụ lục. Guard đã sửa thành đúng11 sheet và vẫn đồng thời bắt buộc `periodNoAnnexMatched=true`, `annexSelected=0`; chưa coi bước Ghi đã đạt cho đến lượt Windows mới.
+
+Phân tích tên tệp: `Menu.xml` D1 có `NopTheoTinhCQT=3`. `GetNameNopTheoTinhCQT` (`060000A3`, body SHA256 `d31d979dbbbe838db307ae1ba73c6a1ece35023b1a50a7f4a8ac00d1bc60dd72`) sinh `CQTQL`+mã CQT quản lý. `GetFileNameBySheet` (`060000A2`, body SHA256 `622698495a9b6c8f41c9ddcf33e61dd2ef498743f238184ca883c674686f8044`), nhánh tháng D1 `0950–09D5`, ghép DataFile/CQT/tiểu mục/tháng+năm/phiên bản bỏ dấu chấm. Ca cố định dùng CQT10129/tiểu mục1701/M10-2026/XML2.8.3 nên chỉ chấp nhận tên nêu trên; không dùng regex số chung. Run40419703029 đã gọi Ghi nhưng chưa xác nhận thành công; không suy bằng chứng lưu thành công từ source hay guard mới.

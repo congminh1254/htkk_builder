@@ -6,7 +6,6 @@ using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using System.Xml;
 public sealed partial class HtkkGuiReferenceAutomation {
@@ -21,10 +20,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"amendmentPriorSavedMoneyCount"+q+":"+amendmentPriorSavedMoneyCount);
   json.Append(","+q+"amendmentPriorFileBytes"+q+":"+amendmentPriorFileBytes+","+q+"amendmentPriorFileSha256"+q+":"+q+amendmentPriorFileSha256+q+","+q+"amendmentLifecycleVerified"+q+":false");return json.ToString();
  }
+ // GetFileNameBySheet060000A2 monthlyD1 + GetNameNopTheoTinhCQT060000A3:
+ // source menu NopTheoTinhCQT=3 => CQTQL10129; TieuMuc1701; M10/2026; XML2.8.3.
+ private const string OriginalPriorFileName="01_GTGT_TT80_CQTQL10129_1701_102026_283.xml";
  private FileInfo[] OriginalPriorCandidates(){
   DirectoryInfo directory=new DirectoryInfo(amendmentPriorDirectory);if(!directory.Exists||(directory.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException();
   FileInfo[] all=directory.GetFiles("*.xml",SearchOption.TopDirectoryOnly);if(all.Length>64)throw new InvalidOperationException();List<FileInfo> found=new List<FileInfo>();
-  foreach(FileInfo file in all){if((file.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException();if(Regex.IsMatch(file.Name,"^01_GTGT_TT80_[0-9_]+\\.xml$")&&file.Name.Length<=96)found.Add(file);}
+  foreach(FileInfo file in all){if((file.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException();if(String.Equals(file.Name,OriginalPriorFileName,StringComparison.Ordinal))found.Add(file);}
   return found.ToArray();
  }
  private void StartOriginalAmendmentPriorSave(Form owner,Control grid,object sheet){

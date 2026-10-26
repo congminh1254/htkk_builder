@@ -68,3 +68,15 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   for stage in ('save-modal-observed','save-modal-content-checking','save-modal-button-checking','save-modal-matched','prior-file-enumerating','prior-file-missing','prior-file-not-unique','prior-file-size-checking','prior-file-parsing','prior-money-checking'):
    self.assertIn('"gtgt-amendment-'+stage+'"',source)
   self.assertNotRegex(source,r'stage\s*=\s*(form|file|labels|amendmentPriorDirectory)\b')
+
+ def test_prior_candidate_uses_exact_geographic_source_filename_for_this_fixed_case(self):
+  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  actual=re.search(r'OriginalPriorFileName="([^"]+)"',source).group(1)
+  # Source060000A3 maps NopTheoTinhCQT3 to CQTQL+authority;060000A2
+  # monthlyD1 concatenates code, tax item, month+year and dotless XMLversion.
+  expected='01_GTGT_TT80'+'_CQTQL'+'10129'+'_'+'1701'+'_'+'10'+'2026'+'_'+'2.8.3'.replace('.','')+'.xml'
+  self.assertEqual(actual,expected)
+  self.assertIn('String.Equals(file.Name,OriginalPriorFileName,StringComparison.Ordinal)',source)
+  self.assertNotIn('Regex.IsMatch(file.Name',source)
+  for wrong in ('01_GTGT_TT80_1701_102026_283.xml',expected.replace('10129','10100'),expected.replace('_102026_','_092026_'),'bs1_'+expected,expected+'.bak'):
+   self.assertNotEqual(actual,wrong)
