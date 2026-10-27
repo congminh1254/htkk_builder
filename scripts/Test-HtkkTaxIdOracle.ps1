@@ -4,9 +4,10 @@ function Invoke-HtkkTaxIdOracle {
   [CmdletBinding()]
   param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
   $ErrorActionPreference = 'Stop'
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
   $expectedHash = '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
-  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; runtime='unknown'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; dllHashVerified=$false; originalMethodInvoked=$false; fullRoundTrip=$false; userDataUsed=$false }
-  $directory = $null; $compilerProcess = $null; $oracleProcess = $null; $firewallName = $null
+  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; runtime='unknown'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; originalMethodInvoked=$false; fullRoundTrip=$false; userDataUsed=$false }
+  $directory = $null; $compilerProcess = $null; $firewallName = $null
   try {
     $business = Join-Path $ProjectDirectory 'TAX.HTKK.Business.dll'
     if ((Get-FileHash -LiteralPath $business -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedHash) { $safe.status='dll-hash-mismatch'; return $safe }
@@ -91,25 +92,20 @@ internal static class ChecksumOracle {
     if($compilerProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $program -PathType Leaf)) { $safe.status='compile-failed'; return $safe }
     $firewallName='HTKK checksum oracle '+[guid]::NewGuid().ToString('N')
     New-NetFirewallRule -DisplayName $firewallName -Direction Outbound -Program $program -Action Block | Out-Null
-    $oracleInfo=[Diagnostics.ProcessStartInfo]::new()
-    $oracleInfo.FileName=$program; $oracleInfo.WorkingDirectory=$ProjectDirectory; $oracleInfo.UseShellExecute=$false; $oracleInfo.CreateNoWindow=$true
-    $oracleInfo.RedirectStandardOutput=$true; $oracleInfo.RedirectStandardError=$true; $oracleInfo.Environment.Clear()
-    foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $oracleInfo.Environment[$key]=$value } }
-    $oracleInfo.ArgumentList.Add($ProjectDirectory); $oracleInfo.ArgumentList.Add($outputFile)
-    $oracleProcess=[Diagnostics.Process]::Start($oracleInfo)
-    $oracleOut=$oracleProcess.StandardOutput.ReadToEndAsync(); $oracleErr=$oracleProcess.StandardError.ReadToEndAsync()
-    if(-not $oracleProcess.WaitForExit(30000)) { $oracleProcess.Kill($true); $safe.status='oracle-timeout'; return $safe }
-    $safe.oracleExitCode=$oracleProcess.ExitCode
+    $safe.oracleJobCleanupVerified=$false
+    $oracleRun=Invoke-HtkkBoundedJobProcess -Executable $program -WorkingDirectory $ProjectDirectory -Arguments @($ProjectDirectory,$outputFile) -TimeoutMilliseconds 30000
+    $safe.oracleJobCleanupVerified=$oracleRun.jobCleanupVerified;$safe.oracleExitCode=$oracleRun.exitCode
+    if(-not $oracleRun.jobCleanupVerified -or $oracleRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+    if($oracleRun.timedOut){$safe.status='oracle-timeout';return $safe}
     if(-not (Test-Path -LiteralPath $outputFile -PathType Leaf) -or (Get-Item -LiteralPath $outputFile).Length -gt 4096) { $safe.status='oracle-result-unavailable'; return $safe }
     $result=Get-Content -LiteralPath $outputFile -Raw | ConvertFrom-Json -AsHashtable
     if($result.format -ne 'htkk-tax-id-oracle-v1' -or $result.status -notin @('matched','mismatch','unsupported-runtime','method-signature-mismatch','reflection-or-invocation-failed') -or $result.runtime -notin @('clr2','unsupported','unknown') -or $result.cases -notin 0..30 -or $result.matched -notin 0..30 -or $result.matched -gt $result.cases -or $result.mismatches -ne ($result.cases-$result.matched)) { $safe.status='oracle-result-invalid'; return $safe }
     $safe.runtime=$result.runtime; $safe.cases=$result.cases; $safe.matched=$result.matched; $safe.mismatches=$result.mismatches
     $safe.originalMethodInvoked=$result.cases -gt 0
-    $safe.status=if($oracleProcess.ExitCode -eq 0 -and $result.status -eq 'matched' -and $result.cases -eq 30 -and $result.matched -eq 30) { 'matched' } elseif($result.status -eq 'mismatch') { 'mismatch' } else { 'oracle-runtime-blocked' }
+    $safe.status=if($safe.oracleExitCode -eq 0 -and $result.status -eq 'matched' -and $result.cases -eq 30 -and $result.matched -eq 30) { 'matched' } elseif($result.status -eq 'mismatch') { 'mismatch' } else { 'oracle-runtime-blocked' }
     return $safe
   } catch { $safe.status='host-or-tool-failure'; return $safe }
   finally {
-    if($null -ne $oracleProcess) { if(-not $oracleProcess.HasExited) { $oracleProcess.Kill($true) }; $oracleProcess.Dispose() }
     if($null -ne $compilerProcess) { if(-not $compilerProcess.HasExited) { $compilerProcess.Kill($true) }; $compilerProcess.Dispose() }
     if($firewallName) { Remove-NetFirewallRule -DisplayName $firewallName -ErrorAction SilentlyContinue }
     if($directory) { Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue }

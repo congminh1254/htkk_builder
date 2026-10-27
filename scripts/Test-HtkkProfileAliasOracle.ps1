@@ -3,8 +3,9 @@ function Invoke-HtkkProfileAliasOracle {
   [CmdletBinding()]
   param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
   $ErrorActionPreference = 'Stop'
-  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; oracleStage='not-started'; oracleStatus='not-run'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
-  $directory=$null; $compilerProcess=$null; $oracleProcess=$null; $firewallName=$null
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
+  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; oracleStage='not-started'; oracleStatus='not-run'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
+  $directory=$null; $compilerProcess=$null;  $firewallName=$null
   try {
     $dll=Join-Path $ProjectDirectory 'TAX.HTKK.Utilities.dll'
     if((Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec') { $safe.status='dll-hash-mismatch'; return $safe }
@@ -118,13 +119,11 @@ internal static class ProfileAliasOracle {
     $safe.compilerErrorCodes=@([regex]::Matches($compilerText,'\bCS[0-9]{4}\b')|ForEach-Object{$_.Value}|Sort-Object -Unique|Select-Object -First 10)
     if($compilerProcess.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
     $firewallName='HTKK profile oracle '+[guid]::NewGuid().ToString('N');New-NetFirewallRule -DisplayName $firewallName -Direction Outbound -Program $program -Action Block|Out-Null
-    $info=[Diagnostics.ProcessStartInfo]::new();$info.FileName=$program;$info.WorkingDirectory=$ProjectDirectory;$info.UseShellExecute=$false;$info.CreateNoWindow=$true
-    $info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true;$info.Environment.Clear()
-    foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')){$v=[Environment]::GetEnvironmentVariable($key);if($null -ne $v){$info.Environment[$key]=$v}}
-    foreach($argument in @($ProjectDirectory,$template,$dataRoot,$resultFile)){$info.ArgumentList.Add($argument)}
-    $oracleProcess=[Diagnostics.Process]::Start($info);$oracleOut=$oracleProcess.StandardOutput.ReadToEndAsync();$oracleErr=$oracleProcess.StandardError.ReadToEndAsync()
-    if(-not $oracleProcess.WaitForExit(30000)){$oracleProcess.Kill($true);$safe.status='oracle-timeout';return $safe}
-    $safe.oracleExitCode=$oracleProcess.ExitCode
+    $safe.oracleJobCleanupVerified=$false
+    $oracleRun=Invoke-HtkkBoundedJobProcess -Executable $program -WorkingDirectory $ProjectDirectory -Arguments @($ProjectDirectory,$template,$dataRoot,$resultFile) -TimeoutMilliseconds 30000
+    $safe.oracleJobCleanupVerified=$oracleRun.jobCleanupVerified;$safe.oracleExitCode=$oracleRun.exitCode
+    if(-not $oracleRun.jobCleanupVerified -or $oracleRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+    if($oracleRun.timedOut){$safe.status='oracle-timeout';return $safe}
     if (-not (Test-Path -LiteralPath $resultFile -PathType Leaf) -or (Get-Item -LiteralPath $resultFile).Length -gt 4096){$safe.status='oracle-result-unavailable';return $safe}
     $r=Get-Content -LiteralPath $resultFile -Raw|ConvertFrom-Json -AsHashtable
     $stages=@('start','configuration','header-types','loader-construction','blank-template','first-load','second-load','legacy-constructor','complete')
@@ -132,11 +131,10 @@ internal static class ProfileAliasOracle {
     if ($r.format -ne 'htkk-profile-alias-oracle-v1' -or $r.status -notin $statuses -or $r.stage -notin $stages -or $r.runtime -notin @('clr2','unsupported','unknown') -or $r.cases -notin 0..12 -or $r.matched -notin 0..12 -or $r.matched -gt $r.cases -or $r.mismatches -ne ($r.cases-$r.matched) -or $r.originalLoaderInvocations -notin 0..2){$safe.status='oracle-result-invalid';return $safe}
     foreach($name in @('aliasValuesRemainDistinct','caseSensitiveBackingFieldUntouched','loaderIgnoresCellId2','legacyPhuongXaConstructorEmpty','templateValuesBlanked')){if($r[$name] -isnot [bool]){$safe.status='oracle-result-invalid';return $safe};$safe[$name]=$r[$name]}
     $safe.oracleStage=$r.stage;$safe.oracleStatus=$r.status;$safe.runtime=$r.runtime;$safe.cases=$r.cases;$safe.matched=$r.matched;$safe.mismatches=$r.mismatches;$safe.originalLoaderInvocations=$r.originalLoaderInvocations;$safe.originalMethodInvoked=$r.originalLoaderInvocations -gt 0
-    $safe.status=if ($oracleProcess.ExitCode -eq 0 -and $r.status -eq 'matched' -and $r.cases -eq 12 -and $r.matched -eq 12 -and $r.originalLoaderInvocations -eq 2 -and $safe.aliasValuesRemainDistinct -and $safe.caseSensitiveBackingFieldUntouched -and $safe.loaderIgnoresCellId2 -and $safe.legacyPhuongXaConstructorEmpty -and $safe.templateValuesBlanked){'matched'}elseif($r.status -eq 'mismatch'){'mismatch'}else{'oracle-runtime-blocked'}
+    $safe.status=if ($safe.oracleExitCode -eq 0 -and $r.status -eq 'matched' -and $r.cases -eq 12 -and $r.matched -eq 12 -and $r.originalLoaderInvocations -eq 2 -and $safe.aliasValuesRemainDistinct -and $safe.caseSensitiveBackingFieldUntouched -and $safe.loaderIgnoresCellId2 -and $safe.legacyPhuongXaConstructorEmpty -and $safe.templateValuesBlanked){'matched'}elseif($r.status -eq 'mismatch'){'mismatch'}else{'oracle-runtime-blocked'}
     return $safe
   }catch{$safe.status='host-or-tool-failure';return $safe}
   finally{
-    if($null -ne $oracleProcess){if (-not $oracleProcess.HasExited){$oracleProcess.Kill($true)};$oracleProcess.Dispose()}
     if($null -ne $compilerProcess){if (-not $compilerProcess.HasExited){$compilerProcess.Kill($true)};$compilerProcess.Dispose()}
     if($firewallName){Remove-NetFirewallRule -DisplayName $firewallName -ErrorAction SilentlyContinue}
     if($directory){Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue}

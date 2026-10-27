@@ -44,6 +44,7 @@ $rootStartTime = $null
 $installerStopped=$true
 $installerCredentialsSafe=$true
 $uiaHelpersStopped=$true
+$htkkHelperJobsStopped=$true
 $supplierJob=$null;$supplierLaunchAttempted=$false;$supplierCleanupVerified=$true
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
 . (Join-Path $PSScriptRoot 'Invoke-HtkkPinnedDownload.ps1')
@@ -926,8 +927,11 @@ try {
   $report['supplierProcessBoundary']=$supplierBoundary
   if($supplierLaunchAttempted -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
   $report['uiaHelpersStopped']=$uiaHelpersStopped
+  $nativeHelperJobsStopped=$htkkHelperJobsStopped -is [bool] -and $htkkHelperJobsStopped
+  $report['nativeHelperJobsStopped']=$nativeHelperJobsStopped
+  if(-not $nativeHelperJobsStopped){$report.stage='blocked';$report['blockedReason']='NATIVE_HELPER_PROCESS_NOT_STOPPED'}
   if($env:GITHUB_OUTPUT){
-    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped) -and $supplierCleanupVerified
+    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped) -and $supplierCleanupVerified -and $nativeHelperJobsStopped
     [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
   }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {

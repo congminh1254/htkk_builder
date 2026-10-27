@@ -3,8 +3,9 @@ function Invoke-HtkkCommonHeaderOracle {
  [CmdletBinding()]
  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
  $ErrorActionPreference='Stop'
- $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;failedCaseIndices=@();getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();oracleExitCode=$null;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
- $directory=$null;$compilerProcess=$null;$oracleProcess=$null;$firewallName=$null
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
+ $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;failedCaseIndices=@();getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();oracleExitCode=$null; oracleJobCleanupVerified=$true;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
+ $directory=$null;$compilerProcess=$null;$firewallName=$null
  try {
   $privateDirectory=Join-Path $env:RUNNER_TEMP 'htkk-common-header-diagnostic'
   foreach($name in @('common-header-first.xml','common-header-supplement.xml')){Remove-Item -LiteralPath (Join-Path $privateDirectory $name) -Force -ErrorAction SilentlyContinue}
@@ -36,11 +37,11 @@ function Invoke-HtkkCommonHeaderOracle {
   $safe.compilerExitCode=$compilerProcess.ExitCode;$compilerText=$compilerOut.GetAwaiter().GetResult()+$compilerErr.GetAwaiter().GetResult();$safe.compilerErrorCodes=@([regex]::Matches($compilerText,'\bCS[0-9]{4}\b')|ForEach-Object{$_.Value}|Sort-Object -Unique|Select-Object -First 10)
   if($compilerProcess.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
   $firewallName='HTKK common header oracle '+[guid]::NewGuid().ToString('N');New-NetFirewallRule -DisplayName $firewallName -Direction Outbound -Program $program -Action Block|Out-Null
-  $info=[Diagnostics.ProcessStartInfo]::new();$info.FileName=$program;$info.WorkingDirectory=$directory;$info.UseShellExecute=$false;$info.CreateNoWindow=$true;$info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true;$info.Environment.Clear()
-  foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')){$v=[Environment]::GetEnvironmentVariable($key);if($null -ne $v){$info.Environment[$key]=$v}}
-  foreach($argument in @($ProjectDirectory,(Join-Path $ProjectDirectory 'Menu.xml'),(Join-Path $root 'InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml'),$directory,$resultFile)){$info.ArgumentList.Add($argument)}
-  $oracleProcess=[Diagnostics.Process]::Start($info);$oracleOut=$oracleProcess.StandardOutput.ReadToEndAsync();$oracleErr=$oracleProcess.StandardError.ReadToEndAsync()
-  if(-not $oracleProcess.WaitForExit(30000)){$oracleProcess.Kill($true);$safe.status='oracle-timeout';return $safe};$safe.oracleExitCode=$oracleProcess.ExitCode
+  $safe.oracleJobCleanupVerified=$false
+  $oracleRun=Invoke-HtkkBoundedJobProcess -Executable $program -WorkingDirectory $directory -Arguments @($ProjectDirectory,(Join-Path $ProjectDirectory 'Menu.xml'),(Join-Path $root 'InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml'),$directory,$resultFile) -TimeoutMilliseconds 30000
+  $safe.oracleJobCleanupVerified=$oracleRun.jobCleanupVerified;$safe.oracleExitCode=$oracleRun.exitCode
+  if(-not $oracleRun.jobCleanupVerified -or $oracleRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+  if($oracleRun.timedOut){$safe.status='oracle-timeout';return $safe}
   foreach($path in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $root $path) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $pins[$path]){$safe.status='source-changed';return $safe}};$safe.sourceHashesUnchanged=$true
   if(-not(Test-Path -LiteralPath $resultFile -PathType Leaf) -or (Get-Item -LiteralPath $resultFile).Length -gt 4096){$safe.status='oracle-result-unavailable';return $safe}
   $r=Get-Content -LiteralPath $resultFile -Raw|ConvertFrom-Json -AsHashtable
@@ -49,7 +50,7 @@ function Invoke-HtkkCommonHeaderOracle {
   if($r.failedChecks -isnot [array] -or $r.failedChecks.Count -ne ($r.cases-$r.matched) -or @($r.failedChecks|Where-Object{($_ -isnot [long] -and $_ -isnot [int]) -or $_ -notin 1..43}).Count -or @($r.failedChecks|Select-Object -Unique).Count -ne $r.failedChecks.Count){$safe.status='oracle-result-invalid';return $safe}
   $safe.failedCaseIndices=$r.failedChecks
   foreach($key in @('runtime','stage','cases','matched','getToKhaiInfoInvocations','bindInvocations','serializeInvocations')){$safe[$key]=$r[$key]}
-  $safe.status=if($oracleProcess.ExitCode -eq 0 -and $r.status -eq 'matched' -and $r.cases -eq 43 -and $r.matched -eq 43 -and $r.getToKhaiInfoInvocations -eq 2 -and $r.bindInvocations -eq 2 -and $r.serializeInvocations -eq 5){'matched'}elseif($r.status -eq 'mismatch'){'mismatch'}else{'oracle-runtime-blocked'}
+  $safe.status=if($safe.oracleExitCode -eq 0 -and $r.status -eq 'matched' -and $r.cases -eq 43 -and $r.matched -eq 43 -and $r.getToKhaiInfoInvocations -eq 2 -and $r.bindInvocations -eq 2 -and $r.serializeInvocations -eq 5){'matched'}elseif($r.status -eq 'mismatch'){'mismatch'}else{'oracle-runtime-blocked'}
   if($safe.status -eq 'matched'){
    New-Item -ItemType Directory -Path $privateDirectory -Force|Out-Null
    foreach($name in @('common-header-first.xml','common-header-supplement.xml')){
@@ -61,7 +62,6 @@ function Invoke-HtkkCommonHeaderOracle {
   return $safe
  }catch{$safe.status='host-or-tool-failure';return $safe}
  finally{
-  if($null -ne $oracleProcess){if(-not $oracleProcess.HasExited){$oracleProcess.Kill($true)};$oracleProcess.Dispose()}
   if($null -ne $compilerProcess){if(-not $compilerProcess.HasExited){$compilerProcess.Kill($true)};$compilerProcess.Dispose()}
   if($firewallName){Remove-NetFirewallRule -DisplayName $firewallName -ErrorAction SilentlyContinue}
   if($directory){Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue}
