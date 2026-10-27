@@ -79,6 +79,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Observe THAT original owner across UI turns rather than testing the outer frame.
   profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;
   if(!profileClosed){stage="waiting-profile-close";Record();return;}
+  if(navigationPhase=="waiting-amendment-prior-close"){ObserveOriginalAmendmentPriorClosed();return;}
   if(navigationPhase=="waiting-amendment-sheet"){InspectOriginalAmendmentOpen();return;}
   if(navigationPhase=="waiting-gtgt-sheet"){InspectOriginalGtgtSheet();return;}
   List<Form> menus=new List<Form>();List<Control> seen=new List<Control>();foreach(Form candidate in Application.OpenForms){if(candidate.Visible&&!candidate.IsDisposed)FindMainMenus(candidate,menus,seen);}

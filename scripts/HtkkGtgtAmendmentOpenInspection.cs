@@ -24,8 +24,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(mode!="gtgt-amendment-open-inspect"||amendmentOpenCloseInvoked||!amendmentPriorDirtyCleared||!amendmentPriorSaveSuccessAcknowledged||!amendmentPriorFileFresh||!amendmentPriorSavedMoneyZero||amendmentPriorSavedMoneyCount!=27||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||!amendmentPriorOwner.Visible||!amendmentPriorOwner.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool)||(bool)dirty.GetValue(amendmentPriorOwner))throw new InvalidOperationException();
   Button close=Named(amendmentPriorOwner,"cmdExit") as Button;if(close==null||close.FindForm()!=amendmentPriorOwner||!close.Visible||!close.Enabled||!close.CanSelect||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
-  amendmentPriorWatcher.Stop();amendmentOpenCloseInvoked=true;navigationPhase="waiting-main-menu";menuStep=0;stage="gtgt-amendment-prior-close-invoking";Record();close.PerformClick();
-  amendmentOpenPriorClosed=amendmentPriorOwner.IsDisposed||!amendmentPriorOwner.Visible;if(!amendmentOpenPriorClosed||OriginalMessageVisible())throw new InvalidOperationException();stage="gtgt-amendment-prior-closed";Record();
+  amendmentPriorWatcher.Stop();amendmentOpenCloseInvoked=true;navigationPhase="waiting-amendment-prior-close";menuStep=0;stage="gtgt-amendment-prior-close-invoking";Record();close.PerformClick();
+  ObserveOriginalAmendmentPriorClosed();
+ }
+ private void ObserveOriginalAmendmentPriorClosed(){
+  if(!AmendmentReopening()||amendmentPriorOwner==null||OriginalMessageVisible())throw new InvalidOperationException();
+  amendmentOpenPriorClosed=amendmentPriorOwner.IsDisposed||!amendmentPriorOwner.Visible;
+  if(!amendmentOpenPriorClosed){stage="gtgt-amendment-prior-close-waiting";Record();return;}
+  navigationPhase="waiting-main-menu";stage="gtgt-amendment-prior-closed";Record();
  }
  private static bool CurrentOriginalAmendmentDate(string text){DateTime parsed;return DateTime.TryParseExact(text,new string[]{"d/M/yyyy","dd/MM/yyyy"},CultureInfo.InvariantCulture,DateTimeStyles.None,out parsed)&&parsed.Date==DateTime.Now.Date;}
  private void ConfigureOriginalAmendmentOpen(Control period){

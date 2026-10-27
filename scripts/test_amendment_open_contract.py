@@ -69,3 +69,11 @@ class AmendmentReaderTypeBoundaryTests(unittest.TestCase):
   self.assertIn("menuClickCount=$(if($ExpectedMode -ceq 'gtgt-amendment-open-inspect'){6}else{3})",reader)
   self.assertIn('$open.menuClickCount=4',fixture)
   self.assertIn("@{key='menuClickCount';value=7}",fixture)
+
+class OriginalCleanCloseTimingTests(unittest.TestCase):
+ def test_close_is_invoked_once_then_observed_across_ui_turns_without_forcing_state(self):
+  text=(ROOT/'HtkkGtgtAmendmentOpenInspection.cs').read_text();navigation=(ROOT/'HtkkGtgtReferenceNavigation.cs').read_text()
+  block=text[text.index(' private void ObserveOriginalAmendmentPriorClosed()'):text.index(' private static bool CurrentOriginalAmendmentDate')]
+  self.assertIn('if(!amendmentOpenPriorClosed){stage="gtgt-amendment-prior-close-waiting";Record();return;}',block)
+  self.assertNotIn('PerformClick',block);self.assertNotIn('SetValue',block);self.assertNotIn('Visible=',block)
+  self.assertIn('if(navigationPhase=="waiting-amendment-prior-close"){ObserveOriginalAmendmentPriorClosed();return;}',navigation)
