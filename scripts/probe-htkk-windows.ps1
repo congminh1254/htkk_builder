@@ -47,6 +47,7 @@ $uiaHelpersStopped=$true
 $htkkHelperJobsStopped=$true
 $supplierJob=$null;$supplierLaunchAttempted=$false;$supplierCleanupVerified=$true
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
+. (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
 . (Join-Path $PSScriptRoot 'Invoke-HtkkPinnedDownload.ps1')
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
 $firewallNames = [Collections.Generic.List[string]]::new()
@@ -586,7 +587,7 @@ Set-UiaPhase 'complete'
   # cannot overwrite a previously unverified cleanup with a safe value.
   $previousHelpersStopped=$script:uiaHelpersStopped;$script:uiaHelpersStopped=$false
   try{
-    $helperRun=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000
+    $helperRun=Invoke-HtkkBoundedJobProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000
   }finally{$diagnostics.helperPhase=Read-HtkkUiaHelperPhase -PhasePath $phasePath}
   $diagnostics.helperProcessStopped=$helperRun.processStopped -is [bool] -and $helperRun.processStopped
   $script:uiaHelpersStopped=$previousHelpersStopped -and $diagnostics.helperProcessStopped

@@ -39,3 +39,5 @@ xuất `uiaHelperPhase` kể cả timeout. Không thêm title/PID/đường dẫ
 `not-started` khác `root-enumerating`/`traversing`, giúp Windows run kế tiếp xác
 định đoạn thực sự chặn. Không thay loginReady, deadline hoặc tiêu chí thành công;
 không suy ra lời giải từ các bài test local.
+
+UIA production dùng `Invoke-HtkkBoundedJobProcess` (15 giây) để cleanup bao gồm cả descendants qua kernel Job, không chỉ WinPS root. Kết quả còn tham gia cờ tổng helper jobs của probe. MSI vẫn dùng primitive riêng và policy fail-closed cho service-mediated timeout.

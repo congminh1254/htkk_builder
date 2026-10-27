@@ -15,7 +15,7 @@ $previousWindir=$env:WINDIR
 if(-not $env:WINDIR){$env:WINDIR=$directory}
 $script:uiaHelpersStopped=$true
 $script:fixture='valid';$script:calls=0
-function Invoke-HtkkBoundedNativeProcess {
+function Invoke-HtkkBoundedJobProcess {
  param($Executable,$WorkingDirectory,$Arguments,$TimeoutMilliseconds)
  $script:calls++
  if($TimeoutMilliseconds -ne 15000 -or $Arguments[0] -cne '-STA' -or $Arguments -cnotcontains '-NonInteractive'){throw 'UIA invocation contract changed'}
@@ -58,18 +58,19 @@ try{
  $script:uiaHelpersStopped=$true;$script:fixture='throw'
  try{$null=Get-HtkkSafeUiDiagnostics -AppProcessId 123 -Descendants @() -TemporaryDirectory $directory}catch{}
  if($script:uiaHelpersStopped){throw 'Unexpected helper exception permitted credentials'}
+ $phaseChecks=0
  $phaseFile=Join-Path $directory 'uia-phase.txt'
  foreach($phase in @('not-started','starting','modules-loading','assembly-loading','initializing','root-enumerating','root-scoping','traversing','result-building','provider-failed','result-writing','complete')){
   [IO.File]::WriteAllText($phaseFile,$phase)
-  if((Read-HtkkUiaHelperPhase $phaseFile) -cne $phase){throw 'Safe phase rejected'}
+  if((Read-HtkkUiaHelperPhase $phaseFile) -cne $phase){throw 'Safe phase rejected'};$phaseChecks++
  }
  foreach($unsafePhase in @('test-private-title-path-message',('x'*65))){
   [IO.File]::WriteAllText($phaseFile,$unsafePhase)
-  if((Read-HtkkUiaHelperPhase $phaseFile) -cne 'invalid'){throw 'Unsafe phase accepted'}
+  if((Read-HtkkUiaHelperPhase $phaseFile) -cne 'invalid'){throw 'Unsafe phase accepted'};$phaseChecks++
  }
  Remove-Item -LiteralPath $phaseFile
- if((Read-HtkkUiaHelperPhase $phaseFile) -cne 'unavailable'){throw 'Missing phase accepted'}
- Write-Host "Actual UIA wrapper boundary scenarios passed: $script:calls; phase whitelist checks passed: 14"
+ if((Read-HtkkUiaHelperPhase $phaseFile) -cne 'unavailable'){throw 'Missing phase accepted'};$phaseChecks++
+ Write-Host "Actual UIA wrapper boundary scenarios passed: $script:calls; phase whitelist checks passed: $phaseChecks"
 }finally{
  $env:WINDIR=$previousWindir
  Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue

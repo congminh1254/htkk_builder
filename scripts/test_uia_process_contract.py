@@ -8,7 +8,7 @@ class UiaProcessContract(unittest.TestCase):
     def test_actual_uia_wrapper_uses_clean_bounded_runner_and_unquoted_arguments(self):
         source = (ROOT / 'probe-htkk-windows.ps1').read_text()
         wrapper = source[source.index('function Get-HtkkSafeUiDiagnostics('):source.index('\ntry {\n  if($GuiAutomation')]
-        self.assertIn('$helperRun=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000', wrapper)
+        self.assertIn('$helperRun=Invoke-HtkkBoundedJobProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000', wrapper)
         self.assertNotIn('Start-Process', wrapper)
         self.assertNotIn('Stop-Process', wrapper)
         self.assertIn("'-File',$helper,'-ProcessIds',$ownerList,'-OutputFile',$resultPath", wrapper)
