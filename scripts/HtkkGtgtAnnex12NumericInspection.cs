@@ -12,13 +12,25 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] values=new string[]{"1","7","33.33","66.67","99999999999999"};
   if(mode!="gtgt-annex12-numeric-inspect"||index!=annex12NumericActionCount||index<0||index>=values.Length)throw new InvalidOperationException();
   grid.Focus();Annex12InputOwner(grid,annex);int row=cells[index,0],column=cells[index,1];
+  // Source FormatCelltypeFromSinfo06002702 configures the original number
+  // editor with DecimalSeparator="," and thousands Separator=".". Keep the
+  // canonical expected value independent from the text typed into that editor.
+  string editorValue=values[index];
+  if(index==2||index==3){
+   stage="gtgt-annex12-numeric-format-checking";Record();
+   object cellType=Get(Cell(annex,row,column),"CellType");
+   if(cellType==null||Convert.ToString(Get(cellType,"DecimalSeparator"),CultureInfo.InvariantCulture)!=","||Convert.ToString(Get(cellType,"Separator"),CultureInfo.InvariantCulture)!=".")throw new InvalidOperationException();
+   editorValue=values[index].Replace('.',',');
+  }
   if(Convert.ToBoolean(Get(Cell(annex,row,column),"Locked")))throw new InvalidOperationException();
   stage="gtgt-annex12-numeric-editing";Record();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
   grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});
-  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();
-  foreach(string keys in new string[]{"^a",EscapeSendKeys(values[index]),"{TAB}"}){Annex12InputOwner(grid,annex);if(!editor.ContainsFocus)throw new InvalidOperationException();SendKeys.SendWait(keys);}
+  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();stage="gtgt-annex12-numeric-editor-ready";Record();
+  foreach(string keys in new string[]{"^a",EscapeSendKeys(editorValue),"{TAB}"}){Annex12InputOwner(grid,annex);if(!editor.ContainsFocus)throw new InvalidOperationException();SendKeys.SendWait(keys);}
   grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();Annex12InputOwner(grid,annex);
-  if(!Annex12NumberMatched(annex,row,column,Decimal.Parse(values[index],CultureInfo.InvariantCulture)))throw new InvalidOperationException();annex12NumericActionCount++;Record();
+  stage="gtgt-annex12-numeric-committed";Record();
+  if(!Annex12NumberMatched(annex,row,column,Decimal.Parse(values[index],CultureInfo.InvariantCulture))){stage="gtgt-annex12-numeric-value-mismatch";Record();throw new InvalidOperationException();}
+  annex12NumericActionCount++;Record();
  }
  private void SnapshotAnnex12Numeric(Control grid,object annex){
   Annex12InputOwner(grid,annex);if(annex12NumericCaseCount>=3)throw new InvalidOperationException();stage="gtgt-annex12-numeric-observing";Record();

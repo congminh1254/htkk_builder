@@ -16,3 +16,15 @@ class NumericProbeContract(unittest.TestCase):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text();self.assertIn("'gtgt-annex12-input-inspected','gtgt-annex12-numeric-inspected','gtgt-annex12-export-inspected'",probe)
   for field in ('annex12NumericActionCount -eq 5','annex12NumericCaseCount -eq 3'):
    self.assertIn(field,probe)
+
+ def test_fractional_ui_text_uses_original_separators_but_comparison_is_canonical(self):
+  source=(ROOT/'HtkkGtgtAnnex12NumericInspection.cs').read_text()
+  self.assertIn("editorValue=values[index].Replace('.',',')",source)
+  self.assertIn('EscapeSendKeys(editorValue)',source)
+  self.assertIn('Decimal.Parse(values[index],CultureInfo.InvariantCulture)',source)
+  self.assertIn('Get(cellType,"DecimalSeparator")',source)
+  self.assertIn('Get(cellType,"Separator")',source)
+  reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  for stage in ('format-checking','editor-ready','committed','value-mismatch'):
+   self.assertIn('gtgt-annex12-numeric-'+stage,source)
+   self.assertIn('gtgt-annex12-numeric-'+stage,reader)

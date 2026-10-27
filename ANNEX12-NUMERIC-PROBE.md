@@ -17,3 +17,17 @@ nonzero cells/main are zero. No new parity or global compatibility flag is set.
 
 Native execution and full-run success are still required. Boundary fixtures are
 synthetic examples of report syntax, not claimed original numeric outputs.
+
+## Fractional editor input correction
+
+Run40512654143 recorded the first nonzero case but stopped on the first fractional
+UI edit before incrementing action2. This is not a tax comparison failure.
+Source `GeneralFunctions.FormatCelltypeFromSinfo`06002702 (bodySHA256
+`ca09060781b8037f20f9e96eacbed31ad96df75ae2672ed6a888fa099b9c6849`)
+selects `DecimalSeparator=","` and `Separator="."` at0111–0122 for
+the source percentage default `0,00`; the default containing a dot takes the
+opposite separator branch at00C5–00D6. The probe now checks those original read-only CellType properties
+before typing33,33/66,67, while invariant expected decimal values stay33.33/66.67.
+No original format property is modified. Bounded format/editor-ready/committed/
+value-mismatch stages distinguish input failures from native calculated outputs.
+A new native run is still required to qualify this correction.
