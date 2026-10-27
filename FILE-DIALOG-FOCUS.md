@@ -1,7 +1,8 @@
 # Chờ focus của hộp thoại XML nguyên bản
 
-Run 40565276626 dừng ở `gtgt-export-filename-keyboard-editing` trước khi nhập
-đường dẫn: hộp thoại, editor và nút lưu đã khớp, nhưng chưa chứng minh được focus.
+Run 40565276626 dừng ở `gtgt-export-filename-keyboard-editing`, chưa xác nhận
+nhập đường dẫn thành công: hộp thoại, editor và nút lưu đã khớp. Stage cũ gộp
+kiểm focus, chọn và gõ nên chưa xác định chính xác thao tác thất bại.
 Đây chưa phải lỗi so sánh XML hay số thuế; không đánh dấu ca đó đạt.
 
 Controller nay đợi tối đa 40 lần quan sát hợp lệ (timer 100 ms), yêu cầu hai lần
