@@ -62,7 +62,7 @@ def parse(body):
 def validate_candidate(body,today=None):
  """Fail closed on exactly one source-predicted synthetic two-row annex.
 
- ID_1 / ID_44 / ID_45 are source predictions awaiting actual native capture.
+ ID_1 / ID_1 / ID_2 are source predictions awaiting actual native capture.
  Every byte of body stays unchanged. The private base copy is only a validation
  projection; it is never returned as XML, staged or published.
  """
@@ -75,7 +75,7 @@ def validate_candidate(body,today=None):
  container(annex,('TenNhaMay','ct13','ct14'),field=field_id('annex'));group=annex[0]
  container(group,GROUP_ORDER,{'id':'ID_1'},field_id('group'))
  for index,expected in ((0,'1'),(1,'NHA MAY GIA LAP - KHONG NOP'),(2,'9999999997-001'),(5,'@ZERO'),(6,'@HUNDRED'),(7,'@ZERO')):value(group[index],expected,field_id('group/'+GROUP_ORDER[index]))
- for position,row_id,serial,kind in ((3,'ID_44','1.1','01'),(4,'ID_45','1.2','02')):
+ for position,row_id,serial,kind in ((3,'ID_1','1.1','01'),(4,'ID_2','1.2','02')):
   location=group[position];container(location,LOCATION_ORDER,{'id':row_id},field_id('row'+str(position-3)))
   expected={'sTT':serial,'loai':kind,**LOCATION_VALUES}
   for child in location:value(child,expected[local(child)],field_id('row'+str(position-3)+'/'+local(child)))

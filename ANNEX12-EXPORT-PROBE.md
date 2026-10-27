@@ -49,8 +49,8 @@ branch `gtgt-annex12-zero-two-locations-native-export`. GET ref 404 alone permit
 creation; a failed PATCH never falls back to creation. Public results contain
 only bounded identifiers/status; no raw XML, original error, path or credential.
 
-First export execution is still required. Source-predicted IDs ID_1, ID_44 and
-ID_45 are strict retention expectations; a difference stops publication. The
+First export execution is still required. Source-predicted IDs ID_1, ID_1 and
+ID_2 are strict retention expectations; a difference stops publication. The
 parser's own `originalAnnexExportVerified=false` means parsing itself cannot
 prove origin. The final manifest records the separate trusted original-run
 attestation. Independent browser/WASM XSD verification, native import/reexport,
@@ -59,3 +59,7 @@ web serializer parity and full filing compatibility remain unverified.
 ## Chẩn đoán mismatch trước retention
 
 Run40422634417 đã đạt GUI export/112 leaf/XSD .NET nhưng staging từ chối XML_CONTRACT; không có raw artifact được phát hành. Probe bổ sung contractCode enum và contractFieldId0–45 từ FIELD_NAMES cố định trong htkk_annex12_fixed_export.py. Không đưa giá trị XML, tag không tin cậy hoặc path máy lên log. Mã này chỉ xác định chỗ cần kiểm lại nguồn; privacy contract không nới và fullcompatibility/roundtrip vẫn false.
+
+## Sửa nhầm lẫn chỉ số dòng với tọa độ XLS
+
+Run40484075903 xác định ATTRIBUTES ở field12 (row0). Đọc lại ExportDataTableToTableNode06000050, bodySHA256de6af1d32db04b6a542259b23ea70b4f4d2391a78e70fad3847472ccc24659e8: local7 khởi tạo0 ở00C2, truyền GetRowData ở00CE, đặt id=ID_+(local7+1) ở0780–0797, tăng và so RowsValues.Count ở087B–0894. Đây là chỉ số phần tử RowsValues, không phải worksheet row43/44. Vì vậy hai con phải ID_1/ID_2; nhóm dùng TableInfo.TableID nên cũng có thể ID_1. Privacy vẫn yêu cầu đúng các ID cố định này, không nhận wildcard. Chờ native capture nguyên byte xác nhận; không sửa byte XML.

@@ -9,7 +9,7 @@ cases and their publishers remain unchanged.
 synthetic C0/M10/2026 case `01GTGT-annex12-zero-two-locations-M10-2026`:
 
 - one 01-2/GTGT annex and one factory (`ID_1`), synthetic parent name and MST;
-- exactly two children (`ID_44`, `ID_45`), STT 1.1/1.2 and types 01/02;
+- exactly two children (`ID_1`, `ID_2`), STT 1.1/1.2 and types 01/02;
 - source-locked child name/MST fields blank, exact Hà Nội/Sơn Tây and CQT codes;
 - each percentage 50, original group percentage 100, every annex amount zero;
 - original fake base profile, industry 00/1701, current native dates, 27 zeros.

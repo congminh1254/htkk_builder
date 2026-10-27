@@ -9,7 +9,7 @@ NS='{'+a.NS+'}'
 def fixture():
  root=ET.fromstring(f.parser_fixture());pluc=ET.SubElement(root.find('./'+NS+'HSoKhaiThue'),NS+'PLuc');annex=ET.SubElement(pluc,NS+'PLuc_01_2_GTGT');group=ET.SubElement(annex,NS+'TenNhaMay',{'id':'ID_1'})
  for name,text in (('sTT','1'),('ten_nhaMay','NHA MAY GIA LAP - KHONG NOP'),('ma_nhaMay','9999999997-001')):ET.SubElement(group,NS+name).text=text
- for row_id,serial,kind in (('ID_44','1.1','01'),('ID_45','1.2','02')):
+ for row_id,serial,kind in (('ID_1','1.1','01'),('ID_2','1.2','02')):
   row=ET.SubElement(group,NS+'DiaBanPhanBo',{'id':row_id});values={'sTT':serial,'loai':kind,**a.LOCATION_VALUES}
   for name in a.LOCATION_ORDER:ET.SubElement(row,NS+name).text={'@ZERO':'0','@FIFTY':'50'}.get(values[name],values[name])
  for name,text in (('ct10_a','0'),('ct11_a','100'),('ct12_a','0')):ET.SubElement(group,NS+name).text=text
@@ -79,3 +79,11 @@ class AnnexBoundedDiagnosticTests(unittest.TestCase):
   self.assertEqual(codes,a.CODES)
   self.assertIn('$annexStageResult.contractFieldId -lt '+str(len(a.FIELD_NAMES)),probe)
   self.assertIn('$annexStageResult.contractFieldId -is [long]',probe)
+
+class AnnexRowCounterTests(unittest.TestCase):
+ def test_physical_worksheet_rows_are_not_export_row_ids(self):
+  root=ET.fromstring(fixture());rows=root.findall('.//'+NS+'DiaBanPhanBo')
+  self.assertEqual([row.attrib for row in rows],[{'id':'ID_1'},{'id':'ID_2'}])
+  rows[0].set('id','ID_44');rows[1].set('id','ID_45')
+  with self.assertRaises(a.AnnexContractError) as caught:a.validate_candidate(ET.tostring(root),TODAY)
+  self.assertEqual((caught.exception.code,caught.exception.field),('ATTRIBUTES',a.field_id('row0')))
