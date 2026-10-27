@@ -47,6 +47,6 @@ def main():
   if path.is_symlink() or not path.is_file() or path.stat().st_size>16384:raise ValueError('PUBLICATION')
   value=publication(path.read_bytes(),os.environ['COMMIT_SHA'])
   dispatch(value,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'))
-  print('Four immutable synthetic native cases dispatched; results use separate commit statuses.')
+  print(str(len(CASES))+' immutable synthetic native cases dispatched; results use separate commit statuses.')
  except Exception:raise SystemExit('Native-case dispatch failed; no raw response, input, path or credential published.')
 if __name__=='__main__':main()
