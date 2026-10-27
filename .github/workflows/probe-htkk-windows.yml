@@ -63,6 +63,9 @@ jobs:
       - name: Check bounded native process and clean environment
         shell: pwsh
         run: ./scripts/Test-HtkkBoundedNativeProcess.ps1
+      - name: Check suspended Windows job and orphan cleanup boundary
+        shell: pwsh
+        run: ./scripts/Test-HtkkWindowsJobProcess.ps1
       - name: Check UIA cleanup and bounded result boundary
         shell: pwsh
         run: ./scripts/Test-HtkkUiaProcessBoundary.ps1
