@@ -42,3 +42,15 @@ bằng chứng mới; không coi giả thuyết module autoload là đã chứng
 thay code.
 
 Kiểm chứng Windows độc lập: run40580662096, builder eadc33f, toàn workflow đạt. Bằng chứng này xác nhận load/type/STA/cleanup, chưa xác nhận traversal, đăng nhập hoặc roundtrip của helper đã sửa.
+
+## Kiểm thêm cmdlet còn lại của generated UIA helper
+
+Windows run40580662096 tại eadc33f đã đạt bài load assembly/type/STA độc lập.
+Đó chưa phải bằng chứng cho các cmdlet còn lại trong helper. Phiên bản test mới
+chạy tiếp trong **cùng WinPS child sạch**: `Sort-Object` trên số3,1,2,
+`ConvertTo-Json -Depth 4` và `Set-Content -Encoding UTF8` trên fixture hoàn toàn
+giả lập cố định. Bổ sung ba flags `sortObjectMatched`,
+`jsonSerializationMatched`, `setContentMatched`, giữ sáu flags cũ; parent còn
+parse file fixture riêng, kiểm đúng format/ba keys/boolean và ba số1,2,3.
+Deadline chung vẫn15 giây. Chưa thêm Import-Module hay đổi probe từ phần việc
+này; cần Windows run mới để chứng minh cmdlet hoạt động dưới môi trường sạch.

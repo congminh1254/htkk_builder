@@ -27,3 +27,15 @@ class FrameworkUiaLoadContract(unittest.TestCase):
         self.assertIn('no Windows readiness proven', source)
         for forbidden in ('RootElement', 'FindAll', 'HTKK.exe', 'SOURCE_READ_TOKEN'):
             self.assertNotIn(forbidden, source)
+
+    def test_same_framework_child_exercises_remaining_uia_cmdlets_on_fixed_data(self):
+        source = (ROOT / 'Test-HtkkFrameworkUiaAssemblyLoad.ps1').read_text()
+        child = source.split(" @'\n", 1)[1].split("\n'@", 1)[0]
+        self.assertIn('$sorted=@(@(3,1,2)|Sort-Object)', child)
+        self.assertIn('$fixture|ConvertTo-Json -Depth 4', child)
+        self.assertIn('$fixtureJson|Set-Content -LiteralPath $fixturePath -Encoding UTF8', child)
+        for flag in ('sortObjectMatched', 'jsonSerializationMatched', 'setContentMatched'):
+            self.assertIn(f"'{flag}'", source)
+            self.assertIn(f'${flag}.ToString().ToLowerInvariant()', child)
+        self.assertIn("'FRAMEWORK_UIA_CMDLET_FIXTURE_INVALID'", source)
+        self.assertIn("'FRAMEWORK_UIA_CMDLET_SORT_NOT_VERIFIED'", source)
