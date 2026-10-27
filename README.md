@@ -50,3 +50,15 @@ A thirteenth fixed `native-import-sale10` case exercises the application's pinne
 ## Thirteen-case release verified
 
 Source `d5e46e0d81ee61f14671ebdc27e5159d1790782b` passed release [40382378273](https://github.com/congminh1254/htkk_builder/actions/runs/40382378273) and Pages [40382923392](https://github.com/congminh1254/htkk_web/actions/runs/40382923392); HTTPS `build.json` was independently checked against that source SHA. The Linux release used builder `c918685`; all thirteen complete Windows jobs used `53cab8b` and passed their dedicated private raw-retention and callbacks. The release's162 offline Python tests passed. The new native-import/browser-export sale used actual web input2,712 bytes/SHA `62457d1e5be8ef06fddda78fab83db89d7fc165cb8978a76bfde43a306674acd`; its final tax values deliberately match the direct sale case while its application input history is independently exercised. These are fixed synthetic main-declaration cases, not a full-compatibility or filing approval.
+
+
+### Local PowerShell boundary preflight
+
+The safe GUI result reader can be tested on Linux using real PowerShell7 before spending a Windows native run. This does not execute HTKK and is not native business evidence:
+
+```sh
+python -m unittest discover -s scripts -p 'test_*.py'
+pwsh -NoLogo -NoProfile -Command '$env:RUNNER_TEMP = [IO.Path]::GetTempPath(); & ./scripts/Test-HtkkSafeGuiReferenceResult.ps1'
+```
+
+PowerShell7.5.4 was used for128 reader checks. The official Linux-x64 archive from the PowerShell/PowerShell v7.5.4 release was checked against its official hashes.sha256: `1fd7983fe56ca9e6233f126925edb24bf6b6b33e356b69996d925c4db94e2fef`. Do not commit the runtime archive or forward tokens into test subprocesses. Windows remains required for original CLR2/x86 supplier execution.

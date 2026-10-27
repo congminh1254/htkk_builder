@@ -40,3 +40,7 @@ Run40484715557 stopped in the offline PowerShell reader test before HTKK ran. A 
 B1 runtime40487969037 observed11 loaded sheets and reached the main-sheet lookup. Source WinSpreadProcess.fpSpDisplayTemplate060001A1, bodySHA48616a3afb63b1152d9a5b8b6194403a7dec05fdc3bee91f60863eae147160b5: when LoaiToKhai=B and KieuKHBS is nonempty (D1=3),0163–01AC renames sheet0 to `Tờ khai điều chỉnh`. The B1 inspector now requires that exact original caption instead of C0's name.
 
 B1 runtime40488821238 proved B/SoLan1/date, allfive sourcepins and original01-KHBS146×65. Metadata ID`01-1-KHBS` differs from its menu/display caption`01-1/KHBS`. GetHTKKSheetInfo060000F0 copiesID andSheetNameseparately; fpSpBindDataTemplate06000194 copiesSheetInfo.SheetName to the actualvendor sheet. B1 nowkeepsmetadataID andliteraldisplaycaptiondistinct ratherthan requiring them identical.
+
+## Verified B1 opening checkpoint
+
+Run40489593966 on builderc5fa217 completed the whole workflow successfully. The original app saved C0, closed cleanly, reopened D1 and suppliedB/SoLan1/currentdate defaults. It observed11 loaded sheets, original01-KHBS146×65 and01-1/KHBS83×85, with the original saved27 amounts and filehash unchanged within the run. The app retains bounded proof in tests/fixtures/htkk-amendment-open. This is opening proof only: no B1Save/export/import/amount-difference orB2 claim; amendmentLifecycleVerified remainsfalse.
