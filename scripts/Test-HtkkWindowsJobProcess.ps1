@@ -27,6 +27,12 @@ function Get-FailureCategory($errorRecord){
  while($null -ne $errorObject.InnerException){$errorObject=$errorObject.InnerException}
  return $errorObject.Message
 }
+function Write-AssignmentFailureDiagnostic($errorRecord){
+ $category=Get-FailureCategory $errorRecord
+ $allowed=@('job-cleanup-not-verified','boundary-tool-failure','process-create-failed','job-create-failed','job-limit-failed','stdio-create-failed','handle-list-failed','launch-arguments-invalid','environment-invalid','process-resume-failed')
+ if($category -cnotin $allowed){$category='unclassified-boundary-error'}
+ Write-Host ('Assignment failure diagnostic category: '+$category)
+}
 try{
  [Environment]::SetEnvironmentVariable('HTKK_TEST_FAKE_CREDENTIAL','test-only-sentinel')
  @'
@@ -86,7 +92,7 @@ exit 17
  $method=[HtkkWindowsJobProcess].GetMethod('LaunchCore',[Reflection.BindingFlags]'NonPublic,Static')
  $rejected=$false
  try{$unexpected=$method.Invoke($null,@($hostExecutable,$directory,[string[]]$arguments,$true,$false,[IntPtr](-1)))}catch{
-  if((Get-FailureCategory $_) -ceq 'job-assignment-failed'){$rejected=$true}else{throw 'Assignment failure cleanup was not verified'}
+  if((Get-FailureCategory $_) -ceq 'job-assignment-failed'){$rejected=$true}else{Write-AssignmentFailureDiagnostic $_;throw 'Assignment failure cleanup was not verified'}
  }
  if(-not $rejected -or (Test-Path -LiteralPath $marker)){throw 'Child executed before successful job assignment'}
  $rejected=$false

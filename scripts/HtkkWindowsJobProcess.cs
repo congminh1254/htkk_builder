@@ -105,19 +105,28 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
         if (disposed) return CleanupVerified;
         CleanupVerified = false;
         try {
-            if (job != IntPtr.Zero && !TerminateJobObject(job, 1)) return false;
-            // Assignment can fail while the root is still suspended outside job.
-            if (process != IntPtr.Zero && !assigned && WaitForSingleObject(process, 0) != 0 && !TerminateProcess(process, 1)) return false;
+            // An unassigned root is suspended OUTSIDE this empty job. Always
+            // terminate it independently; terminating an empty job is unnecessary
+            // and must never short-circuit cleanup of that root.
+            bool terminationVerified = true;
+            if (assigned && job != IntPtr.Zero && !TerminateJobObject(job, 1)) terminationVerified = false;
+            if (process != IntPtr.Zero && (!assigned || !terminationVerified)) {
+                uint rootState = WaitForSingleObject(process, 0);
+                if (rootState == 0xFFFFFFFF) terminationVerified = false;
+                else if (rootState != 0 && !TerminateProcess(process, 1) && WaitForSingleObject(process, 0) != 0) terminationVerified = false;
+            }
             Stopwatch clock = Stopwatch.StartNew();
             do {
-                bool rootStopped = process == IntPtr.Zero || WaitForSingleObject(process, 0) == 0;
+                uint rootState = process == IntPtr.Zero ? 0 : WaitForSingleObject(process, 0);
+                if (rootState == 0xFFFFFFFF) return false; // WAIT_FAILED is never an exit proof.
+                bool rootStopped = rootState == 0;
                 uint active = 0;
                 if (job != IntPtr.Zero) {
                     JOBOBJECT_BASIC_ACCOUNTING_INFORMATION accounting;
                     if (!QueryInformationJobObject(job, 1, out accounting, (uint)Marshal.SizeOf(typeof(JOBOBJECT_BASIC_ACCOUNTING_INFORMATION)), IntPtr.Zero)) return false;
                     active = accounting.ActiveProcesses;
                 }
-                if (rootStopped && active == 0) { CleanupVerified = true; return true; }
+                if (rootStopped && active == 0) { CleanupVerified = terminationVerified; return CleanupVerified; }
                 if (clock.ElapsedMilliseconds >= milliseconds) return false;
                 Thread.Sleep((int)Math.Min(10, Math.Max(1, milliseconds - clock.ElapsedMilliseconds)));
             } while (true);
