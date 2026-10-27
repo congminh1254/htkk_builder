@@ -54,3 +54,37 @@ giả lập cố định. Bổ sung ba flags `sortObjectMatched`,
 parse file fixture riêng, kiểm đúng format/ba keys/boolean và ba số1,2,3.
 Deadline chung vẫn15 giây. Chưa thêm Import-Module hay đổi probe từ phần việc
 này; cần Windows run mới để chứng minh cmdlet hoạt động dưới môi trường sạch.
+
+## Import manifests cố định để kiểm giả thuyết autoload
+
+Đã đọc bounded logs của run40581112695: job `framework_assemblies` thất bại ở
+bài kiểm mới, enum duy nhất `FRAMEWORK_UIA_ASSEMBLY_LOAD_PROCESS_NOT_VERIFIED`.
+Log cũ chưa phân biệt timeout/exit code hay cmdlet nào, nên chưa khẳng định
+nguyên nhân. Không tăng15 giây và không retry lại code cũ.
+
+Test mới import hai manifest bằng đường dẫn ghép trực tiếp từ automatic
+`$PSHOME` của Windows PowerShell (`IO.Path.Combine`, không Join-Path). Sau đó
+đặt `PSModuleAutoloadingPreference=None` và mới thử Sort/JSON/SetContent.
+Bổ sung flag thứ10 `modulesImported`. Sidecar phase dùng .NET IO, chỉ có
+`not-started/client-loading/types-loading/modules-loading/cmdlets/result-writing/complete`;
+parent nhận tối đa64 byte theo whitelist và in summary chỉ gồm format, enum
+status/phase, booleans timeout/stopped và exit code. Không stderr/path/message.
+Lỗi caught giữ phase gây lỗi thay vì ghi đè complete.
+
+Đề xuất block production trước hai Reflection.Assembly.Load (chưa sửa probe
+trong phần việc này; whitelist phase production cần thêm `modules-loading`):
+
+```powershell
+Set-UiaPhase 'modules-loading'
+$utilityManifest=[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')
+$managementManifest=[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Management','Microsoft.PowerShell.Management.psd1')
+Import-Module -Name $utilityManifest -ErrorAction Stop
+Import-Module -Name $managementManifest -ErrorAction Stop
+$PSModuleAutoloadingPreference='None'
+Set-UiaPhase 'assembly-loading'
+# Tiếp tục hai Reflection.Assembly.Load ghim strong-name như trên.
+```
+
+Linux mới kiểm cú pháp và reader phase; cần Windows run mới xác minh imports,
+cmdlets và10 flags. Không coi patch đề xuất là đã chữa được timeout khi chưa có
+bằng chứng đó.
