@@ -23,3 +23,19 @@ môi trường và timeout/termination; không coi mock là bằng chứng UIA W
 TASK-003 còn theo dõi OCX/supplier descendants và Installer service, oracle
 cleanup, phân loại DNS/TLS/HTTP và retry/attempt hữu hạn. Phải dispatch Windows
 main mới sau khi review/push để kiểm chứng thay đổi UIA.
+
+## Chẩn đoán hai lần timeout sau thay đổi launch helper
+
+Run40577296222 cả attempt1 và2 dừng trước login ở `uia-timeout` /
+`helper-timeout`; MSI0, supplier và helper đã dừng. Không retry thêm. Chưa đủ
+bằng chứng để quy nguyên nhân cho môi trường sạch, console hay working directory:
+helper có COM call `RootElement.FindAll` trước clock traversal; mỗi provider call
+cũng có thể chặn lâu hơn budget10 giây. Timeout15 giây bên ngoài vẫn giữ nguyên.
+
+Bổ sung sidecar `uia-phase.txt` chỉ ghi enum ở các ranh giới: script bắt đầu,
+load assembly, khởi tạo, enumerate root, scope root, traversal, build/write result,
+complete hoặc provider failure. Wrapper đọc tối đa64 byte, chỉ nhận whitelist,
+xuất `uiaHelperPhase` kể cả timeout. Không thêm title/PID/đường dẫn/nội dung UIA.
+`not-started` khác `root-enumerating`/`traversing`, giúp Windows run kế tiếp xác
+định đoạn thực sự chặn. Không thay loginReady, deadline hoặc tiêu chí thành công;
+không suy ra lời giải từ các bài test local.

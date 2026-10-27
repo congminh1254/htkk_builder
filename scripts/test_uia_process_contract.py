@@ -28,3 +28,11 @@ class UiaProcessContract(unittest.TestCase):
         self.assertIn("'Get-HtkkSafeUiDiagnostics'", tests)
         self.assertIn("'cleanup','helper-cleanup-not-verified'", tests)
         self.assertIn("'timeout','helper-timeout'", tests)
+
+    def test_phase_diagnostics_precede_blocking_com_calls_and_never_change_login_gate(self):
+        source = (ROOT / 'probe-htkk-windows.ps1').read_text()
+        self.assertLess(source.index("Set-UiaPhase 'root-enumerating'"), source.index('[System.Windows.Automation.AutomationElement]::RootElement.FindAll'))
+        self.assertLess(source.index("Set-UiaPhase 'traversing'"), source.index('while ($queue.Count'))
+        self.assertIn("if($phase -cnotin $phases){return 'invalid'}", source)
+        self.assertIn('$file.Length -gt 64', source)
+        self.assertIn("$diagnostics.status='uia-timeout';$diagnostics.helperFailureCategory='helper-timeout';return $diagnostics", source)

@@ -23,7 +23,7 @@ $report = [ordered]@{
   mainWindowHandlePresent = $false; startupWaitSeconds = 0; startupContext = 'not-probed'
   uiaStatus = 'not-probed'; uiaWindowCount = 0; uiaControlCount = 0; loginReady = $false
   uiaControlTypeCounts = @{}; uiaAllowedControlIds = @(); uiaStaticLabels = @()
-  uiaHelperEncoding = 'utf8-bom'; uiaHelperExitCode = $null; uiaHelperParseErrorCount = 0; uiaHelperFailureCategory = 'not-probed'
+  uiaHelperEncoding = 'utf8-bom'; uiaHelperExitCode = $null; uiaHelperParseErrorCount = 0; uiaHelperFailureCategory = 'not-probed'; uiaHelperPhase = 'not-probed'
   descendantProcessKinds = @{ HTKK = 0; msiexec = 0; WerFault = 0; rundll32 = 0; dllhost = 0; console = 0; shell = 0; browser = 0; updater = 0; debugger = 0; errorReporting = 0; other = 0 }
   ownedWindowKinds = @{}; nativeDialogCueCounts = @{}; rootAppWindowObserved = $false; uiaWindowCategories = @()
   uiaLegacyRoleCounts = @{}; uiaLegacyPatternAvailable = $false; uiaProviderProcessMismatchCount = 0; uiaViews = @()
@@ -439,17 +439,34 @@ function Update-HtkkRegistrationResults([int]$WaitMilliseconds=0) {
 }
 # Isolated Windows PowerShell helper: UIAutomation is a desktop .NET Framework assembly.
 # Only process-scoped UIA controls are inspected, never ValuePattern or arbitrary names in output.
+function Read-HtkkUiaHelperPhase([string]$PhasePath) {
+  $phases=@('not-started','starting','assembly-loading','initializing','root-enumerating','root-scoping','traversing','result-building','provider-failed','result-writing','complete')
+  try{
+    if(-not(Test-Path -LiteralPath $PhasePath -PathType Leaf)){return 'unavailable'}
+    $file=Get-Item -LiteralPath $PhasePath
+    if($file.Length -gt 64 -or ($file.Attributes -band [IO.FileAttributes]::ReparsePoint)){return 'invalid'}
+    $phase=[IO.File]::ReadAllText($PhasePath,[Text.Encoding]::UTF8).Trim()
+    if($phase -cnotin $phases){return 'invalid'}
+    return $phase
+  }catch{return 'unavailable'}
+}
 function Get-HtkkSafeUiDiagnostics([int]$AppProcessId, [int[]]$Descendants, [string]$TemporaryDirectory) {
   $helper = Join-Path $TemporaryDirectory 'uia-helper.ps1'
   $resultPath = Join-Path $TemporaryDirectory 'uia-safe.json'
+  $phasePath=Join-Path $TemporaryDirectory 'uia-phase.txt'
+  [IO.File]::WriteAllText($phasePath,'not-started',[Text.UTF8Encoding]::new($false))
   @'
-param([string]$ProcessIds, [string]$OutputFile)
+param([string]$ProcessIds, [string]$OutputFile, [string]$PhaseFile)
 $ErrorActionPreference = 'Stop'
+function Set-UiaPhase([string]$Phase){[IO.File]::WriteAllText($PhaseFile,$Phase,[Text.UTF8Encoding]::new($false))}
+Set-UiaPhase 'starting'
 Set-StrictMode -Version Latest
 $result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); categories = @(); legacyRoles = @{}; providerProcessMismatchCount = 0; legacyPatternAvailable = $false; views = @('children','raw-walker','control-walker','native-static-dialog') }
 try {
+  Set-UiaPhase 'assembly-loading'
   Add-Type -AssemblyName UIAutomationClient
   Add-Type -AssemblyName UIAutomationTypes
+  Set-UiaPhase 'initializing'
   # Classic UIA assemblies may not expose LegacyIAccessiblePattern; never let
   # an unavailable optional pattern stop the raw/control child traversal.
   $legacyPatternType = [Type]::GetType('System.Windows.Automation.LegacyIAccessiblePattern, UIAutomationClient', $false)
@@ -466,12 +483,15 @@ try {
   $staticNames = @{ 'Mã số thuế' = 'Mã số thuế'; 'Đăng nhập' = 'Đăng nhập'; 'Đăng nhập vào hệ thống' = 'Đăng nhập'; 'Mã số mới' = 'Mã số mới'; 'HTKK' = 'HTKK' }
   $queue = [System.Collections.Generic.Queue[System.Windows.Automation.AutomationElement]]::new()
   $visited = [System.Collections.Generic.HashSet[string]]::new()
+  Set-UiaPhase 'root-enumerating'
   $top = [System.Windows.Automation.AutomationElement]::RootElement.FindAll([System.Windows.Automation.TreeScope]::Children, [System.Windows.Automation.Condition]::TrueCondition)
+  Set-UiaPhase 'root-scoping'
   foreach ($window in $top) {
     try {
       if ($owners.Contains($window.Current.ProcessId)) { $queue.Enqueue($window); $result.windows++ }
     } catch { }
   }
+  Set-UiaPhase 'traversing'
   $clock = [System.Diagnostics.Stopwatch]::StartNew()
   while ($queue.Count -gt 0 -and $result.controls -lt 2000 -and $clock.Elapsed.TotalSeconds -lt 10) {
     $element = $queue.Dequeue()
@@ -526,15 +546,18 @@ try {
       }
     } catch { }
   }
+  Set-UiaPhase 'result-building'
   $result.ids = @($ids | Sort-Object)
   $result.labels = @($labels | Sort-Object)
   $result.categories = @($categories | Sort-Object)
   $result.loginReady = ($ids.Contains('cboMaSoThue') -and ($ids.Contains('btnMaSoMoi') -or $labels.Contains('Mã số thuế'))) -or ($labels.Contains('Mã số thuế') -and $labels.Contains('Đăng nhập') -and $labels.Contains('Mã số mới'))
   $result.status = if ($queue.Count -gt 0) { 'bounded-partial' } else { 'scanned' }
-} catch { $result.status = 'uia-unavailable' }
+} catch { Set-UiaPhase 'provider-failed';$result.status = 'uia-unavailable' }
+Set-UiaPhase 'result-writing'
 $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encoding UTF8
+Set-UiaPhase 'complete'
 '@ | Set-Content -LiteralPath $helper -Encoding utf8BOM
-  $diagnostics = @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); helperEncoding = 'utf8-bom'; helperExitCode = $null; helperParseErrorCount = 0; helperFailureCategory = 'none'; helperProcessStopped = $true }
+  $diagnostics = @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); helperEncoding = 'utf8-bom'; helperExitCode = $null; helperParseErrorCount = 0; helperFailureCategory = 'none'; helperProcessStopped = $true; helperPhase = 'not-started' }
   # Parse before execution; only the count is public, never source snippets or parser messages.
   $helperTokens = $null; $helperParseErrors = $null
   [System.Management.Automation.Language.Parser]::ParseFile($helper, [ref]$helperTokens, [ref]$helperParseErrors) | Out-Null
@@ -545,11 +568,13 @@ $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encodi
   }
   $legacy = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
   $ownerList = (@($AppProcessId) + @($Descendants)) -join ','
-  $arguments = @('-STA','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',$helper,'-ProcessIds',$ownerList,'-OutputFile',$resultPath)
+  $arguments = @('-STA','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',$helper,'-ProcessIds',$ownerList,'-OutputFile',$resultPath,'-PhaseFile',$phasePath)
   # Fail closed if a helper invocation itself unexpectedly throws; later calls
   # cannot overwrite a previously unverified cleanup with a safe value.
   $previousHelpersStopped=$script:uiaHelpersStopped;$script:uiaHelpersStopped=$false
-  $helperRun=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000
+  try{
+    $helperRun=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000
+  }finally{$diagnostics.helperPhase=Read-HtkkUiaHelperPhase -PhasePath $phasePath}
   $diagnostics.helperProcessStopped=$helperRun.processStopped -is [bool] -and $helperRun.processStopped
   $script:uiaHelpersStopped=$previousHelpersStopped -and $diagnostics.helperProcessStopped
   if(-not $diagnostics.helperProcessStopped){$diagnostics.helperFailureCategory='helper-cleanup-not-verified';return $diagnostics}
@@ -566,7 +591,7 @@ $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encodi
   try {
     if((Get-Item -LiteralPath $resultPath).Length -gt 32768){throw 'UIA_RESULT_OVERSIZED'}
     $safeUi = Get-Content -LiteralPath $resultPath -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
-    foreach ($key in @('helperEncoding','helperExitCode','helperParseErrorCount','helperFailureCategory','helperProcessStopped')) { $safeUi[$key] = $diagnostics[$key] }
+    foreach ($key in @('helperEncoding','helperExitCode','helperParseErrorCount','helperFailureCategory','helperProcessStopped','helperPhase')) { $safeUi[$key] = $diagnostics[$key] }
     if ($safeUi.status -eq 'uia-unavailable') { $safeUi.helperFailureCategory = 'uia-provider-unavailable' }
     return $safeUi
   } catch {
@@ -793,7 +818,7 @@ try {
     $report.uiaProviderProcessMismatchCount = if ($uia.ContainsKey('providerProcessMismatchCount')) { $uia.providerProcessMismatchCount } else { 0 }
     $report.uiaViews = if ($uia.ContainsKey('views')) { @($uia.views) } else { @() }
     $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
-    $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory
+    $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory; $report.uiaHelperPhase=$uia.helperPhase
   } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
   if ($AcknowledgeRegistration) {
     Update-HtkkRegistrationResults
