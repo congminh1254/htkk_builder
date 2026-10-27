@@ -52,6 +52,10 @@ Write-Host "Actual supplier job cleanup wrapper scenarios passed: $cases"
 
 if(-not $IsWindows){Write-Host 'Actual supplier launch wrapper Win32 integration NOT RUN on this platform';return}
 
+# AST extraction has no source-file PSScriptRoot: preload its production dependency
+# from this test's actual file directory before invoking the launcher.
+if(-not ('HtkkWindowsJobProcess' -as [type])){Add-Type -Path (Join-Path $PSScriptRoot 'HtkkWindowsJobProcess.cs')}
+
 # Compile a tiny OWN fixed-argument fixture; production launcher accepts no args.
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
 $directory=Join-Path $env:RUNNER_TEMP ('htkk-supplier-job-'+[guid]::NewGuid().ToString('N'))
