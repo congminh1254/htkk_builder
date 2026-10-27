@@ -59,7 +59,7 @@ try{
  try{$null=Get-HtkkSafeUiDiagnostics -AppProcessId 123 -Descendants @() -TemporaryDirectory $directory}catch{}
  if($script:uiaHelpersStopped){throw 'Unexpected helper exception permitted credentials'}
  $phaseFile=Join-Path $directory 'uia-phase.txt'
- foreach($phase in @('not-started','starting','assembly-loading','initializing','root-enumerating','root-scoping','traversing','result-building','provider-failed','result-writing','complete')){
+ foreach($phase in @('not-started','starting','modules-loading','assembly-loading','initializing','root-enumerating','root-scoping','traversing','result-building','provider-failed','result-writing','complete')){
   [IO.File]::WriteAllText($phaseFile,$phase)
   if((Read-HtkkUiaHelperPhase $phaseFile) -cne $phase){throw 'Safe phase rejected'}
  }

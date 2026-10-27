@@ -447,7 +447,7 @@ function Update-HtkkRegistrationResults([int]$WaitMilliseconds=0) {
 # Isolated Windows PowerShell helper: UIAutomation is a desktop .NET Framework assembly.
 # Only process-scoped UIA controls are inspected, never ValuePattern or arbitrary names in output.
 function Read-HtkkUiaHelperPhase([string]$PhasePath) {
-  $phases=@('not-started','starting','assembly-loading','initializing','root-enumerating','root-scoping','traversing','result-building','provider-failed','result-writing','complete')
+  $phases=@('not-started','starting','modules-loading','assembly-loading','initializing','root-enumerating','root-scoping','traversing','result-building','provider-failed','result-writing','complete')
   try{
     if(-not(Test-Path -LiteralPath $PhasePath -PathType Leaf)){return 'unavailable'}
     $file=Get-Item -LiteralPath $PhasePath
@@ -470,6 +470,12 @@ Set-UiaPhase 'starting'
 Set-StrictMode -Version Latest
 $result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); categories = @(); legacyRoles = @{}; providerProcessMismatchCount = 0; legacyPatternAvailable = $false; views = @('children','raw-walker','control-walker','native-static-dialog') }
 try {
+  Set-UiaPhase 'modules-loading'
+  $utilityManifest=[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1')
+  $managementManifest=[IO.Path]::Combine($PSHOME,'Modules','Microsoft.PowerShell.Management','Microsoft.PowerShell.Management.psd1')
+  Import-Module -Name $utilityManifest -ErrorAction Stop
+  Import-Module -Name $managementManifest -ErrorAction Stop
+  $PSModuleAutoloadingPreference='None'
   Set-UiaPhase 'assembly-loading'
   $uiaClient=[Reflection.Assembly]::Load('UIAutomationClient, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35')
   $uiaTypes=[Reflection.Assembly]::Load('UIAutomationTypes, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35')

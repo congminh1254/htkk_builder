@@ -88,3 +88,5 @@ Set-UiaPhase 'assembly-loading'
 Linux mới kiểm cú pháp và reader phase; cần Windows run mới xác minh imports,
 cmdlets và10 flags. Không coi patch đề xuất là đã chữa được timeout khi chưa có
 bằng chứng đó.
+
+Kiểm chứng Windows run40581578692, builder fa92d9e: toàn workflow đạt, đủ10 flags gồm imports/cmdlets trong clean WinPS,15 giây không đổi. Đã áp dụng import manifests cố định vào generated UIA helper; vẫn cần kiểm native GUI/roundtrip sau patch.
