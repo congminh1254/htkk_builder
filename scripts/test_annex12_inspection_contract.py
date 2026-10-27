@@ -1,7 +1,7 @@
 """Mode routing and bounded metadata contracts; no synthetic test is native proof."""
 import ast,pathlib,re,unittest
 ROOT=pathlib.Path(__file__).parent
-MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')
+MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','sample-roundtrip-inspect')
 class AnnexInspectionContract(unittest.TestCase):
  def test_actual_csharp_start_rejects_unknown_modes_and_accepts_every_existing_mode(self):
   text=(ROOT/'HtkkGuiReferenceAutomation.cs').read_text()

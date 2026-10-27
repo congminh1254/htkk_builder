@@ -17,7 +17,13 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private const string FakeName="NNT KIEM THU GIA LAP - KHONG NOP";
  private const string FakeAddress="DU LIEU GIA LAP KIEM THU KHONG SU DUNG";
  private const string FakeSigner="NGUOI KY GIA LAP";
- private string result,project,mode="inspect",stage="not-started",failure="none",editorKind="not-started";
+ private string result,project,mode="inspect",failure="none",editorKind="not-started";
+ private HtkkAutomationStage currentStage=HtkkAutomationStage.NotStarted;
+ private HtkkAutomationMode modeEnum=HtkkAutomationMode.None;
+ private IHtkkNativeAutomationAdapter adapter=null;
+ public void SetStage(HtkkAutomationStage s){currentStage=s;}
+ public void MarkFinished(){finished=true;}
+ private string stage{get{return HtkkNativeAutomationWireMap.ToWireString(currentStage);}set{currentStage=HtkkNativeAutomationWireMap.ParseStage(value);}}
  private volatile bool finished=false,queued=false;
  private bool pins=false,mstMatched=false,initialBlank=false,editingAvailable=false,saveInvoked=false,headerExists=false,headerMatched=false;
  private string saveDialogKind="not-observed";
@@ -26,17 +32,20 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private int forms=0,spreads=0,rows=0,columns=0,inputCount=0,headerChecks=0;
  private readonly Dictionary<string,int> kinds=new Dictionary<string,int>();
  public override object InitializeLifetimeService(){return null;}
- private static string Hash(string path){using(FileStream stream=File.OpenRead(path))using(SHA256 hash=SHA256.Create()){StringBuilder value=new StringBuilder();foreach(byte b in hash.ComputeHash(stream))value.Append(b.ToString("x2",CultureInfo.InvariantCulture));return value.ToString();}}
+ public static string Hash(string path){using(FileStream stream=File.OpenRead(path))using(SHA256 hash=SHA256.Create()){StringBuilder value=new StringBuilder();foreach(byte b in hash.ComputeHash(stream))value.Append(b.ToString("x2",CultureInfo.InvariantCulture));return value.ToString();}}
  private static string Bool(bool value){return value?"true":"false";}
- private void Record(){
+ public void Record(){
   string q=((char)34).ToString();StringBuilder counts=new StringBuilder();
   foreach(string key in new string[]{"form","button","combo","text","spread","other"}){if(counts.Length>0)counts.Append(',');counts.Append(q+key+q+":"+(kinds.ContainsKey(key)?kinds[key]:0).ToString(CultureInfo.InvariantCulture));}
-  string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+NavigationJson()+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
+  string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+(adapter!=null?adapter.BuildNavigationJson():NavigationJson())+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
  public void Start(string requestedMode){
-  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-amendment-inspect"&&requestedMode!="gtgt-amendment-open-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-annex12-row-inspect"&&requestedMode!="gtgt-annex12-input-inspect"&&requestedMode!="gtgt-annex12-numeric-inspect"&&requestedMode!="gtgt-annex12-export-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect")throw new ArgumentException();
+  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-amendment-inspect"&&requestedMode!="gtgt-amendment-open-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-annex12-row-inspect"&&requestedMode!="gtgt-annex12-input-inspect"&&requestedMode!="gtgt-annex12-numeric-inspect"&&requestedMode!="gtgt-annex12-export-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect"&&requestedMode!="sample-roundtrip-inspect")throw new ArgumentException();
   mode=requestedMode;string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
+  modeEnum=HtkkNativeAutomationWireMap.ParseMode(mode);
+  if(modeEnum==HtkkAutomationMode.SampleRoundtripInspect){adapter=new HtkkSampleAdapter();adapter.Initialize(this,project,modeEnum);}
+  else if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}
   try{
    pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
    if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){stage="source-or-runtime-not-matched";finished=true;Record();return;}
@@ -72,7 +81,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private static object Cell(object sheet,int row,int column){object cells=Get(sheet,"Cells");PropertyInfo item=cells.GetType().GetProperty("Item",new Type[]{typeof(int),typeof(int)});if(item==null)throw new InvalidOperationException();return item.GetValue(cells,new object[]{row,column});}
  private static string CellText(object sheet,int row,int column){object value=Get(Cell(sheet,row,column),"Text");return value==null?String.Empty:Convert.ToString(value,CultureInfo.InvariantCulture);}
  private void InspectAndMaybeSave(){
-  if((mode=="gtgt-inspect"||(mode=="gtgt-sheet-inspect"||AmendmentInspectionMode())||Annex12InspectionMode()||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&navigationPhase!="not-started"){ContinueGtgtNavigation();return;}
+  if(adapter!=null&&navigationPhase!="not-started"){adapter.ContinueNavigation();return;}
   forms=0;
   foreach(Form form in Application.OpenForms){
    if(!form.Visible||form.IsDisposed)continue;forms++;
@@ -111,18 +120,16 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
     acknowledgement.Start();try{saves[0].PerformClick();}finally{acknowledgement.Stop();}
    }
    ReadSavedHeader();
-   if((mode=="gtgt-inspect"||(mode=="gtgt-sheet-inspect"||AmendmentInspectionMode())||Annex12InspectionMode()||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&headerMatched&&headerChecks==8&&headerMismatchMask==0&&successAcknowledged){
+   if(adapter!=null&&headerMatched&&headerChecks==8&&headerMismatchMask==0&&successAcknowledged){
     // Original forms can be embedded with TopLevel=false. FindForm on the actual
     // worksheet controls identifies the owner; the outer main frame stays visible.
     Form profileOwner=closes[0].FindForm();
-    if(profileOwner==null||profileOwner.GetType().FullName!="HTKK.frmWinToKhai"||saves[0].FindForm()!=profileOwner||spread.FindForm()!=profileOwner){stage="gtgt-profile-owner-not-matched";finished=true;Record();return;}
-    if(closes[0].Name!="cmdExit"){stage="gtgt-profile-owner-not-matched";finished=true;Record();return;}
-    closingProfileForm=profileOwner;pendingProfileClose=closes[0];
-    // Do not close inside the just-completed Save/modal callback. The next
-    // ORIGINAL UI turn must observe restored owner/button availability first.
-    stage="waiting-profile-close-ready";navigationPhase="waiting-profile-close-ready";Record();return;
+    if(profileOwner==null||profileOwner.GetType().FullName!="HTKK.frmWinToKhai"||saves[0].FindForm()!=profileOwner||spread.FindForm()!=profileOwner){SetStage(HtkkAutomationStage.GtgtProfileOwnerNotMatched);finished=true;Record();return;}
+    if(closes[0].Name!="cmdExit"){SetStage(HtkkAutomationStage.GtgtProfileOwnerNotMatched);finished=true;Record();return;}
+    adapter.OnProfileSaved(profileOwner,closes[0],spread);
+    return;
    }
-   finished=true;stage=headerMatched?"original-profile-saved-verified":"original-profile-save-not-verified";Record();return;
+   finished=true;SetStage(headerMatched?HtkkAutomationStage.OriginalProfileSavedVerified:HtkkAutomationStage.OriginalProfileSaveNotVerified);Record();return;
   }
  }
  private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage){Edit(spread,sheet,row,column,value,isCombo,nextStage,true);}

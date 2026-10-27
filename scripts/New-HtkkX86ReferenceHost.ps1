@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','sample-roundtrip-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
@@ -177,6 +177,10 @@ internal static class HtkkX86ReferenceHost {
 }
 '@
     $hostSource.Replace('__GUI_AUTOMATION_MODE__',$GuiAutomation) | Set-Content -LiteralPath $source -Encoding ASCII
+    $enumsSource=Join-Path $directory 'HtkkNativeAutomationEnums.cs'
+    [IO.File]::WriteAllText($enumsSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkNativeAutomationEnums.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
+    $sampleSource=Join-Path $directory 'HtkkSampleAdapter.cs'
+    [IO.File]::WriteAllText($sampleSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkSampleAdapter.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $automationSource=Join-Path $directory 'HtkkGuiReferenceAutomation.cs'
     [IO.File]::WriteAllText($automationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGuiReferenceAutomation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     '<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>' | Set-Content -LiteralPath $hostConfig -Encoding ASCII
@@ -201,7 +205,7 @@ internal static class HtkkX86ReferenceHost {
     $exportSource=Join-Path $directory 'HtkkGtgtExportInspection.cs'
     [IO.File]::WriteAllText($exportSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtExportInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $safe.compilerJobCleanupVerified=$false
-    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$amendmentOpenSource,$annexNumericSource,$annexExportSource) -TimeoutMilliseconds 30000
+    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$enumsSource,$sampleSource,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$amendmentOpenSource,$annexNumericSource,$annexExportSource) -TimeoutMilliseconds 30000
     $safe.compilerJobCleanupVerified=$compilerRun.jobCleanupVerified;$safe.compilerExitCode=$compilerRun.exitCode;$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes
     if(-not $compilerRun.jobCleanupVerified -or $compilerRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
     if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}

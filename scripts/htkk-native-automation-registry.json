@@ -1,0 +1,1209 @@
+{
+  "format": "htkk-native-automation-registry-v1",
+  "version": "1.0.0",
+  "modes": {
+    "none": {
+      "adapterId": "none",
+      "runtime": "none",
+      "login": false,
+      "permit": null,
+      "terminalStage": "not-started",
+      "timeoutSeconds": 30,
+      "orderedCompileInputs": [],
+      "successPolicyId": "none",
+      "privateArtifactPolicy": "none",
+      "contextPolicy": "none"
+    },
+    "inspect": {
+      "adapterId": "profile",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": null,
+      "terminalStage": "profile-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs"
+      ],
+      "successPolicyId": "profile-inspected",
+      "privateArtifactPolicy": "none",
+      "contextPolicy": "none"
+    },
+    "profile-save": {
+      "adapterId": "profile",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "original-profile-saved-verified",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs"
+      ],
+      "successPolicyId": "original-profile-saved-verified",
+      "privateArtifactPolicy": "synthetic-window-diagnostic",
+      "contextPolicy": "none"
+    },
+    "gtgt-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-period-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs"
+      ],
+      "successPolicyId": "gtgt-period-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-sheet-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-sheet-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs"
+      ],
+      "successPolicyId": "gtgt-sheet-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-amendment-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-original-declaration-saved-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtAmendmentInspection.cs"
+      ],
+      "successPolicyId": "gtgt-amendment-saved",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-amendment-open-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-amendment-open-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs"
+      ],
+      "successPolicyId": "gtgt-amendment-open-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-annex12-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-annex12-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs"
+      ],
+      "successPolicyId": "gtgt-annex12-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-annex12-row-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-annex12-row-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs"
+      ],
+      "successPolicyId": "gtgt-annex12-row-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-annex12-input-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-annex12-input-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs"
+      ],
+      "successPolicyId": "gtgt-annex12-input-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-annex12-numeric-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-annex12-numeric-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs"
+      ],
+      "successPolicyId": "gtgt-annex12-numeric-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-annex12-export-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-annex12-export-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs"
+      ],
+      "successPolicyId": "gtgt-annex12-export-inspected",
+      "privateArtifactPolicy": "raw-annex12-export",
+      "contextPolicy": "none"
+    },
+    "gtgt-export-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-export-inspected",
+      "timeoutSeconds": 120,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs"
+      ],
+      "successPolicyId": "gtgt-export-inspected",
+      "privateArtifactPolicy": "raw-gtgt-export",
+      "contextPolicy": "none"
+    },
+    "gtgt-roundtrip-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-roundtrip-inspected",
+      "timeoutSeconds": 180,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs"
+      ],
+      "successPolicyId": "gtgt-roundtrip-inspected",
+      "privateArtifactPolicy": "synthetic-common-header",
+      "contextPolicy": "none"
+    },
+    "gtgt-web-import-inspect": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-web-import-inspected",
+      "timeoutSeconds": 180,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs"
+      ],
+      "successPolicyId": "gtgt-web-import-inspected",
+      "privateArtifactPolicy": "raw-web-reexport",
+      "contextPolicy": "htkk-native/case"
+    },
+    "sample-roundtrip-inspect": {
+      "adapterId": "sample-adapter",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "sample-roundtrip-inspected",
+      "timeoutSeconds": 180,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkSampleAdapter.cs"
+      ],
+      "successPolicyId": "sample-roundtrip-inspected",
+      "privateArtifactPolicy": "raw-sample-reexport",
+      "contextPolicy": "htkk-native/sample"
+    }
+  },
+  "stages": [
+    {
+      "id": "gtgt-export-filename-focus-waiting",
+      "enumName": "GtgtExportFilenameFocusWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-filename-focus-timeout",
+      "enumName": "GtgtExportFilenameFocusTimeout",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-filename-keyboard-focused",
+      "enumName": "GtgtExportFilenameKeyboardFocused",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-filename-keyboard-selected",
+      "enumName": "GtgtExportFilenameKeyboardSelected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-filename-keyboard-typed",
+      "enumName": "GtgtExportFilenameKeyboardTyped",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-filename-focus-waiting",
+      "enumName": "GtgtImportFilenameFocusWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-filename-focus-timeout",
+      "enumName": "GtgtImportFilenameFocusTimeout",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-filename-keyboard-focused",
+      "enumName": "GtgtImportFilenameKeyboardFocused",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-filename-keyboard-selected",
+      "enumName": "GtgtImportFilenameKeyboardSelected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-filename-keyboard-typed",
+      "enumName": "GtgtImportFilenameKeyboardTyped",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-annex12-numeric-format-checking",
+      "enumName": "GtgtAnnex12NumericFormatChecking",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-numeric-editor-ready",
+      "enumName": "GtgtAnnex12NumericEditorReady",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-numeric-committed",
+      "enumName": "GtgtAnnex12NumericCommitted",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-numeric-value-mismatch",
+      "enumName": "GtgtAnnex12NumericValueMismatch",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-numeric-editing",
+      "enumName": "GtgtAnnex12NumericEditing",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-numeric-observing",
+      "enumName": "GtgtAnnex12NumericObserving",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-numeric-inspected",
+      "enumName": "GtgtAnnex12NumericInspected",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-amendment-open-owner-waiting",
+      "enumName": "GtgtAmendmentOpenOwnerWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-grid-waiting",
+      "enumName": "GtgtAmendmentOpenGridWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-ready-waiting",
+      "enumName": "GtgtAmendmentOpenReadyWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-workbook-waiting",
+      "enumName": "GtgtAmendmentOpenWorkbookWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-main-waiting",
+      "enumName": "GtgtAmendmentOpenMainWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-close-waiting",
+      "enumName": "GtgtAmendmentPriorCloseWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-defaults-selecting",
+      "enumName": "GtgtAmendmentDefaultsSelecting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-confirm-invoking",
+      "enumName": "GtgtAmendmentOpenConfirmInvoking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-inspected",
+      "enumName": "GtgtAmendmentOpenInspected",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-khbs-observing",
+      "enumName": "GtgtAmendmentOpenKhbsObserving",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-open-sheet-waiting",
+      "enumName": "GtgtAmendmentOpenSheetWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-close-invoking",
+      "enumName": "GtgtAmendmentPriorCloseInvoking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-closed",
+      "enumName": "GtgtAmendmentPriorClosed",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-annex12-export-main-checked",
+      "enumName": "GtgtAnnex12ExportMainChecked",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-export-validating",
+      "enumName": "GtgtAnnex12ExportValidating",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-export-inspected",
+      "enumName": "GtgtAnnex12ExportInspected",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-amendment-save-modal-observed",
+      "enumName": "GtgtAmendmentSaveModalObserved",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-save-modal-content-checking",
+      "enumName": "GtgtAmendmentSaveModalContentChecking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-save-modal-button-checking",
+      "enumName": "GtgtAmendmentSaveModalButtonChecking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-save-modal-matched",
+      "enumName": "GtgtAmendmentSaveModalMatched",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-file-enumerating",
+      "enumName": "GtgtAmendmentPriorFileEnumerating",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-file-missing",
+      "enumName": "GtgtAmendmentPriorFileMissing",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-file-not-unique",
+      "enumName": "GtgtAmendmentPriorFileNotUnique",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-file-size-checking",
+      "enumName": "GtgtAmendmentPriorFileSizeChecking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-file-parsing",
+      "enumName": "GtgtAmendmentPriorFileParsing",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-prior-money-checking",
+      "enumName": "GtgtAmendmentPriorMoneyChecking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-annex12-input-editing",
+      "enumName": "GtgtAnnex12InputEditing",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-input-inspected",
+      "enumName": "GtgtAnnex12InputInspected",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-tab-clicking",
+      "enumName": "GtgtAnnex12TabClicking",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-f5-invoking",
+      "enumName": "GtgtAnnex12F5Invoking",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-row-inspected",
+      "enumName": "GtgtAnnex12RowInspected",
+      "category": "annex12"
+    },
+    {
+      "id": "not-started",
+      "enumName": "NotStarted",
+      "category": "lifecycle"
+    },
+    {
+      "id": "gtgt-annex12-inspected",
+      "enumName": "GtgtAnnex12Inspected",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-sheet-metadata",
+      "enumName": "GtgtAnnex12SheetMetadata",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-table-metadata",
+      "enumName": "GtgtAnnex12TableMetadata",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-row-metadata",
+      "enumName": "GtgtAnnex12RowMetadata",
+      "category": "annex12"
+    },
+    {
+      "id": "source-or-runtime-not-matched",
+      "enumName": "SourceOrRuntimeNotMatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "fixture-preexists",
+      "enumName": "FixturePreexists",
+      "category": "lifecycle"
+    },
+    {
+      "id": "waiting-for-profile",
+      "enumName": "WaitingForProfile",
+      "category": "lifecycle"
+    },
+    {
+      "id": "initialization-unavailable",
+      "enumName": "InitializationUnavailable",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-wait-timeout",
+      "enumName": "ProfileWaitTimeout",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-controls-not-yet-unique",
+      "enumName": "ProfileControlsNotYetUnique",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-dimensions-unmatched",
+      "enumName": "ProfileDimensionsUnmatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "fresh-synthetic-profile-not-established",
+      "enumName": "FreshSyntheticProfileNotEstablished",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-inspected",
+      "enumName": "ProfileInspected",
+      "category": "lifecycle"
+    },
+    {
+      "id": "editing-api-unavailable",
+      "enumName": "EditingApiUnavailable",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-province-code-unmatched",
+      "enumName": "ProfileProvinceCodeUnmatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-ward-code-unmatched",
+      "enumName": "ProfileWardCodeUnmatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-taxhead-code-unmatched",
+      "enumName": "ProfileTaxheadCodeUnmatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-taxlocal-code-unmatched",
+      "enumName": "ProfileTaxlocalCodeUnmatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "waiting-for-profile-save-permit",
+      "enumName": "WaitingForProfileSavePermit",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-name",
+      "enumName": "EditName",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-province",
+      "enumName": "EditProvince",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-ward",
+      "enumName": "EditWard",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-address",
+      "enumName": "EditAddress",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-signer",
+      "enumName": "EditSigner",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-tax-authority-head",
+      "enumName": "EditTaxAuthorityHead",
+      "category": "lifecycle"
+    },
+    {
+      "id": "edit-tax-authority-local",
+      "enumName": "EditTaxAuthorityLocal",
+      "category": "lifecycle"
+    },
+    {
+      "id": "original-save-invoking",
+      "enumName": "OriginalSaveInvoking",
+      "category": "lifecycle"
+    },
+    {
+      "id": "success-modal-acknowledged",
+      "enumName": "SuccessModalAcknowledged",
+      "category": "lifecycle"
+    },
+    {
+      "id": "original-profile-saved-verified",
+      "enumName": "OriginalProfileSavedVerified",
+      "category": "lifecycle"
+    },
+    {
+      "id": "original-profile-save-not-verified",
+      "enumName": "OriginalProfileSaveNotVerified",
+      "category": "lifecycle"
+    },
+    {
+      "id": "profile-close-invoking",
+      "enumName": "ProfileCloseInvoking",
+      "category": "lifecycle"
+    },
+    {
+      "id": "waiting-profile-close-ready",
+      "enumName": "WaitingProfileCloseReady",
+      "category": "lifecycle"
+    },
+    {
+      "id": "waiting-profile-close",
+      "enumName": "WaitingProfileClose",
+      "category": "lifecycle"
+    },
+    {
+      "id": "gtgt-profile-owner-not-matched",
+      "enumName": "GtgtProfileOwnerNotMatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "waiting-main-menu",
+      "enumName": "WaitingMainMenu",
+      "category": "lifecycle"
+    },
+    {
+      "id": "gtgt-profile-preconditions-not-matched",
+      "enumName": "GtgtProfilePreconditionsNotMatched",
+      "category": "lifecycle"
+    },
+    {
+      "id": "gtgt-menu-spread-not-yet-unique",
+      "enumName": "GtgtMenuSpreadNotYetUnique",
+      "category": "menu"
+    },
+    {
+      "id": "gtgt-menu-id-not-unique",
+      "enumName": "GtgtMenuIdNotUnique",
+      "category": "menu"
+    },
+    {
+      "id": "gtgt-menu-target-hidden",
+      "enumName": "GtgtMenuTargetHidden",
+      "category": "menu"
+    },
+    {
+      "id": "gtgt-menu-click-101",
+      "enumName": "GtgtMenuClick101",
+      "category": "menu"
+    },
+    {
+      "id": "gtgt-menu-click-101_1",
+      "enumName": "GtgtMenuClick101_1",
+      "category": "menu"
+    },
+    {
+      "id": "gtgt-menu-click-D1",
+      "enumName": "GtgtMenuClickD1",
+      "category": "menu"
+    },
+    {
+      "id": "waiting-gtgt-period",
+      "enumName": "WaitingGtgtPeriod",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-inspected",
+      "enumName": "GtgtPeriodInspected",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-configuring",
+      "enumName": "GtgtPeriodConfiguring",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-province-selecting",
+      "enumName": "GtgtPeriodProvinceSelecting",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-ward-selecting",
+      "enumName": "GtgtPeriodWardSelecting",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-taxhead-selecting",
+      "enumName": "GtgtPeriodTaxheadSelecting",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-taxlocal-selecting",
+      "enumName": "GtgtPeriodTaxlocalSelecting",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-activity-selecting",
+      "enumName": "GtgtPeriodActivitySelecting",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-inputs-not-matched",
+      "enumName": "GtgtPeriodInputsNotMatched",
+      "category": "period"
+    },
+    {
+      "id": "gtgt-period-confirm-invoking",
+      "enumName": "GtgtPeriodConfirmInvoking",
+      "category": "period"
+    },
+    {
+      "id": "waiting-gtgt-sheet",
+      "enumName": "WaitingGtgtSheet",
+      "category": "sheet"
+    },
+    {
+      "id": "gtgt-sheet-inspected",
+      "enumName": "GtgtSheetInspected",
+      "category": "sheet"
+    },
+    {
+      "id": "gtgt-original-declaration-save-invoking",
+      "enumName": "GtgtOriginalDeclarationSaveInvoking",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-original-declaration-save-success",
+      "enumName": "GtgtOriginalDeclarationSaveSuccess",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-original-declaration-saved-inspected",
+      "enumName": "GtgtOriginalDeclarationSavedInspected",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-sheet-contract-not-matched",
+      "enumName": "GtgtSheetContractNotMatched",
+      "category": "sheet"
+    },
+    {
+      "id": "gtgt-export-command-invoking",
+      "enumName": "GtgtExportCommandInvoking",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-original-message-rejected",
+      "enumName": "GtgtExportOriginalMessageRejected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-file-dialog-waiting",
+      "enumName": "GtgtExportFileDialogWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-original-writing",
+      "enumName": "GtgtExportOriginalWriting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-filename-keyboard-editing",
+      "enumName": "GtgtExportFilenameKeyboardEditing",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-success-file-checking",
+      "enumName": "GtgtExportSuccessFileChecking",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-export-inspected",
+      "enumName": "GtgtExportInspected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-ready-waiting",
+      "enumName": "GtgtImportReadyWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-file-dialog-waiting",
+      "enumName": "GtgtImportFileDialogWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-filename-keyboard-editing",
+      "enumName": "GtgtImportFilenameKeyboardEditing",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-original-reading",
+      "enumName": "GtgtImportOriginalReading",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-original-message-rejected",
+      "enumName": "GtgtImportOriginalMessageRejected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-import-success-sheet-checking",
+      "enumName": "GtgtImportSuccessSheetChecking",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-reexport-ready-waiting",
+      "enumName": "GtgtReexportReadyWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-reexport-command-invoking",
+      "enumName": "GtgtReexportCommandInvoking",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-roundtrip-inspected",
+      "enumName": "GtgtRoundtripInspected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-web-input-checking",
+      "enumName": "GtgtWebInputChecking",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-web-import-ready-waiting",
+      "enumName": "GtgtWebImportReadyWaiting",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-web-import-inspected",
+      "enumName": "GtgtWebImportInspected",
+      "category": "export-roundtrip"
+    },
+    {
+      "id": "gtgt-case-editing",
+      "enumName": "GtgtCaseEditing",
+      "category": "sheet"
+    },
+    {
+      "id": "gtgt-noactivity-checkbox-activating",
+      "enumName": "GtgtNoactivityCheckboxActivating",
+      "category": "sheet"
+    },
+    {
+      "id": "gtgt-noactivity-confirming",
+      "enumName": "GtgtNoactivityConfirming",
+      "category": "sheet"
+    },
+    {
+      "id": "gtgt-noactivity-checkbox-unchecking",
+      "enumName": "GtgtNoactivityCheckboxUnchecking",
+      "category": "sheet"
+    },
+    {
+      "id": "sample-sheet-inspected",
+      "enumName": "SampleSheetInspected",
+      "category": "sample"
+    },
+    {
+      "id": "sample-export-command-invoking",
+      "enumName": "SampleExportCommandInvoking",
+      "category": "sample"
+    },
+    {
+      "id": "sample-export-inspected",
+      "enumName": "SampleExportInspected",
+      "category": "sample"
+    },
+    {
+      "id": "sample-import-file-dialog-waiting",
+      "enumName": "SampleImportFileDialogWaiting",
+      "category": "sample"
+    },
+    {
+      "id": "sample-import-success-sheet-checking",
+      "enumName": "SampleImportSuccessSheetChecking",
+      "category": "sample"
+    },
+    {
+      "id": "sample-reexport-ready-waiting",
+      "enumName": "SampleReexportReadyWaiting",
+      "category": "sample"
+    },
+    {
+      "id": "sample-reexport-command-invoking",
+      "enumName": "SampleReexportCommandInvoking",
+      "category": "sample"
+    },
+    {
+      "id": "sample-roundtrip-inspected",
+      "enumName": "SampleRoundtripInspected",
+      "category": "sample"
+    }
+  ],
+  "dynamicStageMappings": {
+    "menuClicks": {
+      "101": "gtgt-menu-click-101",
+      "101_1": "gtgt-menu-click-101_1",
+      "D1": "gtgt-menu-click-D1"
+    },
+    "filenameDialog": {
+      "export": {
+        "focus-waiting": "gtgt-export-filename-focus-waiting",
+        "focus-timeout": "gtgt-export-filename-focus-timeout",
+        "keyboard-editing": "gtgt-export-filename-keyboard-editing",
+        "keyboard-focused": "gtgt-export-filename-keyboard-focused",
+        "keyboard-selected": "gtgt-export-filename-keyboard-selected",
+        "keyboard-typed": "gtgt-export-filename-keyboard-typed"
+      },
+      "import": {
+        "focus-waiting": "gtgt-import-filename-focus-waiting",
+        "focus-timeout": "gtgt-import-filename-focus-timeout",
+        "keyboard-editing": "gtgt-import-filename-keyboard-editing",
+        "keyboard-focused": "gtgt-import-filename-keyboard-focused",
+        "keyboard-selected": "gtgt-import-filename-keyboard-selected",
+        "keyboard-typed": "gtgt-import-filename-keyboard-typed"
+      }
+    }
+  },
+  "keys": [
+    "annex12NumericTextSnapshots",
+    "annex12NumericTypeSnapshots",
+    "annex12NumericDoubleBits",
+    "annex12NumericActionCount",
+    "annex12NumericCaseCount",
+    "annex12NumericSnapshots",
+    "amendmentOpenLoadedSheets",
+    "amendmentOpenCloseInvoked",
+    "amendmentOpenPriorClosed",
+    "amendmentOpenDefaultsMatched",
+    "amendmentOpenConfirmInvoked",
+    "amendmentOpenPeriodMatched",
+    "amendmentOpenSourcesMatched",
+    "amendmentOpenKhbsSheetsObserved",
+    "amendmentOpenPriorUnchanged",
+    "amendmentOpenKhbsRows",
+    "amendmentOpenKhbsColumns",
+    "amendmentOpenExplanationRows",
+    "amendmentOpenExplanationColumns",
+    "annex12ExportMainZeroMatched",
+    "annex12ExportShapeMatched",
+    "annex12ExportSchemaVerified",
+    "annex12InputReadOnlyIdentityMatched",
+    "annex12InputIdentityMatched",
+    "annex12InputTypesMatched",
+    "annex12InputGeographyMatched",
+    "annex12InputTaxAuthoritiesMatched",
+    "annex12InputPercentagesMatched",
+    "annex12InputZeroTaxMatched",
+    "annex12InputActionCount",
+    "amendmentPriorSaveInvoked",
+    "amendmentPriorSaveSuccessAcknowledged",
+    "amendmentPriorDirtyCleared",
+    "amendmentPriorFileFresh",
+    "amendmentPriorFileScopeMatched",
+    "amendmentPriorXmlParsed",
+    "amendmentPriorMoneyZero",
+    "amendmentPriorSavedMoneyZero",
+    "amendmentLifecycleVerified",
+    "amendmentPriorFileBytes",
+    "amendmentPriorFileSha256",
+    "amendmentPriorSavedMoneyCount",
+    "format",
+    "mode",
+    "stage",
+    "failureCategory",
+    "editorKind",
+    "runtime",
+    "sourcePinsVerified",
+    "visibleForms",
+    "spreadCount",
+    "sheetRows",
+    "sheetColumns",
+    "mstBoxesMatched",
+    "initialRequiredTextBlank",
+    "editingApiAvailable",
+    "performedInputCount",
+    "originalSaveInvoked",
+    "savedHeaderExists",
+    "savedHeaderChecksMatched",
+    "savedHeaderCheckedFieldCount",
+    "saveDialogKind",
+    "savedHeaderMismatchMask",
+    "profileClosed",
+    "mainMenuObserved",
+    "d1MenuClicked",
+    "gtgtPeriodObserved",
+    "menuRowCount",
+    "menuClickCount",
+    "periodControlCount",
+    "periodControls",
+    "periodYearMonthMatched",
+    "periodFirstDeclarationMatched",
+    "periodActivityMatched",
+    "periodGeographyMatched",
+    "periodNoAnnexMatched",
+    "periodConfirmInvoked",
+    "gtgtWorkbookPinsVerified",
+    "gtgtMenuVersionMatched",
+    "gtgtPeriodModelMatched",
+    "gtgtSheetObserved",
+    "gtgtSheetNameMatched",
+    "gtgtDimensionsMatched",
+    "gtgtIdentityMatched",
+    "gtgtCt21Ready",
+    "gtgtCt21CaseMatched",
+    "gtgtCt21ConfirmationMatched",
+    "gtgtCt21LocksMatched",
+    "gtgtCt21BeforeExportMatched",
+    "gtgtCt21AfterImportMatched",
+    "gtgtCt21UncheckMatched",
+    "gtgtSignatureReady",
+    "gtgtMonetaryZero",
+    "periodAnnex12Matched",
+    "annex12SourcePinsMatched",
+    "annex12SheetObserved",
+    "annex12StructureMatched",
+    "annex12GroupMetadataMatched",
+    "annex12SttMatched",
+    "annex12LocksMatched",
+    "annex12SelectionActionCount",
+    "annex12SheetRows",
+    "annex12SheetColumns",
+    "annex12NumericCount",
+    "annex12NumericEmptyMask",
+    "annex12NumericNonzeroMask",
+    "annex12GroupCount",
+    "annex12FirstGroupId",
+    "annex12FirstGroupRows",
+    "annex12RowTabClickInvoked",
+    "annex12F5Visible",
+    "annex12F5Invoked",
+    "annex12RowBeforeMatched",
+    "annex12RowAfterMatched",
+    "annex12RowSttMatched",
+    "annex12RowLocksMatched",
+    "annex12RowBeforeRows",
+    "annex12RowAfterRows",
+    "annex12RowBeforeGroupRows",
+    "annex12RowAfterGroupRows",
+    "annex12RowAfterGroupId",
+    "annex12RowInsertActionCount",
+    "annexSelectedCount",
+    "gtgtSheetRows",
+    "gtgtSheetColumns",
+    "gtgtSheetCount",
+    "gtgtEmptyMonetaryCount",
+    "exportCommandInvoked",
+    "exportSelectorMatched",
+    "exportButtonInvoked",
+    "exportDialogMatched",
+    "exportDestinationFresh",
+    "exportDialogSubmitted",
+    "exportFileExists",
+    "exportXmlRootMatched",
+    "exportSyntheticIdentityMatched",
+    "exportSuccessAcknowledged",
+    "exportSchemaPinnedVerified",
+    "exportFilenameKeyboardCommitted",
+    "exportFilenameParentKind",
+    "exportOriginalPathMatched",
+    "exportOriginalPathKind",
+    "exportScopedFileCount",
+    "exportScopedXmlCount",
+    "exportBytes",
+    "exportSha256",
+    "roundtripImportCommandInvoked",
+    "roundtripImportDialogMatched",
+    "roundtripImportKeyboardCommitted",
+    "roundtripImportDialogSubmitted",
+    "roundtripImportPathMatched",
+    "roundtripImportSheetMatched",
+    "roundtripImportSucceeded",
+    "roundtripReexportCommandInvoked",
+    "roundtripReexportSucceeded",
+    "roundtripXmlExactMatched",
+    "roundtripImportCheckedMoneyCount",
+    "roundtripReexportBytes",
+    "roundtripReexportSha256",
+    "gtgtCt42BeforeExportObserved",
+    "gtgtCt42LockedBeforeExport",
+    "gtgtCt42AfterImportObserved",
+    "gtgtCt42LockedAfterImport",
+    "gtgtAutoCalculationReady",
+    "gtgtBusinessInstanceMatched",
+    "gtgtCaseMoneyMatched",
+    "gtgtCt42Locked",
+    "webTaxValuesMatched",
+    "webCreationDateMatchedNativeBaseline",
+    "webServiceIdentityMatched",
+    "webInputVerified",
+    "webImportInputSha256",
+    "webSourceSha",
+    "webTaxLeafCount",
+    "webCaseId",
+    "webCaseEditCount",
+    "gtgtCaseMoneyCount",
+    "gtgtCaseMismatchMask",
+    "gtgtCaseNonzeroMask",
+    "controlKinds",
+    "realTaxpayerDataUsed",
+    "runtimeRoundTrip"
+  ],
+  "controlKinds": [
+    "form",
+    "button",
+    "combo",
+    "text",
+    "spread",
+    "other"
+  ],
+  "periodControls": [
+    "chkTkhaiThang",
+    "chkTKQuy",
+    "OptTKThang",
+    "OptChinhthuc",
+    "OptBosung",
+    "mskYear",
+    "mskMonth",
+    "cbbQuy",
+    "btnDongY",
+    "cmdClose",
+    "axfpsPhuLuc",
+    "cboNganhKD",
+    "chkChonPhuLucKeKhaiAll",
+    "cboCQTCuc",
+    "cboCQTChiCuc",
+    "cboTinh",
+    "cboXa"
+  ]
+}

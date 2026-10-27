@@ -71,7 +71,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    exportSuccessAcknowledged=true;
    if((mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&roundtripPhase=="not-started"){
     firstExportPath=exportPath;firstExportSha256=exportSha256;firstExportBytes=exportBytes;
-    roundtripPhase="waiting-import-ready";stage=mode=="gtgt-web-import-inspect"?"gtgt-web-import-ready-waiting":"gtgt-import-ready-waiting";Record();close.PerformClick();return;
+    roundtripPhase="waiting-import-ready";SetStage(mode=="gtgt-web-import-inspect"?HtkkAutomationStage.GtgtWebImportReadyWaiting:HtkkAutomationStage.GtgtImportReadyWaiting);Record();close.PerformClick();return;
    }
    if(roundtripPhase=="reexporting"){
     roundtripReexportBytes=exportBytes;roundtripReexportSha256=exportSha256;roundtripReexportSucceeded=true;
@@ -81,8 +81,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),baseline=ReadBoundedOriginalXml(firstExportPath),output=ReadBoundedOriginalXml(exportPath);
      webCreationDateMatchedNativeBaseline=HtkkWebTaxComparison.CreationDateMatchesNativeBaseline(baseline,output);webServiceIdentityMatched=HtkkWebTaxComparison.NativeIdentity(baseline,output);webTaxValuesMatched=HtkkWebTaxComparison.Compare(input,baseline,output,out webTaxLeafCount);
     }
-    exportBytes=firstExportBytes;exportSha256=firstExportSha256;if(mode=="gtgt-web-import-inspect"&&Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();stage=mode=="gtgt-web-import-inspect"?"gtgt-web-import-inspected":"gtgt-roundtrip-inspected";
-   }else stage=mode=="gtgt-annex12-export-inspect"?"gtgt-annex12-export-inspected":"gtgt-export-inspected";
+    exportBytes=firstExportBytes;exportSha256=firstExportSha256;if(mode=="gtgt-web-import-inspect"&&Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();SetStage(mode=="gtgt-web-import-inspect"?HtkkAutomationStage.GtgtWebImportInspected:HtkkAutomationStage.GtgtRoundtripInspected);
+   }else SetStage(mode=="gtgt-annex12-export-inspect"?HtkkAutomationStage.GtgtAnnex12ExportInspected:HtkkAutomationStage.GtgtExportInspected);
    finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
   }
   if(!exportButtonInvoked){List<Form> selectors=new List<Form>();int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors(top,selectors,ref count);if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
@@ -115,25 +115,27 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(opening)roundtripImportDialogMatched=true;else exportDialogMatched=true;
   // Focus may settle on a later UI turn. Revalidate the same dialog and editor
   // above on every tick; never restart keyboard input after it has begun.
-  string filenameStage=opening?"gtgt-import-filename-":"gtgt-export-filename-";
+  // Generated explicit map for 10 filename prefix/suffix stages:
+  // "gtgt-export-filename-" "gtgt-import-filename-"
+  // "focus-waiting" "focus-timeout" "keyboard-focused" "keyboard-selected" "keyboard-typed"
   bool ownsFocus=GetForegroundWindow()==dialog&&GetFocus()==edit;
   HtkkFileDialogFocusState focusState=filenameFocusGate.Observe(dialog,edit,ownsFocus);
-  if(focusState==HtkkFileDialogFocusState.Timeout){stage=filenameStage+"focus-timeout";Record();throw new InvalidOperationException();}
+  if(focusState==HtkkFileDialogFocusState.Timeout){SetStage(HtkkNativeAutomationWireMap.GetFilenameStage(opening,HtkkFilenameDialogAction.FocusTimeout));Record();throw new InvalidOperationException();}
   if(focusState!=HtkkFileDialogFocusState.Ready){
-   stage=filenameStage+"focus-waiting";Record();
+   SetStage(HtkkNativeAutomationWireMap.GetFilenameStage(opening,HtkkFilenameDialogAction.FocusWaiting));Record();
    if(!ownsFocus){SetForegroundWindow(dialog);SetFocus(edit);}return false;
   }
-  filenameFocusGate.Begin();exportFilenameEditing=true;exportWatcher.Stop();stage=filenameStage+"keyboard-editing";Record();
+  filenameFocusGate.Begin();exportFilenameEditing=true;exportWatcher.Stop();SetStage(HtkkNativeAutomationWireMap.GetFilenameStage(opening,HtkkFilenameDialogAction.KeyboardEditing));Record();
   try{
    if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
-   stage=filenameStage+"keyboard-focused";Record();
-   SendKeys.SendWait("^a");stage=filenameStage+"keyboard-selected";Record();if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
-   SendKeys.SendWait(EscapeSendKeys(desiredPath));stage=filenameStage+"keyboard-typed";Record();if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=desiredPath)throw new InvalidOperationException();
+   SetStage(HtkkNativeAutomationWireMap.GetFilenameStage(opening,HtkkFilenameDialogAction.KeyboardFocused));Record();
+   SendKeys.SendWait("^a");SetStage(HtkkNativeAutomationWireMap.GetFilenameStage(opening,HtkkFilenameDialogAction.KeyboardSelected));Record();if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
+   SendKeys.SendWait(EscapeSendKeys(desiredPath));SetStage(HtkkNativeAutomationWireMap.GetFilenameStage(opening,HtkkFilenameDialogAction.KeyboardTyped));Record();if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=desiredPath)throw new InvalidOperationException();
    if(opening)roundtripImportKeyboardCommitted=true;else exportFilenameKeyboardCommitted=true;
    // Common-dialog change notifications may rebuild controls. Resolve the
    // original Save button again in the SAME verified dialog after real typing.
    save=GetDlgItem(dialog,1);if(NativeText(dialog,false)!=expectedTitle||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
-   if(opening)roundtripImportDialogSubmitted=true;else exportDialogSubmitted=true;stage=opening?"gtgt-import-original-reading":"gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();filenameFocusGate.ResetAfterSubmission();
+   if(opening)roundtripImportDialogSubmitted=true;else exportDialogSubmitted=true;SetStage(opening?HtkkAutomationStage.GtgtImportOriginalReading:HtkkAutomationStage.GtgtExportOriginalWriting);Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();filenameFocusGate.ResetAfterSubmission();
   }finally{exportFilenameEditing=false;if(!finished)exportWatcher.Start();}
   return true;
  }
