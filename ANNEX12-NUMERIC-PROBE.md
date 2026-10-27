@@ -1,4 +1,4 @@
-# Original annex01-2 numeric observation (not yet native-qualified)
+# Original annex01-2 fixed numeric observations
 
 `gtgt-annex12-numeric-inspect` reuses the source-pinned, genuine fourteen-input
 zero/two-location setup and then enters five fixed fake values through the normal
@@ -15,8 +15,8 @@ most20fraction digits. This does not preserve underlying Double bits, display
 zero input setup remain historical prerequisites, not statements that the final
 nonzero cells/main are zero. No new parity or global compatibility flag is set.
 
-Native execution and full-run success are still required. Boundary fixtures are
-synthetic examples of report syntax, not claimed original numeric outputs.
+Native results below qualify only the listed fixed read-only observations.
+Boundary fixtures remain synthetic examples of report syntax, not native outputs.
 
 ## Fractional editor input correction
 
@@ -30,9 +30,10 @@ opposite separator branch at00C5–00D6. The probe now checks those original rea
 before typing33,33/66,67, while invariant expected decimal values stay33.33/66.67.
 No original format property is modified. Bounded format/editor-ready/committed/
 value-mismatch stages distinguish input failures from native calculated outputs.
-A new native run is still required to qualify this correction.
+Run40513614061 on3fe223faed0b60dcc3702a1746722fbc4f483b61 subsequently passed
+the whole workflow, attempt1, with allfiveoriginal edits and allthree snapshots.
 
-## Display and original type/Double-bit observations (next harness)
+## Display and original type/Double-bit observations
 
 The same twelve fixed numeric coordinates now have three additional bounded
 read-only channels. Each uses `|` between twelve cells and `;` between cases:
@@ -51,4 +52,23 @@ analysis; it can lose Doubleprecision. The new channels distinguish raw value,
 underlying binary bits and rounded/localized display. They still do not establish
 XML type16 serialization parity, manual tax behavior or global compatibility.
 All channels defaultempty outside this mode and the strict reader checks counts,
-grammars and type/bit consistency. Native execution of this enhancement is pending.
+grammars and type/bit consistency.
+
+## Native evidence and remaining limits
+
+Run[40514369316](https://github.com/congminh1254/htkk_builder/actions/runs/40514369316)
+on`0b43db0a07b295af6fd87e2de13a78284e3effae`,attempt1, passed the wholeworkflow
+with the added display/type/bit channels. All36observed original values wereDouble.
+Forparent1/50:50, original childValue0.5/0.5 displayedText1/1 whilefooterValue/Text
+remained1. This must not be replaced with Math.Round(rawValue) or with a sum of
+rounded display rows. Forparent7/fractional percentages, childText was2/5.
+
+The observation-only mode never clicked XMLexport. No XML numeric serialization,
+general rounding parity, manualinput, multigroup or validation qualification is
+implied; all globalcompatibility/roundtrip gates remainfalse. Full bounded reports
+and SHA/provenance are retained privately by the applicationrepo. The old zero
+prerequisite flags describe the baseline before the five nonzero edits.
+
+Atthis codepoint221Python tests and150actualPowerShell boundary checks passed.
+The later documentation-only commit does not change the native harness identity
+recorded above. Use an immutable code/run SHA when reproducing these observations.
