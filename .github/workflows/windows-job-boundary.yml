@@ -1,0 +1,23 @@
+name: Windows Job process boundary
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/HtkkWindowsJobProcess.cs
+      - scripts/Test-HtkkWindowsJobProcess.ps1
+      - .github/workflows/windows-job-boundary.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  process_boundary:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check suspended launch and descendant cleanup
+        shell: pwsh
+        run: ./scripts/Test-HtkkWindowsJobProcess.ps1

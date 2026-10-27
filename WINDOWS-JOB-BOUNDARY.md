@@ -21,6 +21,11 @@ rồi mới gán Job vì có race trước lúc gán. Nested Job trên runner Wi
 được hỗ trợ; lỗi gán không được fallback sang launch ngoài Job.
 
 `WaitForRootExit(ms)` và `RootExitCode` chỉ nói về root, không phải cả tree.
+Chúng dùng native process handle giữ từ `CreateProcess`, không tìm lại bằng PID.
+`ProcessId` chỉ là tọa độ cho UI diagnostics, không là identity/exit proof. Khi
+tích hợp không dùng `Process.GetProcessById` sau resume làm nguồn identity duy
+nhất: root có thể thoát nhanh và PID được dùng lại. API identity cần giữ native
+handle hoặc xác minh creation time với handle gốc trước khi thao tác process.
 `ActiveProcesses` dùng accounting của kernel nên vẫn giữ descendants khi parent
 đã thoát/reparent. `Stop(ms)` terminate toàn Job rồi đợi root đã dừng và
 `ActiveProcesses == 0`, deadline tối đa 300 giây. Chỉ `CleanupVerified == true`
