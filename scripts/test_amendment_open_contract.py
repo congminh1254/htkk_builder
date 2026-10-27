@@ -49,7 +49,7 @@ class AmendmentOpeningContract(unittest.TestCase):
  def test_new_partial_is_an_actual_compiler_input_and_old_prior_mode_still_routes(self):
   host=(ROOT/'New-HtkkX86ReferenceHost.ps1').read_text();source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
   self.assertIn("$amendmentOpenSource=Join-Path $directory 'HtkkGtgtAmendmentOpenInspection.cs'",host)
-  self.assertIn('$amendmentSource,$amendmentOpenSource,$annexExportSource)',host)
+  self.assertIn('$amendmentSource,$amendmentOpenSource,$annexNumericSource,$annexExportSource)',host)
   self.assertIn('!AmendmentInspectionMode()',source);self.assertIn('gtgt-original-declaration-saved-inspected',source)
 
 class AmendmentReaderTypeBoundaryTests(unittest.TestCase):
