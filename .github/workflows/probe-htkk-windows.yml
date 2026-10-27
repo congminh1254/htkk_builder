@@ -57,6 +57,9 @@ jobs:
       - name: Check safe reference-result boundary
         shell: pwsh
         run: ./scripts/Test-HtkkSafeGuiReferenceResult.ps1
+      - name: Check classified pinned download and attempt limits
+        shell: pwsh
+        run: ./scripts/Test-HtkkPinnedDownload.ps1
       - name: Check bounded native process and clean environment
         shell: pwsh
         run: ./scripts/Test-HtkkBoundedNativeProcess.ps1

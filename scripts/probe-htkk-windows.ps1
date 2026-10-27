@@ -5,7 +5,7 @@ $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
 $report = [ordered]@{
-  version = '5.8.1'; stage = 'started'; sourceHashesVerified = $false
+  version = '5.8.1'; stage = 'started'; sourceHashesVerified = $false; sourceDownloads = @()
   runtimeHost = $RuntimeHost; customReferenceHost = $RuntimeHost -eq 'clr2-x86-reference'
   referenceHostPreparation = $null; referenceHostResult = $null; originalSourcesUnmodified = $null
   childEnvironmentPolicy = 'not-launched'; hostOutboundBlocked = $false; originalOutboundBlocked = $false
@@ -45,6 +45,7 @@ $installerStopped=$true
 $installerCredentialsSafe=$true
 $uiaHelpersStopped=$true
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
+. (Join-Path $PSScriptRoot 'Invoke-HtkkPinnedDownload.ps1')
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
 $firewallNames = [Collections.Generic.List[string]]::new()
 $registrationProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
@@ -53,9 +54,21 @@ function Assert-Hash([string]$Path, [string]$Expected) {
   if ((Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant() -ne $Expected) { throw 'SOURCE_HASH_MISMATCH' }
 }
 function Get-PinnedFile([string]$Url, [string]$Path, [string]$Expected) {
-  # Public URLs only. No relay token, cookie, auth header or TLS override.
-  Invoke-WebRequest -Uri $Url -OutFile $Path -TimeoutSec 120 -MaximumRedirection 8 -UserAgent 'HotroKeKhai-ReadinessProbe/1.0'
-  Assert-Hash $Path $Expected
+  # Public HTTPS sources only; no relay token, auth header or TLS override.
+  $download=Invoke-HtkkPinnedDownload -Url $Url -Destination $Path -ExpectedSha256 $Expected
+  $report.sourceDownloads+=@($download)
+  if($download.status -eq 'verified'){return}
+  if(-not $download.partialFileRemoved){throw 'SOURCE_DOWNLOAD_CLEANUP_NOT_VERIFIED'}
+  $code=switch($download.failureCategory){
+    'hash' {'SOURCE_HASH_MISMATCH'}
+    'dns' {'SOURCE_DOWNLOAD_DNS'}
+    'tls' {'SOURCE_DOWNLOAD_TLS'}
+    'http' {'SOURCE_DOWNLOAD_HTTP'}
+    'timeout' {'SOURCE_DOWNLOAD_TIMEOUT'}
+    'connect' {'SOURCE_DOWNLOAD_CONNECT'}
+    default {'SOURCE_DOWNLOAD_TOOL'}
+  }
+  throw $code
 }
 # Never forward runner/service/GitHub credentials to either launch mode.
 function Start-HtkkCleanProcess([string]$Executable,[string]$ProjectDirectory,[bool]$IsX86Reference) {
@@ -846,7 +859,7 @@ try {
   $report.stage = if($GuiAutomation -eq 'gtgt-web-import-inspect'){'synthetic-original-gtgt-web-import-inspected'}elseif($GuiAutomation -eq 'gtgt-roundtrip-inspect'){'synthetic-original-gtgt-roundtrip-inspected'}elseif($GuiAutomation -eq 'gtgt-export-inspect'){'synthetic-original-gtgt-export-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-export-inspect'){'synthetic-original-gtgt-annex12-export-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-numeric-inspect'){'synthetic-original-gtgt-annex12-numeric-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-input-inspect'){'synthetic-original-gtgt-annex12-input-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-row-inspect'){'synthetic-original-gtgt-annex12-row-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-inspect'){'synthetic-original-gtgt-annex12-inspected'}elseif($GuiAutomation -eq 'gtgt-amendment-open-inspect'){'synthetic-original-amendment-open-inspected'}elseif($GuiAutomation -eq 'gtgt-amendment-inspect'){'synthetic-original-declaration-saved-for-amendment-inspected'}elseif($GuiAutomation -eq 'gtgt-sheet-inspect'){'synthetic-original-gtgt-sheet-inspected'}elseif($GuiAutomation -eq 'gtgt-inspect'){'synthetic-original-gtgt-period-inspected'}elseif($GuiAutomation -eq 'profile-save'){'synthetic-original-profile-saved-verified'}elseif($GuiAutomation -eq 'inspect'){'synthetic-profile-managed-controls-inspected'}elseif ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('WEB_REFERENCE_INPUT_INVALID','GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_TIMEOUT','MSI_PROCESS_NOT_STOPPED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('SOURCE_DOWNLOAD_CLEANUP_NOT_VERIFIED','SOURCE_DOWNLOAD_DNS','SOURCE_DOWNLOAD_TLS','SOURCE_DOWNLOAD_HTTP','SOURCE_DOWNLOAD_TIMEOUT','SOURCE_DOWNLOAD_CONNECT','SOURCE_DOWNLOAD_TOOL','WEB_REFERENCE_INPUT_INVALID','GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_TIMEOUT','MSI_PROCESS_NOT_STOPPED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
