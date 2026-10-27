@@ -19,15 +19,28 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
     public static HtkkWindowsJobProcess Launch(string executable, string directory, string[] arguments, bool noWindow, bool x86) {
         return LaunchCore(executable, directory, arguments, noWindow, x86, IntPtr.Zero);
     }
+    // Optional private diagnostics, never pipes: caller reads bounded bytes only
+    // after Stop/Dispose have proved the complete job empty.
+    public static HtkkWindowsJobProcess LaunchWithOutputFiles(string executable, string directory, string[] arguments, bool noWindow, bool x86, string stdoutPath, string stderrPath) {
+        return LaunchCoreWithOutput(executable, directory, arguments, noWindow, x86, IntPtr.Zero, true, stdoutPath, stderrPath);
+    }
 
     // A private invalid-handle override lets the integration test exercise an
     // ACTUAL AssignProcessToJobObject rejection before the child can execute.
     private static HtkkWindowsJobProcess LaunchCore(string executable, string directory, string[] arguments, bool noWindow, bool x86, IntPtr assignmentOverride) {
+        return LaunchCoreWithOutput(executable, directory, arguments, noWindow, x86, assignmentOverride, false, null, null);
+    }
+    private static HtkkWindowsJobProcess LaunchCoreWithOutput(string executable, string directory, string[] arguments, bool noWindow, bool x86, IntPtr assignmentOverride, bool captureOutput, string stdoutPath, string stderrPath) {
         HtkkWindowsJobProcess owner = new HtkkWindowsJobProcess();
-        IntPtr environment = IntPtr.Zero, thread = IntPtr.Zero, nullStream = IntPtr.Zero, attributeList = IntPtr.Zero, handleList = IntPtr.Zero;
+        IntPtr environment = IntPtr.Zero, thread = IntPtr.Zero, nullStream = IntPtr.Zero, stdout = IntPtr.Zero, stderr = IntPtr.Zero, attributeList = IntPtr.Zero, handleList = IntPtr.Zero;
         bool attributesInitialized = false;
         try {
             if (String.IsNullOrEmpty(executable) || !System.IO.Path.IsPathRooted(executable) || String.IsNullOrEmpty(directory) || !System.IO.Path.IsPathRooted(directory)) throw Failure("launch-arguments-invalid");
+            if (captureOutput) {
+                stdoutPath = ValidateOutputPath(directory, stdoutPath);
+                stderrPath = ValidateOutputPath(directory, stderrPath);
+                if (String.Equals(stdoutPath, stderrPath, StringComparison.OrdinalIgnoreCase)) throw Failure("output-path-invalid");
+            }
             owner.job = CreateJobObject(IntPtr.Zero, null);
             if (owner.job == IntPtr.Zero) throw Failure("job-create-failed");
             JOBOBJECT_EXTENDED_LIMIT_INFORMATION limits = new JOBOBJECT_EXTENDED_LIMIT_INFORMATION();
@@ -39,17 +52,28 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
             SECURITY_ATTRIBUTES security = new SECURITY_ATTRIBUTES(); security.nLength = Marshal.SizeOf(typeof(SECURITY_ATTRIBUTES)); security.bInheritHandle = true;
             nullStream = CreateFile(@"\\.\NUL", 0xC0000000, 3, ref security, 3, 0x80, IntPtr.Zero);
             if (nullStream == new IntPtr(-1)) { nullStream = IntPtr.Zero; throw Failure("stdio-create-failed"); }
+            if (captureOutput) {
+                // CREATE_NEW is the atomic no-overwrite guard. Opening the final
+                // component itself also forbids following a reparse target.
+                stdout = CreateFile(stdoutPath, 0x40000000, 0, ref security, 1, 0x00200080, IntPtr.Zero);
+                if (stdout == new IntPtr(-1)) { stdout = IntPtr.Zero; throw Failure("output-create-failed"); }
+                stderr = CreateFile(stderrPath, 0x40000000, 0, ref security, 1, 0x00200080, IntPtr.Zero);
+                if (stderr == new IntPtr(-1)) { stderr = IntPtr.Zero; throw Failure("output-create-failed"); }
+            }
             IntPtr attributeBytes = IntPtr.Zero;
             InitializeProcThreadAttributeList(IntPtr.Zero, 1, 0, ref attributeBytes);
             if (attributeBytes == IntPtr.Zero) throw Failure("handle-list-failed");
             attributeList = Marshal.AllocHGlobal(attributeBytes);
             if (!InitializeProcThreadAttributeList(attributeList, 1, 0, ref attributeBytes)) throw Failure("handle-list-failed");
             attributesInitialized = true;
-            handleList = Marshal.AllocHGlobal(IntPtr.Size); Marshal.WriteIntPtr(handleList, nullStream);
-            if (!UpdateProcThreadAttribute(attributeList, 0, new IntPtr(0x20002), handleList, new IntPtr(IntPtr.Size), IntPtr.Zero, IntPtr.Zero)) throw Failure("handle-list-failed");
+            int handles = captureOutput ? 3 : 1;
+            handleList = Marshal.AllocHGlobal(IntPtr.Size * handles); Marshal.WriteIntPtr(handleList, nullStream);
+            if (captureOutput) { Marshal.WriteIntPtr(handleList, IntPtr.Size, stdout); Marshal.WriteIntPtr(handleList, IntPtr.Size * 2, stderr); }
+            if (!UpdateProcThreadAttribute(attributeList, 0, new IntPtr(0x20002), handleList, new IntPtr(IntPtr.Size * handles), IntPtr.Zero, IntPtr.Zero)) throw Failure("handle-list-failed");
             STARTUPINFOEX startup = new STARTUPINFOEX(); startup.StartupInfo.cb = (uint)Marshal.SizeOf(typeof(STARTUPINFOEX));
             startup.StartupInfo.dwFlags = 0x100;
             startup.StartupInfo.hStdInput = startup.StartupInfo.hStdOutput = startup.StartupInfo.hStdError = nullStream;
+            if (captureOutput) { startup.StartupInfo.hStdOutput = stdout; startup.StartupInfo.hStdError = stderr; }
             startup.lpAttributeList = attributeList;
             PROCESS_INFORMATION child;
             uint flags = 0x4 | 0x400 | 0x80000 | (noWindow ? 0x08000000u : 0u); // SUSPENDED + UNICODE_ENVIRONMENT + EXTENDED_STARTUPINFO.
@@ -71,11 +95,13 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
             owner.CloseHandles();
             if (!stopped) throw Failure("job-cleanup-not-verified");
             string category = error.Message;
-            if (!(error is InvalidOperationException) || Array.IndexOf(new string[] { "launch-arguments-invalid", "job-create-failed", "job-limit-failed", "environment-invalid", "stdio-create-failed", "handle-list-failed", "process-create-failed", "job-assignment-failed", "process-identity-failed", "process-resume-failed" }, category) < 0) category = "boundary-tool-failure";
+            if (!(error is InvalidOperationException) || Array.IndexOf(new string[] { "launch-arguments-invalid", "job-create-failed", "job-limit-failed", "environment-invalid", "stdio-create-failed", "output-path-invalid", "output-create-failed", "handle-list-failed", "process-create-failed", "job-assignment-failed", "process-identity-failed", "process-resume-failed" }, category) < 0) category = "boundary-tool-failure";
             throw Failure(category);
         } finally {
             if (thread != IntPtr.Zero) CloseHandle(thread);
             if (nullStream != IntPtr.Zero) CloseHandle(nullStream);
+            if (stdout != IntPtr.Zero) CloseHandle(stdout);
+            if (stderr != IntPtr.Zero) CloseHandle(stderr);
             if (attributesInitialized) DeleteProcThreadAttributeList(attributeList);
             if (handleList != IntPtr.Zero) Marshal.FreeHGlobal(handleList);
             if (attributeList != IntPtr.Zero) Marshal.FreeHGlobal(attributeList);
@@ -155,6 +181,25 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
     private void RequireLive() { if (disposed || process == IntPtr.Zero || job == IntPtr.Zero) throw Failure("job-not-live"); }
     private static void CheckDeadline(int value) { if (value < 0 || value > 300000) throw Failure("deadline-invalid"); }
     private static InvalidOperationException Failure(string category) { return new InvalidOperationException(category); }
+    private static string ValidateOutputPath(string directory, string path) {
+        try {
+            if (String.IsNullOrEmpty(path) || !System.IO.Path.IsPathFullyQualified(path)) throw Failure("output-path-invalid");
+            string full = System.IO.Path.GetFullPath(path);
+            string root = System.IO.Path.GetFullPath(directory).TrimEnd(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar) + System.IO.Path.DirectorySeparatorChar;
+            if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase) || System.IO.File.Exists(full) || System.IO.Directory.Exists(full)) throw Failure("output-path-invalid");
+            foreach (string component in full.Substring(root.Length).Split(new char[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar })) {
+                if (component.Length == 0 || component.IndexOf(':') >= 0 || component != component.TrimEnd(' ', '.')) throw Failure("output-path-invalid");
+                string stem = component.Split('.')[0].ToUpperInvariant();
+                if (stem == "CON" || stem == "PRN" || stem == "AUX" || stem == "NUL" || stem == "CONIN$" || stem == "CONOUT$" || ((stem.StartsWith("COM", StringComparison.Ordinal) || stem.StartsWith("LPT", StringComparison.Ordinal)) && stem.Length == 4 && "123456789\u00b9\u00b2\u00b3".IndexOf(stem[3]) >= 0)) throw Failure("output-path-invalid");
+            }
+            System.IO.DirectoryInfo parent = System.IO.Directory.GetParent(full);
+            while (parent != null) {
+                if (!parent.Exists || (parent.Attributes & System.IO.FileAttributes.ReparsePoint) != 0) throw Failure("output-path-invalid");
+                parent = parent.Parent;
+            }
+            return full;
+        } catch { throw Failure("output-path-invalid"); }
+    }
     private static string OsEnvironment(bool x86) {
         SortedDictionary<string,string> values = new SortedDictionary<string,string>(StringComparer.OrdinalIgnoreCase);
         foreach (string key in new string[] { "SystemRoot", "WINDIR", "SystemDrive", "TEMP", "TMP", "PATH", "APPDATA", "LOCALAPPDATA", "USERPROFILE", "ProgramData", "COMSPEC", "PROCESSOR_ARCHITECTURE", "PROCESSOR_ARCHITEW6432", "NUMBER_OF_PROCESSORS" }) {

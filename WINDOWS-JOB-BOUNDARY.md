@@ -15,6 +15,10 @@ không xuất vào lỗi; category cố định. Vì không capture stdout/stder
 phải đọc output có cấu trúc từ file riêng như các oracle hiện hành; không thay
 thế helper đang cần đọc pipe một cách máy móc.
 
+API tùy chọn `LaunchWithOutputFiles` có hai file diagnostics private riêng và
+handle allowlist giới hạn; xem `JOB-PRIVATE-OUTPUT.md`. Không đổi semantics NUL
+của `Launch` mặc định và không tự parse hoặc công khai raw compiler output.
+
 Boundary tạo Job không breakaway với `KILL_ON_JOB_CLOSE`, tạo process bằng
 `CREATE_SUSPENDED`, gán vào Job rồi mới `ResumeThread`. Gán thất bại thì process
 vẫn chưa thực thi, bị terminate và chờ xác minh. Không dùng kiểu Start-Process
