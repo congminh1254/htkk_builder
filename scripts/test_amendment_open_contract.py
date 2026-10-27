@@ -83,3 +83,9 @@ class OriginalB1SheetCaptionTests(unittest.TestCase):
   text=(ROOT/'HtkkGtgtAmendmentOpenInspection.cs').read_text()
   self.assertIn('if(name=="Tờ khai điều chỉnh")',text)
   self.assertNotIn('if(name=="01"||name=="Tờ khai")',text)
+
+class OriginalKhbsIdentifierCaptionTests(unittest.TestCase):
+ def test_metadata_id_and_visible_explanation_caption_are_not_conflated(self):
+  text=(ROOT/'HtkkGtgtAmendmentOpenInspection.cs').read_text()
+  self.assertIn('Get(candidate,"SheetID"),CultureInfo.InvariantCulture)==id',text)
+  self.assertIn('(id=="01-1-KHBS"?"01-1/KHBS":"01-KHBS")',text)
