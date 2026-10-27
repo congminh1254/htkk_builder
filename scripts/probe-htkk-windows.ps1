@@ -42,6 +42,8 @@ $report = [ordered]@{
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
 $rootStartTime = $null
 $installerStopped=$true
+$uiaHelpersStopped=$true
+. (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
 $firewallNames = [Collections.Generic.List[string]]::new()
 $registrationProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
@@ -518,7 +520,7 @@ try {
 } catch { $result.status = 'uia-unavailable' }
 $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encoding UTF8
 '@ | Set-Content -LiteralPath $helper -Encoding utf8BOM
-  $diagnostics = @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); helperEncoding = 'utf8-bom'; helperExitCode = $null; helperParseErrorCount = 0; helperFailureCategory = 'none' }
+  $diagnostics = @{ status = 'uia-helper-failed'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); helperEncoding = 'utf8-bom'; helperExitCode = $null; helperParseErrorCount = 0; helperFailureCategory = 'none'; helperProcessStopped = $true }
   # Parse before execution; only the count is public, never source snippets or parser messages.
   $helperTokens = $null; $helperParseErrors = $null
   [System.Management.Automation.Language.Parser]::ParseFile($helper, [ref]$helperTokens, [ref]$helperParseErrors) | Out-Null
@@ -529,29 +531,28 @@ $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $OutputFile -Encodi
   }
   $legacy = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
   $ownerList = (@($AppProcessId) + @($Descendants)) -join ','
-  $arguments = @('-STA','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',"`"$helper`"",'-ProcessIds',$ownerList,'-OutputFile',"`"$resultPath`"")
-  $helperProcess = Start-Process -FilePath $legacy -ArgumentList $arguments -PassThru -RedirectStandardOutput (Join-Path $TemporaryDirectory 'uia-private.stdout') -RedirectStandardError (Join-Path $TemporaryDirectory 'uia-private.stderr')
-  # Retain the process handle before waiting so ExitCode remains available after a fast exit.
-  $null = $helperProcess.Handle
-  if (-not $helperProcess.WaitForExit(15000)) {
-    Stop-Process -Id $helperProcess.Id -Force -ErrorAction SilentlyContinue
-    $diagnostics.status = 'uia-timeout'; $diagnostics.helperFailureCategory = 'helper-timeout'
-    return $diagnostics
+  $arguments = @('-STA','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',$helper,'-ProcessIds',$ownerList,'-OutputFile',$resultPath)
+  # Fail closed if a helper invocation itself unexpectedly throws; later calls
+  # cannot overwrite a previously unverified cleanup with a safe value.
+  $previousHelpersStopped=$script:uiaHelpersStopped;$script:uiaHelpersStopped=$false
+  $helperRun=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $TemporaryDirectory -Arguments $arguments -TimeoutMilliseconds 15000
+  $diagnostics.helperProcessStopped=$helperRun.processStopped -is [bool] -and $helperRun.processStopped
+  $script:uiaHelpersStopped=$previousHelpersStopped -and $diagnostics.helperProcessStopped
+  if(-not $diagnostics.helperProcessStopped){$diagnostics.helperFailureCategory='helper-cleanup-not-verified';return $diagnostics}
+  if($helperRun.timedOut){
+    $diagnostics.status='uia-timeout';$diagnostics.helperFailureCategory='helper-timeout';return $diagnostics
   }
-  $diagnostics.helperExitCode = $helperProcess.ExitCode
-  if ($helperProcess.ExitCode -ne 0) {
-    # Inspect stderr privately only to choose a fixed enum. Never emit its content.
-    $privateError = Get-Content -LiteralPath (Join-Path $TemporaryDirectory 'uia-private.stderr') -Raw -ErrorAction SilentlyContinue
-    $diagnostics.helperFailureCategory = if ($privateError -match 'ParserError') { 'legacy-parser-error' } else { 'helper-nonzero-exit' }
-    return $diagnostics
-  }
+  $diagnostics.helperExitCode=$helperRun.exitCode
+  if($helperRun.status -ne 'exited'){$diagnostics.helperFailureCategory='helper-tool-failure';return $diagnostics}
+  if($helperRun.exitCode -ne 0){$diagnostics.helperFailureCategory='helper-nonzero-exit';return $diagnostics}
   if (-not (Test-Path -LiteralPath $resultPath)) {
     $diagnostics.helperFailureCategory = 'helper-result-missing'
     return $diagnostics
   }
   try {
+    if((Get-Item -LiteralPath $resultPath).Length -gt 32768){throw 'UIA_RESULT_OVERSIZED'}
     $safeUi = Get-Content -LiteralPath $resultPath -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
-    foreach ($key in @('helperEncoding','helperExitCode','helperParseErrorCount','helperFailureCategory')) { $safeUi[$key] = $diagnostics[$key] }
+    foreach ($key in @('helperEncoding','helperExitCode','helperParseErrorCount','helperFailureCategory','helperProcessStopped')) { $safeUi[$key] = $diagnostics[$key] }
     if ($safeUi.status -eq 'uia-unavailable') { $safeUi.helperFailureCategory = 'uia-provider-unavailable' }
     return $safeUi
   } catch {
@@ -601,7 +602,6 @@ try {
   if (-not $InstallAndProbe) { $report.stage = 'verified-install-not-requested'; return }
   # Execute only the pinned, publisher-verified MSI after official-distribution CAB equivalence.
   $report.stage = 'install'
-  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
   $install=Invoke-HtkkBoundedNativeProcess -Executable "$env:WINDIR\System32\msiexec.exe" -WorkingDirectory $work -Arguments @('/i',$msi,'/qn','/norestart','ISCHECKFORPRODUCTUPDATES=0','/L*v',(Join-Path $work 'install-private.log')) -TimeoutMilliseconds 180000
   $report.installerProcess=$install;$installerStopped=$install.processStopped
   $report.installExitCode=$install.exitCode
@@ -878,8 +878,9 @@ try {
     $process.Dispose()
   }
   if($null -ne $process -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
+  $report['uiaHelpersStopped']=$uiaHelpersStopped
   if($env:GITHUB_OUTPUT){
-    $credentialsSafe=$installerStopped -and ($null -eq $process -or $supplierStopped)
+    $credentialsSafe=$installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)
     [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
   }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {

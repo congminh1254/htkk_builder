@@ -60,6 +60,9 @@ jobs:
       - name: Check bounded native process and clean environment
         shell: pwsh
         run: ./scripts/Test-HtkkBoundedNativeProcess.ps1
+      - name: Check UIA cleanup and bounded result boundary
+        shell: pwsh
+        run: ./scripts/Test-HtkkUiaProcessBoundary.ps1
       - name: Check actual C# web-tax comparison boundaries
         shell: pwsh
         run: ./scripts/Test-HtkkWebTaxComparison.ps1
