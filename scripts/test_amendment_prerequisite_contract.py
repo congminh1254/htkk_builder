@@ -12,7 +12,7 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   guard=re.search(r'if \(\$guiAutomation -notin @\(([^\n]+)\)',workflow).group(1);self.assertIn("'"+MODE+"'",guard)
   host=(ROOT/'New-HtkkX86ReferenceHost.ps1').read_text()
   self.assertIn("$amendmentSource=Join-Path $directory 'HtkkGtgtAmendmentInspection.cs'",host)
-  self.assertIn('$webComparisonSource,$amendmentSource,$annexExportSource)',host)
+  for source in ('$amendmentSource','$amendmentOpenSource','$annexExportSource'):self.assertIn(source,host)
  def test_actual_success_condition_requires_all_saved_file_checks_and_closed_amendment_gate(self):
   text=(ROOT/'probe-htkk-windows.ps1').read_text()
   terminal=next(line for line in text.splitlines() if '$terminal=$nextGui.failureCategory' in line)

@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   $safe = [ordered]@{
@@ -187,6 +187,8 @@ internal static class HtkkX86ReferenceHost {
     [IO.File]::WriteAllText($amendmentSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAmendmentInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $annexExportSource=Join-Path $directory 'HtkkGtgtAnnex12ExportInspection.cs'
     [IO.File]::WriteAllText($annexExportSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAnnex12ExportInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
+    $amendmentOpenSource=Join-Path $directory 'HtkkGtgtAmendmentOpenInspection.cs'
+    [IO.File]::WriteAllText($amendmentOpenSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAmendmentOpenInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $webComparisonSource=Join-Path $directory 'HtkkWebTaxComparison.cs'
     [IO.File]::WriteAllText($webComparisonSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWebTaxComparison.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $webInputSource=Join-Path $directory 'HtkkWebInputReference.cs'
@@ -199,7 +201,7 @@ internal static class HtkkX86ReferenceHost {
     $info.FileName=$compiler; $info.WorkingDirectory=$directory; $info.UseShellExecute=$false; $info.CreateNoWindow=$true
     $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true; $info.Environment.Clear()
     foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $info.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$annexExportSource)) { $info.ArgumentList.Add($argument) }
+    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$amendmentOpenSource,$annexExportSource)) { $info.ArgumentList.Add($argument) }
     $compilerProcess=[Diagnostics.Process]::Start($info)
     $null=$compilerProcess.Handle
     $stdout=$compilerProcess.StandardOutput.ReadToEndAsync(); $stderr=$compilerProcess.StandardError.ReadToEndAsync()

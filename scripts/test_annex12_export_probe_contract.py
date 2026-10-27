@@ -25,7 +25,7 @@ class AnnexExportProbeContract(unittest.TestCase):
    self.assertNotIn('gtgt-annex12-export-inspect',(ROOT/name).read_text())
  def test_new_partial_is_an_actual_compiler_input_and_report_flags_are_bounded(self):
   host=(ROOT/'New-HtkkX86ReferenceHost.ps1').read_text();reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
-  self.assertIn("$annexExportSource=Join-Path $directory 'HtkkGtgtAnnex12ExportInspection.cs'",host);self.assertIn('$amendmentSource,$annexExportSource)',host)
+  self.assertIn("$annexExportSource=Join-Path $directory 'HtkkGtgtAnnex12ExportInspection.cs'",host);self.assertIn('$amendmentSource,$amendmentOpenSource,$annexExportSource)',host)
   for flag in ('annex12ExportMainZeroMatched','annex12ExportShapeMatched','annex12ExportSchemaVerified'):
    self.assertIn(flag+'=$false;',fixture);self.assertGreaterEqual(reader.count("'"+flag+"'"),2)
   self.assertIn("$ExpectedMode -cne 'gtgt-annex12-export-inspect'",reader)

@@ -79,6 +79,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Observe THAT original owner across UI turns rather than testing the outer frame.
   profileClosed=closingProfileForm.IsDisposed||!closingProfileForm.Visible;
   if(!profileClosed){stage="waiting-profile-close";Record();return;}
+  if(navigationPhase=="waiting-amendment-sheet"){InspectOriginalAmendmentOpen();return;}
   if(navigationPhase=="waiting-gtgt-sheet"){InspectOriginalGtgtSheet();return;}
   List<Form> menus=new List<Form>();List<Control> seen=new List<Control>();foreach(Form candidate in Application.OpenForms){if(candidate.Visible&&!candidate.IsDisposed)FindMainMenus(candidate,menus,seen);}
   if(menus.Count>1)throw new InvalidOperationException();Form main=menus.Count==1?menus[0]:null;
@@ -88,7 +89,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(periods.Count!=1){stage="waiting-gtgt-period";Record();return;}
    periodDescriptions.Clear();periodControlCount=0;visited=0;DescribePeriod(periods[0],ref visited);
    periodObserved=true;
-   if((mode=="gtgt-sheet-inspect"||mode=="gtgt-amendment-inspect")||Annex12InspectionMode()||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect"){ConfigureOriginalGtgtPeriod(periods[0]);return;}
+   if((mode=="gtgt-sheet-inspect"||AmendmentInspectionMode())||Annex12InspectionMode()||mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect"){ConfigureOriginalGtgtPeriod(periods[0]);return;}
    stage="gtgt-period-inspected";finished=true;Record();return;
   }
   List<Control> grids=new List<Control>();int nodes=0;GatherSpreads(main,grids,ref nodes);

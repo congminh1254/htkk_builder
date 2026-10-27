@@ -337,6 +337,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int row=0;row<annexRows;row++)if(Selected(Get(Cell(annexSheet,row,0),"Value")))annexSelected++;
   periodNoAnnexMatched=annexSelected==0&&!CheckValue(all);
   if(Annex12InspectionMode())SelectOriginalAnnex12(annex,annexSheet);
+  if(AmendmentReopening()){ConfigureOriginalAmendmentOpen(period);return;}
   if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(Annex12InspectionMode()?periodAnnex12Matched:periodNoAnnexMatched)){stage="gtgt-period-inputs-not-matched";finished=true;Record();return;}
   Button confirm=Named(period,"btnDongY") as Button;if(confirm==null||confirm.Text.Replace("&",String.Empty).Trim()!="Đồng ý")throw new InvalidOperationException();
   navigationPhase="waiting-gtgt-sheet";stage="gtgt-period-confirm-invoking";periodConfirmInvoked=true;Record();
@@ -372,7 +373,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
-  if(matched&&mode=="gtgt-amendment-inspect"){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
+  if(matched&&AmendmentInspectionMode()){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12InspectionMode()){InspectOriginalAnnex12(grid);return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";

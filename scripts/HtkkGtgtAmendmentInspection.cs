@@ -18,7 +18,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   bool[] flags=new bool[]{amendmentPriorSaveInvoked,amendmentPriorSaveSuccessAcknowledged,amendmentPriorDirtyCleared,amendmentPriorFileFresh,amendmentPriorFileScopeMatched,amendmentPriorXmlParsed,amendmentPriorMoneyZero,amendmentPriorSavedMoneyZero};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(flags[index]));
   json.Append(","+q+"amendmentPriorSavedMoneyCount"+q+":"+amendmentPriorSavedMoneyCount);
-  json.Append(","+q+"amendmentPriorFileBytes"+q+":"+amendmentPriorFileBytes+","+q+"amendmentPriorFileSha256"+q+":"+q+amendmentPriorFileSha256+q+","+q+"amendmentLifecycleVerified"+q+":false");return json.ToString();
+  json.Append(","+q+"amendmentPriorFileBytes"+q+":"+amendmentPriorFileBytes+","+q+"amendmentPriorFileSha256"+q+":"+q+amendmentPriorFileSha256+q+","+q+"amendmentLifecycleVerified"+q+":false");return json.ToString()+AmendmentOpenJson();
  }
  // GetFileNameBySheet060000A2 monthlyD1 + GetNameNopTheoTinhCQT060000A3:
  // source menu NopTheoTinhCQT=3 => CQTQL10129; TieuMucHachToanVal00 (internal activity); M10/2026; XML2.8.3.
@@ -33,7 +33,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(amendmentPriorSaveInvoked)return;
   // Source XLS loads all eleven worksheets; selection is separately proved by
   // periodNoAnnexMatched and annexSelected==0 (native run40419346023).
-  if(mode!="gtgt-amendment-inspect"||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  if(!AmendmentInspectionMode()||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));if(!gtgtBusinessInstanceMatched||!gtgtAutoCalculationReady)throw new InvalidOperationException();
   // GetPeriodInfo060004E2 (KieuKy19,1356-137C) sets this misleadingly named
   // internal field from cboNganhKD.SelectedValue00, not exported accounting1701.
@@ -50,7 +50,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void ObserveOriginalAmendmentPriorSave(){
   if(finished){amendmentPriorWatcher.Stop();return;}if(amendmentPriorObservationBusy)return;amendmentPriorObservationBusy=true;
   try{
-   if(mode!="gtgt-amendment-inspect"||!amendmentPriorSaveInvoked||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||amendmentPriorOwner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
+   if(!AmendmentInspectionMode()||!amendmentPriorSaveInvoked||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||amendmentPriorOwner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
    foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
     stage="gtgt-amendment-save-modal-observed";Record();
     if(form.Text.Trim()!="Thông Báo"&&form.Text.Trim()!="Thông báo")throw new InvalidOperationException();
@@ -69,6 +69,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    amendmentPriorDirtyCleared=!(bool)dirty.GetValue(amendmentPriorOwner);if(!amendmentPriorDirtyCleared)return;
    InspectMoneyZero(amendmentPriorSheet);amendmentPriorMoneyZero=gtgtZero&&gtgtEmptyMoney==0;if(!amendmentPriorMoneyZero)throw new InvalidOperationException();
    InspectOriginalPriorFile();ReadSavedHeader();if(!headerMatched||headerChecks!=8||headerMismatchMask!=0)throw new InvalidOperationException();
+   if(mode=="gtgt-amendment-open-inspect"){CloseOriginalPriorForAmendment();return;}
    finished=true;stage="gtgt-original-declaration-saved-inspected";Record();amendmentPriorWatcher.Stop();
   }finally{amendmentPriorObservationBusy=false;}
  }
