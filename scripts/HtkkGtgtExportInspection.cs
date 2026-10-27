@@ -13,6 +13,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool exportStarted=false,exportCommandInvoked=false,exportSelectorMatched=false,exportButtonInvoked=false,exportDialogMatched=false,exportDestinationFresh=false,exportDialogSubmitted=false,exportFileExists=false,exportXmlRootMatched=false,exportSyntheticIdentityMatched=false,exportSuccessAcknowledged=false;
  private bool exportFilenameEditing=false,exportFilenameKeyboardCommitted=false;private string exportFilenameParentKind="not-observed";private bool exportSchemaPinnedVerified=false;private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
  private int exportBytes=0;private string exportSha256="",exportPath="",expectedSaveTitle="";
+ private readonly HtkkFileDialogFocusGate filenameFocusGate=new HtkkFileDialogFocusGate();
  private System.Windows.Forms.Timer exportWatcher=null;
  private delegate bool WindowVisitor(IntPtr window,IntPtr parameter);
  [DllImport("user32.dll")]private static extern bool EnumWindows(WindowVisitor callback,IntPtr parameter);
@@ -111,16 +112,28 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Filename editors belong to the verified common-dialog combo. A search edit
   // or unrelated child must never receive keyboard input.
   if(parent==IntPtr.Zero||(parentClass!="ComboBox"&&parentClass!="ComboBoxEx32"))throw new InvalidOperationException();
-  if(opening)roundtripImportDialogMatched=true;else exportDialogMatched=true;exportFilenameEditing=true;exportWatcher.Stop();stage=opening?"gtgt-import-filename-keyboard-editing":"gtgt-export-filename-keyboard-editing";Record();
+  if(opening)roundtripImportDialogMatched=true;else exportDialogMatched=true;
+  // Focus may settle on a later UI turn. Revalidate the same dialog and editor
+  // above on every tick; never restart keyboard input after it has begun.
+  string filenameStage=opening?"gtgt-import-filename-":"gtgt-export-filename-";
+  bool ownsFocus=GetForegroundWindow()==dialog&&GetFocus()==edit;
+  HtkkFileDialogFocusState focusState=filenameFocusGate.Observe(dialog,edit,ownsFocus);
+  if(focusState==HtkkFileDialogFocusState.Timeout){stage=filenameStage+"focus-timeout";Record();throw new InvalidOperationException();}
+  if(focusState!=HtkkFileDialogFocusState.Ready){
+   stage=filenameStage+"focus-waiting";Record();
+   if(!ownsFocus){SetForegroundWindow(dialog);SetFocus(edit);}return false;
+  }
+  filenameFocusGate.Begin();exportFilenameEditing=true;exportWatcher.Stop();stage=filenameStage+"keyboard-editing";Record();
   try{
-   SetForegroundWindow(dialog);SetFocus(edit);if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
-   SendKeys.SendWait("^a");if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
-   SendKeys.SendWait(EscapeSendKeys(desiredPath));if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=desiredPath)throw new InvalidOperationException();
+   if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
+   stage=filenameStage+"keyboard-focused";Record();
+   SendKeys.SendWait("^a");stage=filenameStage+"keyboard-selected";Record();if(GetForegroundWindow()!=dialog||GetFocus()!=edit)throw new InvalidOperationException();
+   SendKeys.SendWait(EscapeSendKeys(desiredPath));stage=filenameStage+"keyboard-typed";Record();if(GetForegroundWindow()!=dialog||GetFocus()!=edit||NativeText(edit,false)!=desiredPath)throw new InvalidOperationException();
    if(opening)roundtripImportKeyboardCommitted=true;else exportFilenameKeyboardCommitted=true;
    // Common-dialog change notifications may rebuild controls. Resolve the
    // original Save button again in the SAME verified dialog after real typing.
    save=GetDlgItem(dialog,1);if(NativeText(dialog,false)!=expectedTitle||save==IntPtr.Zero||!IsWindowVisible(save)||!IsWindowEnabled(save)||NativeText(save,true)!="Button")throw new InvalidOperationException();
-   if(opening)roundtripImportDialogSubmitted=true;else exportDialogSubmitted=true;stage=opening?"gtgt-import-original-reading":"gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+   if(opening)roundtripImportDialogSubmitted=true;else exportDialogSubmitted=true;stage=opening?"gtgt-import-original-reading":"gtgt-export-original-writing";Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();filenameFocusGate.ResetAfterSubmission();
   }finally{exportFilenameEditing=false;if(!finished)exportWatcher.Start();}
   return true;
  }
@@ -139,4 +152,22 @@ public sealed partial class HtkkGuiReferenceAutomation {
   XmlNode name=document.SelectSingleNode("/*[local-name()='HSoThueDTu']/*[local-name()='HSoKhaiThue']/*[local-name()='TTinChung']/*[local-name()='TTinTKhaiThue']/*[local-name()='NNT']/*[local-name()='tenNNT']");
   exportSyntheticIdentityMatched=mst!=null&&mst.InnerText==Mst&&name!=null&&name.InnerText==FakeName;if(!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();exportSha256=Hash(exportPath);
  }
+}
+
+// Pure bounded readiness policy, also compiled directly by the offline tests.
+public enum HtkkFileDialogFocusState { Waiting, Ready, Timeout }
+public sealed class HtkkFileDialogFocusGate {
+ private IntPtr dialog=IntPtr.Zero,editor=IntPtr.Zero;
+ private int ticks=0,stable=0;
+ private bool inputStarted=false;
+ public HtkkFileDialogFocusState Observe(IntPtr currentDialog,IntPtr currentEditor,bool ownsFocus){
+  if(inputStarted||currentDialog==IntPtr.Zero||currentEditor==IntPtr.Zero)throw new InvalidOperationException();
+  if(dialog==IntPtr.Zero){dialog=currentDialog;editor=currentEditor;}
+  if(dialog!=currentDialog||editor!=currentEditor)throw new InvalidOperationException();
+  if(++ticks>40)return HtkkFileDialogFocusState.Timeout;
+  stable=ownsFocus?stable+1:0;
+  return stable>=2?HtkkFileDialogFocusState.Ready:HtkkFileDialogFocusState.Waiting;
+ }
+ public void Begin(){if(inputStarted||stable<2||ticks>40)throw new InvalidOperationException();inputStarted=true;}
+ public void ResetAfterSubmission(){if(!inputStarted)throw new InvalidOperationException();dialog=IntPtr.Zero;editor=IntPtr.Zero;ticks=0;stable=0;inputStarted=false;}
 }

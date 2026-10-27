@@ -1,5 +1,6 @@
 # Offline schema-boundary tests for the actual public-result reader; no HTKK input.
 $ErrorActionPreference='Stop'
+& (Join-Path $PSScriptRoot 'Test-HtkkFileDialogFocusPolicy.ps1')
 . (Join-Path $PSScriptRoot 'Get-HtkkSafeGuiReferenceResult.ps1')
 $directory=Join-Path $env:RUNNER_TEMP ('htkk-gui-result-test-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $directory | Out-Null
@@ -35,7 +36,7 @@ try {
   $copy.periodControls=@{mskYear=$description};$copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-inspect).status -ne 'invalid'){throw 'Unsafe period descriptor accepted'};$cases++
  }
- foreach($selectionStage in @('gtgt-export-filename-keyboard-editing','gtgt-export-success-file-checking','waiting-profile-close-ready','gtgt-period-province-selecting','gtgt-period-ward-selecting','gtgt-period-taxhead-selecting','gtgt-period-taxlocal-selecting','gtgt-period-activity-selecting')){
+ foreach($selectionStage in @('gtgt-export-filename-focus-waiting','gtgt-export-filename-focus-timeout','gtgt-export-filename-keyboard-focused','gtgt-export-filename-keyboard-selected','gtgt-export-filename-keyboard-typed','gtgt-export-filename-keyboard-editing','gtgt-export-success-file-checking','waiting-profile-close-ready','gtgt-period-province-selecting','gtgt-period-ward-selecting','gtgt-period-taxhead-selecting','gtgt-period-taxlocal-selecting','gtgt-period-activity-selecting')){
   $stageCopy=[ordered]@{};foreach($key in $base.Keys){$stageCopy[$key]=$base[$key]};$stageCopy.mode='gtgt-sheet-inspect';$stageCopy.stage=$selectionStage
   $stageCopy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-sheet-inspect).status -ne 'valid'){throw 'Safe period selection stage rejected'};$cases++
@@ -46,7 +47,7 @@ try {
  $copy=[ordered]@{};foreach($key in $base.Keys){$copy[$key]=$base[$key]};$copy.mode='gtgt-export-inspect';$copy.stage='gtgt-export-inspected';$copy.exportBytes=1234;$copy.exportSha256=('a'*64)
  $copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-export-inspect).status -ne 'valid'){throw 'Safe export metadata rejected'};$cases++
- foreach($roundtripStage in @('gtgt-import-ready-waiting','gtgt-import-file-dialog-waiting','gtgt-import-filename-keyboard-editing','gtgt-import-original-reading','gtgt-import-original-message-rejected','gtgt-import-success-sheet-checking','gtgt-reexport-ready-waiting','gtgt-reexport-command-invoking','gtgt-roundtrip-inspected')){
+ foreach($roundtripStage in @('gtgt-import-filename-focus-waiting','gtgt-import-filename-focus-timeout','gtgt-import-filename-keyboard-focused','gtgt-import-filename-keyboard-selected','gtgt-import-filename-keyboard-typed','gtgt-import-ready-waiting','gtgt-import-file-dialog-waiting','gtgt-import-filename-keyboard-editing','gtgt-import-original-reading','gtgt-import-original-message-rejected','gtgt-import-success-sheet-checking','gtgt-reexport-ready-waiting','gtgt-reexport-command-invoking','gtgt-roundtrip-inspected')){
   $copy=[ordered]@{};foreach($key in $base.Keys){$copy[$key]=$base[$key]};$copy.mode='gtgt-roundtrip-inspect';$copy.stage=$roundtripStage;$copy.roundtripReexportSha256=('b'*64)
   $copy | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-roundtrip-inspect).status -ne 'valid'){throw 'Safe roundtrip observation rejected'};$cases++
