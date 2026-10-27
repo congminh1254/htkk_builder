@@ -26,9 +26,9 @@ Không có bản GAC/reference assembly của Windows trong filesystem cloud hi�
 Bài Windows thật phải xác minh full identity/type và dừng nếu không đúng, không
 fallback sang assembly từ thư mục/tải khác.
 
-## Patch UIA đề xuất (chưa áp dụng trong task này)
+## Patch UIA đã áp dụng vào generated helper
 
-Thay đúng hai lệnh Add-Type trong generated helper, sau phase assembly-loading:
+Đã thay đúng hai lệnh Add-Type trong generated helper, sau phase assembly-loading:
 
 ```powershell
 $uiaClient=[Reflection.Assembly]::Load('UIAutomationClient, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35')
@@ -40,3 +40,5 @@ trước probe rồi dispatch main mới; kết quả load độc lập không c
 traversal hoặc đăng nhập đạt. Nếu probe vẫn timeout, phase tiếp theo cung cấp
 bằng chứng mới; không coi giả thuyết module autoload là đã chứng minh chỉ vì đã
 thay code.
+
+Kiểm chứng Windows độc lập: run40580662096, builder eadc33f, toàn workflow đạt. Bằng chứng này xác nhận load/type/STA/cleanup, chưa xác nhận traversal, đăng nhập hoặc roundtrip của helper đã sửa.

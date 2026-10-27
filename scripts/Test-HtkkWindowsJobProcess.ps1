@@ -13,7 +13,7 @@ public static class HtkkWindowsJobTestShim {
   } catch (System.Exception error) {
    while (error.InnerException != null) error = error.InnerException;
    if (error is System.InvalidOperationException) {
-    string[] categories = new string[] { "job-assignment-failed", "job-cleanup-not-verified", "boundary-tool-failure", "process-create-failed", "job-create-failed", "job-limit-failed", "stdio-create-failed", "handle-list-failed", "launch-arguments-invalid", "environment-invalid", "process-resume-failed" };
+    string[] categories = new string[] { "job-assignment-failed", "job-cleanup-not-verified", "boundary-tool-failure", "process-create-failed", "job-create-failed", "job-limit-failed", "stdio-create-failed", "handle-list-failed", "launch-arguments-invalid", "environment-invalid", "process-identity-failed", "process-resume-failed" };
     if (System.Array.IndexOf(categories, error.Message) >= 0) return error.Message;
     return "unexpected-invalid-operation";
    }
@@ -87,7 +87,10 @@ exit 17
  $payload='a "quoted" value with trailing slash\'
  $arguments=@('-NoLogo','-NoProfile','-NonInteractive','-File',$child,'normal',$marker,$grandMarker,$hostExecutable,$payload)
  $owner=[HtkkWindowsJobProcess]::Launch($hostExecutable,$directory,$arguments,$true,$false)
+ $retainedRoot=$owner.RootProcess;$retainedHandle=$retainedRoot.Handle
+ if($retainedHandle -eq [IntPtr]::Zero -or $retainedRoot.Id -ne $owner.ProcessId){throw 'Pre-resume diagnostic identity missing'}
  if(-not $owner.WaitForRootExit(15000) -or $owner.RootExitCode -ne 17){throw 'Normal job child exit failed'}
+ if(-not [Object]::ReferenceEquals($retainedRoot,$owner.RootProcess) -or $retainedRoot.Handle -ne $retainedHandle -or -not $retainedRoot.HasExited -or $retainedRoot.ExitCode -ne 17){throw 'Retained diagnostic identity changed after fast root exit'}
  $result=Get-Content -LiteralPath $marker -Raw|ConvertFrom-Json
  if($result.payload -cne $payload){throw 'Actual Windows argument roundtrip failed'}
  if(-not $owner.Stop(5000) -or -not $owner.CleanupVerified -or $owner.ActiveProcesses -ne 0){throw 'Normal job cleanup failed'}

@@ -44,6 +44,7 @@ $rootStartTime = $null
 $installerStopped=$true
 $installerCredentialsSafe=$true
 $uiaHelpersStopped=$true
+$supplierJob=$null;$supplierLaunchAttempted=$false;$supplierCleanupVerified=$true
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
 . (Join-Path $PSScriptRoot 'Invoke-HtkkPinnedDownload.ps1')
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
@@ -72,20 +73,25 @@ function Get-PinnedFile([string]$Url, [string]$Path, [string]$Expected) {
 }
 # Never forward runner/service/GitHub credentials to either launch mode.
 function Start-HtkkCleanProcess([string]$Executable,[string]$ProjectDirectory,[bool]$IsX86Reference) {
-  $info=[Diagnostics.ProcessStartInfo]::new()
-  $info.FileName=$Executable; $info.WorkingDirectory=$ProjectDirectory; $info.UseShellExecute=$false
-  $info.CreateNoWindow=$false; $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true
-  $info.Environment.Clear()
-  foreach($key in @('SystemRoot','WINDIR','SystemDrive','TEMP','TMP','PATH','APPDATA','LOCALAPPDATA','USERPROFILE','ProgramData','COMSPEC','PROCESSOR_ARCHITECTURE','PROCESSOR_ARCHITEW6432','NUMBER_OF_PROCESSORS')) {
-    $value=[Environment]::GetEnvironmentVariable($key)
-    if($null -ne $value) { $info.Environment[$key]=$value }
+  if(-not ('HtkkWindowsJobProcess' -as [type])){Add-Type -Path (Join-Path $PSScriptRoot 'HtkkWindowsJobProcess.cs')}
+  return [HtkkWindowsJobProcess]::Launch($Executable,$ProjectDirectory,[string[]]@(),$false,$IsX86Reference)
+}
+function Stop-HtkkSupplierJob($Job,[bool]$LaunchAttempted) {
+  $result=[ordered]@{status='not-launched';cleanupVerified=(-not $LaunchAttempted);supplierStopped=$false;rootStopped=$false;jobEmpty=$false}
+  if($null -eq $Job){if($LaunchAttempted){$result.status='launch-cleanup-not-verified'};return $result}
+  $result.status='cleanup-not-verified';$result.cleanupVerified=$false
+  try{
+    $stopped=$Job.Stop(5000)
+    $rootExited=$Job.WaitForRootExit(0);$result.rootStopped=$rootExited -is [bool] -and $rootExited
+    $active=$Job.ActiveProcesses;$result.jobEmpty=($active -is [uint] -or $active -is [int] -or $active -is [long]) -and $active -eq 0
+    if($stopped -is [bool] -and $stopped -and $Job.CleanupVerified -is [bool] -and $Job.CleanupVerified -and $result.rootStopped -and $result.jobEmpty){
+      $result.cleanupVerified=$true;$result.supplierStopped=$true;$result.status='stopped-empty-job'
+    }
+  }catch{} # Only fixed status/boolean fields leave this boundary.
+  finally{
+    try{$Job.Dispose()}catch{$result.cleanupVerified=$false;$result.supplierStopped=$false;$result.status='cleanup-not-verified'}
   }
-  # Match the standard architecture variables that a native 32-bit launch sees.
-  if($IsX86Reference) {
-    $info.Environment['PROCESSOR_ARCHITECTURE']='x86'
-    if([Environment]::Is64BitOperatingSystem) { $nativeArchitecture=[Environment]::GetEnvironmentVariable('PROCESSOR_ARCHITECTURE'); if($nativeArchitecture) { $info.Environment['PROCESSOR_ARCHITEW6432']=$nativeArchitecture } }
-  }
-  return [Diagnostics.Process]::Start($info)
+  return $result
 }
 function Get-HtkkSafeReferenceResult([string]$ResultPath) {
   $invalid=[ordered]@{ status='result-unavailable'; mode='custom-x86-clr2-reference-host' }
@@ -464,8 +470,8 @@ Set-StrictMode -Version Latest
 $result = [ordered]@{ status = 'unavailable'; windows = 0; controls = 0; loginReady = $false; types = @{}; ids = @(); labels = @(); categories = @(); legacyRoles = @{}; providerProcessMismatchCount = 0; legacyPatternAvailable = $false; views = @('children','raw-walker','control-walker','native-static-dialog') }
 try {
   Set-UiaPhase 'assembly-loading'
-  Add-Type -AssemblyName UIAutomationClient
-  Add-Type -AssemblyName UIAutomationTypes
+  $uiaClient=[Reflection.Assembly]::Load('UIAutomationClient, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35')
+  $uiaTypes=[Reflection.Assembly]::Load('UIAutomationTypes, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35')
   Set-UiaPhase 'initializing'
   # Classic UIA assemblies may not expose LegacyIAccessiblePattern; never let
   # an unavailable optional pattern stop the raw/control child traversal.
@@ -729,10 +735,11 @@ try {
   $runnerSession = [Diagnostics.Process]::GetCurrentProcess().SessionId
   foreach ($existing in $preexistingHtkk) { try { if ($existing.SessionId -eq $runnerSession) { $report.preexistingHtkkSameSessionCount++ } } catch { } }
   $applicationStartTime = Get-Date
-  $process = Start-HtkkCleanProcess -Executable $launchExecutable -ProjectDirectory (Split-Path $exe) -IsX86Reference ($RuntimeHost -eq 'clr2-x86-reference')
+  $supplierLaunchAttempted=$true;$supplierCleanupVerified=$false
+  $supplierJob = Start-HtkkCleanProcess -Executable $launchExecutable -ProjectDirectory (Split-Path $exe) -IsX86Reference ($RuntimeHost -eq 'clr2-x86-reference')
+  $process=$supplierJob.RootProcess
   $null=$process.Handle
   # Drain privately so no application output can reach the public log or block it.
-  $applicationStdout=$process.StandardOutput.ReadToEndAsync(); $applicationStderr=$process.StandardError.ReadToEndAsync()
   $report.childEnvironmentPolicy='os-essentials-only'
   $report.processStarted = $true
   Initialize-WindowDiagnostics
@@ -914,15 +921,13 @@ try {
     $report.privateSyntheticLoginDiagnostic=Save-HtkkSyntheticWindowDiagnostic -RootProcessId $process.Id -RootStartTime $rootStartTime -ExpectedHtkkExecutable $exe -LoginReport $report.syntheticLogin -RunId $env:GITHUB_RUN_ID -ReferenceExecutable $referencePreparation.hostPath -ReferenceSha256 $referencePreparation.hostSha256 -GuiReport $report.guiReferenceAutomation
    }}catch{$report.privateSyntheticLoginDiagnostic=@{status='capture-unavailable';captured=$false;realTaxpayerDataUsed=$false;publicScreenshot=$false}}
   }
-  $supplierStopped=$false
-  if($null -ne $process) {
-    try { if(-not $process.HasExited) { $process.Kill($true); $process.WaitForExit(5000) | Out-Null }; $supplierStopped=$process.HasExited } catch { }
-    $process.Dispose()
-  }
-  if($null -ne $process -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
+  $supplierBoundary=Stop-HtkkSupplierJob -Job $supplierJob -LaunchAttempted $supplierLaunchAttempted
+  $supplierStopped=$supplierBoundary.supplierStopped;$supplierCleanupVerified=$supplierBoundary.cleanupVerified
+  $report['supplierProcessBoundary']=$supplierBoundary
+  if($supplierLaunchAttempted -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
   $report['uiaHelpersStopped']=$uiaHelpersStopped
   if($env:GITHUB_OUTPUT){
-    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)
+    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped) -and $supplierCleanupVerified
     [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
   }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {

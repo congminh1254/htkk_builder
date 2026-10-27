@@ -19,7 +19,10 @@ class AnnexExportProbeContract(unittest.TestCase):
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text();start=workflow.index('      - name: Retain fixed original 01-2 GTGT export privately');end=workflow.index('      - name:',start+20);block=workflow[start:end]
   for term in ("steps.native_probe.outcome == 'success'","steps.native_probe.outputs.credentials_safe == 'true'","steps.native_probe.outputs.supplier_stopped == 'true'","inputs.gui_automation == 'gtgt-annex12-export-inspect'",'SOURCE_PUBLISH_TOKEN:','publish-htkk-annex12-export.py'):
    self.assertIn(term,block)
-  probe=(ROOT/'probe-htkk-windows.ps1').read_text();self.assertLess(probe.index('$supplierStopped=$process.HasExited'),probe.index("'stage-htkk-annex12-export.py'"))
+  probe=(ROOT/'probe-htkk-windows.ps1').read_text()
+  self.assertLess(probe.index('$supplierBoundary=Stop-HtkkSupplierJob'),probe.index("'stage-htkk-annex12-export.py'"))
+  self.assertIn('$supplierStopped=$supplierBoundary.supplierStopped;$supplierCleanupVerified=$supplierBoundary.cleanupVerified',probe)
+  self.assertIn('$Job.CleanupVerified -is [bool] -and $Job.CleanupVerified -and $result.rootStopped -and $result.jobEmpty',probe)
   stage=(ROOT/'stage-htkk-annex12-export.py').read_text();self.assertNotIn('SOURCE_PUBLISH_TOKEN',stage);self.assertNotIn('SOURCE_READ_TOKEN',stage)
   for name in ('publish-htkk-web-native-output.py','fetch-htkk-web-input.py','publish-htkk-web-inputs.py','report-native-case.py'):
    self.assertNotIn('gtgt-annex12-export-inspect',(ROOT/name).read_text())

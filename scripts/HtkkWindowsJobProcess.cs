@@ -8,9 +8,13 @@ using System.Threading;
 
 public sealed class HtkkWindowsJobProcess : IDisposable {
     private IntPtr job = IntPtr.Zero, process = IntPtr.Zero;
+    private Process rootProcess;
     private bool assigned, disposed;
     public bool CleanupVerified { get; private set; }
     public uint ProcessId { get; private set; }
+    // Borrowed diagnostic object. Its handle/identity is pinned BEFORE resume,
+    // never reconstructed from a PID after the supplier starts executing.
+    public Process RootProcess { get { RequireLive(); return rootProcess; } }
 
     public static HtkkWindowsJobProcess Launch(string executable, string directory, string[] arguments, bool noWindow, bool x86) {
         return LaunchCore(executable, directory, arguments, noWindow, x86, IntPtr.Zero);
@@ -56,6 +60,10 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
             IntPtr target = assignmentOverride == IntPtr.Zero ? owner.job : assignmentOverride;
             if (!AssignProcessToJobObject(target, owner.process)) throw Failure("job-assignment-failed");
             owner.assigned = true;
+            owner.rootProcess = Process.GetProcessById(checked((int)child.dwProcessId));
+            IntPtr diagnosticHandle = owner.rootProcess.Handle;
+            long nativeCreation, diagnosticCreation, exit, kernel, user;
+            if (!GetProcessTimes(owner.process, out nativeCreation, out exit, out kernel, out user) || !GetProcessTimes(diagnosticHandle, out diagnosticCreation, out exit, out kernel, out user) || nativeCreation != diagnosticCreation || WaitForSingleObject(owner.process, 0) != 0x102) throw Failure("process-identity-failed");
             if (ResumeThread(thread) == UInt32.MaxValue) throw Failure("process-resume-failed");
             return owner;
         } catch (Exception error) {
@@ -63,7 +71,7 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
             owner.CloseHandles();
             if (!stopped) throw Failure("job-cleanup-not-verified");
             string category = error.Message;
-            if (!(error is InvalidOperationException) || Array.IndexOf(new string[] { "launch-arguments-invalid", "job-create-failed", "job-limit-failed", "environment-invalid", "stdio-create-failed", "handle-list-failed", "process-create-failed", "job-assignment-failed", "process-resume-failed" }, category) < 0) category = "boundary-tool-failure";
+            if (!(error is InvalidOperationException) || Array.IndexOf(new string[] { "launch-arguments-invalid", "job-create-failed", "job-limit-failed", "environment-invalid", "stdio-create-failed", "handle-list-failed", "process-create-failed", "job-assignment-failed", "process-identity-failed", "process-resume-failed" }, category) < 0) category = "boundary-tool-failure";
             throw Failure(category);
         } finally {
             if (thread != IntPtr.Zero) CloseHandle(thread);
@@ -139,6 +147,7 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
     }
     ~HtkkWindowsJobProcess() { CloseHandles(); }
     private void CloseHandles() {
+        if (rootProcess != null) { try { rootProcess.Dispose(); } catch { } finally { rootProcess = null; } }
         if (process != IntPtr.Zero) { CloseHandle(process); process = IntPtr.Zero; }
         if (job != IntPtr.Zero) { CloseHandle(job); job = IntPtr.Zero; }
         disposed = true;
@@ -210,5 +219,6 @@ public sealed class HtkkWindowsJobProcess : IDisposable {
     [DllImport("kernel32.dll", SetLastError=true)] private static extern uint ResumeThread(IntPtr thread);
     [DllImport("kernel32.dll", SetLastError=true)] private static extern uint WaitForSingleObject(IntPtr handle, uint milliseconds);
     [DllImport("kernel32.dll", SetLastError=true)] private static extern bool GetExitCodeProcess(IntPtr process, out uint exitCode);
+    [DllImport("kernel32.dll", SetLastError=true)] private static extern bool GetProcessTimes(IntPtr process, out long creation, out long exit, out long kernel, out long user);
     [DllImport("kernel32.dll", SetLastError=true)] private static extern bool CloseHandle(IntPtr handle);
 }

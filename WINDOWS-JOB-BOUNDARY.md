@@ -1,9 +1,10 @@
-# Primitive Windows Job chưa tích hợp
+# Primitive Windows Job
 
-`scripts/HtkkWindowsJobProcess.cs` là boundary riêng của runner, chưa thay cách
-launch HTKK/compiler/oracle trong pipeline. Không sửa EXE/DLL/config gốc. Chưa
-có bằng chứng Win32 integration thật cho primitive này; compile trên Linux
-không chứng minh Windows Job hoạt động.
+`scripts/HtkkWindowsJobProcess.cs` là boundary riêng của runner. Primitive độc
+lập đã qua Windows run40579443937 ở ab4309d; compile trên Linux không thay bằng
+chứng Win32. Supplier launcher đang được tích hợp ở thay đổi tiếp theo, xem
+`SUPPLIER-JOB-INTEGRATION.md`; compiler/oracle chưa đổi. Không sửa EXE/DLL/config
+gốc, không suy test primitive là đã kiểm toàn bộ luồng supplier HTKK.
 
 API `Launch(executable, workingDirectory, arguments, noWindow, x86)` xóa môi
 trường kế thừa và chỉ truyền danh sách biến hệ điều hành đang dùng trong runner.
@@ -22,6 +23,9 @@ rồi mới gán Job vì có race trước lúc gán. Nested Job trên runner Wi
 
 `WaitForRootExit(ms)` và `RootExitCode` chỉ nói về root, không phải cả tree.
 Chúng dùng native process handle giữ từ `CreateProcess`, không tìm lại bằng PID.
+`RootProcess` là System.Diagnostics.Process mượn từ owner: handle được giữ và
+creation time đối chiếu với native identity trước resume. Caller không Dispose
+object mượn này trước owner; Stop/Dispose owner quản lý vòng đời.
 `ProcessId` chỉ là tọa độ cho UI diagnostics, không là identity/exit proof. Khi
 tích hợp không dùng `Process.GetProcessById` sau resume làm nguồn identity duy
 nhất: root có thể thoát nhanh và PID được dùng lại. API identity cần giữ native
