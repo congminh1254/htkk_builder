@@ -5,9 +5,10 @@ function Invoke-HtkkTaxIdOracle {
   param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
   $expectedHash = '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
-  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; runtime='unknown'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; originalMethodInvoked=$false; fullRoundTrip=$false; userDataUsed=$false }
-  $directory = $null; $compilerProcess = $null; $firewallName = $null
+  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; runtime='unknown'; compilerExitCode=$null; compilerErrorCodes=@();compilerJobCleanupVerified=$true; oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; originalMethodInvoked=$false; fullRoundTrip=$false; userDataUsed=$false }
+  $directory = $null; $firewallName = $null
   try {
     $business = Join-Path $ProjectDirectory 'TAX.HTKK.Business.dll'
     if ((Get-FileHash -LiteralPath $business -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedHash) { $safe.status='dll-hash-mismatch'; return $safe }
@@ -77,19 +78,13 @@ internal static class ChecksumOracle {
 }
 '@ | Set-Content -LiteralPath $source -Encoding ASCII
     '<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>' | Set-Content -LiteralPath ($program+'.config') -Encoding ASCII
-    # System compiler and generated oracle receive only essential Windows environment variables.
-    $compilerInfo = [Diagnostics.ProcessStartInfo]::new()
-    $compilerInfo.FileName=$compiler; $compilerInfo.WorkingDirectory=$directory; $compilerInfo.UseShellExecute=$false; $compilerInfo.CreateNoWindow=$true
-    $compilerInfo.RedirectStandardOutput=$true; $compilerInfo.RedirectStandardError=$true; $compilerInfo.Environment.Clear()
-    foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $compilerInfo.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$program),$source)) { $compilerInfo.ArgumentList.Add($argument) }
-    $compilerProcess=[Diagnostics.Process]::Start($compilerInfo)
-    $compilerOut=$compilerProcess.StandardOutput.ReadToEndAsync(); $compilerErr=$compilerProcess.StandardError.ReadToEndAsync()
-    if(-not $compilerProcess.WaitForExit(30000)) { $compilerProcess.Kill($true); $safe.status='compile-timeout'; return $safe }
-    $safe.compilerExitCode=$compilerProcess.ExitCode
-    $compilerText=$compilerOut.GetAwaiter().GetResult()+$compilerErr.GetAwaiter().GetResult()
-    $safe.compilerErrorCodes=@([regex]::Matches($compilerText,'\bCS[0-9]{4}\b') | ForEach-Object { $_.Value } | Sort-Object -Unique | Select-Object -First 10)
-    if($compilerProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $program -PathType Leaf)) { $safe.status='compile-failed'; return $safe }
+    $safe.compilerJobCleanupVerified=$false
+    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$program),$source) -TimeoutMilliseconds 30000
+    $safe.compilerJobCleanupVerified=$compilerRun.jobCleanupVerified;$safe.compilerExitCode=$compilerRun.exitCode;$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes
+    if(-not $compilerRun.jobCleanupVerified -or $compilerRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+    if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}
+    if(-not $compilerRun.diagnosticsVerified){$safe.status='host-or-tool-failure';return $safe}
+    if($safe.compilerExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
     $firewallName='HTKK checksum oracle '+[guid]::NewGuid().ToString('N')
     New-NetFirewallRule -DisplayName $firewallName -Direction Outbound -Program $program -Action Block | Out-Null
     $safe.oracleJobCleanupVerified=$false
@@ -106,7 +101,6 @@ internal static class ChecksumOracle {
     return $safe
   } catch { $safe.status='host-or-tool-failure'; return $safe }
   finally {
-    if($null -ne $compilerProcess) { if(-not $compilerProcess.HasExited) { $compilerProcess.Kill($true) }; $compilerProcess.Dispose() }
     if($firewallName) { Remove-NetFirewallRule -DisplayName $firewallName -ErrorAction SilentlyContinue }
     if($directory) { Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue }
   }

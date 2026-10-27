@@ -10,10 +10,11 @@ function New-HtkkX86ReferenceHost {
     [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
   $safe = [ordered]@{
     status='not-prepared'; mode='custom-x86-clr2-reference-host'; launched=$false
     originalExeHashVerified=$false; businessDllHashVerified=$false; originalConfigHashVerified=$false
-    compilerTrustVerified=$false; compilerExitCode=$null; compilerErrorCodes=@()
+    compilerTrustVerified=$false; compilerExitCode=$null; compilerErrorCodes=@(); compilerJobCleanupVerified=$true
     hostPath=$null; hostSha256=$null; hostConfigPath=$null; resultPath=$null
     arguments=@(); createdPaths=@(); compilerDirectory=$null
     webImportInputPath=$null; webImportInputHashPath=$null; webImportCasePath=$null; webImportSourceShaPath=$null
@@ -21,7 +22,7 @@ function New-HtkkX86ReferenceHost {
     originalExecutableModified=$false; originalConfigurationModified=$false
     secondaryDomainUsesOriginalConfiguration=$true; runtimeRoundTrip=$false
   }
-  $compilerProcess=$null; $directory=$null; $owned=@(); $prepared=$false
+   $directory=$null; $owned=@(); $prepared=$false
   $expectedExe='411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
   $expectedBusiness='281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
   $expectedConfig='b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
@@ -199,19 +200,13 @@ internal static class HtkkX86ReferenceHost {
     [IO.File]::WriteAllText($roundtripSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtRoundtripInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $exportSource=Join-Path $directory 'HtkkGtgtExportInspection.cs'
     [IO.File]::WriteAllText($exportSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtExportInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $info=[Diagnostics.ProcessStartInfo]::new()
-    $info.FileName=$compiler; $info.WorkingDirectory=$directory; $info.UseShellExecute=$false; $info.CreateNoWindow=$true
-    $info.RedirectStandardOutput=$true; $info.RedirectStandardError=$true; $info.Environment.Clear()
-    foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')) { $value=[Environment]::GetEnvironmentVariable($key); if($null -ne $value) { $info.Environment[$key]=$value } }
-    foreach($argument in @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$amendmentOpenSource,$annexNumericSource,$annexExportSource)) { $info.ArgumentList.Add($argument) }
-    $compilerProcess=[Diagnostics.Process]::Start($info)
-    $null=$compilerProcess.Handle
-    $stdout=$compilerProcess.StandardOutput.ReadToEndAsync(); $stderr=$compilerProcess.StandardError.ReadToEndAsync()
-    if(-not $compilerProcess.WaitForExit(30000)) { $compilerProcess.Kill($true); $safe.status='compile-timeout'; return $safe }
-    $safe.compilerExitCode=$compilerProcess.ExitCode
-    $privateCompilerOutput=$stdout.GetAwaiter().GetResult()+$stderr.GetAwaiter().GetResult()
-    $safe.compilerErrorCodes=@([regex]::Matches($privateCompilerOutput,'\bCS[0-9]{4}\b') | ForEach-Object { $_.Value } | Sort-Object -Unique | Select-Object -First 10)
-    if($compilerProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath $program -PathType Leaf)) { $safe.status='compile-failed'; return $safe }
+    $safe.compilerJobCleanupVerified=$false
+    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$amendmentOpenSource,$annexNumericSource,$annexExportSource) -TimeoutMilliseconds 30000
+    $safe.compilerJobCleanupVerified=$compilerRun.jobCleanupVerified;$safe.compilerExitCode=$compilerRun.exitCode;$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes
+    if(-not $compilerRun.jobCleanupVerified -or $compilerRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+    if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}
+    if(-not $compilerRun.diagnosticsVerified){$safe.status='host-or-tool-failure';return $safe}
+    if($safe.compilerExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
     # Guard again after compilation, before returning anything launchable.
     if((Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedExe -or (Get-FileHash -LiteralPath $business -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedBusiness -or (Get-FileHash -LiteralPath $originalConfig -Algorithm SHA256).Hash.ToLowerInvariant() -ne $expectedConfig) { $safe.status='source-changed-during-prepare'; return $safe }
     $safe.hostPath=$program; $safe.hostSha256=(Get-FileHash -LiteralPath $program -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -220,7 +215,6 @@ internal static class HtkkX86ReferenceHost {
     return $safe
   } catch { $safe.status='host-or-tool-failure'; return $safe }
   finally {
-    if($null -ne $compilerProcess) { if(-not $compilerProcess.HasExited) { $compilerProcess.Kill($true) }; $compilerProcess.Dispose() }
     if(-not $prepared) {
       foreach($path in $owned) { if(Test-Path -LiteralPath $path) { Remove-Item -LiteralPath $path -Force -ErrorAction SilentlyContinue } }
       if($directory) { Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue }

@@ -38,13 +38,12 @@ hoặc dùng dữ liệu người dùng trong các test fixture.
 
 ## Phần còn lại của TASK-003
 
-Compiler của cả ba oracle và `New-HtkkX86ReferenceHost.ps1` vẫn giữ stdout riêng
-để trích tối đa mười mã `CS####`. Không thay chúng bằng NUL rồi giả mã lỗi rỗng.
-Cần một cơ chế capture riêng có giới hạn, cùng job boundary, và đọc sau khi job
-đã sạch để loại bỏ việc chờ pipe/GetResult không giới hạn. Compiler cleanup
-root-only hiện tại còn là khoảng trống, không được coi task hoàn tất bởi patch
-oracle này. Cần chạy Windows workflow mới sau khi tích hợp trước khi nhận native
-oracle/runtime behavior đã được giữ nguyên.
+Đợt bổ sung compiler dùng `Invoke-HtkkBoundedCompiler.ps1` và API native
+output-file riêng cho cả ba oracle lẫn `New-HtkkX86ReferenceHost.ps1`. Việc giữ
+mã `CS####`, bounded read sau cleanup và giới hạn đọc/encoding được mô tả tại
+`BOUNDED-COMPILER-DIAGNOSTICS.md`; không thay compiler bằng NUL. Cần Windows
+workflow mới để xác minh tích hợp, không coi test policy trên Linux là bằng
+chứng native oracle/runtime behavior được giữ nguyên.
 
 Job không chứng minh Windows Installer service đã dừng hoặc bao phủ mọi công
 việc được chuyển sang service có sẵn. Giữ điều kiện fail-closed của installer;

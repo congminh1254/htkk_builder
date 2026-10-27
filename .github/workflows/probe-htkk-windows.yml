@@ -63,6 +63,9 @@ jobs:
       - name: Check bounded native process and clean environment
         shell: pwsh
         run: ./scripts/Test-HtkkBoundedNativeProcess.ps1
+      - name: Check bounded compiler diagnostics and complete cleanup
+        shell: pwsh
+        run: ./scripts/Test-HtkkBoundedCompiler.ps1
       - name: Check bounded oracle Job cleanup and environment
         shell: pwsh
         run: ./scripts/Test-HtkkBoundedJobProcess.ps1

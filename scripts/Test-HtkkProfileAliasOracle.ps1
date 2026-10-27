@@ -4,8 +4,9 @@ function Invoke-HtkkProfileAliasOracle {
   param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
-  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; oracleStage='not-started'; oracleStatus='not-run'; compilerExitCode=$null; compilerErrorCodes=@(); oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
-  $directory=$null; $compilerProcess=$null;  $firewallName=$null
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
+  $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; oracleStage='not-started'; oracleStatus='not-run'; compilerExitCode=$null; compilerErrorCodes=@();compilerJobCleanupVerified=$true; oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
+  $directory=$null;   $firewallName=$null
   try {
     $dll=Join-Path $ProjectDirectory 'TAX.HTKK.Utilities.dll'
     if((Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec') { $safe.status='dll-hash-mismatch'; return $safe }
@@ -109,15 +110,13 @@ internal static class ProfileAliasOracle {
     $configuration=[xml]'<?xml version="1.0"?><configuration><appSettings><add key="DataFiles" value=""/><add key="APP_PREFIX" value="HTKK-PROFILE-ORACLE"/><add key="ENABLE_LOGGING" value="0"/></appSettings><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>'
     $configuration.configuration.appSettings.add | Where-Object {$_.key -eq 'DataFiles'} | ForEach-Object {$_.SetAttribute('value',$dataRoot)}
     $configuration.Save($program+'.config')
-    $compilerInfo=[Diagnostics.ProcessStartInfo]::new();$compilerInfo.FileName=$compiler;$compilerInfo.WorkingDirectory=$directory;$compilerInfo.UseShellExecute=$false;$compilerInfo.CreateNoWindow=$true
-    $compilerInfo.RedirectStandardOutput=$true;$compilerInfo.RedirectStandardError=$true;$compilerInfo.Environment.Clear()
-    foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')){$v=[Environment]::GetEnvironmentVariable($key);if($null -ne $v){$compilerInfo.Environment[$key]=$v}}
-    foreach($argument in @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$program),$source)){$compilerInfo.ArgumentList.Add($argument)}
-    $compilerProcess=[Diagnostics.Process]::Start($compilerInfo);$compilerOut=$compilerProcess.StandardOutput.ReadToEndAsync();$compilerErr=$compilerProcess.StandardError.ReadToEndAsync()
-    if(-not $compilerProcess.WaitForExit(30000)){$compilerProcess.Kill($true);$safe.status='compile-timeout';return $safe}
-    $safe.compilerExitCode=$compilerProcess.ExitCode;$compilerText=$compilerOut.GetAwaiter().GetResult()+$compilerErr.GetAwaiter().GetResult()
-    $safe.compilerErrorCodes=@([regex]::Matches($compilerText,'\bCS[0-9]{4}\b')|ForEach-Object{$_.Value}|Sort-Object -Unique|Select-Object -First 10)
-    if($compilerProcess.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
+    $safe.compilerJobCleanupVerified=$false
+    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$program),$source) -TimeoutMilliseconds 30000
+    $safe.compilerJobCleanupVerified=$compilerRun.jobCleanupVerified;$safe.compilerExitCode=$compilerRun.exitCode;$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes
+    if(-not $compilerRun.jobCleanupVerified -or $compilerRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+    if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}
+    if(-not $compilerRun.diagnosticsVerified){$safe.status='host-or-tool-failure';return $safe}
+    if($safe.compilerExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
     $firewallName='HTKK profile oracle '+[guid]::NewGuid().ToString('N');New-NetFirewallRule -DisplayName $firewallName -Direction Outbound -Program $program -Action Block|Out-Null
     $safe.oracleJobCleanupVerified=$false
     $oracleRun=Invoke-HtkkBoundedJobProcess -Executable $program -WorkingDirectory $ProjectDirectory -Arguments @($ProjectDirectory,$template,$dataRoot,$resultFile) -TimeoutMilliseconds 30000
@@ -135,7 +134,6 @@ internal static class ProfileAliasOracle {
     return $safe
   }catch{$safe.status='host-or-tool-failure';return $safe}
   finally{
-    if($null -ne $compilerProcess){if (-not $compilerProcess.HasExited){$compilerProcess.Kill($true)};$compilerProcess.Dispose()}
     if($firewallName){Remove-NetFirewallRule -DisplayName $firewallName -ErrorAction SilentlyContinue}
     if($directory){Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue}
   }

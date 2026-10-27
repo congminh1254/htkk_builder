@@ -4,8 +4,9 @@ function Invoke-HtkkCommonHeaderOracle {
  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
  $ErrorActionPreference='Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
- $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;failedCaseIndices=@();getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();oracleExitCode=$null; oracleJobCleanupVerified=$true;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
- $directory=$null;$compilerProcess=$null;$firewallName=$null
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
+ $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;failedCaseIndices=@();getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();compilerJobCleanupVerified=$true;oracleExitCode=$null; oracleJobCleanupVerified=$true;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
+ $directory=$null;$firewallName=$null
  try {
   $privateDirectory=Join-Path $env:RUNNER_TEMP 'htkk-common-header-diagnostic'
   foreach($name in @('common-header-first.xml','common-header-supplement.xml')){Remove-Item -LiteralPath (Join-Path $privateDirectory $name) -Force -ErrorAction SilentlyContinue}
@@ -29,13 +30,13 @@ function Invoke-HtkkCommonHeaderOracle {
    if($existing.Count){$existing|ForEach-Object{$_.SetAttribute('value',$setting.Value)}}else{$node=$configuration.CreateElement('add');$node.SetAttribute('key',$setting.Key);$node.SetAttribute('value',$setting.Value);$configuration.configuration.appSettings.AppendChild($node)|Out-Null}
   }
   New-Item -ItemType Directory -Path (Join-Path $directory 'DATAFILES')|Out-Null;$configuration.Save($program+'.config')
-  $compilerInfo=[Diagnostics.ProcessStartInfo]::new();$compilerInfo.FileName=$compiler;$compilerInfo.WorkingDirectory=$directory;$compilerInfo.UseShellExecute=$false;$compilerInfo.CreateNoWindow=$true;$compilerInfo.RedirectStandardOutput=$true;$compilerInfo.RedirectStandardError=$true;$compilerInfo.Environment.Clear()
-  foreach($key in @('SystemRoot','WINDIR','TEMP','TMP','PATH')){$v=[Environment]::GetEnvironmentVariable($key);if($null -ne $v){$compilerInfo.Environment[$key]=$v}}
-  foreach($argument in @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$program),$source)){$compilerInfo.ArgumentList.Add($argument)}
-  $compilerProcess=[Diagnostics.Process]::Start($compilerInfo);$compilerOut=$compilerProcess.StandardOutput.ReadToEndAsync();$compilerErr=$compilerProcess.StandardError.ReadToEndAsync()
-  if(-not $compilerProcess.WaitForExit(30000)){$compilerProcess.Kill($true);$safe.status='compile-timeout';return $safe}
-  $safe.compilerExitCode=$compilerProcess.ExitCode;$compilerText=$compilerOut.GetAwaiter().GetResult()+$compilerErr.GetAwaiter().GetResult();$safe.compilerErrorCodes=@([regex]::Matches($compilerText,'\bCS[0-9]{4}\b')|ForEach-Object{$_.Value}|Sort-Object -Unique|Select-Object -First 10)
-  if($compilerProcess.ExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
+  $safe.compilerJobCleanupVerified=$false
+  $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$program),$source) -TimeoutMilliseconds 30000
+  $safe.compilerJobCleanupVerified=$compilerRun.jobCleanupVerified;$safe.compilerExitCode=$compilerRun.exitCode;$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes
+  if(-not $compilerRun.jobCleanupVerified -or $compilerRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
+  if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}
+  if(-not $compilerRun.diagnosticsVerified){$safe.status='host-or-tool-failure';return $safe}
+  if($safe.compilerExitCode -ne 0 -or -not(Test-Path -LiteralPath $program -PathType Leaf)){$safe.status='compile-failed';return $safe}
   $firewallName='HTKK common header oracle '+[guid]::NewGuid().ToString('N');New-NetFirewallRule -DisplayName $firewallName -Direction Outbound -Program $program -Action Block|Out-Null
   $safe.oracleJobCleanupVerified=$false
   $oracleRun=Invoke-HtkkBoundedJobProcess -Executable $program -WorkingDirectory $directory -Arguments @($ProjectDirectory,(Join-Path $ProjectDirectory 'Menu.xml'),(Join-Path $root 'InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml'),$directory,$resultFile) -TimeoutMilliseconds 30000
@@ -62,7 +63,6 @@ function Invoke-HtkkCommonHeaderOracle {
   return $safe
  }catch{$safe.status='host-or-tool-failure';return $safe}
  finally{
-  if($null -ne $compilerProcess){if(-not $compilerProcess.HasExited){$compilerProcess.Kill($true)};$compilerProcess.Dispose()}
   if($firewallName){Remove-NetFirewallRule -DisplayName $firewallName -ErrorAction SilentlyContinue}
   if($directory){Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue}
  }

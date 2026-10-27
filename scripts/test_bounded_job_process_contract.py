@@ -39,6 +39,6 @@ class BoundedJobProcessContract(unittest.TestCase):
                 self.assertNotIn('$oracleProcess', source)
                 self.assertNotIn('$oracleOut', source)
                 self.assertNotIn('$oracleErr', source)
-                self.assertIn('compilerErrorCodes=@([regex]::Matches(', source)
-                self.assertIn("Select-Object -First 10)", source)
+                self.assertIn('Invoke-HtkkBoundedCompiler -Executable $compiler', source)
+                self.assertIn('$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes', source)
                 self.assertIn("$safe.status='oracle-timeout'", source)
