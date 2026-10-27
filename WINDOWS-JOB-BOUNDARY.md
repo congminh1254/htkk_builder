@@ -40,7 +40,11 @@ kiểm quoting. Khi chạy Windows, test thực sự launch child PowerShell: m�
 argument có quote/space/trailing slash, sentinel credential không kế thừa,
 parent thoát trước grandchild đang treo, timeout, lỗi AssignProcessToJobObject
 native trước resume và lỗi image không tồn tại. Test dùng private reflection
-override handle để tạo lỗi gán thật; API public luôn dùng Job vừa tạo.
+override handle qua C# shim có `object[]` kiểu xác định để tạo lỗi gán thật;
+không ghép reflection argument bằng PowerShell. Shim chỉ trả category/type enum
+cố định khi lỗi, không xuất exception message tùy ý hoặc đường dẫn. Preflight
+typed invocation chạy trên cả Linux; lỗi Win32 thật vẫn chỉ kiểm trên Windows.
+API public luôn dùng Job vừa tạo.
 
 Primitive chưa đảm bảo công việc được tạo qua Windows Installer service hoặc
 service khác ở ngoài cây process. Không kill `msiserver` dùng chung và không

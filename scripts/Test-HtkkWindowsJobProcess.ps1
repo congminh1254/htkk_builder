@@ -1,6 +1,35 @@
 # Standalone boundary validation; does not install, load or run HTKK.
 $ErrorActionPreference='Stop'
-Add-Type -Path (Join-Path $PSScriptRoot 'HtkkWindowsJobProcess.cs')
+$shim=@'
+// Test-only typed invocation: PowerShell never constructs reflection object[].
+public static class HtkkWindowsJobTestShim {
+ public static string AssignmentRefusal(string executable, string directory, string[] arguments) {
+  HtkkWindowsJobProcess unexpected = null;
+  try {
+   System.Reflection.MethodInfo method = typeof(HtkkWindowsJobProcess).GetMethod("LaunchCore", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+   if (method == null) return "test-hook-missing";
+   unexpected = (HtkkWindowsJobProcess)method.Invoke(null, new object[] { executable, directory, arguments, true, false, new System.IntPtr(-1) });
+   return unexpected.Stop(5000) ? "unexpected-launch-success" : "job-cleanup-not-verified";
+  } catch (System.Exception error) {
+   while (error.InnerException != null) error = error.InnerException;
+   if (error is System.InvalidOperationException) {
+    string[] categories = new string[] { "job-assignment-failed", "job-cleanup-not-verified", "boundary-tool-failure", "process-create-failed", "job-create-failed", "job-limit-failed", "stdio-create-failed", "handle-list-failed", "launch-arguments-invalid", "environment-invalid", "process-resume-failed" };
+    if (System.Array.IndexOf(categories, error.Message) >= 0) return error.Message;
+    return "unexpected-invalid-operation";
+   }
+   if (error is System.ArgumentException) return "unexpected-argument-exception";
+   if (error is System.Reflection.TargetParameterCountException) return "unexpected-parameter-count";
+   if (error is System.Reflection.TargetException) return "unexpected-reflection-target";
+   if (error is System.MethodAccessException) return "unexpected-method-access";
+   if (error is System.Reflection.AmbiguousMatchException) return "unexpected-ambiguous-method";
+   return "unexpected-other-exception-type";
+  } finally {
+   if (unexpected != null) unexpected.Dispose();
+  }
+ }
+}
+'@
+Add-Type -TypeDefinition ([IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWindowsJobProcess.cs'))+"`n"+$shim)
 $quoteCases=@(
  @('', '""'),
  @('alpha beta','"alpha beta"'),
@@ -8,7 +37,10 @@ $quoteCases=@(
  @('C:\space path\','"C:\space path\\"')
 )
 foreach($case in $quoteCases){if([HtkkWindowsJobProcess]::QuoteArgument($case[0]) -cne $case[1]){throw 'Windows argument encoding failed'}}
-if(-not $IsWindows){Write-Host 'Windows Job boundary C# compiled; 4 quoting checks passed; Win32 integration NOT RUN on this platform';return}
+# This reaches the actual production preflight through typed reflection on ANY
+# platform, proving argument binding without starting a native process.
+if([HtkkWindowsJobTestShim]::AssignmentRefusal('relative.exe','relative',@('quoted "argument"')) -cne 'launch-arguments-invalid'){throw 'Typed test invocation preflight failed'}
+if(-not $IsWindows){Write-Host 'Windows Job boundary C# compiled; 4 quoting checks and typed invocation preflight passed; Win32 integration NOT RUN on this platform';return}
 
 $directory=Join-Path $env:RUNNER_TEMP ('htkk-job-boundary-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $directory|Out-Null
@@ -26,12 +58,6 @@ function Get-FailureCategory($errorRecord){
  $errorObject=$errorRecord.Exception
  while($null -ne $errorObject.InnerException){$errorObject=$errorObject.InnerException}
  return $errorObject.Message
-}
-function Write-AssignmentFailureDiagnostic($errorRecord){
- $category=Get-FailureCategory $errorRecord
- $allowed=@('job-cleanup-not-verified','boundary-tool-failure','process-create-failed','job-create-failed','job-limit-failed','stdio-create-failed','handle-list-failed','launch-arguments-invalid','environment-invalid','process-resume-failed')
- if($category -cnotin $allowed){$category='unclassified-boundary-error'}
- Write-Host ('Assignment failure diagnostic category: '+$category)
 }
 try{
  [Environment]::SetEnvironmentVariable('HTKK_TEST_FAKE_CREDENTIAL','test-only-sentinel')
@@ -89,12 +115,9 @@ exit 17
 
  # Force an actual native assignment error while the child is suspended.
  $arguments[5]='normal'
- $method=[HtkkWindowsJobProcess].GetMethod('LaunchCore',[Reflection.BindingFlags]'NonPublic,Static')
- $rejected=$false
- try{$unexpected=$method.Invoke($null,@($hostExecutable,$directory,[string[]]$arguments,$true,$false,[IntPtr](-1)))}catch{
-  if((Get-FailureCategory $_) -ceq 'job-assignment-failed'){$rejected=$true}else{Write-AssignmentFailureDiagnostic $_;throw 'Assignment failure cleanup was not verified'}
- }
- if(-not $rejected -or (Test-Path -LiteralPath $marker)){throw 'Child executed before successful job assignment'}
+ $refusal=[HtkkWindowsJobTestShim]::AssignmentRefusal($hostExecutable,$directory,[string[]]$arguments)
+ if($refusal -cne 'job-assignment-failed'){Write-Host ('Assignment failure diagnostic category: '+$refusal);throw 'Assignment failure cleanup was not verified'}
+ if(Test-Path -LiteralPath $marker){throw 'Child executed before successful job assignment'}
  $rejected=$false
  try{$unexpected=[HtkkWindowsJobProcess]::Launch((Join-Path $directory 'missing.exe'),$directory,@(),$true,$false)}catch{
   if((Get-FailureCategory $_) -ceq 'process-create-failed'){$rejected=$true}else{throw 'Unexpected native launch failure category'}
