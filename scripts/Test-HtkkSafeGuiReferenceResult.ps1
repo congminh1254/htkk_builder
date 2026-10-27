@@ -78,10 +78,10 @@ try {
  $open.amendmentOpenKhbsRows=10;
  $open.amendmentOpenKhbsColumns=10;
  $open.amendmentOpenExplanationRows=10;
- $open.amendmentOpenExplanationColumns=10;
+ $open.amendmentOpenExplanationColumns=10;$open.menuClickCount=4;
  $open | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'valid'){throw 'Typed B1 opening rejected'};$cases++
- foreach($change in @(@{key='amendmentLifecycleVerified';value=$true},@{key='amendmentOpenKhbsRows';value=0},@{key='amendmentOpenKhbsColumns';value=513},@{key='amendmentOpenSourcesMatched';value=$false},@{key='amendmentOpenPeriodMatched';value=$false})){
+ foreach($change in @(@{key='amendmentLifecycleVerified';value=$true},@{key='amendmentOpenKhbsRows';value=0},@{key='amendmentOpenKhbsColumns';value=513},@{key='amendmentOpenSourcesMatched';value=$false},@{key='amendmentOpenPeriodMatched';value=$false},@{key='menuClickCount';value=7},@{key='amendmentOpenCloseInvoked';value=1},@{key='amendmentOpenPriorClosed';value=1},@{key='amendmentOpenDefaultsMatched';value=1},@{key='amendmentOpenConfirmInvoked';value=1},@{key='amendmentOpenPeriodMatched';value=1},@{key='amendmentOpenSourcesMatched';value=1},@{key='amendmentOpenKhbsSheetsObserved';value=1},@{key='amendmentOpenPriorUnchanged';value=1})){
   $copy=[ordered]@{};foreach($key in $open.Keys){$copy[$key]=$open[$key]};$copy[$change.key]=$change.value
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'Unsafe B1 opening accepted'};$cases++

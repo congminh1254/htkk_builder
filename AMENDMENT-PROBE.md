@@ -32,3 +32,7 @@ Mode mới `gtgt-amendment-open-inspect` dùng lại đúng bước Ghi trên, s
 Các cờ `gtgtPeriodModelMatched`/`periodFirstDeclarationMatched` hiện có vẫn mô tả checkpoint C0 đã lưu; cờ `amendmentOpenPeriodMatched` riêng mô tả model B1 mới. Không dùng cờ C0 để khẳng định B1. Các field mở bổ sung mặc địnhfalse/0 trong mọi mode cũ. Reader nhận đúng bộ key/type/bounds, chặn metadata B1 xuất hiện ở mode khác và chặn `amendmentLifecycleVerified=true`.
 
 Checkpoint này chỉ quan sát mở màn hình/tabs; chưa kiểm KHBS phân bổ/chênh lệch, Tổng hợp KHBS, validation lưu B1, in, export/import XML hoặc số tiền phát sinh. `amendmentLifecycleVerified=false` và `runtimeRoundTrip=false` tiếp tục giữ nguyên. Chỉ sau Windows runtime mới được ghi nhận checkpoint mở B1 đạt.
+
+## Boundary checks before B1
+
+Run40484715557 stopped in the offline PowerShell reader test before HTKK ran. A merge introduced a leading array element in string validation and omitted B1 flags from boolean typing. Both are corrected and individually covered. B1 alone allows up to six original menu clicks (two traversals); existing modes retain the three-click bound. The real PowerShell boundary suite is also run locally on Linux before dispatch; it is not native HTKK evidence.

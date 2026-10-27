@@ -51,3 +51,21 @@ class AmendmentOpeningContract(unittest.TestCase):
   self.assertIn("$amendmentOpenSource=Join-Path $directory 'HtkkGtgtAmendmentOpenInspection.cs'",host)
   self.assertIn('$amendmentSource,$amendmentOpenSource,$annexExportSource)',host)
   self.assertIn('!AmendmentInspectionMode()',source);self.assertIn('gtgt-original-declaration-saved-inspected',source)
+
+class AmendmentReaderTypeBoundaryTests(unittest.TestCase):
+ def test_opening_flags_are_individually_boolean_typed_not_just_allowlisted(self):
+  text=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  boolean_line=next(line for line in text.splitlines() if '$value[$key] -isnot [bool]' in line)
+  typed=set(re.findall(r"'([^']+)'",boolean_line))
+  self.assertTrue(set(FLAGS)<=typed,set(FLAGS)-typed)
+ def test_string_field_validation_does_not_gain_a_leading_array_element_during_merge(self):
+  text=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  self.assertNotRegex(text,r'@\(\s*,')
+  line=next(line for line in text.splitlines() if '$value[$key] -isnot [string]' in line and 'foreach($key' in line)
+  self.assertEqual(re.findall(r"'([^']+)'",line),['format','mode','stage','failureCategory','editorKind','runtime','saveDialogKind','invalid'])
+
+ def test_second_menu_traversal_budget_is_restricted_to_the_new_b1_mode(self):
+  reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
+  self.assertIn("menuClickCount=$(if($ExpectedMode -ceq 'gtgt-amendment-open-inspect'){6}else{3})",reader)
+  self.assertIn('$open.menuClickCount=4',fixture)
+  self.assertIn("@{key='menuClickCount';value=7}",fixture)
