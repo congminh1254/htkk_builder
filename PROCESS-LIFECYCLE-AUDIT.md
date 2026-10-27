@@ -1,5 +1,7 @@
 # Kiểm toán vòng đời tiến trình cho TASK-003
 
+> Phần kiểm toán dưới đây là snapshot lịch sử trước tích hợp. Supplier đã chuyển sang Job ở bd54b0c (native40581842543 đạt); oracle result-file ở801a7e6, UIA ởfa87e5f, compiler bounded private capture ở18b6f1b. Các khoảng trống root-only/pipe được nêu bên dưới đã có code xử lý tương ứng; cần đọc bằng chứng native mới và13ca hồi quy trước khi đóng #4. Giới hạn service/sandbox vẫn giữ nguyên.
+
 Kiểm tra ngày 27/10/2026. Đây là kiểm tra chỉ đọc mã runner và các bảng trong
 MSI đã ghim; không cài đặt hoặc chạy HTKK/MSI, không thu thập dữ liệu người dùng.
 Các nhận xét dưới đây không chứng minh tương thích nghiệp vụ hoặc hoàn tất #4.

@@ -33,8 +33,6 @@ wrapper thật. Đây không phải chạy HTKK. Workflow vẫn cần chạy sup
 nguyên bản riêng để kiểm tương thích launch mới.
 
 Phạm vi này chỉ tích hợp supplier và descendants được kernel Job theo dõi.
-Compiler/oracle/helper khác chưa tự động chuyển sang Job; Windows Installer
-service vẫn ngoài phạm vi process tree. Giữ MSI fail-closed riêng và tiếp tục
-TASK-003, chưa tuyên bố toàn bộ lifecycle hoàn chỉnh.
+Ở snapshot bd54b0c, compiler/oracle/helper khác chưa chuyển sang Job. Các đợt sau đã tích hợp oracle801a7e6, UIAfa87e5f và compiler18b6f1b. Windows Installer service vẫn ngoài phạm vi process tree; giữ policy MSI fail-closed và kiểm native/13ca mới trước khi đóng TASK-003.
 
 Cleanup wrapper đợi Stop tối đa5 giây; Dispose có một lượt fallback tối đa5 giây nếu lần dừng trước chưa xác minh, tổng hữu hạn tối đa10 giây. Không mở credentials nếu fallback/query không đạt.

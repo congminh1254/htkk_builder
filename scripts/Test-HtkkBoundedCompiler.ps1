@@ -75,18 +75,21 @@ try{
  Write-Host 'Bounded compiler policy checks passed: 14 scenarios; raw output excluded'
  if(-not $IsWindows){Write-Host 'Bounded compiler Win32 integration NOT RUN on this platform';return}
 
- $source=Join-Path $directory 'private invalid compiler fixture.cs'
+ # Mocked cleanup-failure cases intentionally leave their files untouched.
+ # A fresh subdirectory keeps that safety-policy evidence separate from real capture.
+ $nativeDirectory=Join-Path $directory 'native';New-Item -ItemType Directory -Path $nativeDirectory|Out-Null
+ $source=Join-Path $nativeDirectory 'private invalid compiler fixture.cs'
  [IO.File]::WriteAllText($source,'internal class Fixture { static void Main() { int value = ; } }')
  $compiler=Join-Path $env:WINDIR 'Microsoft.NET/Framework/v4.0.30319/csc.exe'
  if(-not(Test-Path -LiteralPath $compiler -PathType Leaf)){throw 'Trusted Windows compiler fixture missing'}
  $script:htkkHelperJobsStopped=$true
- $actual=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:exe',('/out:'+(Join-Path $directory 'fixture.exe')),$source)
+ $actual=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $nativeDirectory -Arguments @('/nologo','/target:exe',('/out:'+(Join-Path $nativeDirectory 'fixture.exe')),$source)
  if($actual.status -cne 'exited' -or $actual.exitCode -eq 0 -or -not $actual.diagnosticsVerified -or -not $actual.jobCleanupVerified -or $actual.compilerErrorCodes -cnotcontains 'CS1525'){throw 'Actual compiler diagnostic capture failed'}
  if(($actual|ConvertTo-Json -Compress) -match 'private|fixture|\.cs|stdout|stderr'){throw 'Actual compiler source/path escaped'}
- if(@(Get-ChildItem -LiteralPath $directory -Filter 'compiler-*').Count){throw 'Private compiler output files were not removed'}
+ if(@(Get-ChildItem -LiteralPath $nativeDirectory -Filter 'compiler-*').Count){throw 'Private compiler output files were not removed'}
 
  # Exercise timeout through the output-file API without running an untrusted tool.
- $child=Join-Path $directory 'hanging compiler fixture.ps1';$marker=Join-Path $directory 'timeout marker.txt'
+ $child=Join-Path $nativeDirectory 'hanging compiler fixture.ps1';$marker=Join-Path $nativeDirectory 'timeout marker.txt'
  @'
 param([string]$Marker)
 if([Environment]::GetEnvironmentVariable('HTKK_TEST_FAKE_CREDENTIAL')){exit 91}
@@ -98,7 +101,7 @@ Start-Sleep -Seconds 60
  try{
   [Environment]::SetEnvironmentVariable('HTKK_TEST_FAKE_CREDENTIAL','test-only-sentinel')
   $hostExecutable=[Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
-  $timeout=Invoke-HtkkBoundedCompiler -Executable $hostExecutable -WorkingDirectory $directory -Arguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$child,$marker) -TimeoutMilliseconds 2500
+  $timeout=Invoke-HtkkBoundedCompiler -Executable $hostExecutable -WorkingDirectory $nativeDirectory -Arguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$child,$marker) -TimeoutMilliseconds 2500
   if($timeout.status -cne 'process-timeout' -or -not $timeout.jobCleanupVerified -or $timeout.diagnosticsVerified -or $timeout.compilerErrorCodes.Count){throw 'Actual compiler timeout capture boundary failed'}
   if(-not(Test-Path -LiteralPath $marker)){throw 'Compiler timeout fixture did not start'}
   if(Get-Process -Id ([int][IO.File]::ReadAllText($marker)) -ErrorAction SilentlyContinue){throw 'Timed out compiler fixture remained alive'}
