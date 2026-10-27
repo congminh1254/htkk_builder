@@ -1,0 +1,23 @@
+name: Clean Framework UIA assembly readiness
+on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/Test-HtkkFrameworkUiaAssemblyLoad.ps1
+      - scripts/Invoke-HtkkBoundedNativeProcess.ps1
+      - .github/workflows/framework-uia-readiness.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  framework_assemblies:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check strong-named Framework assemblies in clean Windows PowerShell
+        shell: pwsh
+        run: ./scripts/Test-HtkkFrameworkUiaAssemblyLoad.ps1
