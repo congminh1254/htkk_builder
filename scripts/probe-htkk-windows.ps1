@@ -10,7 +10,7 @@ $report = [ordered]@{
   referenceHostPreparation = $null; referenceHostResult = $null; originalSourcesUnmodified = $null
   childEnvironmentPolicy = 'not-launched'; hostOutboundBlocked = $false; originalOutboundBlocked = $false
   officialCabMatchesMirror = $false; msiAuthenticodeValid = $false
-  netFx35Present = $false; installExitCode = $null
+  netFx35Present = $false; installExitCode = $null; installerProcess = $null
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
   runnerSessionId = $null; appSessionId = $null; userInteractive = [Environment]::UserInteractive
   registrationAcknowledgementEnabled = [bool]$AcknowledgeRegistration; registrationDialogPosts = 0; registrationProcessesTracked = 0
@@ -41,6 +41,7 @@ $report = [ordered]@{
 }
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
 $rootStartTime = $null
+$installerStopped=$true
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
 $firewallNames = [Collections.Generic.List[string]]::new()
 $registrationProcesses = [Collections.Generic.List[Diagnostics.Process]]::new()
@@ -600,10 +601,14 @@ try {
   if (-not $InstallAndProbe) { $report.stage = 'verified-install-not-requested'; return }
   # Execute only the pinned, publisher-verified MSI after official-distribution CAB equivalence.
   $report.stage = 'install'
-  $install = Start-Process -FilePath "$env:WINDIR\System32\msiexec.exe" -ArgumentList @('/i', "`"$msi`"", '/qn', '/norestart', 'ISCHECKFORPRODUCTUPDATES=0', '/L*v', "`"$(Join-Path $work 'install-private.log')`"") -Wait -PassThru
-  $report.installExitCode = $install.ExitCode
-  if ($install.ExitCode -notin @(0, 3010)) { throw 'MSI_INSTALL_FAILED' }
-  if ($install.ExitCode -eq 3010) { throw 'REBOOT_REQUIRED_PROBE_NOT_RUN' }
+  . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
+  $install=Invoke-HtkkBoundedNativeProcess -Executable "$env:WINDIR\System32\msiexec.exe" -WorkingDirectory $work -Arguments @('/i',$msi,'/qn','/norestart','ISCHECKFORPRODUCTUPDATES=0','/L*v',(Join-Path $work 'install-private.log')) -TimeoutMilliseconds 180000
+  $report.installerProcess=$install;$installerStopped=$install.processStopped
+  $report.installExitCode=$install.exitCode
+  if(-not $installerStopped){throw 'MSI_PROCESS_NOT_STOPPED'}
+  if($install.timedOut){throw 'MSI_INSTALL_TIMEOUT'}
+  if($install.status -ne 'exited' -or $install.exitCode -notin @(0,3010)){throw 'MSI_INSTALL_FAILED'}
+  if($install.exitCode -eq 3010){throw 'REBOOT_REQUIRED_PROBE_NOT_RUN'}
   $candidates = @("${env:ProgramFiles}\HTKK\Project\HTKK.exe", "${env:ProgramFiles(x86)}\HTKK\Project\HTKK.exe", 'C:\HTKK\Project\HTKK.exe')
   $exe = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
   if (-not $exe) { throw 'INSTALLED_HTKK_NOT_FOUND' }
@@ -837,7 +842,7 @@ try {
   $report.stage = if($GuiAutomation -eq 'gtgt-web-import-inspect'){'synthetic-original-gtgt-web-import-inspected'}elseif($GuiAutomation -eq 'gtgt-roundtrip-inspect'){'synthetic-original-gtgt-roundtrip-inspected'}elseif($GuiAutomation -eq 'gtgt-export-inspect'){'synthetic-original-gtgt-export-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-export-inspect'){'synthetic-original-gtgt-annex12-export-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-numeric-inspect'){'synthetic-original-gtgt-annex12-numeric-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-input-inspect'){'synthetic-original-gtgt-annex12-input-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-row-inspect'){'synthetic-original-gtgt-annex12-row-inspected'}elseif($GuiAutomation -eq 'gtgt-annex12-inspect'){'synthetic-original-gtgt-annex12-inspected'}elseif($GuiAutomation -eq 'gtgt-amendment-open-inspect'){'synthetic-original-amendment-open-inspected'}elseif($GuiAutomation -eq 'gtgt-amendment-inspect'){'synthetic-original-declaration-saved-for-amendment-inspected'}elseif($GuiAutomation -eq 'gtgt-sheet-inspect'){'synthetic-original-gtgt-sheet-inspected'}elseif($GuiAutomation -eq 'gtgt-inspect'){'synthetic-original-gtgt-period-inspected'}elseif($GuiAutomation -eq 'profile-save'){'synthetic-original-profile-saved-verified'}elseif($GuiAutomation -eq 'inspect'){'synthetic-profile-managed-controls-inspected'}elseif ($SyntheticLogin) { 'synthetic-profile-window-observed' } else { 'startup-window-observed' }
 } catch {
   # Only allow fixed diagnostic enums into the public summary. Never dump remote/installer output.
-  $known = @('WEB_REFERENCE_INPUT_INVALID','GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
+  $known = @('WEB_REFERENCE_INPUT_INVALID','GUI_REFERENCE_AUTOMATION_MODE_INVALID','GUI_REFERENCE_AUTOMATION_NOT_VERIFIED','SYNTHETIC_LOGIN_NOT_READY','SYNTHETIC_LOGIN_NOT_VERIFIED','PROFILE_ALIAS_ORACLE_NOT_VERIFIED','REGISTRATION_PROCESS_FAILED','REGISTRATION_RESULT_NOT_VERIFIED','REGISTRATION_ACKNOWLEDGEMENT_LIMIT','X86_REFERENCE_HOST_PREPARATION_FAILED','X86_REFERENCE_HOST_LAYOUT_INVALID','ORIGINAL_SOURCE_CHANGED','TAX_ID_ORACLE_NOT_VERIFIED','SOURCE_HASH_MISMATCH','TRUSTED_RUNNER_7ZIP_MISSING','OFFICIAL_CAB_EXTRACTION_FAILED','MSI_AUTHENTICODE_NOT_VALID','MSI_PUBLISHER_SERIAL_MISMATCH','MSI_PUBLISHER_SUBJECT_MISMATCH','RUNNER_SIGNTOOL_MISSING','MSI_SIGNTOOL_VERIFICATION_FAILED','NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED','MSI_INSTALL_TIMEOUT','MSI_PROCESS_NOT_STOPPED','MSI_INSTALL_FAILED','REBOOT_REQUIRED_PROBE_NOT_RUN','INSTALLED_HTKK_NOT_FOUND','STARTUP_WINDOW_NOT_OBSERVED')
   $reason = $_.Exception.Message
   $report['blockedReason'] = if ($reason -in $known) { $reason } else { 'HOST_NETWORK_OR_TOOL_FAILURE' }
   $report.stage = 'blocked'
@@ -874,7 +879,7 @@ try {
   }
   if($null -ne $process -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
   if($env:GITHUB_OUTPUT){
-    $credentialsSafe=$null -eq $process -or $supplierStopped
+    $credentialsSafe=$installerStopped -and ($null -eq $process -or $supplierStopped)
     [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
   }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {
