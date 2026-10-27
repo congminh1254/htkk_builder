@@ -55,3 +55,7 @@ parser's own `originalAnnexExportVerified=false` means parsing itself cannot
 prove origin. The final manifest records the separate trusted original-run
 attestation. Independent browser/WASM XSD verification, native import/reexport,
 web serializer parity and full filing compatibility remain unverified.
+
+## Chẩn đoán mismatch trước retention
+
+Run40422634417 đã đạt GUI export/112 leaf/XSD .NET nhưng staging từ chối XML_CONTRACT; không có raw artifact được phát hành. Probe bổ sung contractCode enum và contractFieldId0–45 từ FIELD_NAMES cố định trong htkk_annex12_fixed_export.py. Không đưa giá trị XML, tag không tin cậy hoặc path máy lên log. Mã này chỉ xác định chỗ cần kiểm lại nguồn; privacy contract không nới và fullcompatibility/roundtrip vẫn false.

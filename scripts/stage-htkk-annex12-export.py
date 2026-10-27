@@ -10,4 +10,6 @@ try:
  result=p.stage_original(request['installedRoot'],request['gui'],request['supplierStopped'],request['sourcesUnmodified'],os.environ.get('RUNNER_TEMP',''),os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('GITHUB_RUN_ATTEMPT'))
  print(json.dumps(result,separators=(',',':')))
 except Exception as error:
- print(json.dumps(p.safe_failure(error),separators=(',',':')));raise SystemExit('Fixed annex staging rejected; no source XML, paths or raw errors logged.')
+ result=p.safe_failure(error)
+ if isinstance(error,p.contract.AnnexContractError):result.update(contractCode=error.code,contractFieldId=error.field)
+ print(json.dumps(result,separators=(',',':')));raise SystemExit('Fixed annex staging rejected; no source XML, paths or raw errors logged.')

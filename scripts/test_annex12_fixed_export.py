@@ -58,3 +58,24 @@ class AnnexCandidateContractTests(unittest.TestCase):
   for body in (b'<HSoThueDTu xmlns="'+a.NS.encode()+b'">'+b'<unknown>'*40+b'</unknown>'*40+b'</HSoThueDTu>',b'<HSoThueDTu xmlns="'+a.NS.encode()+b'">'+b'<unknown/>'*513+b'</HSoThueDTu>'):
    with self.assertRaises(a.AnnexContractError) as caught:a.validate_candidate(body,TODAY)
    self.assertEqual(caught.exception.code,'LIMIT')
+
+class AnnexBoundedDiagnosticTests(unittest.TestCase):
+ def test_value_mismatches_identify_static_field_without_returning_xml_content(self):
+  for xpath,name in (('.//'+NS+'ma_nhaMay','group/ma_nhaMay'),('.//'+NS+'ct09_cqt_ten','row0/ct09_cqt_ten'),('.//'+NS+'ct13','annex/ct13')):
+   body=edited(fixture(),lambda root:root.find(xpath).__setattr__('text','PRIVATE-CONTENT-DO-NOT-LOG'))
+   with self.subTest(name=name),self.assertRaises(a.AnnexContractError) as caught:a.validate_candidate(body,TODAY)
+   error=caught.exception
+   self.assertEqual(error.code,'VALUE');self.assertEqual(error.field,a.field_id(name));self.assertNotIn('PRIVATE',str(error))
+ def test_structural_mismatch_has_static_container_id_and_invalid_diagnostics_fail(self):
+  body=edited(fixture(),lambda root:root.find('.//'+NS+'TenNhaMay').set('id','PRIVATE'))
+  with self.assertRaises(a.AnnexContractError) as caught:a.validate_candidate(body,TODAY)
+  self.assertEqual((caught.exception.code,caught.exception.field),('ATTRIBUTES',a.field_id('group')))
+  for field in (-1,len(a.FIELD_NAMES),'PRIVATE',True):
+   with self.assertRaises(ValueError):a.AnnexContractError('VALUE',field)
+ def test_powershell_accepts_only_fixed_code_and_field_range_including_json_int64(self):
+  import re
+  probe=(ROOT/'probe-htkk-windows.ps1').read_text()
+  codes=set(re.search(r"\$annexStageResult.contractCode -cin @\(([^)]+)\)",probe).group(1).replace("'",'').split(','))
+  self.assertEqual(codes,a.CODES)
+  self.assertIn('$annexStageResult.contractFieldId -lt '+str(len(a.FIELD_NAMES)),probe)
+  self.assertIn('$annexStageResult.contractFieldId -is [long]',probe)

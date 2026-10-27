@@ -20,27 +20,29 @@ GROUP_ORDER=('sTT','ten_nhaMay','ma_nhaMay','DiaBanPhanBo','DiaBanPhanBo','ct10_
 LOCATION_ORDER=('sTT','loai','ct05','ct06','ma_xa','ten_xa','ct07_huyen_ma','ct07_huyen_ten','ct08_tinh_ma','ct08_tinh_ten','ct09_cqt_ma','ct09_cqt_ten','ct10','ct11','ct12')
 LOCATION_VALUES={'ct05':'','ct06':'','ma_xa':'10129087','ten_xa':'Phường Sơn Tây','ct07_huyen_ma':'','ct07_huyen_ten':'','ct08_tinh_ma':'101','ct08_tinh_ten':'Thành phố Hà Nội','ct09_cqt_ma':'10129','ct09_cqt_ten':'Thuế cơ sở 16 Thành phố Hà Nội','ct10':'@ZERO','ct11':'@FIFTY','ct12':'@ZERO'}
 CODES=frozenset(('SIZE','ENCODING','DECLARATION','XML_PARSE','NAMESPACE','STRUCTURE','ATTRIBUTES','CONTENT','VALUE','BASE_PRIVACY','LEAF_COUNT','LIMIT'))
+FIELD_NAMES=('document','base','root','pluc','annex','group')+tuple('group/'+name for name in ('sTT','ten_nhaMay','ma_nhaMay','ct10_a','ct11_a','ct12_a'))+tuple(path for index in range(2) for path in ('row'+str(index),)+tuple('row'+str(index)+'/'+name for name in LOCATION_ORDER))+('annex/ct13','annex/ct14')
+def field_id(name):return FIELD_NAMES.index(name)
 class AnnexContractError(ValueError):
- def __init__(self,code):
-  if code not in CODES:raise ValueError('Invalid bounded annex contract code')
-  self.code=code;super().__init__(code)
-def reject(code):raise AnnexContractError(code)
+ def __init__(self,code,field=0):
+  if code not in CODES or type(field) is not int or not 0<=field<len(FIELD_NAMES):raise ValueError('Invalid bounded annex contract diagnostic')
+  self.code=code;self.field=field;super().__init__(code)
+def reject(code,field=0):raise AnnexContractError(code,field)
 def local(node):
  if not isinstance(node.tag,str) or not node.tag.startswith('{'+NS+'}'):reject('NAMESPACE')
  return node.tag[len(NS)+2:]
-def container(node,order,attributes=None):
- if node.attrib!=(attributes or {}):reject('ATTRIBUTES')
- if (node.text or '').strip() or (node.tail or '').strip():reject('CONTENT')
- if tuple(local(child) for child in node)!=order:reject('STRUCTURE')
-def value(node,expected):
- if node.attrib or len(node):reject('ATTRIBUTES')
- if (node.tail or '').strip():reject('CONTENT')
+def container(node,order,attributes=None,field=0):
+ if node.attrib!=(attributes or {}):reject('ATTRIBUTES',field)
+ if (node.text or '').strip() or (node.tail or '').strip():reject('CONTENT',field)
+ if tuple(local(child) for child in node)!=order:reject('STRUCTURE',field)
+def value(node,expected,field=0):
+ if node.attrib or len(node):reject('ATTRIBUTES',field)
+ if (node.tail or '').strip():reject('CONTENT',field)
  text=node.text or ''
  if expected=='@ZERO':matched=bool(re.fullmatch(r'0(?:\.0{1,8})?',text))
  elif expected=='@FIFTY':matched=bool(re.fullmatch(r'50(?:\.0{1,8})?',text))
  elif expected=='@HUNDRED':matched=bool(re.fullmatch(r'100(?:\.0{1,8})?',text))
  else:matched=text==expected or expected=='' and text.isspace()
- if not matched:reject('VALUE')
+ if not matched:reject('VALUE',field)
 def parse(body):
  if not isinstance(body,bytes) or not 0<len(body)<=privacy.MAX_XML:reject('SIZE')
  try:text=body.decode('utf-8-sig')
@@ -65,25 +67,25 @@ def validate_candidate(body,today=None):
  projection; it is never returned as XML, staged or published.
  """
  root=parse(body)
- if local(root)!='HSoThueDTu':reject('STRUCTURE')
+ if local(root)!='HSoThueDTu':reject('STRUCTURE',field_id('root'))
  ns='{'+NS+'}'
  plucs=root.findall('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
- if len(plucs)!=1:reject('STRUCTURE')
- pluc=plucs[0];container(pluc,('PLuc_01_2_GTGT',));annex=pluc[0]
- container(annex,('TenNhaMay','ct13','ct14'));group=annex[0]
- container(group,GROUP_ORDER,{'id':'ID_1'})
- for index,expected in ((0,'1'),(1,'NHA MAY GIA LAP - KHONG NOP'),(2,'9999999997-001'),(5,'@ZERO'),(6,'@HUNDRED'),(7,'@ZERO')):value(group[index],expected)
+ if len(plucs)!=1:reject('STRUCTURE',field_id('pluc'))
+ pluc=plucs[0];container(pluc,('PLuc_01_2_GTGT',),field=field_id('pluc'));annex=pluc[0]
+ container(annex,('TenNhaMay','ct13','ct14'),field=field_id('annex'));group=annex[0]
+ container(group,GROUP_ORDER,{'id':'ID_1'},field_id('group'))
+ for index,expected in ((0,'1'),(1,'NHA MAY GIA LAP - KHONG NOP'),(2,'9999999997-001'),(5,'@ZERO'),(6,'@HUNDRED'),(7,'@ZERO')):value(group[index],expected,field_id('group/'+GROUP_ORDER[index]))
  for position,row_id,serial,kind in ((3,'ID_44','1.1','01'),(4,'ID_45','1.2','02')):
-  location=group[position];container(location,LOCATION_ORDER,{'id':row_id})
+  location=group[position];container(location,LOCATION_ORDER,{'id':row_id},field_id('row'+str(position-3)))
   expected={'sTT':serial,'loai':kind,**LOCATION_VALUES}
-  for child in location:value(child,expected[local(child)])
- value(annex[1],'@ZERO');value(annex[2],'@ZERO')
+  for child in location:value(child,expected[local(child)],field_id('row'+str(position-3)+'/'+local(child)))
+ value(annex[1],'@ZERO',field_id('annex/ct13'));value(annex[2],'@ZERO',field_id('annex/ct14'))
  # Reuse the original no-annex allowlist without changing that allowlist or raw
  # bytes. This enforces exact fake NNT/service identity, C0/M10/2026 and 27 zeros.
  projected=copy.deepcopy(root);projected_pluc=projected.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc');projected_pluc.remove(projected_pluc[0])
  ET.register_namespace('',NS);ET.register_namespace('xsi',privacy.XSI)
  try:base=privacy.validate_xml(ET.tostring(projected,encoding='utf-8'),today)
- except privacy.EvidenceError:reject('BASE_PRIVACY')
+ except privacy.EvidenceError:reject('BASE_PRIVACY',field_id('base'))
  leaves=sum(1 for node in root.iter() if len(node)==0)
  if base['leafCount']!=74 or leaves!=112:reject('LEAF_COUNT')
  return {'format':'htkk-annex12-fixed-export-candidate-v1','caseId':CASE_ID,'sha256':hashlib.sha256(body).hexdigest(),'bytes':len(body),'fixedSyntheticValuesVerified':True,'totalLeafCount':112,'annexLeafCount':38,'taxLeafCount':108,'sourcePredictedRowIdsMatched':True,'originalAnnexExportVerified':False,'independentSchemaVerification':False,'nativeAnnexRoundTripVerified':False,'fullCompatibilityVerified':False}

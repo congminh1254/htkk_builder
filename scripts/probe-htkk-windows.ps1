@@ -920,17 +920,17 @@ try {
     }
   }
   if($GuiAutomation -eq 'gtgt-annex12-export-inspect' -and $report.stage -eq 'synthetic-original-gtgt-annex12-export-inspected') {
-    $annexStageFailure='NOT_STAGED'
+    $annexStageFailure='NOT_STAGED';$annexContractCode='none';$annexContractField=-1
     try {
       if(-not $supplierStopped -or -not $report.originalSourcesUnmodified){throw 'STAGING_NOT_VERIFIED'}
       $annexStageInput=[ordered]@{installedRoot=(Split-Path (Split-Path $exe));gui=$report.guiReferenceAutomation;supplierStopped=[bool]$supplierStopped;sourcesUnmodified=[bool]$report.originalSourcesUnmodified} | ConvertTo-Json -Depth 6 -Compress
       $annexStageOutput=$annexStageInput | & python (Join-Path $PSScriptRoot 'stage-htkk-annex12-export.py')
       $annexStageExit=$LASTEXITCODE
       $annexStageResult=$annexStageOutput | ConvertFrom-Json -AsHashtable
-      if($annexStageExit -ne 0){if($annexStageResult.format -ceq 'htkk-annex12-export-publication-status-v1' -and $annexStageResult.status -ceq 'rejected' -and $annexStageResult.code -cin @('PROVENANCE','STAGING','HASH','XML_CONTRACT','IO','INTERNAL','BUILDER','MANIFEST','SOURCE_COMMIT')){$annexStageFailure=$annexStageResult.code};throw 'STAGING_NOT_VERIFIED'}
+      if($annexStageExit -ne 0){if($annexStageResult.format -ceq 'htkk-annex12-export-publication-status-v1' -and $annexStageResult.status -ceq 'rejected' -and $annexStageResult.code -cin @('PROVENANCE','STAGING','HASH','XML_CONTRACT','IO','INTERNAL','BUILDER','MANIFEST','SOURCE_COMMIT')){$annexStageFailure=$annexStageResult.code;if($annexStageFailure -ceq 'XML_CONTRACT' -and $annexStageResult.contractCode -cin @('ATTRIBUTES','BASE_PRIVACY','CONTENT','DECLARATION','ENCODING','LEAF_COUNT','LIMIT','NAMESPACE','SIZE','STRUCTURE','VALUE','XML_PARSE') -and ($annexStageResult.contractFieldId -is [int] -or $annexStageResult.contractFieldId -is [long]) -and $annexStageResult.contractFieldId -ge 0 -and $annexStageResult.contractFieldId -lt 46){$annexContractCode=$annexStageResult.contractCode;$annexContractField=$annexStageResult.contractFieldId}};throw 'STAGING_NOT_VERIFIED'}
       if($annexStageResult.format -cne 'htkk-annex12-export-staging-status-v1' -or $annexStageResult.status -cne 'staged' -or $annexStageResult.rawBytesPreserved -isnot [bool] -or -not $annexStageResult.rawBytesPreserved -or $annexStageResult.independentSchemaVerification -isnot [bool] -or -not $annexStageResult.independentSchemaVerification){throw 'STAGING_NOT_VERIFIED'}
       $report.privateAnnex12ExportEvidence=@{status='staged';supplierStopped=$true;rawBytesPreserved=$true;independentSchemaVerification=$true;nativeAnnexRoundTripVerified=$false;fullCompatibilityVerified=$false}
-    } catch { $report.privateAnnex12ExportEvidence=@{status='not-staged';failureCode=$annexStageFailure;supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$false;independentSchemaVerification=$false;nativeAnnexRoundTripVerified=$false;fullCompatibilityVerified=$false} }
+    } catch { $report.privateAnnex12ExportEvidence=@{status='not-staged';failureCode=$annexStageFailure;contractCode=$annexContractCode;contractFieldId=$annexContractField;supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$false;independentSchemaVerification=$false;nativeAnnexRoundTripVerified=$false;fullCompatibilityVerified=$false} }
   }
   if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $report.stage -eq 'synthetic-original-gtgt-web-import-inspected') {
     $nativeEvidenceCreated=$false;$nativeEvidenceStage='preconditions'
