@@ -77,3 +77,9 @@ class OriginalCleanCloseTimingTests(unittest.TestCase):
   self.assertIn('if(!amendmentOpenPriorClosed){stage="gtgt-amendment-prior-close-waiting";Record();return;}',block)
   self.assertNotIn('PerformClick',block);self.assertNotIn('SetValue',block);self.assertNotIn('Visible=',block)
   self.assertIn('if(navigationPhase=="waiting-amendment-prior-close"){ObserveOriginalAmendmentPriorClosed();return;}',navigation)
+
+class OriginalB1SheetCaptionTests(unittest.TestCase):
+ def test_b1_uses_the_original_adjustment_caption_not_the_c0_sheet_caption(self):
+  text=(ROOT/'HtkkGtgtAmendmentOpenInspection.cs').read_text()
+  self.assertIn('if(name=="Tờ khai điều chỉnh")',text)
+  self.assertNotIn('if(name=="01"||name=="Tờ khai")',text)

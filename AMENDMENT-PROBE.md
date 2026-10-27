@@ -36,3 +36,5 @@ Checkpoint này chỉ quan sát mở màn hình/tabs; chưa kiểm KHBS phân b�
 ## Boundary checks before B1
 
 Run40484715557 stopped in the offline PowerShell reader test before HTKK ran. A merge introduced a leading array element in string validation and omitted B1 flags from boolean typing. Both are corrected and individually covered. B1 alone allows up to six original menu clicks (two traversals); existing modes retain the three-click bound. The real PowerShell boundary suite is also run locally on Linux before dispatch; it is not native HTKK evidence.
+
+B1 runtime40487969037 observed11 loaded sheets and reached the main-sheet lookup. Source WinSpreadProcess.fpSpDisplayTemplate060001A1, bodySHA48616a3afb63b1152d9a5b8b6194403a7dec05fdc3bee91f60863eae147160b5: when LoaiToKhai=B and KieuKHBS is nonempty (D1=3),0163–01AC renames sheet0 to `Tờ khai điều chỉnh`. The B1 inspector now requires that exact original caption instead of C0's name.
