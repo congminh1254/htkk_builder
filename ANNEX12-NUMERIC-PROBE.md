@@ -31,3 +31,24 @@ before typing33,33/66,67, while invariant expected decimal values stay33.33/66.6
 No original format property is modified. Bounded format/editor-ready/committed/
 value-mismatch stages distinguish input failures from native calculated outputs.
 A new native run is still required to qualify this correction.
+
+## Display and original type/Double-bit observations (next harness)
+
+The same twelve fixed numeric coordinates now have three additional bounded
+read-only channels. Each uses `|` between twelve cells and `;` between cases:
+
+- `annex12NumericTextSnapshots`: original `Cell.Text`, unchanged, at most64characters
+  percell drawn only from digits, comma, dot, parentheses, minus and ASCIIspace.
+  Blank numeric display is preserved. No arbitrary source text is published.
+- `annex12NumericTypeSnapshots`: a static enum (`double`, `decimal`, `single`,
+  `integer`, `other`), derived with CLR `is` checks; never arbitrary type names.
+- `annex12NumericDoubleBits`: exact sixteen-uppercase-hex IEEE754bits when and
+  only when original `Cell.Value is Double`; otherwise the cell token is blank.
+  No conversion toDouble is used to manufacture bits for other CLRtypes.
+
+The original decimal-canonical `annex12NumericSnapshots` is retained for existing
+analysis; it can lose Doubleprecision. The new channels distinguish raw value,
+underlying binary bits and rounded/localized display. They still do not establish
+XML type16 serialization parity, manual tax behavior or global compatibility.
+All channels defaultempty outside this mode and the strict reader checks counts,
+grammars and type/bit consistency. Native execution of this enhancement is pending.

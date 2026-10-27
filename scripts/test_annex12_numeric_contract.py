@@ -28,3 +28,12 @@ class NumericProbeContract(unittest.TestCase):
   for stage in ('format-checking','editor-ready','committed','value-mismatch'):
    self.assertIn('gtgt-annex12-numeric-'+stage,source)
    self.assertIn('gtgt-annex12-numeric-'+stage,reader)
+
+ def test_display_and_bits_are_read_only_bounded_original_observations(self):
+  source=(ROOT/'HtkkGtgtAnnex12NumericInspection.cs').read_text()
+  for term in ('CellText(annex,cells[i,0],cells[i,1])','text.Length>64','"0123456789,.()- "','raw is Double?BitConverter.DoubleToInt64Bits((Double)raw)','ToString("X16",CultureInfo.InvariantCulture)'):
+   self.assertIn(term,source)
+  for field in ('annex12NumericTextSnapshots','annex12NumericTypeSnapshots','annex12NumericDoubleBits'):
+   self.assertIn(field,source)
+   self.assertIn(field,(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text())
+   self.assertIn(field+"='';",(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text())
