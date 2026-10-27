@@ -21,3 +21,5 @@ attempt/retry transient, xử lý deadline/cleanup UIA và OCX, chứng minh t�
 supplier descendants/oracle helpers dừng (không chỉ root), và kiểm chứng Windows
 mới cho thay đổi MSI. MSI có thể sử dụng Windows Installer service; trạng thái
 root đã dừng không tự chứng minh mọi service/descendant đã dừng.
+
+Timeout hoặc lỗi tool/cài đặt chặn credentials ngay cả khi MSI client đã dừng: không suy Windows Installer service đã dừng từ root exit. Cờ an toàn bị hạ trước khi gọi helper và chỉ khôi phục khi kết thúc bình thường với mã 0, không timeout.

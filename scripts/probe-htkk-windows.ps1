@@ -42,6 +42,7 @@ $report = [ordered]@{
 $work = Join-Path $env:RUNNER_TEMP ('htkk-probe-' + [guid]::NewGuid().ToString('N'))
 $rootStartTime = $null
 $installerStopped=$true
+$installerCredentialsSafe=$true
 $uiaHelpersStopped=$true
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
 $process = $null; $referencePreparation = $null; $referenceOwnedFiles = @(); $referenceHostName = ''
@@ -602,8 +603,11 @@ try {
   if (-not $InstallAndProbe) { $report.stage = 'verified-install-not-requested'; return }
   # Execute only the pinned, publisher-verified MSI after official-distribution CAB equivalence.
   $report.stage = 'install'
+  # An interrupted installer can leave service-mediated work; root exit alone is insufficient.
+  $installerCredentialsSafe=$false
   $install=Invoke-HtkkBoundedNativeProcess -Executable "$env:WINDIR\System32\msiexec.exe" -WorkingDirectory $work -Arguments @('/i',$msi,'/qn','/norestart','ISCHECKFORPRODUCTUPDATES=0','/L*v',(Join-Path $work 'install-private.log')) -TimeoutMilliseconds 180000
   $report.installerProcess=$install;$installerStopped=$install.processStopped
+  $installerCredentialsSafe=$installerStopped -and $install.status -eq 'exited' -and $install.exitCode -eq 0 -and -not $install.timedOut
   $report.installExitCode=$install.exitCode
   if(-not $installerStopped){throw 'MSI_PROCESS_NOT_STOPPED'}
   if($install.timedOut){throw 'MSI_INSTALL_TIMEOUT'}
@@ -880,7 +884,7 @@ try {
   if($null -ne $process -and -not $supplierStopped){$report.stage='blocked';$report['blockedReason']='ORIGINAL_PROCESS_NOT_STOPPED'}
   $report['uiaHelpersStopped']=$uiaHelpersStopped
   if($env:GITHUB_OUTPUT){
-    $credentialsSafe=$installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)
+    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)
     [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
   }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {

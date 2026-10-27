@@ -18,7 +18,7 @@ class UiaProcessContract(unittest.TestCase):
         source = (ROOT / 'probe-htkk-windows.ps1').read_text()
         self.assertIn('$previousHelpersStopped=$script:uiaHelpersStopped;$script:uiaHelpersStopped=$false', source)
         self.assertIn('$script:uiaHelpersStopped=$previousHelpersStopped -and $diagnostics.helperProcessStopped', source)
-        self.assertIn('$credentialsSafe=$installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)', source)
+        self.assertIn('$credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)', source)
 
     def test_windows_runs_actual_production_wrapper_scenarios(self):
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text()

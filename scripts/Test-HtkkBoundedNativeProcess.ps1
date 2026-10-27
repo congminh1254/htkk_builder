@@ -1,5 +1,6 @@
 # Actual child-process tests: no HTKK/MSI execution or network required.
 $ErrorActionPreference='Stop'
+& (Join-Path $PSScriptRoot 'Test-HtkkInstallerCredentialPolicy.ps1')
 . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')
 $directory=Join-Path $env:RUNNER_TEMP ('htkk-native-boundary-'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $directory|Out-Null

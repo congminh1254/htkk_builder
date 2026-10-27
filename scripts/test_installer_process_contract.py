@@ -17,7 +17,7 @@ class InstallerProcessContract(unittest.TestCase):
         source = (ROOT / 'probe-htkk-windows.ps1').read_text()
         self.assertIn('$installerStopped=$install.processStopped', source)
         self.assertIn("if(-not $installerStopped){throw 'MSI_PROCESS_NOT_STOPPED'}", source)
-        self.assertIn('$credentialsSafe=$installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)', source)
+        self.assertIn('$credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped)', source)
         for code in ('MSI_INSTALL_TIMEOUT', 'MSI_PROCESS_NOT_STOPPED'):
             self.assertGreaterEqual(source.count("'" + code + "'"), 2)
 
