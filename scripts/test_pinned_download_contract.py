@@ -28,3 +28,23 @@ class PinnedDownloadContract(unittest.TestCase):
         self.assertIn("@('tls',1,'failed','tls')", tests)
         self.assertIn("@('hash',1,'failed','hash')", tests)
         self.assertNotIn('Invoke-WebRequest', tests)
+
+    def test_optional_http_exception_type_never_requires_utility_to_be_loaded(self):
+        helper = (ROOT / 'Invoke-HtkkPinnedDownload.ps1').read_text()
+        self.assertNotIn('[Microsoft.PowerShell.Commands.HttpResponseException]', helper)
+        self.assertIn("'Microsoft.PowerShell.Commands.HttpResponseException' -as [type]", helper)
+        self.assertIn('$null -ne $httpResponseExceptionType -and $httpResponseExceptionType.IsInstanceOfType($errorItem)', helper)
+
+    def test_main_download_suite_runs_isolated_cold_process_regression(self):
+        tests = (ROOT / 'Test-HtkkPinnedDownload.ps1').read_text()
+        self.assertIn("& (Join-Path $PSScriptRoot 'Test-HtkkPinnedDownloadColdProcess.ps1')", tests)
+        cold = (ROOT / 'Test-HtkkPinnedDownloadColdProcess.ps1').read_text()
+        self.assertIn("$PSModuleAutoloadingPreference='None'", cold)
+        self.assertIn("$start.Environment.Clear()", cold)
+        self.assertIn("$process.WaitForExit(20000)", cold)
+        self.assertIn("$process.Kill($true)", cold)
+        self.assertIn("'Microsoft.PowerShell.Utility','Microsoft.PowerShell.Utility.psd1'", cold)
+        self.assertIn("Get-HtkkDownloadFailure -Exception $case[0]", cold)
+        self.assertIn("Get-HtkkDownloadFailure -Exception $errorItem", cold)
+        self.assertNotIn('Invoke-WebRequest', cold)
+        self.assertNotIn('Exception.Message', cold)
