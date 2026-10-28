@@ -1,64 +1,54 @@
-# Modular Native Harness and Typed Registry Architecture (TASK-004)
+# Native adapter routing and stage registry foundation (TASK-004, partial)
 
-## Overview and Goals
+This change introduces a D1 adapter facade and generated wire-name contracts. It
+is a foundation for issue `congminh1254/htkk_web#5`; it does **not** complete that
+issue or qualify a new declaration, period, native sample, or status context.
 
-Previously, the custom CLR2/x86 Windows reference automation harness was tightly coupled with declaration 01/GTGT (menu coordinates `101 -> 101_1 -> D1`). Adding or modifying automation modes carried the risk of missing workflow guards, strict result allowlists, compiler arguments, or terminal stage matchers.
+## What is implemented
 
-TASK-004 decouples the native harness into:
-1. **Shared Common Harness**: Profile creation, lifecycle polling, STA dispatcher, WinForms/FarPoint control walking, active cell editors, vendor `FpCombo` selection, Save/Message modal dismissal, and bounded result persistence.
-2. **Pluggable Adapter Contract (`IHtkkNativeAutomationAdapter`)**: Specialized declaration logic (e.g. `d1-gtgt` for 01/GTGT menu/period/sheets/annexes/cases, and `sample-adapter` for modular verification).
-3. **Strict Typed Registry**: Single source of truth in `scripts/htkk-native-automation-registry.json` combined with a Python standard library generator `scripts/generate-native-automation-registry.py` (`--check`).
-4. **Compile-Time Typed Stages and Enums**: CLR2/C# 2.0 compatible `HtkkAutomationMode` and `HtkkAutomationStage` enums with explicit wire mappings, replacing error-prone dynamic string concatenations and enabling compiler verification across ternaries.
+- `HtkkGtgtAdapter` delegates the existing D1 continuation and result collection
+  through `IHtkkNativeAutomationAdapter`. Shared profile editing, STA dispatch,
+  timers and the original control actions remain in the existing harness.
+- `htkk-native-automation-registry.json` records the existing 14 automation modes
+  plus launcher-only `none`, 130 wire stages, 182 result keys, and explicit menu
+  and filename action maps. No sample mode or new context is exposed.
+- The Python standard-library generator validates collection shapes, property
+  allowlists, duplicate identities, safe generated tokens, cross-references,
+  bounded timeouts and compile-input paths. Missing or ambiguous integration
+  anchors fail instead of silently skipping synchronization.
+- Generated CLR2/C# 2.0 enums and maps synchronize PowerShell mode/stage/key
+  allowlists and workflow mode guards. Selected dynamic and ternary stages use
+  enum values. Remaining string stage assignments are validated at runtime by
+  the stage property; they are **not** claimed to have compile-time checking.
 
-## Architecture
+## Gates that remain handwritten
 
-```
-+----------------------------------------------------------------------------------+
-|                    htkk-native-automation-registry.json                          |
-|             (16 modes, 138 stages, 182 keys, dynamic maps, bounds)              |
-+----------------------------------------------------------------------------------+
-                                         |
-                                         v
-                    scripts/generate-native-automation-registry.py (--check)
-                                         |
-         +-------------------------------+-------------------------------+
-         |                               |                               |
-         v                               v                               v
-HtkkNativeAutomationEnums.cs   Get-HtkkSafeGuiReferenceResult.ps1  probe-htkk-windows.ps1
-- HtkkAutomationMode           - ValidateSet([mode])               - ValidateSet([mode])
-- HtkkAutomationStage          - $keys allowlist (182)             - Terminal stage matcher
-- IHtkkNativeAutomationAdapter - $stages allowlist (138)
-- WireMap: filename/menu maps
-```
+The registry currently describes routing metadata; timeout, permit, compile-set,
+artifact/context and success-policy metadata do not replace the reviewed runtime
+implementations. Field types, counter limits, defaults and mode-specific business
+success predicates remain in the strict PowerShell reader/probe. Full generation
+and validation of those contracts is pending in issue #5.
 
-## Adapter Contract
+The D1 facade still depends on existing D1 partial state. Extraction of reusable
+profile/editor/dialog state and an independently driven native sample remains
+pending. A sample which authors XML itself and then parses/hashes its own output
+would not establish original HTKK export/import compatibility and is excluded.
 
-```csharp
-public interface IHtkkNativeAutomationAdapter {
-  string AdapterId { get; }
-  bool CanHandle(HtkkAutomationMode mode);
-  void Initialize(HtkkGuiReferenceAutomation harness, string project, HtkkAutomationMode mode);
-  void OnProfileSaved(Form profileOwner, Button closeButton, Control spread);
-  void ContinueNavigation();
-  string BuildNavigationJson();
-}
-```
-
-### Adapters Implemented
-- **`HtkkGtgtAdapter` (`d1-gtgt`)**: Handles all 12 GTGT modes (`gtgt-inspect`, `gtgt-sheet-inspect`, `gtgt-amendment-inspect`, `gtgt-amendment-open-inspect`, `gtgt-annex12-inspect`, `gtgt-annex12-row-inspect`, `gtgt-annex12-input-inspect`, `gtgt-annex12-numeric-inspect`, `gtgt-annex12-export-inspect`, `gtgt-export-inspect`, `gtgt-roundtrip-inspect`, `gtgt-web-import-inspect`).
-- **`HtkkSampleAdapter` (`sample-adapter`)**: Proves harness reusability with independent roundtrip export/import verification, isolated artifact policy (`raw-sample-reexport`), and dedicated status context (`htkk-native/sample`).
-
-## Verification & Commands
+## Validation
 
 ```sh
-# 1. Verify that all generated files, PowerShell allowlists, and workflow guards are in sync:
 python3 scripts/generate-native-automation-registry.py --check
-
-# 2. Run full test suite (258 unit & contract tests):
-TMPDIR=/private/tmp python3 -m unittest discover -s scripts -p 'test_*.py'
+python3 -m unittest discover -s scripts -p 'test_*.py'
 ```
 
-## Backward Compatibility & Privacy Guarantee
-- All 13 fixed regression cases (`01GTGT-*`) remain 100% intact with zero breaking changes.
-- Strict privacy boundary is preserved: no real taxpayer data, no log leakage, strictly synthetic test data.
-- Unmodified source binaries and configuration: `HTKK.exe`, `TAX.HTKK.Business.dll`, and `HTKK.exe.config` hashes are verified and never patched.
+These checks establish source synchronization and contract regression only.
+A trusted Windows run must compile the complete CLR2/x86 host and replay the
+existing 13 native cases before this revision can be described as native-qualified.
+A future genuine sample requires original profile → declaration → export → import
+→ re-export actions, independent XSD/semantic checks, immutable provenance and raw
+bytes retained privately in its own case context. No new evidence claim is made
+by this foundation.
+
+Original binaries/configuration and source pins remain unchanged. Existing
+process boundaries, credential gates, privacy rules and 13 case dispatch mappings
+are preserved; this change supplies no evidence that broadens application scope.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Strict JSON registry generator and synchronization verifier for HTKK native harness.
+"""Validated wire-name registry generator for the HTKK native harness foundation.
 
 Generates CLR2-compatible C# enums & wire mappings, and synchronizes PowerShell contracts,
 workflow choice guards, and terminal stage matchers with scripts/htkk-native-automation-registry.json.
@@ -16,9 +16,92 @@ ROOT = pathlib.Path(__file__).resolve().parent
 REGISTRY_PATH = ROOT / "htkk-native-automation-registry.json"
 
 
+def unique_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError("Duplicate registry property")
+        result[key] = value
+    return result
+
+
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
+
+
+def validate_registry(registry):
+    """Validate data before interpolating it into C#, PowerShell or YAML.
+
+    This registry describes routing and wire names only. The reviewed PowerShell
+    reader still owns field types/ranges/defaults and business success predicates.
+    """
+    top = {"format", "version", "modes", "stages", "dynamicStageMappings", "keys", "controlKinds", "periodControls"}
+    require(type(registry) is dict and set(registry) == top, "Invalid registry properties")
+    require(registry["format"] == "htkk-native-automation-registry-v1" and registry["version"] == "1.0.0", "Unsupported registry version")
+    modes, stages = registry["modes"], registry["stages"]
+    require(type(modes) is dict and 1 <= len(modes) <= 64, "Invalid mode collection")
+    require(type(stages) is list and 1 <= len(stages) <= 512, "Invalid stage collection")
+    safe_wire = lambda x: type(x) is str and re.fullmatch(r"[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*", x) is not None
+    safe_name = lambda x: type(x) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", x) is not None
+    stage_ids, enum_names = set(), set()
+    categories = {"sheet", "menu", "annex12", "export-roundtrip", "lifecycle", "period", "amendment"}
+    for stage in stages:
+        require(type(stage) is dict and set(stage) == {"id", "enumName", "category"}, "Invalid stage properties")
+        require(safe_wire(stage["id"]) and safe_name(stage["enumName"]) and stage["category"] in categories, "Invalid stage token")
+        require(stage["id"] not in stage_ids and stage["enumName"] not in enum_names, "Duplicate stage identity")
+        stage_ids.add(stage["id"])
+        enum_names.add(stage["enumName"])
+    mode_fields = {"adapterId", "runtime", "login", "permit", "terminalStage", "timeoutSeconds", "orderedCompileInputs", "successPolicyId", "privateArtifactPolicy", "contextPolicy"}
+    seen_mode_enums = set()
+    artifact_policies = {"none", "raw-annex12-export", "raw-gtgt-export", "raw-web-reexport", "synthetic-common-header", "synthetic-window-diagnostic"}
+    success_policies = stage_ids | {"none", "gtgt-amendment-saved"}
+    for mode, meta in modes.items():
+        require(safe_wire(mode) and type(meta) is dict and set(meta) == mode_fields, "Invalid mode properties")
+        mode_enum = "".join(part.capitalize() for part in mode.split("-"))
+        require(safe_name(mode_enum) and mode_enum not in seen_mode_enums, "Duplicate mode enum")
+        seen_mode_enums.add(mode_enum)
+        require(meta["adapterId"] in {"none", "profile", "d1-gtgt"}, "Unknown adapter")
+        require(meta["runtime"] in {"none", "clr2-x86-custom-reference"}, "Unknown runtime")
+        require(type(meta["login"]) is bool and meta["permit"] in (None, "profile-save"), "Invalid login/permit")
+        require(meta["terminalStage"] in stage_ids and meta["successPolicyId"] in success_policies, "Unknown success stage/policy")
+        require(type(meta["timeoutSeconds"]) is int and 1 <= meta["timeoutSeconds"] <= 180, "Invalid timeout")
+        require(meta["privateArtifactPolicy"] in artifact_policies and meta["contextPolicy"] in {"none", "htkk-native/case"}, "Unknown artifact/context policy")
+        inputs = meta["orderedCompileInputs"]
+        require(type(inputs) is list and len(inputs) <= 32 and len(set(inputs)) == len(inputs), "Invalid compile inputs")
+        for name in inputs:
+            require(type(name) is str and re.fullmatch(r"Htkk[A-Za-z0-9]+\.cs", name) is not None and (ROOT / name).is_file(), "Invalid compile input")
+        if mode == "none":
+            require(meta["runtime"] == "none" and not meta["login"] and not inputs and meta["permit"] is None, "Invalid launch-only policy")
+        else:
+            require(meta["runtime"] == "clr2-x86-custom-reference" and meta["login"] and bool(inputs), "Invalid automation policy")
+    require("none" in modes, "Missing launch-only mode")
+    for key in ("keys", "controlKinds", "periodControls"):
+        values = registry[key]
+        require(type(values) is list and bool(values) and all(safe_name(x) for x in values) and len(values) == len(set(values)), "Invalid or duplicate allowlist entries")
+    require(set(registry["controlKinds"]) == {"form", "button", "combo", "text", "spread", "other"}, "Invalid control kinds")
+    dynamic = registry["dynamicStageMappings"]
+    require(type(dynamic) is dict and set(dynamic) == {"menuClicks", "filenameDialog"}, "Invalid dynamic maps")
+    menus = dynamic["menuClicks"]
+    require(type(menus) is dict and set(menus) == {"101", "101_1", "D1"}, "Invalid menu mapping")
+    require(all(s in stage_ids for s in menus.values()), "Unknown menu stage")
+    filenames = dynamic["filenameDialog"]
+    require(type(filenames) is dict and set(filenames) == {"import", "export"}, "Invalid filename maps")
+    actions = {"focus-waiting", "focus-timeout", "keyboard-editing", "keyboard-focused", "keyboard-selected", "keyboard-typed"}
+    for mapping in filenames.values():
+        require(type(mapping) is dict and set(mapping) == actions and all(s in stage_ids for s in mapping.values()), "Invalid filename mapping")
+    return registry
+
+
 def load_registry():
     with open(REGISTRY_PATH, "r", encoding="utf-8") as f:
-        return json.load(f)
+        return validate_registry(json.load(f, object_pairs_hook=unique_object))
+
+
+def replace_exact(pattern, replacement, content):
+    content, count = re.subn(pattern, lambda match: replacement, content)
+    require(count == 1, "Generated integration anchor missing or ambiguous")
+    return content
 
 
 def generate_csharp_enums(registry):
@@ -122,7 +205,7 @@ def generate_csharp_enums(registry):
         " }",
         " public static HtkkAutomationMode ParseMode(string wire) {",
         "\n".join(wire_to_mode),
-        '  throw new ArgumentException("Unknown automation mode wire: " + wire);',
+        '  throw new ArgumentException("Unknown automation mode");',
         " }",
         " public static string ToWireString(HtkkAutomationStage stage) {",
         "  switch (stage) {",
@@ -132,7 +215,7 @@ def generate_csharp_enums(registry):
         " }",
         " public static HtkkAutomationStage ParseStage(string wire) {",
         "\n".join(wire_to_stage),
-        '  throw new ArgumentException("Unknown automation stage wire: " + wire);',
+        '  throw new ArgumentException("Unknown automation stage");',
         " }",
         " public static HtkkAutomationStage GetFilenameStage(bool opening, HtkkFilenameDialogAction action) {",
         "  if (opening) {",
@@ -149,7 +232,7 @@ def generate_csharp_enums(registry):
         " }",
         " public static HtkkAutomationStage GetMenuClickStage(string menuId) {",
         "\n".join(menu_cases),
-        '  throw new ArgumentException("Unknown menu ID for click stage: " + menuId);',
+        '  throw new ArgumentException("Unknown menu ID for click stage");',
         " }",
         "}",
         ""
@@ -175,28 +258,28 @@ def sync_powershell_and_workflow(registry, check_mode=False):
 
     # Replace ValidateSet for ExpectedMode
     new_validate = "[ValidateSet(" + ",".join(f"'{m}'" for m in automation_mode_ids) + ")][string]$ExpectedMode"
-    content = re.sub(r"\[ValidateSet\([^\)]+\)\]\[string\]\$ExpectedMode", new_validate, content)
+    content = replace_exact(r"\[ValidateSet\([^\)]+\)\]\[string\]\$ExpectedMode", new_validate, content)
 
     # Replace $keys=@(...)
     new_keys = "$keys=@(" + ",".join(f"'{k}'" for k in keys) + ")"
-    content = re.sub(r"\$keys=@\([^\)]+\)", new_keys, content)
+    content = replace_exact(r"\$keys=@\([^\)]+\)", new_keys, content)
 
     # Replace $stages=@(...)
     new_stages = "$stages=@(" + ",".join(f"'{s}'" for s in stages) + ")"
-    content = re.sub(r"\$stages=@\([^\)]+\)", new_stages, content)
+    content = replace_exact(r"\$stages=@\([^\)]+\)", new_stages, content)
     updates[ps_safe_path] = content
 
     # 2. scripts/New-HtkkX86ReferenceHost.ps1
     host_path = ROOT / "New-HtkkX86ReferenceHost.ps1"
     content = host_path.read_text(encoding="utf-8")
     new_host_validate = "[ValidateSet(" + ",".join(f"'{m}'" for m in all_mode_ids) + ")][string]$GuiAutomation='none'"
-    content = re.sub(r"\[ValidateSet\([^\)]+\)\]\[string\]\$GuiAutomation='none'", new_host_validate, content)
+    content = replace_exact(r"\[ValidateSet\([^\)]+\)\]\[string\]\$GuiAutomation='none'", new_host_validate, content)
     updates[host_path] = content
 
     # 3. scripts/probe-htkk-windows.ps1
     probe_path = ROOT / "probe-htkk-windows.ps1"
     content = probe_path.read_text(encoding="utf-8")
-    content = re.sub(r"\[ValidateSet\([^\)]+\)\]\[string\]\$GuiAutomation='none'", new_host_validate, content)
+    content = replace_exact(r"\[ValidateSet\([^\)]+\)\]\[string\]\$GuiAutomation='none'", new_host_validate, content)
 
     # Synchronize terminal matcher stages in probe-htkk-windows.ps1
     # Terminal stages include error stages and expected terminal stages for each mode
@@ -221,7 +304,7 @@ def sync_powershell_and_workflow(registry, check_mode=False):
 
     # Build terminal stage replacement pattern
     term_list_str = "@(" + ",".join(f"'{s}'" for s in terminal_stages) + ")"
-    content = re.sub(
+    content = replace_exact(
         r"\$terminal=\$nextGui\.failureCategory -ne 'none' -or \$nextGui\.stage -in @\([^\)]+\) -or \(\$GuiAutomation -eq 'inspect' -and \$nextGui\.stage -eq 'profile-inspected'\)",
         f"$terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in {term_list_str} -or ($GuiAutomation -eq 'inspect' -and $nextGui.stage -eq 'profile-inspected')",
         content
@@ -230,14 +313,15 @@ def sync_powershell_and_workflow(registry, check_mode=False):
 
     # 4. .github/workflows/probe-htkk-windows.yml
     workflow_path = ROOT.parent / ".github/workflows/probe-htkk-windows.yml"
+    require(workflow_path.is_file(), "Workflow integration file missing")
     if workflow_path.exists():
         content = workflow_path.read_text(encoding="utf-8")
         # Update options
         options_str = "[" + ", ".join(all_mode_ids) + "]"
-        content = re.sub(r"options: \[[^\]]+\]", f"options: {options_str}", content, count=1)
+        content = replace_exact(r"(?m)^        options: \[none, [^\]\n]+\]$", f"        options: {options_str}", content)
         # Update powershell check in workflow
         notin_str = "@(" + ",".join(f"'{m}'" for m in all_mode_ids) + ")"
-        content = re.sub(r"if \(\$guiAutomation -notin @\([^\)]+\)\)", f"if ($guiAutomation -notin {notin_str})", content)
+        content = replace_exact(r"if \(\$guiAutomation -notin @\([^\)]+\)\)", f"if ($guiAutomation -notin {notin_str})", content)
         updates[workflow_path] = content
 
     # Check or write

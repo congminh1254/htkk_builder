@@ -260,22 +260,6 @@
       "successPolicyId": "gtgt-web-import-inspected",
       "privateArtifactPolicy": "raw-web-reexport",
       "contextPolicy": "htkk-native/case"
-    },
-    "sample-roundtrip-inspect": {
-      "adapterId": "sample-adapter",
-      "runtime": "clr2-x86-custom-reference",
-      "login": true,
-      "permit": "profile-save",
-      "terminalStage": "sample-roundtrip-inspected",
-      "timeoutSeconds": 180,
-      "orderedCompileInputs": [
-        "HtkkNativeAutomationEnums.cs",
-        "HtkkGuiReferenceAutomation.cs",
-        "HtkkSampleAdapter.cs"
-      ],
-      "successPolicyId": "sample-roundtrip-inspected",
-      "privateArtifactPolicy": "raw-sample-reexport",
-      "contextPolicy": "htkk-native/sample"
     }
   },
   "stages": [
@@ -928,46 +912,6 @@
       "id": "gtgt-noactivity-checkbox-unchecking",
       "enumName": "GtgtNoactivityCheckboxUnchecking",
       "category": "sheet"
-    },
-    {
-      "id": "sample-sheet-inspected",
-      "enumName": "SampleSheetInspected",
-      "category": "sample"
-    },
-    {
-      "id": "sample-export-command-invoking",
-      "enumName": "SampleExportCommandInvoking",
-      "category": "sample"
-    },
-    {
-      "id": "sample-export-inspected",
-      "enumName": "SampleExportInspected",
-      "category": "sample"
-    },
-    {
-      "id": "sample-import-file-dialog-waiting",
-      "enumName": "SampleImportFileDialogWaiting",
-      "category": "sample"
-    },
-    {
-      "id": "sample-import-success-sheet-checking",
-      "enumName": "SampleImportSuccessSheetChecking",
-      "category": "sample"
-    },
-    {
-      "id": "sample-reexport-ready-waiting",
-      "enumName": "SampleReexportReadyWaiting",
-      "category": "sample"
-    },
-    {
-      "id": "sample-reexport-command-invoking",
-      "enumName": "SampleReexportCommandInvoking",
-      "category": "sample"
-    },
-    {
-      "id": "sample-roundtrip-inspected",
-      "enumName": "SampleRoundtripInspected",
-      "category": "sample"
     }
   ],
   "dynamicStageMappings": {

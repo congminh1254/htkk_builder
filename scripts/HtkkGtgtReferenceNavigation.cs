@@ -16,7 +16,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private Button pendingProfileClose=null;
  private readonly Dictionary<string,string> periodDescriptions=new Dictionary<string,string>();
  private static readonly string[] PeriodNames=new string[]{"chkTkhaiThang","chkTKQuy","OptTKThang","OptChinhthuc","OptBosung","mskYear","mskMonth","cbbQuy","btnDongY","cmdClose","axfpsPhuLuc","cboNganhKD","chkChonPhuLucKeKhaiAll","cboCQTCuc","cboCQTChiCuc","cboTinh","cboXa"};
- private string NavigationJson(){
+ internal string NavigationJson(){
   string q=((char)34).ToString();StringBuilder descriptions=new StringBuilder();
   foreach(string name in PeriodNames){if(!periodDescriptions.ContainsKey(name))continue;if(descriptions.Length>0)descriptions.Append(',');descriptions.Append(q+name+q+":"+periodDescriptions[name]);}
   return ","+q+"profileClosed"+q+":"+Bool(profileClosed)+","+q+"mainMenuObserved"+q+":"+Bool(mainMenuObserved)+","+q+"d1MenuClicked"+q+":"+Bool(d1MenuClicked)+","+q+"gtgtPeriodObserved"+q+":"+Bool(periodObserved)+","+q+"menuRowCount"+q+":"+menuRowCount.ToString(CultureInfo.InvariantCulture)+","+q+"menuClickCount"+q+":"+menuClicks.ToString(CultureInfo.InvariantCulture)+","+q+"periodControlCount"+q+":"+periodControlCount.ToString(CultureInfo.InvariantCulture)+","+q+"periodControls"+q+":{ "+descriptions.ToString()+"}"+SheetJson()+ExportJson();
@@ -60,7 +60,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Form form=root as Form;if(form!=null&&form.Visible&&!form.IsDisposed&&form.GetType().FullName=="HTKK.frmHTKKSystems")found.Add(form);
   foreach(Control child in root.Controls){if(seen.Count>=512)break;FindMainMenus(child,found,seen);}
  }
- private void ContinueGtgtNavigation(){
+ internal void ContinueGtgtNavigation(){
   if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||!successAcknowledged||closingProfileForm==null){stage="gtgt-profile-preconditions-not-matched";finished=true;Record();return;}
   if(navigationPhase=="waiting-profile-close-ready"){
    foreach(Form modal in Application.OpenForms){if(modal.Visible&&modal.GetType().FullName=="TAX.HTKK.Utilities.Control.frmMessage"){stage="waiting-profile-close-ready";Record();return;}}
@@ -111,7 +111,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    menuStep++;Record();return;
   }
  }
- public void OnGtgtProfileSaved(Form profileOwner, Button closeButton, Control spread) {
+ internal void OnGtgtProfileSaved(Form profileOwner, Button closeButton, Control spread) {
   if(profileOwner==null||profileOwner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
   closingProfileForm=profileOwner;
   pendingProfileClose=closeButton;
@@ -139,6 +139,7 @@ public sealed class HtkkGtgtAdapter : IHtkkNativeAutomationAdapter {
    || mode == HtkkAutomationMode.GtgtWebImportInspect;
  }
  public void Initialize(HtkkGuiReferenceAutomation harnessInstance, string projectDir, HtkkAutomationMode mode) {
+  if(harnessInstance==null||!CanHandle(mode))throw new ArgumentException();
   harness = harnessInstance;
  }
  public void OnProfileSaved(Form profileOwner, Button closeButton, Control spread) {

@@ -1,7 +1,7 @@
 """Exhaustive synchronization tests for the HTKK native automation registry.
 
-Ensures that every mode, stage, flag, counter, terminal stage, and compile input across
-C# source files, PowerShell controllers, and GitHub Actions workflows remains 100% synchronized
+Checks the generated mode/stage/key names and routing references across
+C# source files, PowerShell controllers, and GitHub Actions workflows remain synchronized
 with scripts/htkk-native-automation-registry.json.
 """
 import ast
@@ -127,3 +127,59 @@ class NativeAutomationRegistrySyncTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class NativeAutomationRegistryRejectionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('native_registry_review', ROOT / 'generate-native-automation-registry.py')
+        cls.generator = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.generator)
+        cls.registry = json.loads(REGISTRY_PATH.read_text())
+
+    def mutated(self, mutate):
+        import copy
+        data = copy.deepcopy(self.registry)
+        mutate(data)
+        with self.assertRaises(ValueError):
+            self.generator.validate_registry(data)
+
+    def test_rejects_unknown_properties(self):
+        self.mutated(lambda r: r.update(unreviewed=True))
+        self.mutated(lambda r: r['modes']['inspect'].update(unreviewed=True))
+
+    def test_rejects_unknown_references(self):
+        self.mutated(lambda r: r['modes']['inspect'].update(terminalStage='unknown-stage'))
+        self.mutated(lambda r: r['modes']['inspect'].update(successPolicyId='unknown-policy'))
+        self.mutated(lambda r: r['modes']['inspect'].update(adapterId='sample-adapter'))
+        self.mutated(lambda r: r['modes']['inspect'].update(contextPolicy='htkk-native/sample'))
+        self.mutated(lambda r: r['dynamicStageMappings']['menuClicks'].update(D1='unknown-stage'))
+
+    def test_rejects_unsafe_tokens_and_duplicate_ids(self):
+        self.mutated(lambda r: r['stages'][0].update(id="'; injected"))
+        self.mutated(lambda r: r['stages'].append(dict(r['stages'][0])))
+        self.mutated(lambda r: r['keys'].append(r['keys'][0]))
+        self.mutated(lambda r: r['modes']['inspect'].update(orderedCompileInputs=['../outside.cs']))
+
+    def test_rejects_wrong_types_and_bounds(self):
+        self.mutated(lambda r: r['modes']['inspect'].update(login='true'))
+        for bad in (True, 0, -1, 181, '120'):
+            self.mutated(lambda r: r['modes']['inspect'].update(timeoutSeconds=bad))
+
+    def test_rejects_duplicate_json_properties(self):
+        with self.assertRaises(ValueError):
+            json.loads('{"mode":1,"mode":2}', object_pairs_hook=self.generator.unique_object)
+
+    def test_missing_or_ambiguous_integration_anchor_fails(self):
+        for content in ('missing', 'anchor anchor'):
+            with self.assertRaises(ValueError):
+                self.generator.replace_exact('anchor', 'replacement', content)
+
+    def test_adapter_dispatch_facade_is_accessible_and_fail_closed(self):
+        navigation = (ROOT / 'HtkkGtgtReferenceNavigation.cs').read_text()
+        self.assertIn('internal void ContinueGtgtNavigation()', navigation)
+        self.assertIn('internal string NavigationJson()', navigation)
+        self.assertIn('if(harnessInstance==null||!CanHandle(mode))throw new ArgumentException();', navigation)
+        self.assertNotIn('HtkkSampleAdapter', (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text())
+        self.assertFalse((ROOT / 'HtkkSampleAdapter.cs').exists())
+        self.assertFalse((ROOT / 'publish-sample-roundtrip-evidence.py').exists())

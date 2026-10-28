@@ -27,8 +27,7 @@ public enum HtkkAutomationMode {
   GtgtAnnex12ExportInspect,
   GtgtExportInspect,
   GtgtRoundtripInspect,
-  GtgtWebImportInspect,
-  SampleRoundtripInspect
+  GtgtWebImportInspect
 }
 
 public enum HtkkAutomationStage {
@@ -161,15 +160,7 @@ public enum HtkkAutomationStage {
   GtgtCaseEditing,
   GtgtNoactivityCheckboxActivating,
   GtgtNoactivityConfirming,
-  GtgtNoactivityCheckboxUnchecking,
-  SampleSheetInspected,
-  SampleExportCommandInvoking,
-  SampleExportInspected,
-  SampleImportFileDialogWaiting,
-  SampleImportSuccessSheetChecking,
-  SampleReexportReadyWaiting,
-  SampleReexportCommandInvoking,
-  SampleRoundtripInspected
+  GtgtNoactivityCheckboxUnchecking
 }
 
 public enum HtkkFilenameDialogAction {
@@ -199,7 +190,6 @@ public static class HtkkNativeAutomationWireMap {
    case HtkkAutomationMode.GtgtExportInspect: return "gtgt-export-inspect";
    case HtkkAutomationMode.GtgtRoundtripInspect: return "gtgt-roundtrip-inspect";
    case HtkkAutomationMode.GtgtWebImportInspect: return "gtgt-web-import-inspect";
-   case HtkkAutomationMode.SampleRoundtripInspect: return "sample-roundtrip-inspect";
    default: throw new ArgumentException("Unknown automation mode");
   }
  }
@@ -219,8 +209,7 @@ public static class HtkkNativeAutomationWireMap {
    if (wire == "gtgt-export-inspect") return HtkkAutomationMode.GtgtExportInspect;
    if (wire == "gtgt-roundtrip-inspect") return HtkkAutomationMode.GtgtRoundtripInspect;
    if (wire == "gtgt-web-import-inspect") return HtkkAutomationMode.GtgtWebImportInspect;
-   if (wire == "sample-roundtrip-inspect") return HtkkAutomationMode.SampleRoundtripInspect;
-  throw new ArgumentException("Unknown automation mode wire: " + wire);
+  throw new ArgumentException("Unknown automation mode");
  }
  public static string ToWireString(HtkkAutomationStage stage) {
   switch (stage) {
@@ -354,14 +343,6 @@ public static class HtkkNativeAutomationWireMap {
    case HtkkAutomationStage.GtgtNoactivityCheckboxActivating: return "gtgt-noactivity-checkbox-activating";
    case HtkkAutomationStage.GtgtNoactivityConfirming: return "gtgt-noactivity-confirming";
    case HtkkAutomationStage.GtgtNoactivityCheckboxUnchecking: return "gtgt-noactivity-checkbox-unchecking";
-   case HtkkAutomationStage.SampleSheetInspected: return "sample-sheet-inspected";
-   case HtkkAutomationStage.SampleExportCommandInvoking: return "sample-export-command-invoking";
-   case HtkkAutomationStage.SampleExportInspected: return "sample-export-inspected";
-   case HtkkAutomationStage.SampleImportFileDialogWaiting: return "sample-import-file-dialog-waiting";
-   case HtkkAutomationStage.SampleImportSuccessSheetChecking: return "sample-import-success-sheet-checking";
-   case HtkkAutomationStage.SampleReexportReadyWaiting: return "sample-reexport-ready-waiting";
-   case HtkkAutomationStage.SampleReexportCommandInvoking: return "sample-reexport-command-invoking";
-   case HtkkAutomationStage.SampleRoundtripInspected: return "sample-roundtrip-inspected";
    default: throw new ArgumentException("Unknown automation stage");
   }
  }
@@ -496,15 +477,7 @@ public static class HtkkNativeAutomationWireMap {
    if (wire == "gtgt-noactivity-checkbox-activating") return HtkkAutomationStage.GtgtNoactivityCheckboxActivating;
    if (wire == "gtgt-noactivity-confirming") return HtkkAutomationStage.GtgtNoactivityConfirming;
    if (wire == "gtgt-noactivity-checkbox-unchecking") return HtkkAutomationStage.GtgtNoactivityCheckboxUnchecking;
-   if (wire == "sample-sheet-inspected") return HtkkAutomationStage.SampleSheetInspected;
-   if (wire == "sample-export-command-invoking") return HtkkAutomationStage.SampleExportCommandInvoking;
-   if (wire == "sample-export-inspected") return HtkkAutomationStage.SampleExportInspected;
-   if (wire == "sample-import-file-dialog-waiting") return HtkkAutomationStage.SampleImportFileDialogWaiting;
-   if (wire == "sample-import-success-sheet-checking") return HtkkAutomationStage.SampleImportSuccessSheetChecking;
-   if (wire == "sample-reexport-ready-waiting") return HtkkAutomationStage.SampleReexportReadyWaiting;
-   if (wire == "sample-reexport-command-invoking") return HtkkAutomationStage.SampleReexportCommandInvoking;
-   if (wire == "sample-roundtrip-inspected") return HtkkAutomationStage.SampleRoundtripInspected;
-  throw new ArgumentException("Unknown automation stage wire: " + wire);
+  throw new ArgumentException("Unknown automation stage");
  }
  public static HtkkAutomationStage GetFilenameStage(bool opening, HtkkFilenameDialogAction action) {
   if (opening) {
@@ -533,6 +506,6 @@ public static class HtkkNativeAutomationWireMap {
    if (menuId == "101") return HtkkAutomationStage.GtgtMenuClick101;
    if (menuId == "101_1") return HtkkAutomationStage.GtgtMenuClick101_1;
    if (menuId == "D1") return HtkkAutomationStage.GtgtMenuClickD1;
-  throw new ArgumentException("Unknown menu ID for click stage: " + menuId);
+  throw new ArgumentException("Unknown menu ID for click stage");
  }
 }

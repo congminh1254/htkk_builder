@@ -21,8 +21,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private HtkkAutomationStage currentStage=HtkkAutomationStage.NotStarted;
  private HtkkAutomationMode modeEnum=HtkkAutomationMode.None;
  private IHtkkNativeAutomationAdapter adapter=null;
- public void SetStage(HtkkAutomationStage s){currentStage=s;}
- public void MarkFinished(){finished=true;}
+ private void SetStage(HtkkAutomationStage s){currentStage=s;}
  private string stage{get{return HtkkNativeAutomationWireMap.ToWireString(currentStage);}set{currentStage=HtkkNativeAutomationWireMap.ParseStage(value);}}
  private volatile bool finished=false,queued=false;
  private bool pins=false,mstMatched=false,initialBlank=false,editingAvailable=false,saveInvoked=false,headerExists=false,headerMatched=false;
@@ -41,11 +40,10 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
  public void Start(string requestedMode){
-  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-amendment-inspect"&&requestedMode!="gtgt-amendment-open-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-annex12-row-inspect"&&requestedMode!="gtgt-annex12-input-inspect"&&requestedMode!="gtgt-annex12-numeric-inspect"&&requestedMode!="gtgt-annex12-export-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect"&&requestedMode!="sample-roundtrip-inspect")throw new ArgumentException();
+  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-amendment-inspect"&&requestedMode!="gtgt-amendment-open-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-annex12-row-inspect"&&requestedMode!="gtgt-annex12-input-inspect"&&requestedMode!="gtgt-annex12-numeric-inspect"&&requestedMode!="gtgt-annex12-export-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect")throw new ArgumentException();
   mode=requestedMode;string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
   modeEnum=HtkkNativeAutomationWireMap.ParseMode(mode);
-  if(modeEnum==HtkkAutomationMode.SampleRoundtripInspect){adapter=new HtkkSampleAdapter();adapter.Initialize(this,project,modeEnum);}
-  else if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}
+  if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}
   try{
    pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
    if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){stage="source-or-runtime-not-matched";finished=true;Record();return;}
