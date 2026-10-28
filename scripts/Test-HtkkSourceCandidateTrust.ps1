@@ -25,7 +25,7 @@ $script:flagNames=@('archivePinsMatched','officialDistributionFilesMatched','ext
 function New-SafeTrustResult {
  $flags=[ordered]@{};foreach($name in $script:flagNames){$flags[$name]=$false}
  return [ordered]@{
-  format='htkk-source-candidate-trust-v1';version='5.8.1';status='blocked';failureCode='NOT_STARTED'
+  format='htkk-source-candidate-trust-v1';version='5.8.1';status='blocked';failureCode='NOT_STARTED';verificationStage='not-started'
   ready=$false;automaticActivation=$false;adapterActivated=$false
   vendorCodeExecuted=$false;installerExecuted=$false;msiCustomActionsExecuted=$false;mirrorUsed=$false;mirrorCompared=$false
   sourcePins=$script:pins;actualHashes=[ordered]@{officialArchive=$null;mirrorArchive=$null;msi=$null;setup=$null;cab=$null}
@@ -179,8 +179,9 @@ function Invoke-TrustWorker {
   if($result.actualHashes.officialArchive -cne $script:pins.officialArchive -or ($hasMirror -and $result.actualHashes.mirrorArchive -cne $script:pins.mirrorArchive)){throw 'ARCHIVE_PIN_MISMATCH'}
   $result.checks.archivePinsMatched=$true
   $phase='RUNNER_TOOLS'
-  $seven=[IO.Path]::Combine($env:ProgramFiles,'7-Zip','7z.exe');Assert-RunnerTool $seven '(?i)(?:Igor Pavlov|7-Zip)';$result.checks.extractorTrusted=$true
-  $signTool=Get-ChildItem 'C:\Program Files (x86)\Windows Kits\10\bin\*\x64\signtool.exe' -ErrorAction Stop | Sort-Object FullName -Descending | Select-Object -First 1
+  $seven=[IO.Path]::Combine([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles),'7-Zip','7z.exe');Assert-RunnerTool $seven '(?i)(?:Igor Pavlov|7-Zip)';$result.checks.extractorTrusted=$true
+  $sdk=[IO.Path]::Combine([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86),'Windows Kits','10','bin','*','x64','signtool.exe')
+  $signTool=Get-ChildItem $sdk -ErrorAction Stop | Sort-Object FullName -Descending | Select-Object -First 1
   if($null -eq $signTool){throw 'RUNNER_TOOLS'}
   Assert-RunnerTool $signTool.FullName '(?i)(?:^|,\s*)O=Microsoft Corporation(?:,|$)';$result.checks.signToolTrusted=$true
   $phase='ARCHIVE_EXTRACTION'
@@ -212,6 +213,7 @@ function Invoke-TrustWorker {
   $known=@('WINDOWS_REQUIRED','INPUT_MISSING','PATH_POLICY','ARCHIVE_PIN_MISMATCH','RUNNER_TOOL_TRUST','TOOL_TIMEOUT','TOOL_REJECTED','REVOCATION_OR_CHAIN','PUBLISHER_ROOT','AUTHENTICODE_OR_TIMESTAMP','PUBLISHER_IDENTITY','MSI_MEDIA','MSI_FILE_COUNTS','MSI_FILE_IDENTITIES','MSI_HASH_IDENTITIES','CAB_FILE_COUNTS','PAYLOAD_SIZE','PAYLOAD_MSI_HASH','UNVERSIONED_HASH_GAP','PAYLOAD_COVERAGE','PAYLOAD_VERSION','SOURCE_CHANGED')
   $result.failureCode=if($_.Exception.Message -cin $known){$_.Exception.Message}else{$phase}
  }
+ $result.verificationStage=$phase
  Write-NewPrivateJson $ResultPath $result
 }
 if($Worker){Invoke-TrustWorker;exit 0}

@@ -12,3 +12,10 @@ class OfficialDistributionTests(unittest.TestCase):
   self.assertLess(s.index("$report.msiAuthenticodeValid = $true"),s.index("$report.stage = 'install'"))
   self.assertNotIn('$report.officialCabMatchesMirror = $true',s)
 if __name__=='__main__':unittest.main()
+
+class TrustEnvironmentTests(unittest.TestCase):
+ def test_worker_uses_os_known_folders_under_essential_only_environment(self):
+  s=(ROOT/'Test-HtkkSourceCandidateTrust.ps1').read_text()
+  self.assertNotIn('$env:ProgramFiles',s)
+  self.assertIn('[Environment+SpecialFolder]::ProgramFiles',s)
+  self.assertIn('[Environment+SpecialFolder]::ProgramFilesX86',s)
