@@ -17,6 +17,9 @@ jobs:
       - name: Check data-only Cabinet extraction with own fixtures
         shell: pwsh
         run: ./scripts/Test-HtkkSourceCabinet.ps1
+      - name: Check read-only MSI query adapter
+        shell: pwsh
+        run: ./scripts/Test-HtkkMsiRows.ps1
       - name: Check fail-closed source worker launch boundary
         shell: pwsh
         run: ./scripts/Test-HtkkSourceTrustBoundary.ps1

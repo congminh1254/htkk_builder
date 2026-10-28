@@ -108,9 +108,9 @@ function Release-ComObject($Object){if($null -ne $Object -and [Runtime.InteropSe
 function Read-MsiRows($Database,[string]$Sql,[scriptblock]$Read){
  $view=$null;$record=$null;$rows=[Collections.Generic.List[object]]::new()
  try{
-  $view=$Database.OpenView($Sql);$view.Execute()
+  $view=$Database.OpenView($Sql);$null=$view.Execute()
   while($null -ne ($record=$view.Fetch())){try{$rows.Add((& $Read $record))}finally{Release-ComObject $record;$record=$null}}
- }finally{if($null -ne $view){$view.Close()};Release-ComObject $view}
+ }finally{if($null -ne $view){$null=$view.Close()};Release-ComObject $view}
  return ,$rows
 }
 function Verify-CabPayload([string]$Msi,[string]$Cab,[string]$Seven,[string]$Work,[string]$ManifestPath,$Result){
