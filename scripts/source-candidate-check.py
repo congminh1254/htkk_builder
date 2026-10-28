@@ -7,10 +7,11 @@ def main():
  root.mkdir()
  try:
   official=candidate.fetch_resource('https://www.fshare.vn/file/TPW3FMLVAJL1',root/'official.rar',candidate.BASELINE_OFFICIAL_SHA256)
-  mirror=candidate.fetch_baseline_mirror(root/'mirror.zip',official['sha256'])
+  # The official archive contains MSI/setup/CAB; never depend on a mirror.
+  mirror=None
   report={'format':'htkk-pinned-source-reverification-v1','scope':'pinned-baseline-not-new-release-discovery','official':official,'mirror':mirror,'ready':False,'automaticActivation':False}
   (root/'downloads.json').write_text(json.dumps(report)+'\n')
-  print(json.dumps({'status':'downloaded-pinned-baseline','officialSha256':official['sha256'],'mirrorSha256':mirror['sha256'],'ready':False}))
+  print(json.dumps({'status':'downloaded-pinned-baseline','officialSha256':official['sha256'],'mirrorUsed':False,'ready':False}))
  except candidate.CandidateError as error:
   print(json.dumps({'status':'blocked','failureCode':error.code,'httpStatus':error.status,'ready':False}));return 1
  return 0

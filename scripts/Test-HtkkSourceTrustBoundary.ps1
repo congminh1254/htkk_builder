@@ -4,7 +4,7 @@ if(-not $IsWindows){Write-Output 'Source trust launch-failure runtime checks req
 $work=Join-Path $env:RUNNER_TEMP ('htkk-trust-boundary-'+[Guid]::NewGuid().ToString('N'));$null=[IO.Directory]::CreateDirectory($work)
 try{
  $original=[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'Test-HtkkSourceCandidateTrust.ps1'))
- $launch='(?m)^  \$owner=New-HtkkBoundedJobOwner[^\r\n]*$'
+ $launch='(?m)^  \$owner=New-HtkkBoundedJobOwner[^\r\n]*\r?$'
  if([regex]::Matches($original,$launch).Count -ne 1){throw 'TRUST_CONTROLLER_ANCHOR'}
  $count=0
  foreach($case in @(@('unclassified-fixture-launch',$false),@('job-assignment-failed',$true))){

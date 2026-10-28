@@ -21,13 +21,13 @@ $script:pins=[ordered]@{
  cab='00669905937fb29e10cb53209ece5e8a9f8097970e4cb40bb28f89baa9fc3744'
  signerRoot='7b9d553e1c92cb6e8803e137f4f287d4363757f5d44b37d52f9fca22fb97df86'
 }
-$script:flagNames=@('archivePinsMatched','officialMirrorFilesMatched','extractorTrusted','signToolTrusted','msiAuthenticodeValid','setupAuthenticodeValid','msiPublisherMatched','setupPublisherMatched','msiTimestampValid','setupTimestampValid','signerRevocationVerified','timestampRevocationVerified','msiCabMediaMatched','payloadSizesMatched','payloadMsiHashesMatched','payloadVersionMatched','sourceFilesUnmodified')
+$script:flagNames=@('archivePinsMatched','officialDistributionFilesMatched','extractorTrusted','signToolTrusted','msiAuthenticodeValid','setupAuthenticodeValid','msiPublisherMatched','setupPublisherMatched','msiTimestampValid','setupTimestampValid','signerRevocationVerified','timestampRevocationVerified','msiCabMediaMatched','payloadSizesMatched','payloadMsiHashesMatched','payloadVersionMatched','sourceFilesUnmodified')
 function New-SafeTrustResult {
  $flags=[ordered]@{};foreach($name in $script:flagNames){$flags[$name]=$false}
  return [ordered]@{
   format='htkk-source-candidate-trust-v1';version='5.8.1';status='blocked';failureCode='NOT_STARTED'
   ready=$false;automaticActivation=$false;adapterActivated=$false
-  vendorCodeExecuted=$false;installerExecuted=$false;msiCustomActionsExecuted=$false
+  vendorCodeExecuted=$false;installerExecuted=$false;msiCustomActionsExecuted=$false;mirrorUsed=$false;mirrorCompared=$false
   sourcePins=$script:pins;actualHashes=[ordered]@{officialArchive=$null;mirrorArchive=$null;msi=$null;setup=$null;cab=$null}
   checks=$flags
   payload=[ordered]@{files=0;sizeMatches=0;msiHashMatches=0;versionedWithoutMsiHash=0;sha256Entries=0;fullyCoveredBySignedMsiHashes=$false}
@@ -173,9 +173,10 @@ function Invoke-TrustWorker {
   if(-not $IsWindows){throw 'WINDOWS_REQUIRED'}
   $candidate=Assert-PlainPath $CandidateDirectory $true;$work=Assert-PlainPath $WorkerDirectory $true
   $official=Assert-PlainPath ([IO.Path]::Combine($candidate,'official.rar')) $true
-  $mirror=Assert-PlainPath ([IO.Path]::Combine($candidate,'mirror.zip')) $true
-  $result.actualHashes.officialArchive=Get-PrivateFileHash $official;$result.actualHashes.mirrorArchive=Get-PrivateFileHash $mirror
-  if($result.actualHashes.officialArchive -cne $script:pins.officialArchive -or $result.actualHashes.mirrorArchive -cne $script:pins.mirrorArchive){throw 'ARCHIVE_PIN_MISMATCH'}
+  $mirror=[IO.Path]::Combine($candidate,'mirror.zip');$hasMirror=[IO.File]::Exists($mirror);$result.mirrorUsed=$hasMirror
+  if($hasMirror){$mirror=Assert-PlainPath $mirror $true}
+  $result.actualHashes.officialArchive=Get-PrivateFileHash $official;if($hasMirror){$result.actualHashes.mirrorArchive=Get-PrivateFileHash $mirror}
+  if($result.actualHashes.officialArchive -cne $script:pins.officialArchive -or ($hasMirror -and $result.actualHashes.mirrorArchive -cne $script:pins.mirrorArchive)){throw 'ARCHIVE_PIN_MISMATCH'}
   $result.checks.archivePinsMatched=$true
   $phase='RUNNER_TOOLS'
   $seven=[IO.Path]::Combine($env:ProgramFiles,'7-Zip','7z.exe');Assert-RunnerTool $seven '(?i)(?:Igor Pavlov|7-Zip)';$result.checks.extractorTrusted=$true
@@ -184,18 +185,20 @@ function Invoke-TrustWorker {
   Assert-RunnerTool $signTool.FullName '(?i)(?:^|,\s*)O=Microsoft Corporation(?:,|$)';$result.checks.signToolTrusted=$true
   $phase='ARCHIVE_EXTRACTION'
   $names=@('HTKK_5.8.1_DLL_signed/Data1.cab','HTKK_5.8.1_DLL_signed/HTKK.msi','HTKK_5.8.1_DLL_signed/setup.exe')
-  foreach($pair in @(@($official,'official'),@($mirror,'mirror'))){
+  $distributions=,@($official,'official');if($hasMirror){$distributions+=,@($mirror,'mirror')}
+  foreach($pair in $distributions){
    $destination=[IO.Path]::Combine($work,$pair[1]);$null=[IO.Directory]::CreateDirectory($destination)
    Invoke-ReadOnlyTool $seven (@('x','-y',('-o'+$destination),$pair[0])+$names) $work
   }
   $source=[IO.Path]::Combine($work,'official','HTKK_5.8.1_DLL_signed');$mirrorSource=[IO.Path]::Combine($work,'mirror','HTKK_5.8.1_DLL_signed')
   foreach($item in @(@('msi','HTKK.msi'),@('setup','setup.exe'),@('cab','Data1.cab'))){
-   $path=Assert-PlainPath ([IO.Path]::Combine($source,$item[1])) $true;$other=Assert-PlainPath ([IO.Path]::Combine($mirrorSource,$item[1])) $true
+   $path=Assert-PlainPath ([IO.Path]::Combine($source,$item[1])) $true
+   if($hasMirror){$other=Assert-PlainPath ([IO.Path]::Combine($mirrorSource,$item[1])) $true}
    $actual=Get-PrivateFileHash $path
-   if($actual -cne $script:pins[$item[0]] -or (Get-PrivateFileHash $other) -cne $actual){throw 'DISTRIBUTION_HASH'}
+   if($actual -cne $script:pins[$item[0]] -or ($hasMirror -and (Get-PrivateFileHash $other) -cne $actual)){throw 'DISTRIBUTION_HASH'}
    $result.actualHashes[$item[0]]=$actual
   }
-  $result.checks.officialMirrorFilesMatched=$true
+  $result.checks.officialDistributionFilesMatched=$true;$result.mirrorCompared=$hasMirror
   $phase='SIGNATURE_CHAIN'
   Test-SignedDistributionFile ([IO.Path]::Combine($source,'HTKK.msi')) 'msi' $signTool.FullName $work $result
   Test-SignedDistributionFile ([IO.Path]::Combine($source,'setup.exe')) 'setup' $signTool.FullName $work $result
@@ -203,7 +206,7 @@ function Invoke-TrustWorker {
   $phase='MSI_CAB_PAYLOAD'
   Verify-CabPayload ([IO.Path]::Combine($source,'HTKK.msi')) ([IO.Path]::Combine($source,'Data1.cab')) $seven $work ([IO.Path]::Combine($work,'payload-sha256.json')) $result
   foreach($item in @(@('msi','HTKK.msi'),@('setup','setup.exe'),@('cab','Data1.cab'))){if((Get-PrivateFileHash ([IO.Path]::Combine($source,$item[1]))) -cne $script:pins[$item[0]]){throw 'SOURCE_CHANGED'}}
-  if((Get-PrivateFileHash $official) -cne $script:pins.officialArchive -or (Get-PrivateFileHash $mirror) -cne $script:pins.mirrorArchive){throw 'SOURCE_CHANGED'}
+  if((Get-PrivateFileHash $official) -cne $script:pins.officialArchive -or ($hasMirror -and (Get-PrivateFileHash $mirror) -cne $script:pins.mirrorArchive)){throw 'SOURCE_CHANGED'}
   $result.checks.sourceFilesUnmodified=$true;$result.status='baseline-verified';$result.failureCode=$null
  }catch{
   $known=@('WINDOWS_REQUIRED','INPUT_MISSING','PATH_POLICY','ARCHIVE_PIN_MISMATCH','RUNNER_TOOL_TRUST','TOOL_TIMEOUT','TOOL_REJECTED','REVOCATION_OR_CHAIN','PUBLISHER_ROOT','AUTHENTICODE_OR_TIMESTAMP','PUBLISHER_IDENTITY','MSI_MEDIA','MSI_FILE_COUNTS','MSI_FILE_IDENTITIES','MSI_HASH_IDENTITIES','CAB_FILE_COUNTS','PAYLOAD_SIZE','PAYLOAD_MSI_HASH','UNVERSIONED_HASH_GAP','PAYLOAD_COVERAGE','PAYLOAD_VERSION','SOURCE_CHANGED')

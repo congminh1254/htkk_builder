@@ -51,13 +51,13 @@ def resolve():
  prepared=os.environ.get('PREPARED_OBSERVATION_COMMIT','')
  if prepared:
   gitsha(prepared);entry=watch.api('/contents/prepared-source.json?ref='+prepared,token);raw=base64.b64decode(entry['content'],validate=True);require(len(raw)<=64000)
-  p=json.loads(raw);exact(p,('format','sourceSha','origin','observerSha256','report'));require(p['format']=='htkk-prepared-source-observation-v1'and p['sourceSha']==source and p['origin']=='authorized-cloud-source-observation'and p['observerSha256']==digest((ROOT/'source-watch.py').read_bytes()))
+  p=json.loads(raw);exact(p,('format','sourceSha','origin','observerSha256','report'));require(p['format']=='htkk-prepared-source-observation-v1'and p['sourceSha']==source and p['origin']=='authorized-cloud-source-observation'and p['observerSha256']==digest((ROOT/'source-watch.py').read_text().replace('\r\n','\n').encode()))
   watch.validate_report(p['report']);age=datetime.datetime.now(datetime.timezone.utc)-datetime.datetime.fromisoformat(p['report']['checkedAt']);require(0<=age.total_seconds()<=86400,'STALE_OBSERVATION');write(report,p['report'])
  output('source_sha',source);print('Fixed private source identity resolved; no source checkout.')
 def prepare_observation(filename,token):
  # Caller creates this report in a separate credential-free observer process.
  report=watch.validate_report(load(filename,64000));require(report['result']in('unchanged','review-required'))
- source=source_read(token);packet={'format':'htkk-prepared-source-observation-v1','sourceSha':source,'origin':'authorized-cloud-source-observation','observerSha256':digest((ROOT/'source-watch.py').read_bytes()),'report':report}
+ source=source_read(token);packet={'format':'htkk-prepared-source-observation-v1','sourceSha':source,'origin':'authorized-cloud-source-observation','observerSha256':digest((ROOT/'source-watch.py').read_text().replace('\r\n','\n').encode()),'report':report}
  body=(json.dumps(packet,ensure_ascii=False,separators=(',',':'))+'\n').encode();blob=gitsha(watch.api('/git/blobs',token,{'encoding':'base64','content':base64.b64encode(body).decode()})['sha']);tree=gitsha(watch.api('/git/trees',token,{'tree':[{'path':'prepared-source.json','mode':'100644','type':'blob','sha':blob}]})['sha']);commit=gitsha(watch.api('/git/commits',token,{'message':'Private prepared public-source observation; no activation','parents':[],'tree':tree})['sha']);require(source_read(token)==source,'STALE_SOURCE');return commit
 STAGE_KEYS=('format','checkedAt','scope','observationSha256','preparedObservationCommit','verifyCurrent','observedVersion','reference','result','failureCode','transportFailures','official','mirror','baselineArchiveMatched','trustRequested','ready','automaticActivation')
 def validate_stage(s):
@@ -86,7 +86,7 @@ def validate_stage(s):
   require(type(d)is dict and d.get('format')=='htkk-source-candidate-download-v1'and d.get('ready')is False and d.get('automaticActivation')is False and d.get('signatureVerified')is False and d.get('payloadVerified')is False)
   require(type(d.get('bytes'))is int and 1<=d['bytes']<=candidate.MAX_BYTES and re.fullmatch('[a-f0-9]{64}',d.get('sha256',''))is not None)
   require(d.get('kind')in('rar','zip','7z','cab','compound','pe'))
- require(not s['trustRequested']or(s['official']is not None and s['mirror']is not None and s['baselineArchiveMatched']))
+ require(not s['trustRequested']or(s['official']is not None and s['baselineArchiveMatched']))
  return s
 def stage():
  work,report,bundle=getpaths();require(not work.exists());work.mkdir();r=watch.validate_report(load(report,64000))
@@ -105,12 +105,11 @@ def stage():
      s['official']=candidate.fetch_resource(ref,work/'official.rar',relay_token=os.environ['AGENT_AUTH_TOKEN'],transport='relay',max_attempts=1)
     s['baselineArchiveMatched']=s['observedVersion']==watch.PINNED_VERSION and s['official']['sha256']==candidate.BASELINE_OFFICIAL_SHA256
     if s['baselineArchiveMatched']:
-     s['mirror']=candidate.fetch_baseline_mirror(work/'mirror.zip',s['official']['sha256'],max_attempts=2)
      s.update(result='staged',trustRequested=True)
     else:s.update(result='blocked',failureCode='UNREVIEWED_VERSION'if s['observedVersion']!=watch.PINNED_VERSION else'BASELINE_BYTES_CHANGED')
    except candidate.CandidateError as e:s.update(result='blocked',failureCode=e.code)
  write(work/'candidate.json',validate_stage(s));output('trust_requested','true'if s['trustRequested']else'false');print(json.dumps({'result':s['result'],'failureCode':s['failureCode'],'trustRequested':s['trustRequested'],'ready':False}))
-TRUST_FLAGS=('archivePinsMatched','officialMirrorFilesMatched','extractorTrusted','signToolTrusted','msiAuthenticodeValid','setupAuthenticodeValid','msiPublisherMatched','setupPublisherMatched','msiTimestampValid','setupTimestampValid','signerRevocationVerified','timestampRevocationVerified','msiCabMediaMatched','payloadSizesMatched','payloadMsiHashesMatched','payloadVersionMatched','sourceFilesUnmodified')
+TRUST_FLAGS=('archivePinsMatched','officialDistributionFilesMatched','extractorTrusted','signToolTrusted','msiAuthenticodeValid','setupAuthenticodeValid','msiPublisherMatched','setupPublisherMatched','msiTimestampValid','setupTimestampValid','signerRevocationVerified','timestampRevocationVerified','msiCabMediaMatched','payloadSizesMatched','payloadMsiHashesMatched','payloadVersionMatched','sourceFilesUnmodified')
 def validate_trust(t,directory):
  if t.get('format')=='htkk-source-candidate-trust-not-run-v1':
   exact(t,('format','reason','noProcessStarted','workerStopped','jobCleanupVerified','workerTimedOut','ready','automaticActivation'))
@@ -121,7 +120,9 @@ def validate_trust(t,directory):
  require(t.get('revocationPolicy')=='online-exclude-root-no-verification-exceptions'and t.get('revocationUrlTimeoutSeconds')==10)
  require(type(t.get('checks'))is dict and set(t['checks'])==set(TRUST_FLAGS)and all(type(v)is bool for v in t['checks'].values()))
  for k in('workerStopped','jobCleanupVerified','workerTimedOut'):require(type(t.get(k))is bool)
+ require(type(t.get('mirrorUsed'))is bool and type(t.get('mirrorCompared'))is bool)
  if t['status']=='baseline-verified':
+  require(t['mirrorUsed']==t['mirrorCompared'])
   require(all(t['checks'].values())and t.get('failureCode')is None)
   p=t['payload'];require(p=={'files':4526,'sizeMatches':4526,'msiHashMatches':4493,'versionedWithoutMsiHash':33,'sha256Entries':4526,'fullyCoveredBySignedMsiHashes':False})
   f=t['payloadManifest'];require(f['path']=='payload-sha256.json'and f['entries']==4526)
