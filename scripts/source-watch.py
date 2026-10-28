@@ -8,7 +8,7 @@ PAGE='https://www.gdt.gov.vn/wps/portal/home/hotrokekhai?1dmy&current=true&urile
 PINNED_VERSION='5.8.1'
 PINNED_DOWNLOAD='https://www.fshare.vn/file/TPW3FMLVAJL1'
 RELAY='https://service.medpass.vn/api/agent/fetch'
-REPO='congminh1254/htkk_web';BUILDER='congminh1254/htkk_builder';BRANCH='official-source-observations'
+REPO='htkk-net/htkk_web';BUILDER='congminh1254/htkk_builder';BRANCH='official-source-observations'
 MAX_HTML=2_000_000;MAX_REPORT=64_000
 HOSTS=('www.gdt.gov.vn','gdt.gov.vn')
 ERRORS=frozenset(('HTTP_DENIED','HTTP_STATUS','TLS','TIMEOUT','NETWORK','REDIRECT','TOO_LARGE','CONTENT_TYPE','CONTENT_ENCODING','UTF8','HTML_PARSE','NO_RELEASES','RELAY_AUTH','RELAY_HTTP','RELAY_UPSTREAM','RELAY_ENVELOPE','INTERNAL'))

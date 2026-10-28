@@ -5,7 +5,7 @@ only a privacy-allowlist adapter, never native provenance or filing validation.
 """
 import base64,datetime,hashlib,importlib.util,io,json,os,pathlib,re,shutil,tempfile,urllib.error,urllib.parse,urllib.request
 import xml.etree.ElementTree as ET
-REPO='congminh1254/htkk_web'
+REPO='htkk-net/htkk_web'
 BUILDER='congminh1254/htkk_builder'
 BRANCH='gtgt-web-reference-input'
 NAMES=('01GTGT-web.xml','manifest.json')

@@ -5,7 +5,7 @@ The GUI process never receives this step's credential.
 """
 import base64,hashlib,json,os,pathlib,re,shutil,struct,urllib.request,urllib.error
 
-REPO='congminh1254/htkk_web'
+REPO='htkk-net/htkk_web'
 BRANCH='windows-reference-diagnostics'
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None

@@ -6,7 +6,7 @@ that the GitHub runner reached the landing page itself.
 """
 import argparse,base64,datetime,hashlib,importlib.util,json,os,pathlib,re,shutil,urllib.error
 ROOT=pathlib.Path(__file__).resolve().parent
-REPO='congminh1254/htkk_web';BUILDER='congminh1254/htkk_builder'
+REPO='htkk-net/htkk_web';BUILDER='congminh1254/htkk_builder'
 MAX_META=4*1024*1024;CHUNK=4*1024*1024
 META=('official-sources.json','candidate.json','trust.json','proposal.json','payload-sha256.json')
 ARCHIVES=('official.rar','mirror.zip')

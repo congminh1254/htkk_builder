@@ -26,12 +26,12 @@ try:
  import base64
  env['GIT_CONFIG_VALUE_0']='AUTHORIZATION: basic '+base64.b64encode(('x-access-token:'+os.environ['SOURCE_PUBLISH_TOKEN']).encode()).decode()
  def api(path,payload=None):
-  request=urllib.request.Request('https://api.github.com/repos/congminh1254/htkk_web/'+path,data=json.dumps(payload).encode() if payload is not None else None,headers={'Authorization':'Bearer '+os.environ['SOURCE_PUBLISH_TOKEN'],'Accept':'application/vnd.github+json'},method='POST' if payload is not None else 'GET')
+  request=urllib.request.Request('https://api.github.com/repos/htkk-net/htkk_web/'+path,data=json.dumps(payload).encode() if payload is not None else None,headers={'Authorization':'Bearer '+os.environ['SOURCE_PUBLISH_TOKEN'],'Accept':'application/vnd.github+json'},method='POST' if payload is not None else 'GET')
   with urllib.request.urlopen(request,timeout=30) as response:
    content=response.read()
    return json.loads(content) if content else None
  if api('branches/main')['commit']['sha']!=sha:raise ValueError('Release superseded')
- run(['git','push','--force','https://github.com/congminh1254/htkk_web.git','HEAD:refs/heads/pages-output'],env)
+ run(['git','push','--force','https://github.com/htkk-net/htkk_web.git','HEAD:refs/heads/pages-output'],env)
  pages_commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True).stdout.decode().strip()
  if not re.fullmatch('[0-9a-f]{40}',pages_commit):raise ValueError()
  api('dispatches',{'event_type':'htkk-pages-ready','client_payload':{'pages_commit':pages_commit,'source_sha':sha}})

@@ -1,6 +1,6 @@
 """Authorize only current main or a verified internal PR head. Never print API data."""
 import json,os,re,urllib.request
-REPO='congminh1254/htkk_web'
+REPO='htkk-net/htkk_web'
 def get(path):
  request=urllib.request.Request('https://api.github.com/repos/'+REPO+'/'+path,headers={'Authorization':'Bearer '+os.environ['SOURCE_READ_TOKEN'],'Accept':'application/vnd.github+json'})
  with urllib.request.urlopen(request,timeout=30) as response:return json.load(response)

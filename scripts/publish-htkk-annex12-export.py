@@ -9,7 +9,7 @@ def module(name,file):
  spec=importlib.util.spec_from_file_location(name,pathlib.Path(__file__).with_name(file));value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
 contract=module('annex12_export_contract','htkk_annex12_fixed_export.py')
 transport=module('annex12_export_transport','publish-htkk-web-inputs.py')
-REPO='congminh1254/htkk_web';BUILDER='congminh1254/htkk_builder'
+REPO='htkk-net/htkk_web';BUILDER='congminh1254/htkk_builder'
 DIRECTORY='htkk-annex12-export-output';BRANCH='gtgt-annex12-zero-two-locations-native-export'
 NAMES=('01GTGT-annex12-native.xml','provenance.json')
 SCHEMA_PINS={'InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd':'8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003','InterfaceTemplates/TKhaiThue.xsd':'8f451719355b5a6247f65a34a37584b4a0c7f7cc81a568e1033d08b8fe9b8c1d','InterfaceTemplates/xmldsig-core-schema.xsd':'c3b5160be1852606d10f6928e0b214d418f8dd418667cb2fb88fec31e4e6f56d'}

@@ -717,7 +717,7 @@ try {
         '01GTGT-native-import-sale10-M10-2026'='htkk-web-native-import-sale10-input-v1'
       }
       $expectedFormat=$expectedFormats[$env:EXPECTED_WEB_CASE_ID]
-      if($manifest.caseId -cne $env:EXPECTED_WEB_CASE_ID -or $manifest.format -cne $expectedFormat -or $manifest.sourceRepository -cne 'congminh1254/htkk_web' -or $manifest.inputsSynthetic -ne $true -or $manifest.sourceCommit -cne $env:EXPECTED_WEB_SOURCE_SHA -or $manifest.xmlSha256 -cnotmatch '^[a-f0-9]{64}$' -or $manifest.bytes -le 0 -or $manifest.bytes -gt 262144 -or (Get-Item -LiteralPath $xml).Length -ne $manifest.bytes){throw 'WEB_REFERENCE_INPUT_INVALID'}
+      if($manifest.caseId -cne $env:EXPECTED_WEB_CASE_ID -or $manifest.format -cne $expectedFormat -or $manifest.sourceRepository -cne 'htkk-net/htkk_web' -or $manifest.inputsSynthetic -ne $true -or $manifest.sourceCommit -cne $env:EXPECTED_WEB_SOURCE_SHA -or $manifest.xmlSha256 -cnotmatch '^[a-f0-9]{64}$' -or $manifest.bytes -le 0 -or $manifest.bytes -gt 262144 -or (Get-Item -LiteralPath $xml).Length -ne $manifest.bytes){throw 'WEB_REFERENCE_INPUT_INVALID'}
       Assert-Hash $xml $manifest.xmlSha256
       [IO.File]::WriteAllBytes($inputPath,[IO.File]::ReadAllBytes($xml))
       Assert-Hash $inputPath $manifest.xmlSha256
@@ -1008,7 +1008,7 @@ try {
       foreach($path in @($inputDirectory,$inputManifestPath)) {if(-not (Test-Path -LiteralPath $path) -or ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'STAGING_NOT_VERIFIED'}}
       if((Get-Item -LiteralPath $inputManifestPath).Length -gt 16384){throw 'STAGING_NOT_VERIFIED'}
       $inputManifest=Get-Content -LiteralPath $inputManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-      if($inputManifest.sourceRepository -cne 'congminh1254/htkk_web' -or $inputManifest.sourceCommit -cne $gui.webSourceSha -or $inputManifest.caseId -cne $gui.webCaseId -or $inputManifest.xmlSha256 -cne $gui.webImportInputSha256 -or $inputManifest.inputsSynthetic -isnot [bool] -or -not $inputManifest.inputsSynthetic){throw 'STAGING_NOT_VERIFIED'}
+      if($inputManifest.sourceRepository -cne 'htkk-net/htkk_web' -or $inputManifest.sourceCommit -cne $gui.webSourceSha -or $inputManifest.caseId -cne $gui.webCaseId -or $inputManifest.xmlSha256 -cne $gui.webImportInputSha256 -or $inputManifest.inputsSynthetic -isnot [bool] -or -not $inputManifest.inputsSynthetic){throw 'STAGING_NOT_VERIFIED'}
       $nativeEvidenceStage='source-file'
       $nativeOriginal=Join-Path (Split-Path (Split-Path $exe)) 'DataFiles/9999999997/reference-output/01GTGT-roundtrip.xml'
       $nativeFile=Get-Item -LiteralPath $nativeOriginal
@@ -1025,7 +1025,7 @@ try {
       Assert-Hash $nativeOriginal $gui.roundtripReexportSha256
       if((Get-Item -LiteralPath (Join-Path $nativeEvidence '01GTGT-native.xml')).Length -ne $gui.roundtripReexportBytes){throw 'STAGING_NOT_VERIFIED'}
       $nativeEvidenceStage='provenance'
-      [ordered]@{format='htkk-web-native-output-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='congminh1254/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=70;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
+      [ordered]@{format='htkk-web-native-output-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=70;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
       $report.privateWebNativeOutputEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
     } catch {
       if($nativeEvidenceCreated){Remove-Item -LiteralPath $nativeEvidence -Recurse -Force -ErrorAction SilentlyContinue}

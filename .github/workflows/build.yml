@@ -46,7 +46,7 @@ jobs:
       - name: Checkout authorized source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
-          repository: congminh1254/htkk_web
+          repository: htkk-net/htkk_web
           ref: ${{ inputs.commit_sha }}
           token: ${{ secrets.SOURCE_READ_TOKEN }}
           path: source
@@ -101,7 +101,7 @@ jobs:
           if not re.fullmatch('[0-9a-f]{40}',sha): raise SystemExit('Invalid source SHA.')
           state='success' if os.environ['BUILD_RESULT']=='success' else 'failure'
           payload=json.dumps({'state':state,'context':'htkk-builder','description':'Builder '+state,'target_url':os.environ['GITHUB_SERVER_URL']+'/'+os.environ['GITHUB_REPOSITORY']+'/actions/runs/'+os.environ['GITHUB_RUN_ID']}).encode()
-          request=urllib.request.Request('https://api.github.com/repos/congminh1254/htkk_web/statuses/'+sha,data=payload,headers={'Authorization':'Bearer '+os.environ['SOURCE_STATUS_TOKEN'],'Accept':'application/vnd.github+json'},method='POST')
+          request=urllib.request.Request('https://api.github.com/repos/htkk-net/htkk_web/statuses/'+sha,data=payload,headers={'Authorization':'Bearer '+os.environ['SOURCE_STATUS_TOKEN'],'Accept':'application/vnd.github+json'},method='POST')
           try:
               with urllib.request.urlopen(request,timeout=30) as response: response.read()
           except Exception: raise SystemExit('Status callback failed.')
