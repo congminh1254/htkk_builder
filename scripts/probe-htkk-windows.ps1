@@ -1015,6 +1015,10 @@ try {
       foreach($directory in @($nativeFile.Directory,$nativeFile.Directory.Parent,$nativeFile.Directory.Parent.Parent)) {if($directory.Attributes -band [IO.FileAttributes]::ReparsePoint){throw 'STAGING_NOT_VERIFIED'}}
       if($nativeFile.Attributes -band [IO.FileAttributes]::ReparsePoint -or $nativeFile.Length -lt 1 -or $nativeFile.Length -gt 262144 -or $nativeFile.Length -ne $gui.roundtripReexportBytes){throw 'STAGING_NOT_VERIFIED'}
       Assert-Hash $nativeOriginal $gui.roundtripReexportSha256
+      $initialOriginal=Join-Path $nativeFile.Directory.FullName '01GTGT.xml'
+      $initialFile=Get-Item -LiteralPath $initialOriginal
+      if($initialFile.Attributes -band [IO.FileAttributes]::ReparsePoint -or $initialFile.Length -lt 1 -or $initialFile.Length -gt 262144 -or $initialFile.Length -ne $gui.exportBytes -or $gui.exportSha256 -cnotmatch '^[0-9a-f]{64}$' -or $env:GITHUB_RUN_ATTEMPT -cnotmatch '^[1-9][0-9]{0,5}$'){throw 'STAGING_NOT_VERIFIED'}
+      Assert-Hash $initialOriginal $gui.exportSha256
       $nativeEvidenceStage='fresh-destination'
       $nativeEvidence=Join-Path $env:RUNNER_TEMP 'htkk-web-native-output'
       if((Get-Item -LiteralPath $env:RUNNER_TEMP).Attributes -band [IO.FileAttributes]::ReparsePoint -or (Test-Path -LiteralPath $nativeEvidence)){throw 'STAGING_NOT_VERIFIED'}
@@ -1024,8 +1028,12 @@ try {
       Assert-Hash (Join-Path $nativeEvidence '01GTGT-native.xml') $gui.roundtripReexportSha256
       Assert-Hash $nativeOriginal $gui.roundtripReexportSha256
       if((Get-Item -LiteralPath (Join-Path $nativeEvidence '01GTGT-native.xml')).Length -ne $gui.roundtripReexportBytes){throw 'STAGING_NOT_VERIFIED'}
+      Copy-Item -LiteralPath $initialOriginal -Destination (Join-Path $nativeEvidence '01GTGT-initial.xml')
+      Assert-Hash (Join-Path $nativeEvidence '01GTGT-initial.xml') $gui.exportSha256
+      Assert-Hash $initialOriginal $gui.exportSha256
+      if((Get-Item -LiteralPath (Join-Path $nativeEvidence '01GTGT-initial.xml')).Length -ne $gui.exportBytes){throw 'STAGING_NOT_VERIFIED'}
       $nativeEvidenceStage='provenance'
-      [ordered]@{format='htkk-web-native-output-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=70;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
+      [ordered]@{format='htkk-web-native-output-staging-v2';runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;initialOutputSha256=$gui.exportSha256;initialOutputBytes=[int]$initialFile.Length;builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=70;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
       $report.privateWebNativeOutputEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
     } catch {
       if($nativeEvidenceCreated){Remove-Item -LiteralPath $nativeEvidence -Recurse -Force -ErrorAction SilentlyContinue}
