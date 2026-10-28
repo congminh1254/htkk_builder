@@ -51,7 +51,7 @@ class CandidateError(ValueError):
 
 
 def allowed_url(url):
-    """No arbitrary mirror, credential, query-bearing CDN or private-IP routes."""
+    """No arbitrary mirror, userinfo, unknown query parameters or private-IP routes."""
     if not isinstance(url, str) or len(url) > 2048 or any(ord(c) < 33 or ord(c) == 127 for c in url) or '\\' in url:
         raise CandidateError('URL_POLICY')
     try:
@@ -65,13 +65,19 @@ def allowed_url(url):
             pass
         else:
             raise CandidateError('URL_POLICY')
+        signed_query=False
+        if p.query:
+            try:
+                items=urllib.parse.parse_qsl(p.query,keep_blank_values=True,strict_parsing=True)
+                signed_query=len(items)==1 and items[0][0]=='token' and re.fullmatch(r'[A-Za-z0-9._~+/=\-]{1,1024}',items[0][1]) is not None
+            except ValueError:pass
         if host in OFFICIAL_HOSTS:
             pass
         elif host in ('fshare.vn', 'www.fshare.vn'):
-            if p.query or not re.fullmatch(r'/file/[A-Za-z0-9]{8,32}', p.path):
+            if (p.query and not signed_query) or not re.fullmatch(r'/file/[A-Za-z0-9]{8,32}', p.path):
                 raise CandidateError('URL_POLICY')
         elif re.fullmatch(r'download[0-9]{1,4}\.fshare\.vn', host):
-            if p.query or not re.fullmatch(r'/dl/[A-Za-z0-9_./%+\-]{1,1800}', p.path):
+            if (p.query and not signed_query) or not re.fullmatch(r'/dl/[A-Za-z0-9_./%+\-]{1,1800}', p.path):
                 raise CandidateError('URL_POLICY')
         else:
             raise CandidateError('URL_POLICY')

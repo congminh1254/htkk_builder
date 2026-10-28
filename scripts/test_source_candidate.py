@@ -102,6 +102,14 @@ class CandidateTests(unittest.TestCase):
     def no_files(self):
         self.assertEqual(list(self.root.iterdir()), [])
 
+    def test_public_fshare_signed_token_route_is_ephemeral_not_metadata(self):
+        signed=URL+'?token=ephemeral-fixture-token'
+        self.assertEqual(c.allowed_url(signed),signed)
+        result=self.fetch([Response(DATA,url=signed)])
+        self.assertNotIn('ephemeral-fixture-token',json.dumps(result))
+        for suffix in ('?token=one&token=two','?token=','?token=one&redirect=elsewhere'):
+            with self.assertRaises(c.CandidateError):c.allowed_url(URL+suffix)
+
     def test_direct_stream_pins_hash_size_and_keeps_candidate_not_ready(self):
         digest = hashlib.sha256(DATA).hexdigest()
         r = self.fetch([Response(DATA)], expected_sha256=digest)
@@ -122,7 +130,7 @@ class CandidateTests(unittest.TestCase):
         self.assertNotIn('finalUrl', r)
 
     def test_url_policy_rejects_credentials_private_hosts_unsafe_redirects_and_unknown_mirrors(self):
-        for url in ['http://www.gdt.gov.vn/x.zip', 'https://127.0.0.1/a.zip', 'https://[::1]/a.zip', 'https://www.gdt.gov.vn:444/a', 'https://u:p@www.fshare.vn/file/ABCDEFGH', 'https://download802.fshare.vn/dl/a.rar?token=private', 'https://fa.getpedia.net/data?q=private', 'https://download802.fshare.vn/other/a.rar', 'https://evil.fshare.vn/dl/a.rar', 'https://www.gdt.gov.vn/a\nInjected:private', 'https://www.gdt.gov.vn/a\\x', 'https://www.gdt.gov.vn/x#fragment']:
+        for url in ['http://www.gdt.gov.vn/x.zip', 'https://127.0.0.1/a.zip', 'https://[::1]/a.zip', 'https://www.gdt.gov.vn:444/a', 'https://u:p@www.fshare.vn/file/ABCDEFGH', 'https://download802.fshare.vn/dl/a.rar?password=private', 'https://fa.getpedia.net/data?q=private', 'https://download802.fshare.vn/other/a.rar', 'https://evil.fshare.vn/dl/a.rar', 'https://www.gdt.gov.vn/a\nInjected:private', 'https://www.gdt.gov.vn/a\\x', 'https://www.gdt.gov.vn/x#fragment']:
             with self.subTest(url=url), self.assertRaises(c.CandidateError) as error:
                 c.allowed_url(url)
             self.assertEqual(error.exception.code, 'URL_POLICY')
