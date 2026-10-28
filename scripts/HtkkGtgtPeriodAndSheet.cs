@@ -22,6 +22,24 @@ public sealed partial class HtkkGuiReferenceAutomation {
   HtkkNativeUiHarness.CommitCellEdit(spread);
   decimal actual,expected;if(!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)throw new InvalidOperationException();webCaseEditCount++;Record();
  }
+ private bool webSigningDateEdited=false,webSigningDateReady=false;
+ private static bool FixedWebSigningDate(object sheet){
+  object cell=Cell(sheet,65,10),value=Get(cell,"Value");DateTime date;
+  if(value is DateTime)return ((DateTime)value).Date==new DateTime(2026,10,25);
+  string text=Convert.ToString(value,CultureInfo.InvariantCulture);
+  return DateTime.TryParseExact(text,new string[]{"dd/MM/yyyy","d/M/yyyy","yyyy-MM-dd"},CultureInfo.InvariantCulture,DateTimeStyles.None,out date)&&date.Date==new DateTime(2026,10,25);
+ }
+ private void EditOriginalSigningDate(Control grid,object sheet){
+  // Pinned 01_GTGT_TT80_283.xml: K_66, Controltype 14, TKhaiThue/ngayKy.
+  // Zero-based original sheet coordinate65/10; never set Cell.Value or a model field.
+  Form owner=grid.FindForm();object dateCell=Cell(sheet,65,10),type=Get(dateCell,"CellType");
+  if(mode!="gtgt-web-import-inspect"||!webInputVerified||webSigningDateEdited||!gtgtPins||!gtgtDimensions||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible()||Convert.ToBoolean(Get(dateCell,"Locked"))||type==null||(type.GetType().FullName!="FarPoint.Win.Spread.CellType.DateTimeCellType"&&type.GetType().FullName!="FarPoint.Win.Spread.CellType.TextCellType"))throw new InvalidOperationException();
+  webSigningDateEdited=true;SetStage(HtkkAutomationStage.GtgtCaseEditing);Record();Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,65,10);
+  if(!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();
+  foreach(string keys in new string[]{"^a","25/10/2026","{TAB}"}){uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
+  HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+  webSigningDateReady=FixedWebSigningDate(sheet);if(!webSigningDateReady)throw new InvalidOperationException();Record();
+ }
  private bool periodDateMatched=false,periodFirstMatched=false,periodActivityMatched=false,periodGeographyMatched=false,periodNoAnnexMatched=false,periodConfirmInvoked=false;
  private bool gtgtPins=false,gtgtVersion=false,gtgtPeriod=false,gtgtSheet=false,gtgtName=false,gtgtDimensions=false,gtgtIdentity=false,gtgtCt21=false,gtgtSigner=false,gtgtZero=false;
  private int annexSelected=0,gtgtRows=0,gtgtColumns=0,gtgtSheets=0,gtgtEmptyMoney=0;
@@ -388,6 +406,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(matched&&AmendmentInspectionMode()){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12InspectionMode()){InspectOriginalAnnex12(grid);return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
+   if(!webSigningDateReady){EditOriginalSigningDate(grid,sheet);return;}
+   if(!FixedWebSigningDate(sheet))throw new InvalidOperationException();
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
    if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
    if(!webInputVerified)VerifyOwnWebInput();
