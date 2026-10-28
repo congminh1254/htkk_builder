@@ -406,11 +406,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(matched&&AmendmentInspectionMode()){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12InspectionMode()){InspectOriginalAnnex12(grid);return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
-   if(!webSigningDateReady){EditOriginalSigningDate(grid,sheet);return;}
-   if(!FixedWebSigningDate(sheet))throw new InvalidOperationException();
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
    if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
    if(!webInputVerified)VerifyOwnWebInput();
+   if(!webSigningDateReady){EditOriginalSigningDate(grid,sheet);return;}
+   if(!FixedWebSigningDate(sheet))throw new InvalidOperationException();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
    if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!webCaseEdited){
