@@ -1,5 +1,5 @@
 """Authorize only current main or a verified internal PR head. Never print API data."""
-import json,os,re,urllib.request
+import json,os,re,urllib.request,urllib.error
 REPO='htkk-net/htkk_web'
 def get(path):
  request=urllib.request.Request('https://api.github.com/repos/'+REPO+'/'+path,headers={'Authorization':'Bearer '+os.environ['SOURCE_READ_TOKEN'],'Accept':'application/vnd.github+json'})
@@ -14,5 +14,6 @@ def main():
  if data['state']!='open' or data['base']['ref']!='main' or data['head']['repo']['full_name']!=REPO or data['head']['sha']!=sha:raise ValueError()
 if __name__=='__main__':
  try:main()
+ except urllib.error.HTTPError as error:raise SystemExit('Source authorization API failed (HTTP '+str(error.code)+'). Check SOURCE_READ_TOKEN access to '+REPO+'.')
  except Exception:raise SystemExit('Source request rejected or authorization unavailable.')
  print('Source request authorized.')
