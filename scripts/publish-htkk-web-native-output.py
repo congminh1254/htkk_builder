@@ -59,7 +59,7 @@ def native_document(body):
   return ET.fromstring(body)
  except ET.ParseError:fail('XML_PARSE')
 
-def validate_native(body,case_id,today=None,initial=False,aligned=False):
+def validate_native(body,case_id,today=None,initial=False):
  if case_id not in BRANCHES:fail('PROVENANCE')
  root=native_document(body)
  if root.tag!='{'+privacy.NS+'}HSoThueDTu':fail('XML_PRIVACY')
@@ -68,7 +68,7 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False):
  provider=leaf(root,'HSoKhaiThue/TTinChung/TTinDVu/ttinNhaCCapDVu').text
  if not isinstance(provider,str) or not re.fullmatch('[0-9A-F]{32}',provider):fail('NATIVE_IDENTITY')
  created=leaf(root,PREFIX+'ngayLapTKhai');signed=leaf(root,PREFIX+'ngayKy')
- if (signed.text!=created.text if initial and not aligned else signed.text!='2026-10-25') or not isinstance(created.text,str) or not re.fullmatch('[0-9]{4}-[0-9]{2}-[0-9]{2}',created.text):fail('NATIVE_DATE')
+ if (signed.text!=created.text if initial else signed.text!='2026-10-25') or not isinstance(created.text,str) or not re.fullmatch('[0-9]{4}-[0-9]{2}-[0-9]{2}',created.text):fail('NATIVE_DATE')
  try:created_date=datetime.date.fromisoformat(created.text)
  except ValueError:fail('NATIVE_DATE')
  today=today or datetime.datetime.now(datetime.timezone.utc).date()
@@ -93,7 +93,7 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False):
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
  checked=privacy.validate_xml(ET.tostring(root,encoding='utf-8'),today)
  if checked['leafCount']!=74:fail('XML_PRIVACY')
- return {'privacyValuesVerified':True,'leafCount':74,'fixedSyntheticCase':case_id,'historicalSigningDate':None if initial and not aligned else '2026-10-25','signingDateRule':'native-initial-creation-date' if initial and not aligned else 'fixed-web-synthetic-date','creationDateRule':'native-export-current-date','nativeServiceIdentityVerified':True}
+ return {'privacyValuesVerified':True,'leafCount':74,'fixedSyntheticCase':case_id,'historicalSigningDate':None if initial else '2026-10-25','signingDateRule':'native-initial-creation-date' if initial else 'fixed-web-synthetic-date','creationDateRule':'native-export-current-date','nativeServiceIdentityVerified':True}
 
 def compare_native_roundtrip(initial,native):
  # Record the actual whole-document result without normalization. Initial GUI
@@ -107,7 +107,7 @@ def compare_native_roundtrip(initial,native):
  matched=equal(native_document(initial),native_document(native))
  return {'allLeafValuesMatched':matched,'normalizationApplied':False,'rawBytesPreserved':True,'qualificationGranted':False}
 
-def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,artifact_commit,initial=None,run_attempt=None,aligned=False):
+def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,artifact_commit,initial=None,run_attempt=None):
  if case_id not in BRANCHES:fail('PROVENANCE')
  exact_run(run_id);exact_sha(builder_commit);exact_sha(source_commit);exact_sha(artifact_commit)
  if not isinstance(body,bytes) or not 0<len(body)<=reader.MAX_MANIFEST:fail('PROVENANCE')
@@ -116,24 +116,22 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
  if initial is not None:
   if not isinstance(initial,bytes) or not 0<len(initial)<=reader.MAX_XML or not isinstance(run_attempt,str) or not re.fullmatch('[1-9][0-9]{0,5}',run_attempt):fail('PROVENANCE')
   expected.update(format='htkk-web-native-output-staging-v2',runAttempt=int(run_attempt),initialOutputSha256=hashlib.sha256(initial).hexdigest(),initialOutputBytes=len(initial))
-  if aligned:expected.update(format='htkk-web-native-output-staging-v3',initialSigningDateRule='fixed-web-synthetic-date')
  elif run_attempt is not None:fail('PROVENANCE')
  exact_sha(expected['webImportInputSha256'],64)
  if set(observed)!=set(expected) or any(type(observed[key]) is not type(value) or observed[key]!=value for key,value in expected.items()):fail('PROVENANCE')
  return observed
 
-def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact_commit,today=None,run_attempt=None,aligned=False):
+def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact_commit,today=None,run_attempt=None):
  directory=pathlib.Path(directory)
  if transport.unsafe_path(directory) or not directory.is_dir() or set(p.name for p in directory.iterdir())!=set((*NAMES,INITIAL) if run_attempt is not None else NAMES):fail('FILES')
  native=transport.safe_read(directory/NAMES[0],reader.MAX_XML)
  provenance=transport.safe_read(directory/NAMES[1],reader.MAX_MANIFEST)
  initial=transport.safe_read(directory/INITIAL,reader.MAX_XML) if run_attempt is not None else None
- metadata=validate_provenance(provenance,native,run_id,builder_commit,source_commit,case_id,artifact_commit,initial,run_attempt,aligned)
+ metadata=validate_provenance(provenance,native,run_id,builder_commit,source_commit,case_id,artifact_commit,initial,run_attempt)
  validate_native(native,case_id,today)
  if initial is not None:
-  validate_native(initial,case_id,today,initial=True,aligned=aligned)
-  compared=compare_native_roundtrip(initial,native)
-  if aligned and not compared['allLeafValuesMatched']:fail('COMPARE')
+  validate_native(initial,case_id,today,initial=True)
+  compare_native_roundtrip(initial,native)
  return native,metadata
 
 def compare_tax(input_body,native_body):
@@ -155,13 +153,11 @@ def compare_tax(input_body,native_body):
 
 def publish(native,metadata,token,fetch=None,today=None,initial=None):
  # Revalidate even when called independently of the fixed-path staging reader.
- aligned=metadata.get('format')=='htkk-web-native-output-staging-v3'
- metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),initial,str(metadata.get('runAttempt','')) if initial is not None else None,aligned)
+ metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),initial,str(metadata.get('runAttempt','')) if initial is not None else None)
  checked=validate_native(native,metadata['caseId'],today)
  if initial is not None:
-  validate_native(initial,metadata['caseId'],today,initial=True,aligned=aligned)
-  compared=compare_native_roundtrip(initial,native)
-  if aligned and not compared['allLeafValuesMatched']:fail('COMPARE')
+  validate_native(initial,metadata['caseId'],today,initial=True)
+  compare_native_roundtrip(initial,native)
  if not isinstance(token,str) or not token:fail('AUTH')
  fetch=fetch or transport.api
  # Only a fixed PRIVATE immutable input artifact may justify retention.
@@ -173,7 +169,7 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None):
  manifest={'format':'htkk-web-native-output-reference-v1','scope':'single-fixed-synthetic-web-native-reexport','provenance':metadata,'sourcePins':PINS,'privacyCheck':checked,'comparison':comparison,'input':{'artifactCommit':metadata['artifactCommit'],'sourceCommit':metadata['sourceCommit'],'caseId':metadata['caseId'],'sha256':metadata['webImportInputSha256'],'bytes':input_manifest['bytes'],'producerSha256':input_manifest['producerSha256']},'files':{'01GTGT-native.xml':{'sha256':metadata['originalOutputSha256'],'bytes':len(native)}},'fullRoundTrip':False,'independentSchemaVerification':False}
  if initial is not None:
   manifest['initialReexportComparison']=compare_native_roundtrip(initial,native)
-  manifest['format']='htkk-web-native-output-reference-v3' if aligned else 'htkk-web-native-output-reference-v2'
+  manifest['format']='htkk-web-native-output-reference-v2'
   manifest['files'][INITIAL]={'sha256':hashlib.sha256(initial).hexdigest(),'bytes':len(initial)}
  elif metadata.get('format')!='htkk-web-native-output-staging-v1':fail('PROVENANCE')
  files={'01GTGT-native.xml':native,'manifest.json':(json.dumps(manifest,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode('utf-8')}
@@ -209,7 +205,7 @@ def main():
   if os.environ.get('GITHUB_REPOSITORY')!=BUILDER:fail('BUILDER')
   token=os.environ.get('SOURCE_PUBLISH_TOKEN') or os.environ.get('SOURCE_READ_TOKEN')
   if not token:fail('AUTH')
-  native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),run_attempt=os.environ.get('GITHUB_RUN_ATTEMPT',''),aligned=True)
+  native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),run_attempt=os.environ.get('GITHUB_RUN_ATTEMPT',''))
   initial=transport.safe_read(directory/INITIAL,reader.MAX_XML)
   print(json.dumps(publish(native,metadata,token,initial=initial),separators=(',',':')))
  except Exception as error:

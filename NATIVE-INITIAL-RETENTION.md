@@ -9,5 +9,3 @@ The first export has the GUI-generated current signing date. The web input delib
 All authenticated input reads and writes happen after both outputs have passed their separate strict synthetic privacy checks. Only private Git blobs receive the XML. Public output remains bounded status/commit/hash metadata, with no raw XML or paths. A future post-workflow collector must independently authenticate the completed run/attempt, retain producer/input/audit records, perform XSD and full scoped comparisons, and obtain actual independent review before issue #6 can close.
 
 Validation: `python -m unittest discover -s scripts -p 'test_*.py'`; new tests cover distinct byte streams, attempt substitution/types, missing files, symlinks/extra files, date/identity comparison, immutable private blobs and rejection before authenticated I/O. Windows evidence must be linked separately; these synthetic tests do not prove native execution.
-
-Current live staging-v3 alignment is described in [NATIVE-SIGNING-ALIGNMENT.md](NATIVE-SIGNING-ALIGNMENT.md). The current-date initial signing rule above describes historical staging-v2, not a permitted live downgrade.
