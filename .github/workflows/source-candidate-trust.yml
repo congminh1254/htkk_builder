@@ -17,6 +17,9 @@ jobs:
       - name: Check data-only Cabinet extraction with own fixtures
         shell: pwsh
         run: ./scripts/Test-HtkkSourceCabinet.ps1
+      - name: Check fail-closed source worker launch boundary
+        shell: pwsh
+        run: ./scripts/Test-HtkkSourceTrustBoundary.ps1
       - name: Download only pinned inert baseline archives
         run: python scripts/source-candidate-check.py
       - name: Verify Authenticode, online revocation and read-only MSI CAB payload

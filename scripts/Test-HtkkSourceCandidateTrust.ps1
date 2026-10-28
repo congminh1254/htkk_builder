@@ -213,7 +213,7 @@ function Invoke-TrustWorker {
 }
 if($Worker){Invoke-TrustWorker;exit 0}
 $result=New-SafeTrustResult;$result.workerScriptSha256=Get-PrivateFileHash $PSCommandPath
-$owner=$null;$work=$null;$safeCleanup=$true
+$owner=$null;$work=$null;$safeCleanup=$true;$launchAttempted=$false
 try{
  $candidate=Assert-PlainPath $CandidateDirectory $true;$target=Assert-PlainPath $ResultPath $false
  if([IO.File]::Exists($target) -or [IO.Directory]::Exists($target) -or [IO.File]::Exists([IO.Path]::Combine($candidate,'payload-sha256.json'))){throw 'OUTPUT_PREEXISTS'}
@@ -221,6 +221,7 @@ try{
   $work=[IO.Path]::Combine($candidate,('trust-work-'+[Guid]::NewGuid().ToString('N')));$null=[IO.Directory]::CreateDirectory($work)
   $workerResult=[IO.Path]::Combine($work,'worker-result.json')
   . ([IO.Path]::Combine($PSScriptRoot,'Invoke-HtkkBoundedJobProcess.ps1'))
+  $launchAttempted=$true;$safeCleanup=$false
   $owner=New-HtkkBoundedJobOwner -Executable ([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) -WorkingDirectory $work -Arguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$PSCommandPath,'-Worker','-CandidateDirectory',$candidate,'-WorkerDirectory',$work,'-ResultPath',$workerResult)
   $safeCleanup=$false
   if($owner.WaitForRootExit(180000)){$result.workerExitCode=[BitConverter]::ToInt32([BitConverter]::GetBytes([uint32]$owner.RootExitCode),0)}else{$result.workerTimedOut=$true;$result.failureCode='WORKER_TIMEOUT'}
@@ -232,7 +233,7 @@ try{
   elseif(-not [IO.File]::Exists($workerResult) -or ([IO.FileInfo]::new($workerResult)).Length -gt 16384){$result.failureCode='WORKER_RESULT'}
   else{
    $child=Get-Content -LiteralPath $workerResult -Raw -Encoding UTF8 | ConvertFrom-Json -AsHashtable
-   if($child.format -cne $result.format -or $child.version -cne '5.8.1' -or $child.workerScriptSha256 -cne $result.workerScriptSha256 -or $child.ready -isnot [bool] -or $child.ready -or $child.automaticActivation -isnot [bool] -or $child.automaticActivation -or $child.vendorCodeExecuted -isnot [bool] -or $child.vendorCodeExecuted -or $child.installerExecuted -isnot [bool] -or $child.installerExecuted -or $child.msiCustomActionsExecuted -isnot [bool] -or $child.msiCustomActionsExecuted){throw 'WORKER_RESULT'}
+   if($child.format -cne $result.format -or $child.version -cne '5.8.1' -or $child.workerScriptSha256 -cne $result.workerScriptSha256 -or $child.cabinetHelperSha256 -cne $result.cabinetHelperSha256 -or $child.ready -isnot [bool] -or $child.ready -or $child.automaticActivation -isnot [bool] -or $child.automaticActivation -or $child.vendorCodeExecuted -isnot [bool] -or $child.vendorCodeExecuted -or $child.installerExecuted -isnot [bool] -or $child.installerExecuted -or $child.msiCustomActionsExecuted -isnot [bool] -or $child.msiCustomActionsExecuted){throw 'WORKER_RESULT'}
    if($child.status -cnotin @('blocked','baseline-verified') -or $child.checks.Count -ne $script:flagNames.Count){throw 'WORKER_RESULT'}
    foreach($name in $script:flagNames){if($child.checks[$name] -isnot [bool] -or ($child.status -ceq 'baseline-verified' -and -not $child.checks[$name])){throw 'WORKER_RESULT'}}
    if($child.status -ceq 'baseline-verified'){
@@ -245,6 +246,11 @@ try{
   }
  }
 }catch{
+ if($launchAttempted -and $null -eq $owner){
+  $errorItem=$_.Exception;while($null -ne $errorItem.InnerException){$errorItem=$errorItem.InnerException}
+  $cleanFailures=@('launch-arguments-invalid','job-create-failed','job-limit-failed','environment-invalid','stdio-create-failed','handle-list-failed','process-create-failed','job-assignment-failed','process-identity-failed','process-resume-failed','boundary-tool-failure')
+  $safeCleanup=$errorItem -is [InvalidOperationException] -and $errorItem.Message -cin $cleanFailures
+ }
  if($result.failureCode -in @('NOT_STARTED',$null)){$result.failureCode='WORKER_POLICY'}
  $result.status='blocked'
 }finally{
