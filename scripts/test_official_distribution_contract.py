@@ -17,5 +17,6 @@ class TrustEnvironmentTests(unittest.TestCase):
  def test_worker_uses_os_known_folders_under_essential_only_environment(self):
   s=(ROOT/'Test-HtkkSourceCandidateTrust.ps1').read_text()
   self.assertNotIn('$env:ProgramFiles',s)
-  self.assertIn('[Environment+SpecialFolder]::ProgramFiles',s)
+  self.assertIn("$env:SystemRoot,'System32','tar.exe'",s)
+  self.assertIn('microsoft-signed-system32-tar-pinned-members',s)
   self.assertIn('[Environment+SpecialFolder]::ProgramFilesX86',s)

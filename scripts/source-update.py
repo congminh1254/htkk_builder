@@ -117,6 +117,7 @@ def validate_trust(t,directory):
  require(t.get('format')=='htkk-source-candidate-trust-v1'and t.get('status')in('baseline-verified','blocked'))
  for k in('ready','automaticActivation','adapterActivated','vendorCodeExecuted','installerExecuted','msiCustomActionsExecuted'):require(t.get(k)is False)
  require(t.get('workerScriptSha256')==digest((ROOT/'Test-HtkkSourceCandidateTrust.ps1').read_bytes())and t.get('cabinetHelperSha256')==digest((ROOT/'HtkkSourceCabinet.cs').read_bytes()))
+ require(t.get('extractorPolicy')=='microsoft-signed-system32-tar-pinned-members')
  require(t.get('revocationPolicy')=='online-exclude-root-no-verification-exceptions'and t.get('revocationUrlTimeoutSeconds')==10)
  require(type(t.get('checks'))is dict and set(t['checks'])==set(TRUST_FLAGS)and all(type(v)is bool for v in t['checks'].values()))
  for k in('workerStopped','jobCleanupVerified','workerTimedOut'):require(type(t.get(k))is bool)

@@ -32,7 +32,7 @@ function New-SafeTrustResult {
   checks=$flags
   payload=[ordered]@{files=0;sizeMatches=0;msiHashMatches=0;versionedWithoutMsiHash=0;sha256Entries=0;fullyCoveredBySignedMsiHashes=$false}
   payloadManifest=$null
-  revocationPolicy='online-exclude-root-no-verification-exceptions';revocationUrlTimeoutSeconds=10
+  extractorPolicy='microsoft-signed-system32-tar-pinned-members';revocationPolicy='online-exclude-root-no-verification-exceptions';revocationUrlTimeoutSeconds=10
   timestampPolicy='authenticode-and-signtool-all-signatures-with-timestamp-certificate-chain'
   cabinetHelperSha256=(Get-PrivateFileHash ([IO.Path]::Combine($PSScriptRoot,'HtkkSourceCabinet.cs')));workerScriptSha256=$null;workerStopped=$false;jobCleanupVerified=$false;workerTimedOut=$false;workerExitCode=$null
   lifetimeBoundary='windows-job-before-resume';workerTimeoutMilliseconds=180000;childEnvironmentPolicy='os-essentials-only'
@@ -179,7 +179,7 @@ function Invoke-TrustWorker {
   if($result.actualHashes.officialArchive -cne $script:pins.officialArchive -or ($hasMirror -and $result.actualHashes.mirrorArchive -cne $script:pins.mirrorArchive)){throw 'ARCHIVE_PIN_MISMATCH'}
   $result.checks.archivePinsMatched=$true
   $phase='RUNNER_TOOLS'
-  $seven=[IO.Path]::Combine([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFiles),'7-Zip','7z.exe');Assert-RunnerTool $seven '(?i)(?:Igor Pavlov|7-Zip)';$result.checks.extractorTrusted=$true
+  $seven=[IO.Path]::Combine($env:SystemRoot,'System32','tar.exe');Assert-RunnerTool $seven '(?i)(?:^|,\s*)O=Microsoft Corporation(?:,|$)';$result.checks.extractorTrusted=$true
   $sdk=[IO.Path]::Combine([Environment]::GetFolderPath([Environment+SpecialFolder]::ProgramFilesX86),'Windows Kits','10','bin','*','x64','signtool.exe')
   $signTool=Get-ChildItem $sdk -ErrorAction Stop | Sort-Object FullName -Descending | Select-Object -First 1
   if($null -eq $signTool){throw 'RUNNER_TOOLS'}
@@ -189,7 +189,7 @@ function Invoke-TrustWorker {
   $distributions=,@($official,'official');if($hasMirror){$distributions+=,@($mirror,'mirror')}
   foreach($pair in $distributions){
    $destination=[IO.Path]::Combine($work,$pair[1]);$null=[IO.Directory]::CreateDirectory($destination)
-   Invoke-ReadOnlyTool $seven (@('x','-y',('-o'+$destination),$pair[0])+$names) $work
+   Invoke-ReadOnlyTool $seven (@('-xf',$pair[0],'-C',$destination)+$names) $work
   }
   $source=[IO.Path]::Combine($work,'official','HTKK_5.8.1_DLL_signed');$mirrorSource=[IO.Path]::Combine($work,'mirror','HTKK_5.8.1_DLL_signed')
   foreach($item in @(@('msi','HTKK.msi'),@('setup','setup.exe'),@('cab','Data1.cab'))){
