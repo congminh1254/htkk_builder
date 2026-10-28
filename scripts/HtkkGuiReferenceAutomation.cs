@@ -22,7 +22,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private HtkkAutomationMode modeEnum=HtkkAutomationMode.None;
  private IHtkkNativeAutomationAdapter adapter=null;
  private void SetStage(HtkkAutomationStage s){currentStage=s;}
- private string stage{get{return HtkkNativeAutomationWireMap.ToWireString(currentStage);}set{currentStage=HtkkNativeAutomationWireMap.ParseStage(value);}}
+ private string stage{get{return HtkkNativeAutomationWireMap.ToWireString(currentStage);}}
  private volatile bool finished=false,queued=false;
  private bool pins=false,mstMatched=false,initialBlank=false,editingAvailable=false,saveInvoked=false,headerExists=false,headerMatched=false;
  private string saveDialogKind="not-observed";
@@ -40,17 +40,17 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
  public void Start(string requestedMode){
-  if(requestedMode!="inspect"&&requestedMode!="profile-save"&&requestedMode!="gtgt-inspect"&&requestedMode!="gtgt-sheet-inspect"&&requestedMode!="gtgt-amendment-inspect"&&requestedMode!="gtgt-amendment-open-inspect"&&requestedMode!="gtgt-annex12-inspect"&&requestedMode!="gtgt-annex12-row-inspect"&&requestedMode!="gtgt-annex12-input-inspect"&&requestedMode!="gtgt-annex12-numeric-inspect"&&requestedMode!="gtgt-annex12-export-inspect"&&requestedMode!="gtgt-export-inspect"&&requestedMode!="gtgt-roundtrip-inspect"&&requestedMode!="gtgt-web-import-inspect")throw new ArgumentException();
-  mode=requestedMode;string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
-  modeEnum=HtkkNativeAutomationWireMap.ParseMode(mode);
+  modeEnum=HtkkNativeAutomationWireMap.ParseMode(requestedMode);
+  if(modeEnum==HtkkAutomationMode.None)throw new ArgumentException();
+  mode=HtkkNativeAutomationWireMap.ToWireString(modeEnum);string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
   if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}
   try{
    pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
-   if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){stage="source-or-runtime-not-matched";finished=true;Record();return;}
+   if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){SetStage(HtkkAutomationStage.SourceOrRuntimeNotMatched);finished=true;Record();return;}
    // Never reuse a source/sample/previous-run fixture directory.
-   if(Directory.Exists(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst))){stage="fixture-preexists";finished=true;Record();return;}
-   stage="waiting-for-profile";Record();Thread thread=new Thread(new ThreadStart(Poll));thread.IsBackground=true;thread.SetApartmentState(ApartmentState.STA);thread.Start();
-  }catch{stage="initialization-unavailable";finished=true;try{Record();}catch{}}
+   if(Directory.Exists(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst))){SetStage(HtkkAutomationStage.FixturePreexists);finished=true;Record();return;}
+   SetStage(HtkkAutomationStage.WaitingForProfile);Record();Thread thread=new Thread(new ThreadStart(Poll));thread.IsBackground=true;thread.SetApartmentState(ApartmentState.STA);thread.Start();
+  }catch{SetStage(HtkkAutomationStage.InitializationUnavailable);finished=true;try{Record();}catch{}}
  }
  private void Poll(){
   Stopwatch clock=Stopwatch.StartNew();
@@ -64,7 +64,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    }catch{}
    Thread.Sleep(200);
   }
-  if(!finished){stage="profile-wait-timeout";finished=true;try{Record();}catch{}}
+  if(!finished){SetStage(HtkkAutomationStage.ProfileWaitTimeout);finished=true;try{Record();}catch{}}
  }
  private static bool IsSpread(Control control){for(Type type=control.GetType();type!=null;type=type.BaseType)if(type.FullName=="FarPoint.Win.Spread.FpSpread")return true;return false;}
  private void Walk(Control parent,List<Control> found,List<Button> saves,List<Button> closes,ref int visited){
@@ -75,9 +75,9 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   Button button=parent as Button;if(button!=null&&button.Visible&&button.Enabled){string label=button.Text.Replace("&",String.Empty).Trim();if(label=="Ghi")saves.Add(button);if(label=="Đóng")closes.Add(button);}
   foreach(Control child in parent.Controls){if(visited>=512)break;Walk(child,found,saves,closes,ref visited);}
  }
- private static object Get(object target,string name){PropertyInfo property=target.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance);if(property==null)throw new InvalidOperationException();return property.GetValue(target,null);}
- private static object Cell(object sheet,int row,int column){object cells=Get(sheet,"Cells");PropertyInfo item=cells.GetType().GetProperty("Item",new Type[]{typeof(int),typeof(int)});if(item==null)throw new InvalidOperationException();return item.GetValue(cells,new object[]{row,column});}
- private static string CellText(object sheet,int row,int column){object value=Get(Cell(sheet,row,column),"Text");return value==null?String.Empty:Convert.ToString(value,CultureInfo.InvariantCulture);}
+ private static object Get(object target,string name){return HtkkNativeUiHarness.Get(target,name);}
+ private static object Cell(object sheet,int row,int column){return HtkkNativeUiHarness.Cell(sheet,row,column);}
+ private static string CellText(object sheet,int row,int column){return HtkkNativeUiHarness.CellText(sheet,row,column);}
  private void InspectAndMaybeSave(){
   if(adapter!=null&&navigationPhase!="not-started"){adapter.ContinueNavigation();return;}
   forms=0;
@@ -86,30 +86,30 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    string caption=form.Text.Replace(" ",String.Empty);
    if(caption!="Hỗ trợ kê khai thuế - Phiên bản 5.8.1".Replace(" ",String.Empty))continue;
    kinds.Clear();List<Control> found=new List<Control>();List<Button> saves=new List<Button>();List<Button> closes=new List<Button>();int visited=0;Walk(form,found,saves,closes,ref visited);spreads=found.Count;
-   if(found.Count!=1||saves.Count!=1||closes.Count!=1){stage="profile-controls-not-yet-unique";Record();continue;}
+   if(found.Count!=1||saves.Count!=1||closes.Count!=1){SetStage(HtkkAutomationStage.ProfileControlsNotYetUnique);Record();continue;}
    Control spread=found[0];object sheet=Get(spread,"ActiveSheet");rows=Convert.ToInt32(Get(sheet,"RowCount"));columns=Convert.ToInt32(Get(sheet,"ColumnCount"));
-   if(rows<74||columns<20||rows>10000||columns>10000){stage="profile-dimensions-unmatched";finished=true;Record();return;}
+   if(rows<74||columns<20||rows>10000||columns>10000){SetStage(HtkkAutomationStage.ProfileDimensionsUnmatched);finished=true;Record();return;}
    StringBuilder boxes=new StringBuilder();for(int column=2;column<12;column++)boxes.Append(CellText(sheet,1,column));mstMatched=boxes.ToString()==Mst;
    initialBlank=CellText(sheet,3,2)==String.Empty&&CellText(sheet,15,2)==String.Empty&&CellText(sheet,31,2)==String.Empty;
    editingAvailable=spread.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)})!=null&&spread.GetType().GetMethod("StopCellEditing",Type.EmptyTypes)!=null&&spread.GetType().GetProperty("EditingControl")!=null&&sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)})!=null;
-   if(!mstMatched||!initialBlank){stage="fresh-synthetic-profile-not-established";finished=true;Record();return;}
-   stage="profile-inspected";Record();
+   if(!mstMatched||!initialBlank){SetStage(HtkkAutomationStage.FreshSyntheticProfileNotEstablished);finished=true;Record();return;}
+   SetStage(HtkkAutomationStage.ProfileInspected);Record();
    if(mode=="inspect"){finished=true;return;}
-   if(!editingAvailable){stage="editing-api-unavailable";finished=true;Record();return;}
+   if(!editingAvailable){SetStage(HtkkAutomationStage.EditingApiUnavailable);finished=true;Record();return;}
    string permit=Assembly.GetExecutingAssembly().Location+".gui-automation.allow";
-   if(!File.Exists(permit)||new FileInfo(permit).Length!=12||File.ReadAllText(permit,Encoding.ASCII)!="profile-save"){stage="waiting-for-profile-save-permit";Record();return;}
-   Edit(spread,sheet,3,2,FakeName,false,"edit-name");
-   Edit(spread,sheet,5,2,"Thành phố Hà Nội",true,"edit-province");
-   Edit(spread,sheet,9,2,"Phường Sơn Tây",true,"edit-ward");
-   Edit(spread,sheet,15,2,FakeAddress,false,"edit-address");
-   Edit(spread,sheet,31,2,FakeSigner,false,"edit-signer");
-   Edit(spread,sheet,33,2,"Thuế Thành phố Hà Nội",true,"edit-tax-authority-head");
-   Edit(spread,sheet,35,2,"Thuế cơ sở 16 Thành phố Hà Nội",true,"edit-tax-authority-local");
+   if(!File.Exists(permit)||new FileInfo(permit).Length!=12||File.ReadAllText(permit,Encoding.ASCII)!="profile-save"){SetStage(HtkkAutomationStage.WaitingForProfileSavePermit);Record();return;}
+   Edit(spread,sheet,3,2,FakeName,false,HtkkAutomationStage.EditName);
+   Edit(spread,sheet,5,2,"Thành phố Hà Nội",true,HtkkAutomationStage.EditProvince);
+   Edit(spread,sheet,9,2,"Phường Sơn Tây",true,HtkkAutomationStage.EditWard);
+   Edit(spread,sheet,15,2,FakeAddress,false,HtkkAutomationStage.EditAddress);
+   Edit(spread,sheet,31,2,FakeSigner,false,HtkkAutomationStage.EditSigner);
+   Edit(spread,sheet,33,2,"Thuế Thành phố Hà Nội",true,HtkkAutomationStage.EditTaxAuthorityHead);
+   Edit(spread,sheet,35,2,"Thuế cơ sở 16 Thành phố Hà Nội",true,HtkkAutomationStage.EditTaxAuthorityLocal);
    string[] codeValues=new string[]{"101","10129087","10100","10129"};int[] codeRows=new int[]{5,9,33,35},codeColumns=new int[]{18,18,19,19};
-   string[] codeStages=new string[]{"profile-province-code-unmatched","profile-ward-code-unmatched","profile-taxhead-code-unmatched","profile-taxlocal-code-unmatched"};
-   for(int index=0;index<codeValues.Length;index++){if(CellText(sheet,codeRows[index],codeColumns[index])!=codeValues[index]){stage=codeStages[index];finished=true;Record();return;}}
+   HtkkAutomationStage[] codeStages=new HtkkAutomationStage[]{HtkkAutomationStage.ProfileProvinceCodeUnmatched,HtkkAutomationStage.ProfileWardCodeUnmatched,HtkkAutomationStage.ProfileTaxheadCodeUnmatched,HtkkAutomationStage.ProfileTaxlocalCodeUnmatched};
+   for(int index=0;index<codeValues.Length;index++){if(CellText(sheet,codeRows[index],codeColumns[index])!=codeValues[index]){SetStage(codeStages[index]);finished=true;Record();return;}}
    if(CellText(sheet,29,2)!="01/01")throw new InvalidOperationException();
-   stage="original-save-invoking";saveInvoked=true;Record();
+   SetStage(HtkkAutomationStage.OriginalSaveInvoking);saveInvoked=true;Record();
    // This is the ORIGINAL application button and its original validators/save handler.
    // A validation dialog is not dismissed automatically; the outer probe remains bounded.
    using(System.Windows.Forms.Timer acknowledgement=new System.Windows.Forms.Timer()){
@@ -130,51 +130,15 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    finished=true;SetStage(headerMatched?HtkkAutomationStage.OriginalProfileSavedVerified:HtkkAutomationStage.OriginalProfileSaveNotVerified);Record();return;
   }
  }
- private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage){Edit(spread,sheet,row,column,value,isCombo,nextStage,true);}
- private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,string nextStage,bool profileInput){
-  stage=nextStage;Record();spread.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{row,column});
-  spread.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(spread,new object[]{EventArgs.Empty,false});
-  Control editor=Get(spread,"EditingControl") as Control;if(editor==null)throw new InvalidOperationException();
-  if(isCombo){
-   ComboBox combo=editor as ComboBox;if(combo==null){foreach(Control child in editor.Controls){if(child is ComboBox){if(combo!=null)throw new InvalidOperationException();combo=(ComboBox)child;}}}
-   if(combo!=null){
-    editorKind="combo";int selected=-1;
-    for(int index=0;index<combo.Items.Count&&index<4096;index++){if(combo.GetItemText(combo.Items[index])==value){if(selected>=0)throw new InvalidOperationException();selected=index;}}
-    if(selected<0)throw new InvalidOperationException();combo.DroppedDown=true;combo.SelectedIndex=selected;combo.DroppedDown=false;
-   }else{
-    // FarPoint's original editor is FpCombo, not a WinForms ComboBox.
-    // Use its public selection API so original edit/selection events still execute.
-    Control vendor=FindVendorCombo(editor,0);
-    if(vendor==null){editorKind="other-control";Record();throw new InvalidOperationException();}
-    editorKind="combo";SetPublic(vendor,"DroppedDown",true);
-    object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
-    if(count<1||count>4096)throw new InvalidOperationException();
-    PropertyInfo item=list.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null&&sequence==null)throw new InvalidOperationException();
-    int selected=-1;
-    for(int index=0;index<count;index++){object entry=sequence!=null?sequence[index]:item.GetValue(list,new object[]{index});if(entry!=null&&entry.ToString()==value){if(selected>=0)throw new InvalidOperationException();selected=index;}}
-    if(selected<0)throw new InvalidOperationException();SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
-   }
-  }else{
-   editorKind=editor is TextBoxBase?"text-box":"other-control";
-   if(profileInput)editor.Text=value;
-   else{
-    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";
-    bool fixedInput=webInputVerified&&((CreditCt21Case()&&webCaseEditCount==0&&row==36&&column==11&&value=="7")||(!CreditCt21Case()&&row==(fivePercent?46:47)&&((webCaseEditCount==0&&column==9&&value==(webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000")&&webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026")||(webCaseEditCount==1&&column==11&&value=="7"&&(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")))));
-    if(!fixedInput||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
-    editor.Focus();if(!editor.ContainsFocus)throw new InvalidOperationException();
-    foreach(string keys in new string[]{"^a",value,"{TAB}"}){uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
-   }
-  }
-  spread.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(spread,null);
-  if(profileInput){if(CellText(sheet,row,column)!=value)throw new InvalidOperationException();inputCount++;}
-  else{decimal actual,expected;if(!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)throw new InvalidOperationException();webCaseEditCount++;}Record();
+ private void Edit(Control spread,object sheet,int row,int column,string value,bool isCombo,HtkkAutomationStage nextStage){
+  SetStage(nextStage);Record();Control editor=HtkkNativeUiHarness.BeginCellEdit(spread,sheet,row,column);
+  if(isCombo){editorKind="combo";if(!HtkkNativeUiHarness.SelectCombo(editor,value)){editorKind="other-control";Record();throw new InvalidOperationException();}}
+  else{editorKind=editor is TextBoxBase?"text-box":"other-control";editor.Text=value;}
+  HtkkNativeUiHarness.CommitCellEdit(spread);
+  if(CellText(sheet,row,column)!=value)throw new InvalidOperationException();inputCount++;Record();
  }
- private static void SetPublic(object target,string name,object value){PropertyInfo p=target.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance);if(p==null||!p.CanWrite)throw new InvalidOperationException();p.SetValue(target,value,null);}
- private static Control FindVendorCombo(Control root,int depth){
-  if(depth>6)return null;
-  for(Type type=root.GetType();type!=null;type=type.BaseType)if(type.FullName=="FarPoint.Win.FpCombo")return root;
-  Control found=null;foreach(Control child in root.Controls){Control candidate=FindVendorCombo(child,depth+1);if(candidate!=null){if(found!=null)throw new InvalidOperationException();found=candidate;}}return found;
- }
+ private static void SetPublic(object target,string name,object value){HtkkNativeUiHarness.SetPublic(target,name,value);}
+ private static Control FindVendorCombo(Control root,int depth){return HtkkNativeUiHarness.FindVendorCombo(root,depth);}
  private void AcknowledgeVerifiedSuccess(){
   if(successAcknowledged||!saveInvoked)return;
   ReadSavedHeader();
@@ -187,7 +151,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    if(!headerMatched||headerChecks!=8||saveDialogKind!="success-0002"||buttons.Length!=1)return;
    Button close=buttons[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")return;
    if(CountVisibleButtons(form)!=1)return;
-   successAcknowledged=true;stage="success-modal-acknowledged";Record();close.PerformClick();return;
+   successAcknowledged=true;SetStage(HtkkAutomationStage.SuccessModalAcknowledged);Record();close.PerformClick();return;
   }
  }
  private static int CountVisibleButtons(Control root){int count=root is Button&&root.Visible&&root.Enabled?1:0;foreach(Control child in root.Controls)count+=CountVisibleButtons(child);return count;}

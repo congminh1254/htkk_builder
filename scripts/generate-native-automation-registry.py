@@ -33,10 +33,10 @@ def require(condition, message):
 def validate_registry(registry):
     """Validate data before interpolating it into C#, PowerShell or YAML.
 
-    This registry describes routing and wire names only. The reviewed PowerShell
-    reader still owns field types/ranges/defaults and business success predicates.
+    This registry describes routing and wire names only. The registry owns field types/ranges/defaults. Reviewed custom validators
+    and business success predicates remain code, never arbitrary expressions.
     """
-    top = {"format", "version", "modes", "stages", "dynamicStageMappings", "keys", "controlKinds", "periodControls"}
+    top = {"format", "version", "modes", "stages", "dynamicStageMappings", "keys", "controlKinds", "periodControls", "resultFields"}
     require(type(registry) is dict and set(registry) == top, "Invalid registry properties")
     require(registry["format"] == "htkk-native-automation-registry-v1" and registry["version"] == "1.0.0", "Unsupported registry version")
     modes, stages = registry["modes"], registry["stages"]
@@ -72,10 +72,12 @@ def validate_registry(registry):
         for name in inputs:
             require(type(name) is str and re.fullmatch(r"Htkk[A-Za-z0-9]+\.cs", name) is not None and (ROOT / name).is_file(), "Invalid compile input")
         if mode == "none":
-            require(meta["runtime"] == "none" and not meta["login"] and not inputs and meta["permit"] is None, "Invalid launch-only policy")
+            require(meta["runtime"] == "none" and not meta["login"] and bool(inputs) and meta["permit"] is None, "Invalid launch-only policy")
         else:
             require(meta["runtime"] == "clr2-x86-custom-reference" and meta["login"] and bool(inputs), "Invalid automation policy")
     require("none" in modes, "Missing launch-only mode")
+    closure = modes["inspect"]["orderedCompileInputs"]
+    require(all(m["orderedCompileInputs"] == closure for m in modes.values()), "All modes must compile the full shared partial closure")
     for key in ("keys", "controlKinds", "periodControls"):
         values = registry[key]
         require(type(values) is list and bool(values) and all(safe_name(x) for x in values) and len(values) == len(set(values)), "Invalid or duplicate allowlist entries")
@@ -90,7 +92,212 @@ def validate_registry(registry):
     actions = {"focus-waiting", "focus-timeout", "keyboard-editing", "keyboard-focused", "keyboard-selected", "keyboard-typed"}
     for mapping in filenames.values():
         require(type(mapping) is dict and set(mapping) == actions and all(s in stage_ids for s in mapping.values()), "Invalid filename mapping")
+    validate_result_fields(registry)
     return registry
+
+
+def audit_result_producers(registry, sources=None):
+    """Conservative source-shape audit for this reviewed CLR2 serializer.
+
+    This is not a C# parser or native proof. Any new serializer shape needs a
+    reviewed extractor, instead of silently bypassing the wire contract.
+    """
+    if sources is None:
+        names = registry['modes']['inspect']['orderedCompileInputs']
+        sources = [(ROOT/name).read_text(encoding='utf-8') for name in names
+                   if name not in {'HtkkNativeAutomationEnums.cs', 'HtkkNativeUiHarness.cs'}]
+    defaults = {}
+    producers = {}
+    def add(key, kind, member):
+        require(key not in producers, 'Duplicate producer result field')
+        producers[key] = (kind, member)
+    for source in sources:
+        for kind, declaration in re.findall(r'\bprivate\s+(bool|int)\s+([^;]+);', source):
+            # Field declaration shape only: method bodies and computed expressions
+            # do not count as declared initial defaults.
+            if '(' in declaration or '{' in declaration:
+                continue
+            for item in declaration.split(','):
+                match = re.fullmatch(r'\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(false|true|[0-9]+)\s*', item)
+                if match:
+                    name, value = match.groups()
+                    require(name not in defaults, 'Ambiguous producer result member')
+                    defaults[name] = (kind, value == 'true' if kind == 'bool' else int(value))
+        for match in re.finditer(r'"([A-Za-z0-9_]+)"\+q\+":"\+Bool\(([A-Za-z0-9_]+)\)', source):
+            if match[1] not in {'checked','checkedAvailable'}:  # reviewed periodControls nested schema
+                add(match[1], 'boolean', match[2])
+        for match in re.finditer(r'"([A-Za-z0-9_]+)"\+q\+":"\+([A-Za-z_][A-Za-z0-9_]*)(?=\+|\.ToString\(|[);])', source):
+            key, member = match.groups()
+            if member in defaults and defaults[member][0] == 'int':
+                add(key, 'integer', member)
+        for match in re.finditer(r'"([A-Za-z0-9_]+)"\+q\+":(false|true)', source):
+            add(match[1], 'boolean', match[2] == 'true')
+        # Array serializers pair names with a typed bool/int array. Match each
+        # names declaration to the immediately following typed array, even when
+        # q/StringBuilder declarations occur between the two.
+        pattern = r'\bnames=new string\[\]\{([^}]+)\};(?:(?!\bnames=).)*?\b(bool|int)\[\]\s+(?:flags|values|counts)=new (?:bool|int)\[\]\{([^}]+)\};'
+        for match in re.finditer(pattern, source, flags=re.S):
+            names = re.findall(r'"([A-Za-z0-9_]+)"', match[1])
+            members = [m.strip() for m in match[3].split(',')]
+            require(len(names) == len(members), 'Result producer name/value arity mismatch')
+            kind = 'boolean' if match[2] == 'bool' else 'integer'
+            for key, member in zip(names, members):
+                add(key, kind, member)
+    expected = {k:v for k,v in registry['resultFields'].items() if v['kind'] in {'boolean','integer'}}
+    require(set(producers) == set(expected), 'Typed result fields must exactly match actual serializer names: missing='+str(set(expected)-set(producers))+' extra='+str(set(producers)-set(expected)))
+    for key, (kind, member) in producers.items():
+        field = expected[key]
+        require(kind == field['kind'], 'Result serializer type mismatch')
+        if type(member) is bool:
+            require(kind == 'boolean' and member is field['default'], 'Result literal default mismatch')
+        else:
+            require(member in defaults, 'Result member must have explicit reviewed initial default')
+            declared, default = defaults[member]
+            require(declared == ('bool' if kind == 'boolean' else 'int') and type(default) is type(field['default']) and default == field['default'], 'Result producer member type/default mismatch')
+    return producers
+
+
+def field_values(registry, field):
+    if 'values' in field:
+        return field['values']
+    if field['valuesFrom'] == 'automation-modes':
+        return [m for m in registry['modes'] if m != 'none']
+    return [s['id'] for s in registry['stages']]
+
+
+def validate_result_fields(registry):
+    fields = registry['resultFields']
+    require(type(fields) is dict and list(fields) == registry['keys'], 'Result field contract must exactly cover ordered keys')
+    kinds = {'boolean', 'integer', 'enum', 'hex', 'string', 'object'}
+    for key, field in fields.items():
+        require(type(field) is dict and field.get('kind') in kinds, 'Invalid result field kind')
+        kind = field['kind']
+        base = {'kind', 'default'}
+        optional = {'activeModes'}
+        if kind == 'integer':
+            base |= {'minimum', 'maximum'}
+            optional |= {'modeMaximums'}
+        elif kind == 'enum':
+            require(('values' in field) != ('valuesFrom' in field), 'Enum requires one source')
+            base |= {'values'} if 'values' in field else {'valuesFrom'}
+        elif kind == 'hex':
+            base |= {'length', 'allowEmpty'}
+        elif kind == 'string':
+            base |= {'validator', 'maximumLength'}
+        elif kind == 'object':
+            base |= {'validator'}
+        require(base <= set(field) <= base | optional, 'Invalid result field properties')
+        if 'activeModes' in field:
+            active = field['activeModes']
+            require(type(active) is list and all(type(m) is str and m in registry['modes'] and m != 'none' for m in active) and len(set(active)) == len(active), 'Invalid active mode restriction')
+        default = field['default']
+        if kind == 'boolean':
+            require(type(default) is bool and default is False, 'Flag default must fail closed')
+        elif kind == 'integer':
+            low, high = field['minimum'], field['maximum']
+            require(type(low) is int and type(high) is int and 0 <= low <= high <= 2147483647, 'Invalid counter range')
+            require(type(default) is int and low <= default <= high and default == 0, 'Invalid counter default')
+            overrides = field.get('modeMaximums', {})
+            require(type(overrides) is dict and all(type(m) is str and m in registry['modes'] and m != 'none' and type(v) is int and low <= v <= 2147483647 for m,v in overrides.items()), 'Invalid mode counter range')
+        elif kind == 'enum':
+            if 'valuesFrom' in field:
+                require(field['valuesFrom'] in {'automation-modes', 'stages'}, 'Unknown enum source')
+            values = field_values(registry, field)
+            require(type(values) is list and bool(values) and all(type(v) is str and re.fullmatch(r'[A-Za-z0-9_-]+',v) for v in values) and len(set(values)) == len(values), 'Invalid enum values')
+            require(type(default) is str and default in values, 'Invalid enum default')
+        elif kind == 'hex':
+            require(type(field['length']) is int and field['length'] in {40,64} and field['allowEmpty'] is True and default == '', 'Invalid digest field')
+        elif kind == 'string':
+            require(field['validator'] == 'annex-numeric-snapshots-v1' and type(field['maximumLength']) is int and field['maximumLength'] == 4096 and default == '', 'Unknown string validator')
+        else:
+            require((key, field['validator']) in {('periodControls','period-controls-v1'),('controlKinds','control-kinds-v1')}, 'Unknown object validator')
+            expected = {} if key == 'periodControls' else {k:0 for k in registry['controlKinds']}
+            require(type(default) is dict and default == expected and all(type(v) is int for v in default.values()), 'Invalid object defaults')
+    for key in ('realTaxpayerDataUsed', 'runtimeRoundTrip', 'amendmentLifecycleVerified'):
+        require(fields[key].get('activeModes') == [] and fields[key]['kind'] == 'boolean', 'Privacy and capability flags must remain closed')
+
+
+def ps_literal(value):
+    if type(value) is bool:
+        return '$true' if value else '$false'
+    if type(value) is int:
+        return str(value)
+    if type(value) is str:
+        return "'" + value.replace("'", "''") + "'"
+    if type(value) is dict:
+        return '[ordered]@{' + ';'.join(k+'='+ps_literal(v) for k,v in value.items()) + '}'
+    raise ValueError('Unsupported PowerShell literal')
+
+
+def generate_result_validation(registry):
+    lines = ['  # BEGIN GENERATED RESULT CONTRACT - do not edit']
+    for key, field in registry['resultFields'].items():
+        value = "$value['"+key+"']"
+        kind = field['kind']
+        if kind == 'boolean':
+            check = value + ' -isnot [bool]'
+        elif kind == 'integer':
+            maximum = str(field['maximum'])
+            for mode, bound in reversed(list(field.get('modeMaximums', {}).items())):
+                maximum = "$(if($ExpectedMode -ceq '"+mode+"'){"+str(bound)+'}else{'+maximum+'})'
+            check = '('+value+' -isnot [int] -and '+value+' -isnot [long]) -or '+value+' -lt '+str(field['minimum'])+' -or '+value+' -gt '+maximum
+        elif kind == 'enum':
+            values = '@('+','.join(ps_literal(v) for v in field_values(registry,field))+')'
+            check = value+' -isnot [string] -or '+value+' -cnotin '+values
+        elif kind == 'hex':
+            check = value+" -isnot [string] -or ("+value+" -cne '' -and "+value+" -cnotmatch '\\A[0-9a-f]{"+str(field['length'])+"}\\z')"
+        elif kind == 'string':
+            check = value+' -isnot [string] -or '+value+'.Length -gt '+str(field['maximumLength'])
+        else:
+            # Reviewed custom code below reconstructs object fields recursively.
+            check = value+' -isnot [Collections.IDictionary]'
+        lines.append("  if("+check+"){throw 'invalid'}")
+        if 'activeModes' in field:
+            modes = field['activeModes']
+            condition = '$true' if not modes else '$ExpectedMode -cnotin @('+','.join(ps_literal(m) for m in modes)+')'
+            lines.append("  if(("+condition+") -and "+value+' -cne '+ps_literal(field['default'])+"){throw 'invalid'}")
+    lines.append("  if($value.mode -cne $ExpectedMode){throw 'invalid'}")
+    lines.append('  # END GENERATED RESULT CONTRACT')
+    return '\n'.join(lines)
+
+
+def generate_result_defaults(registry):
+    lines = ['# BEGIN GENERATED RESULT DEFAULTS - fixture initialization only; reader never fills missing keys',
+             'function New-HtkkNativeResultDefaults {',
+             ' param([Parameter(Mandatory=$true)][string]$Mode)',
+             ' if($Mode -cnotin @('+','.join(ps_literal(m) for m in registry['modes'] if m != 'none')+")){throw 'Unknown mode'}",
+             ' $result=[ordered]@{']
+    for key, field in registry['resultFields'].items():
+        lines.append('  '+key+'='+('$Mode' if key=='mode' else ps_literal(field['default'])))
+    lines.extend([' }',' return $result','}','# END GENERATED RESULT DEFAULTS'])
+    return '\n'.join(lines)
+
+
+def generate_result_csharp(registry):
+    flags = {k:v for k,v in registry['resultFields'].items() if v['kind']=='boolean'}
+    counters = {k:v for k,v in registry['resultFields'].items() if v['kind']=='integer'}
+    enum_name = lambda key: key[0].upper()+key[1:]
+    lines = ['', '// Typed result metadata; values remain produced exclusively by original UI observations.',
+             'public enum HtkkNativeResultFlag { '+', '.join(enum_name(k) for k in flags)+' }',
+             'public enum HtkkNativeResultCounter { '+', '.join(enum_name(k) for k in counters)+' }',
+             'public static class HtkkNativeResultContract {']
+    for name, fields in [('Flag',flags),('Counter',counters)]:
+        lines += [' public static string ToWireString(HtkkNativeResult'+name+' field) {','  switch(field) {']
+        for key in fields:
+            lines.append('   case HtkkNativeResult'+name+'.'+enum_name(key)+': return "'+key+'";')
+        lines += ['   default: throw new ArgumentException("Unknown result field");','  }',' }']
+    lines += [' public static bool FlagDefault(HtkkNativeResultFlag field) { ToWireString(field); return false; }',
+              ' public static int CounterDefault(HtkkNativeResultCounter field) { ToWireString(field); return 0; }',
+              ' public static int CounterMaximum(HtkkNativeResultCounter field, HtkkAutomationMode mode) {',
+              '  HtkkNativeAutomationWireMap.ToWireString(mode);','  if(mode==HtkkAutomationMode.None)throw new ArgumentException("Launch-only mode");',
+              '  switch(field) {']
+    for key, field in counters.items():
+        lines.append('   case HtkkNativeResultCounter.'+enum_name(key)+':')
+        for mode, bound in field.get('modeMaximums',{}).items():
+            lines.append('    if(mode==HtkkAutomationMode.'+''.join(p.capitalize() for p in mode.split('-'))+')return '+str(bound)+';')
+        lines.append('    return '+str(field['maximum'])+';')
+    lines += ['   default: throw new ArgumentException("Unknown result counter");','  }',' }','}']
+    return '\n'.join(lines)+'\n'
 
 
 def load_registry():
@@ -237,10 +444,11 @@ def generate_csharp_enums(registry):
         "}",
         ""
     ]
-    return "\n".join(code)
+    return "\n".join(code) + generate_result_csharp(registry)
 
 
 def sync_powershell_and_workflow(registry, check_mode=False):
+    audit_result_producers(registry)
     modes = registry["modes"]
     stages = [s["id"] for s in registry["stages"]]
     keys = registry["keys"]
@@ -267,6 +475,8 @@ def sync_powershell_and_workflow(registry, check_mode=False):
     # Replace $stages=@(...)
     new_stages = "$stages=@(" + ",".join(f"'{s}'" for s in stages) + ")"
     content = replace_exact(r"\$stages=@\([^\)]+\)", new_stages, content)
+    content = replace_exact(r"(?ms)^  # BEGIN GENERATED RESULT CONTRACT.*?^  # END GENERATED RESULT CONTRACT", generate_result_validation(registry), content)
+    updates[ROOT / "HtkkNativeResultDefaults.ps1"] = generate_result_defaults(registry)+"\n"
     updates[ps_safe_path] = content
 
     # 2. scripts/New-HtkkX86ReferenceHost.ps1
@@ -324,10 +534,20 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         content = replace_exact(r"if \(\$guiAutomation -notin @\([^\)]+\)\)", f"if ($guiAutomation -notin {notin_str})", content)
         updates[workflow_path] = content
 
+    compile_lines = ['# Auto-generated by generate-native-automation-registry.py. Do not edit.',
+                     'function Get-HtkkNativeCompileInputs {',
+                     ' [CmdletBinding()]',
+                     ' param([Parameter(Mandatory=$true)][string]$Mode)',
+                     ' switch -CaseSensitive ($Mode) {']
+    for mode, meta in modes.items():
+        compile_lines.append("  '"+mode+"' { return @("+','.join(ps_literal(name) for name in meta['orderedCompileInputs'])+"); }")
+    compile_lines += ["  default { throw 'Unknown automation mode' }", ' }', '}']
+    updates[ROOT / 'HtkkNativeCompileInputs.ps1'] = '\n'.join(compile_lines)+'\n'
+
     # Check or write
     has_diff = False
     for path, new_text in updates.items():
-        old_text = path.read_text(encoding="utf-8")
+        old_text = path.read_text(encoding="utf-8") if path.exists() else ""
         if old_text != new_text:
             has_diff = True
             if check_mode:

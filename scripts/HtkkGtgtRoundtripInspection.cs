@@ -29,21 +29,21 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(roundtripPhase=="waiting-import-ready"){
    if(!OriginalRoundtripOwnerReady())return;
    Button import=Named(roundtripOwner,"cmdImportXML") as Button;if(import==null||import.FindForm()!=roundtripOwner||import.Text.Replace("&",String.Empty).Trim()!="Nhập từ XML"||roundtripImportCommandInvoked)throw new InvalidOperationException();
-   roundtripImportCommandInvoked=true;roundtripPhase="waiting-import-result";stage="gtgt-import-file-dialog-waiting";Record();
+   roundtripImportCommandInvoked=true;roundtripPhase="waiting-import-result";SetStage(HtkkAutomationStage.GtgtImportFileDialogWaiting);Record();
    roundtripOwner.BeginInvoke(new MethodInvoker(delegate{try{import.PerformClick();}catch(Exception error){Failure(error);}}));return;
   }
   if(roundtripPhase=="waiting-import-result"){
    foreach(Form message in Application.OpenForms){if(!message.Visible||message.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
     Control[] labels=message.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
-    if(labels[0].Text!="Nhập dữ liệu từ XML thành công."){stage="gtgt-import-original-message-rejected";finished=true;Record();exportWatcher.Stop();return;}
-    stage="gtgt-import-success-sheet-checking";
+    if(labels[0].Text!="Nhập dữ liệu từ XML thành công."){SetStage(HtkkAutomationStage.GtgtImportOriginalMessageRejected);finished=true;Record();exportWatcher.Stop();return;}
+    SetStage(HtkkAutomationStage.GtgtImportSuccessSheetChecking);
     FieldInfo loading=OriginalAssembly().GetType("HTKK.frmWinToKhai",true).GetField("FileNameLoading",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);
     if(loading==null||loading.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)loading.GetValue(null);
     roundtripImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(RoundtripInputPath()),StringComparison.OrdinalIgnoreCase);Record();
     if(!roundtripImportCommandInvoked||!roundtripImportDialogMatched||!roundtripImportKeyboardCommitted||!roundtripImportDialogSubmitted||!roundtripImportPathMatched)throw new InvalidOperationException();
     roundtripImportSheetMatched=InspectOriginalImportedSheet();Record();if(!roundtripImportSheetMatched)throw new InvalidOperationException();
     Control[] controls=message.Controls.Find("btn_2",true);if(message.Text.Trim()!="Thông Báo"||controls.Length!=1||CountVisibleButtons(message)!=1)throw new InvalidOperationException();Button close=controls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
-    roundtripImportSucceeded=true;roundtripPhase="waiting-reexport-ready";stage="gtgt-reexport-ready-waiting";Record();close.PerformClick();return;
+    roundtripImportSucceeded=true;roundtripPhase="waiting-reexport-ready";SetStage(HtkkAutomationStage.GtgtReexportReadyWaiting);Record();close.PerformClick();return;
    }
    if(!roundtripImportDialogSubmitted)TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",RoundtripInputPath(),true);
    return;
@@ -55,7 +55,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(String.IsNullOrEmpty(actualSchema)||!String.Equals(Path.GetFullPath(actualSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)||Hash(schema)!="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003")throw new InvalidOperationException();
    exportPath=Path.Combine(Path.GetDirectoryName(firstExportPath),"01GTGT-roundtrip.xml");if(File.Exists(exportPath))throw new InvalidOperationException();
    Button export=Named(roundtripOwner,"cmdExport") as Button;if(export==null||export.FindForm()!=roundtripOwner||export.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
-   exportButtonInvoked=false;exportDialogSubmitted=false;roundtripReexportCommandInvoked=true;roundtripPhase="reexporting";stage="gtgt-reexport-command-invoking";Record();
+   exportButtonInvoked=false;exportDialogSubmitted=false;roundtripReexportCommandInvoked=true;roundtripPhase="reexporting";SetStage(HtkkAutomationStage.GtgtReexportCommandInvoking);Record();
    roundtripOwner.BeginInvoke(new MethodInvoker(delegate{try{export.PerformClick();}catch(Exception error){Failure(error);}}));return;
   }
   throw new InvalidOperationException();

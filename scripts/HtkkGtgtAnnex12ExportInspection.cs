@@ -19,7 +19,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Convert.ToInt32(Get(main,"RowCount"))!=72||Convert.ToInt32(Get(main,"ColumnCount"))!=24||CellText(main,9,3)!=FakeName||CellText(main,10,3).Replace("-",String.Empty)!=Mst||CellText(main,63,10)!=FakeSigner||Selected(Get(Cell(main,35,8),"Value"))||!Convert.ToBoolean(Get(main,"AutoCalculation")))throw new InvalidOperationException();
   InspectMoneyZero(main);InspectCaseMoney(main);
   annex12ExportMainZeroMatched=gtgtZero&&gtgtEmptyMoney==0&&gtgtCaseMoneyMatched&&gtgtCaseMoneyCount==27&&gtgtCaseMismatchMask==0&&gtgtCaseNonzeroMask==0;
-  if(!annex12ExportMainZeroMatched)throw new InvalidOperationException();stage="gtgt-annex12-export-main-checked";Record();StartOriginalGtgtExport(grid.FindForm());
+  if(!annex12ExportMainZeroMatched)throw new InvalidOperationException();SetStage(HtkkAutomationStage.GtgtAnnex12ExportMainChecked);Record();StartOriginalGtgtExport(grid.FindForm());
  }
  private sealed class Annex12PinnedSchemaResolver : XmlResolver {
   private readonly Dictionary<string,string> files=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
@@ -42,7 +42,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void ValidateOriginalAnnex12Export(){
   if(mode!="gtgt-annex12-export-inspect"||!annex12ExportMainZeroMatched||!exportSchemaPinnedVerified||!exportFileExists||!exportSyntheticIdentityMatched||exportBytes<1||exportBytes>262144||Hash(exportPath)!=exportSha256)throw new InvalidOperationException();
-  stage="gtgt-annex12-export-validating";Record();XmlDocument document=ReadBoundedOriginalXml(exportPath);XmlNamespaceManager ns=new XmlNamespaceManager(document.NameTable);ns.AddNamespace("t","http://kekhaithue.gdt.gov.vn/TKhaiThue");
+  SetStage(HtkkAutomationStage.GtgtAnnex12ExportValidating);Record();XmlDocument document=ReadBoundedOriginalXml(exportPath);XmlNamespaceManager ns=new XmlNamespaceManager(document.NameTable);ns.AddNamespace("t","http://kekhaithue.gdt.gov.vn/TKhaiThue");
   XmlNodeList plucs=document.SelectNodes("/t:HSoThueDTu/t:HSoKhaiThue/t:PLuc",ns),groups=document.SelectNodes("/t:HSoThueDTu/t:HSoKhaiThue/t:PLuc/t:PLuc_01_2_GTGT/t:TenNhaMay",ns),rows=document.SelectNodes("/t:HSoThueDTu/t:HSoKhaiThue/t:PLuc/t:PLuc_01_2_GTGT/t:TenNhaMay/t:DiaBanPhanBo",ns);
   int leaves=0;foreach(XmlNode node in document.SelectNodes("//*[not(*)]"))leaves++;
   annex12ExportShapeMatched=plucs.Count==1&&plucs[0].ChildNodes.Count==1&&groups.Count==1&&rows.Count==2&&leaves==112;

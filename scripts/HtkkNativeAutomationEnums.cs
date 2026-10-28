@@ -509,3 +509,290 @@ public static class HtkkNativeAutomationWireMap {
   throw new ArgumentException("Unknown menu ID for click stage");
  }
 }
+
+// Typed result metadata; values remain produced exclusively by original UI observations.
+public enum HtkkNativeResultFlag { AmendmentOpenCloseInvoked, AmendmentOpenPriorClosed, AmendmentOpenDefaultsMatched, AmendmentOpenConfirmInvoked, AmendmentOpenPeriodMatched, AmendmentOpenSourcesMatched, AmendmentOpenKhbsSheetsObserved, AmendmentOpenPriorUnchanged, Annex12ExportMainZeroMatched, Annex12ExportShapeMatched, Annex12ExportSchemaVerified, Annex12InputReadOnlyIdentityMatched, Annex12InputIdentityMatched, Annex12InputTypesMatched, Annex12InputGeographyMatched, Annex12InputTaxAuthoritiesMatched, Annex12InputPercentagesMatched, Annex12InputZeroTaxMatched, AmendmentPriorSaveInvoked, AmendmentPriorSaveSuccessAcknowledged, AmendmentPriorDirtyCleared, AmendmentPriorFileFresh, AmendmentPriorFileScopeMatched, AmendmentPriorXmlParsed, AmendmentPriorMoneyZero, AmendmentPriorSavedMoneyZero, AmendmentLifecycleVerified, SourcePinsVerified, MstBoxesMatched, InitialRequiredTextBlank, EditingApiAvailable, OriginalSaveInvoked, SavedHeaderExists, SavedHeaderChecksMatched, ProfileClosed, MainMenuObserved, D1MenuClicked, GtgtPeriodObserved, PeriodYearMonthMatched, PeriodFirstDeclarationMatched, PeriodActivityMatched, PeriodGeographyMatched, PeriodNoAnnexMatched, PeriodConfirmInvoked, GtgtWorkbookPinsVerified, GtgtMenuVersionMatched, GtgtPeriodModelMatched, GtgtSheetObserved, GtgtSheetNameMatched, GtgtDimensionsMatched, GtgtIdentityMatched, GtgtCt21Ready, GtgtCt21CaseMatched, GtgtCt21ConfirmationMatched, GtgtCt21LocksMatched, GtgtCt21BeforeExportMatched, GtgtCt21AfterImportMatched, GtgtCt21UncheckMatched, GtgtSignatureReady, GtgtMonetaryZero, PeriodAnnex12Matched, Annex12SourcePinsMatched, Annex12SheetObserved, Annex12StructureMatched, Annex12GroupMetadataMatched, Annex12SttMatched, Annex12LocksMatched, Annex12RowTabClickInvoked, Annex12F5Visible, Annex12F5Invoked, Annex12RowBeforeMatched, Annex12RowAfterMatched, Annex12RowSttMatched, Annex12RowLocksMatched, ExportCommandInvoked, ExportSelectorMatched, ExportButtonInvoked, ExportDialogMatched, ExportDestinationFresh, ExportDialogSubmitted, ExportFileExists, ExportXmlRootMatched, ExportSyntheticIdentityMatched, ExportSuccessAcknowledged, ExportSchemaPinnedVerified, ExportFilenameKeyboardCommitted, ExportOriginalPathMatched, RoundtripImportCommandInvoked, RoundtripImportDialogMatched, RoundtripImportKeyboardCommitted, RoundtripImportDialogSubmitted, RoundtripImportPathMatched, RoundtripImportSheetMatched, RoundtripImportSucceeded, RoundtripReexportCommandInvoked, RoundtripReexportSucceeded, RoundtripXmlExactMatched, GtgtCt42BeforeExportObserved, GtgtCt42LockedBeforeExport, GtgtCt42AfterImportObserved, GtgtCt42LockedAfterImport, GtgtAutoCalculationReady, GtgtBusinessInstanceMatched, GtgtCaseMoneyMatched, GtgtCt42Locked, WebTaxValuesMatched, WebCreationDateMatchedNativeBaseline, WebServiceIdentityMatched, WebInputVerified, RealTaxpayerDataUsed, RuntimeRoundTrip }
+public enum HtkkNativeResultCounter { Annex12NumericActionCount, Annex12NumericCaseCount, AmendmentOpenLoadedSheets, AmendmentOpenKhbsRows, AmendmentOpenKhbsColumns, AmendmentOpenExplanationRows, AmendmentOpenExplanationColumns, Annex12InputActionCount, AmendmentPriorFileBytes, AmendmentPriorSavedMoneyCount, VisibleForms, SpreadCount, SheetRows, SheetColumns, PerformedInputCount, SavedHeaderCheckedFieldCount, SavedHeaderMismatchMask, MenuRowCount, MenuClickCount, PeriodControlCount, Annex12SelectionActionCount, Annex12SheetRows, Annex12SheetColumns, Annex12NumericCount, Annex12NumericEmptyMask, Annex12NumericNonzeroMask, Annex12GroupCount, Annex12FirstGroupId, Annex12FirstGroupRows, Annex12RowBeforeRows, Annex12RowAfterRows, Annex12RowBeforeGroupRows, Annex12RowAfterGroupRows, Annex12RowAfterGroupId, Annex12RowInsertActionCount, AnnexSelectedCount, GtgtSheetRows, GtgtSheetColumns, GtgtSheetCount, GtgtEmptyMonetaryCount, ExportScopedFileCount, ExportScopedXmlCount, ExportBytes, RoundtripImportCheckedMoneyCount, RoundtripReexportBytes, WebTaxLeafCount, WebCaseEditCount, GtgtCaseMoneyCount, GtgtCaseMismatchMask, GtgtCaseNonzeroMask }
+public static class HtkkNativeResultContract {
+ public static string ToWireString(HtkkNativeResultFlag field) {
+  switch(field) {
+   case HtkkNativeResultFlag.AmendmentOpenCloseInvoked: return "amendmentOpenCloseInvoked";
+   case HtkkNativeResultFlag.AmendmentOpenPriorClosed: return "amendmentOpenPriorClosed";
+   case HtkkNativeResultFlag.AmendmentOpenDefaultsMatched: return "amendmentOpenDefaultsMatched";
+   case HtkkNativeResultFlag.AmendmentOpenConfirmInvoked: return "amendmentOpenConfirmInvoked";
+   case HtkkNativeResultFlag.AmendmentOpenPeriodMatched: return "amendmentOpenPeriodMatched";
+   case HtkkNativeResultFlag.AmendmentOpenSourcesMatched: return "amendmentOpenSourcesMatched";
+   case HtkkNativeResultFlag.AmendmentOpenKhbsSheetsObserved: return "amendmentOpenKhbsSheetsObserved";
+   case HtkkNativeResultFlag.AmendmentOpenPriorUnchanged: return "amendmentOpenPriorUnchanged";
+   case HtkkNativeResultFlag.Annex12ExportMainZeroMatched: return "annex12ExportMainZeroMatched";
+   case HtkkNativeResultFlag.Annex12ExportShapeMatched: return "annex12ExportShapeMatched";
+   case HtkkNativeResultFlag.Annex12ExportSchemaVerified: return "annex12ExportSchemaVerified";
+   case HtkkNativeResultFlag.Annex12InputReadOnlyIdentityMatched: return "annex12InputReadOnlyIdentityMatched";
+   case HtkkNativeResultFlag.Annex12InputIdentityMatched: return "annex12InputIdentityMatched";
+   case HtkkNativeResultFlag.Annex12InputTypesMatched: return "annex12InputTypesMatched";
+   case HtkkNativeResultFlag.Annex12InputGeographyMatched: return "annex12InputGeographyMatched";
+   case HtkkNativeResultFlag.Annex12InputTaxAuthoritiesMatched: return "annex12InputTaxAuthoritiesMatched";
+   case HtkkNativeResultFlag.Annex12InputPercentagesMatched: return "annex12InputPercentagesMatched";
+   case HtkkNativeResultFlag.Annex12InputZeroTaxMatched: return "annex12InputZeroTaxMatched";
+   case HtkkNativeResultFlag.AmendmentPriorSaveInvoked: return "amendmentPriorSaveInvoked";
+   case HtkkNativeResultFlag.AmendmentPriorSaveSuccessAcknowledged: return "amendmentPriorSaveSuccessAcknowledged";
+   case HtkkNativeResultFlag.AmendmentPriorDirtyCleared: return "amendmentPriorDirtyCleared";
+   case HtkkNativeResultFlag.AmendmentPriorFileFresh: return "amendmentPriorFileFresh";
+   case HtkkNativeResultFlag.AmendmentPriorFileScopeMatched: return "amendmentPriorFileScopeMatched";
+   case HtkkNativeResultFlag.AmendmentPriorXmlParsed: return "amendmentPriorXmlParsed";
+   case HtkkNativeResultFlag.AmendmentPriorMoneyZero: return "amendmentPriorMoneyZero";
+   case HtkkNativeResultFlag.AmendmentPriorSavedMoneyZero: return "amendmentPriorSavedMoneyZero";
+   case HtkkNativeResultFlag.AmendmentLifecycleVerified: return "amendmentLifecycleVerified";
+   case HtkkNativeResultFlag.SourcePinsVerified: return "sourcePinsVerified";
+   case HtkkNativeResultFlag.MstBoxesMatched: return "mstBoxesMatched";
+   case HtkkNativeResultFlag.InitialRequiredTextBlank: return "initialRequiredTextBlank";
+   case HtkkNativeResultFlag.EditingApiAvailable: return "editingApiAvailable";
+   case HtkkNativeResultFlag.OriginalSaveInvoked: return "originalSaveInvoked";
+   case HtkkNativeResultFlag.SavedHeaderExists: return "savedHeaderExists";
+   case HtkkNativeResultFlag.SavedHeaderChecksMatched: return "savedHeaderChecksMatched";
+   case HtkkNativeResultFlag.ProfileClosed: return "profileClosed";
+   case HtkkNativeResultFlag.MainMenuObserved: return "mainMenuObserved";
+   case HtkkNativeResultFlag.D1MenuClicked: return "d1MenuClicked";
+   case HtkkNativeResultFlag.GtgtPeriodObserved: return "gtgtPeriodObserved";
+   case HtkkNativeResultFlag.PeriodYearMonthMatched: return "periodYearMonthMatched";
+   case HtkkNativeResultFlag.PeriodFirstDeclarationMatched: return "periodFirstDeclarationMatched";
+   case HtkkNativeResultFlag.PeriodActivityMatched: return "periodActivityMatched";
+   case HtkkNativeResultFlag.PeriodGeographyMatched: return "periodGeographyMatched";
+   case HtkkNativeResultFlag.PeriodNoAnnexMatched: return "periodNoAnnexMatched";
+   case HtkkNativeResultFlag.PeriodConfirmInvoked: return "periodConfirmInvoked";
+   case HtkkNativeResultFlag.GtgtWorkbookPinsVerified: return "gtgtWorkbookPinsVerified";
+   case HtkkNativeResultFlag.GtgtMenuVersionMatched: return "gtgtMenuVersionMatched";
+   case HtkkNativeResultFlag.GtgtPeriodModelMatched: return "gtgtPeriodModelMatched";
+   case HtkkNativeResultFlag.GtgtSheetObserved: return "gtgtSheetObserved";
+   case HtkkNativeResultFlag.GtgtSheetNameMatched: return "gtgtSheetNameMatched";
+   case HtkkNativeResultFlag.GtgtDimensionsMatched: return "gtgtDimensionsMatched";
+   case HtkkNativeResultFlag.GtgtIdentityMatched: return "gtgtIdentityMatched";
+   case HtkkNativeResultFlag.GtgtCt21Ready: return "gtgtCt21Ready";
+   case HtkkNativeResultFlag.GtgtCt21CaseMatched: return "gtgtCt21CaseMatched";
+   case HtkkNativeResultFlag.GtgtCt21ConfirmationMatched: return "gtgtCt21ConfirmationMatched";
+   case HtkkNativeResultFlag.GtgtCt21LocksMatched: return "gtgtCt21LocksMatched";
+   case HtkkNativeResultFlag.GtgtCt21BeforeExportMatched: return "gtgtCt21BeforeExportMatched";
+   case HtkkNativeResultFlag.GtgtCt21AfterImportMatched: return "gtgtCt21AfterImportMatched";
+   case HtkkNativeResultFlag.GtgtCt21UncheckMatched: return "gtgtCt21UncheckMatched";
+   case HtkkNativeResultFlag.GtgtSignatureReady: return "gtgtSignatureReady";
+   case HtkkNativeResultFlag.GtgtMonetaryZero: return "gtgtMonetaryZero";
+   case HtkkNativeResultFlag.PeriodAnnex12Matched: return "periodAnnex12Matched";
+   case HtkkNativeResultFlag.Annex12SourcePinsMatched: return "annex12SourcePinsMatched";
+   case HtkkNativeResultFlag.Annex12SheetObserved: return "annex12SheetObserved";
+   case HtkkNativeResultFlag.Annex12StructureMatched: return "annex12StructureMatched";
+   case HtkkNativeResultFlag.Annex12GroupMetadataMatched: return "annex12GroupMetadataMatched";
+   case HtkkNativeResultFlag.Annex12SttMatched: return "annex12SttMatched";
+   case HtkkNativeResultFlag.Annex12LocksMatched: return "annex12LocksMatched";
+   case HtkkNativeResultFlag.Annex12RowTabClickInvoked: return "annex12RowTabClickInvoked";
+   case HtkkNativeResultFlag.Annex12F5Visible: return "annex12F5Visible";
+   case HtkkNativeResultFlag.Annex12F5Invoked: return "annex12F5Invoked";
+   case HtkkNativeResultFlag.Annex12RowBeforeMatched: return "annex12RowBeforeMatched";
+   case HtkkNativeResultFlag.Annex12RowAfterMatched: return "annex12RowAfterMatched";
+   case HtkkNativeResultFlag.Annex12RowSttMatched: return "annex12RowSttMatched";
+   case HtkkNativeResultFlag.Annex12RowLocksMatched: return "annex12RowLocksMatched";
+   case HtkkNativeResultFlag.ExportCommandInvoked: return "exportCommandInvoked";
+   case HtkkNativeResultFlag.ExportSelectorMatched: return "exportSelectorMatched";
+   case HtkkNativeResultFlag.ExportButtonInvoked: return "exportButtonInvoked";
+   case HtkkNativeResultFlag.ExportDialogMatched: return "exportDialogMatched";
+   case HtkkNativeResultFlag.ExportDestinationFresh: return "exportDestinationFresh";
+   case HtkkNativeResultFlag.ExportDialogSubmitted: return "exportDialogSubmitted";
+   case HtkkNativeResultFlag.ExportFileExists: return "exportFileExists";
+   case HtkkNativeResultFlag.ExportXmlRootMatched: return "exportXmlRootMatched";
+   case HtkkNativeResultFlag.ExportSyntheticIdentityMatched: return "exportSyntheticIdentityMatched";
+   case HtkkNativeResultFlag.ExportSuccessAcknowledged: return "exportSuccessAcknowledged";
+   case HtkkNativeResultFlag.ExportSchemaPinnedVerified: return "exportSchemaPinnedVerified";
+   case HtkkNativeResultFlag.ExportFilenameKeyboardCommitted: return "exportFilenameKeyboardCommitted";
+   case HtkkNativeResultFlag.ExportOriginalPathMatched: return "exportOriginalPathMatched";
+   case HtkkNativeResultFlag.RoundtripImportCommandInvoked: return "roundtripImportCommandInvoked";
+   case HtkkNativeResultFlag.RoundtripImportDialogMatched: return "roundtripImportDialogMatched";
+   case HtkkNativeResultFlag.RoundtripImportKeyboardCommitted: return "roundtripImportKeyboardCommitted";
+   case HtkkNativeResultFlag.RoundtripImportDialogSubmitted: return "roundtripImportDialogSubmitted";
+   case HtkkNativeResultFlag.RoundtripImportPathMatched: return "roundtripImportPathMatched";
+   case HtkkNativeResultFlag.RoundtripImportSheetMatched: return "roundtripImportSheetMatched";
+   case HtkkNativeResultFlag.RoundtripImportSucceeded: return "roundtripImportSucceeded";
+   case HtkkNativeResultFlag.RoundtripReexportCommandInvoked: return "roundtripReexportCommandInvoked";
+   case HtkkNativeResultFlag.RoundtripReexportSucceeded: return "roundtripReexportSucceeded";
+   case HtkkNativeResultFlag.RoundtripXmlExactMatched: return "roundtripXmlExactMatched";
+   case HtkkNativeResultFlag.GtgtCt42BeforeExportObserved: return "gtgtCt42BeforeExportObserved";
+   case HtkkNativeResultFlag.GtgtCt42LockedBeforeExport: return "gtgtCt42LockedBeforeExport";
+   case HtkkNativeResultFlag.GtgtCt42AfterImportObserved: return "gtgtCt42AfterImportObserved";
+   case HtkkNativeResultFlag.GtgtCt42LockedAfterImport: return "gtgtCt42LockedAfterImport";
+   case HtkkNativeResultFlag.GtgtAutoCalculationReady: return "gtgtAutoCalculationReady";
+   case HtkkNativeResultFlag.GtgtBusinessInstanceMatched: return "gtgtBusinessInstanceMatched";
+   case HtkkNativeResultFlag.GtgtCaseMoneyMatched: return "gtgtCaseMoneyMatched";
+   case HtkkNativeResultFlag.GtgtCt42Locked: return "gtgtCt42Locked";
+   case HtkkNativeResultFlag.WebTaxValuesMatched: return "webTaxValuesMatched";
+   case HtkkNativeResultFlag.WebCreationDateMatchedNativeBaseline: return "webCreationDateMatchedNativeBaseline";
+   case HtkkNativeResultFlag.WebServiceIdentityMatched: return "webServiceIdentityMatched";
+   case HtkkNativeResultFlag.WebInputVerified: return "webInputVerified";
+   case HtkkNativeResultFlag.RealTaxpayerDataUsed: return "realTaxpayerDataUsed";
+   case HtkkNativeResultFlag.RuntimeRoundTrip: return "runtimeRoundTrip";
+   default: throw new ArgumentException("Unknown result field");
+  }
+ }
+ public static string ToWireString(HtkkNativeResultCounter field) {
+  switch(field) {
+   case HtkkNativeResultCounter.Annex12NumericActionCount: return "annex12NumericActionCount";
+   case HtkkNativeResultCounter.Annex12NumericCaseCount: return "annex12NumericCaseCount";
+   case HtkkNativeResultCounter.AmendmentOpenLoadedSheets: return "amendmentOpenLoadedSheets";
+   case HtkkNativeResultCounter.AmendmentOpenKhbsRows: return "amendmentOpenKhbsRows";
+   case HtkkNativeResultCounter.AmendmentOpenKhbsColumns: return "amendmentOpenKhbsColumns";
+   case HtkkNativeResultCounter.AmendmentOpenExplanationRows: return "amendmentOpenExplanationRows";
+   case HtkkNativeResultCounter.AmendmentOpenExplanationColumns: return "amendmentOpenExplanationColumns";
+   case HtkkNativeResultCounter.Annex12InputActionCount: return "annex12InputActionCount";
+   case HtkkNativeResultCounter.AmendmentPriorFileBytes: return "amendmentPriorFileBytes";
+   case HtkkNativeResultCounter.AmendmentPriorSavedMoneyCount: return "amendmentPriorSavedMoneyCount";
+   case HtkkNativeResultCounter.VisibleForms: return "visibleForms";
+   case HtkkNativeResultCounter.SpreadCount: return "spreadCount";
+   case HtkkNativeResultCounter.SheetRows: return "sheetRows";
+   case HtkkNativeResultCounter.SheetColumns: return "sheetColumns";
+   case HtkkNativeResultCounter.PerformedInputCount: return "performedInputCount";
+   case HtkkNativeResultCounter.SavedHeaderCheckedFieldCount: return "savedHeaderCheckedFieldCount";
+   case HtkkNativeResultCounter.SavedHeaderMismatchMask: return "savedHeaderMismatchMask";
+   case HtkkNativeResultCounter.MenuRowCount: return "menuRowCount";
+   case HtkkNativeResultCounter.MenuClickCount: return "menuClickCount";
+   case HtkkNativeResultCounter.PeriodControlCount: return "periodControlCount";
+   case HtkkNativeResultCounter.Annex12SelectionActionCount: return "annex12SelectionActionCount";
+   case HtkkNativeResultCounter.Annex12SheetRows: return "annex12SheetRows";
+   case HtkkNativeResultCounter.Annex12SheetColumns: return "annex12SheetColumns";
+   case HtkkNativeResultCounter.Annex12NumericCount: return "annex12NumericCount";
+   case HtkkNativeResultCounter.Annex12NumericEmptyMask: return "annex12NumericEmptyMask";
+   case HtkkNativeResultCounter.Annex12NumericNonzeroMask: return "annex12NumericNonzeroMask";
+   case HtkkNativeResultCounter.Annex12GroupCount: return "annex12GroupCount";
+   case HtkkNativeResultCounter.Annex12FirstGroupId: return "annex12FirstGroupId";
+   case HtkkNativeResultCounter.Annex12FirstGroupRows: return "annex12FirstGroupRows";
+   case HtkkNativeResultCounter.Annex12RowBeforeRows: return "annex12RowBeforeRows";
+   case HtkkNativeResultCounter.Annex12RowAfterRows: return "annex12RowAfterRows";
+   case HtkkNativeResultCounter.Annex12RowBeforeGroupRows: return "annex12RowBeforeGroupRows";
+   case HtkkNativeResultCounter.Annex12RowAfterGroupRows: return "annex12RowAfterGroupRows";
+   case HtkkNativeResultCounter.Annex12RowAfterGroupId: return "annex12RowAfterGroupId";
+   case HtkkNativeResultCounter.Annex12RowInsertActionCount: return "annex12RowInsertActionCount";
+   case HtkkNativeResultCounter.AnnexSelectedCount: return "annexSelectedCount";
+   case HtkkNativeResultCounter.GtgtSheetRows: return "gtgtSheetRows";
+   case HtkkNativeResultCounter.GtgtSheetColumns: return "gtgtSheetColumns";
+   case HtkkNativeResultCounter.GtgtSheetCount: return "gtgtSheetCount";
+   case HtkkNativeResultCounter.GtgtEmptyMonetaryCount: return "gtgtEmptyMonetaryCount";
+   case HtkkNativeResultCounter.ExportScopedFileCount: return "exportScopedFileCount";
+   case HtkkNativeResultCounter.ExportScopedXmlCount: return "exportScopedXmlCount";
+   case HtkkNativeResultCounter.ExportBytes: return "exportBytes";
+   case HtkkNativeResultCounter.RoundtripImportCheckedMoneyCount: return "roundtripImportCheckedMoneyCount";
+   case HtkkNativeResultCounter.RoundtripReexportBytes: return "roundtripReexportBytes";
+   case HtkkNativeResultCounter.WebTaxLeafCount: return "webTaxLeafCount";
+   case HtkkNativeResultCounter.WebCaseEditCount: return "webCaseEditCount";
+   case HtkkNativeResultCounter.GtgtCaseMoneyCount: return "gtgtCaseMoneyCount";
+   case HtkkNativeResultCounter.GtgtCaseMismatchMask: return "gtgtCaseMismatchMask";
+   case HtkkNativeResultCounter.GtgtCaseNonzeroMask: return "gtgtCaseNonzeroMask";
+   default: throw new ArgumentException("Unknown result field");
+  }
+ }
+ public static bool FlagDefault(HtkkNativeResultFlag field) { ToWireString(field); return false; }
+ public static int CounterDefault(HtkkNativeResultCounter field) { ToWireString(field); return 0; }
+ public static int CounterMaximum(HtkkNativeResultCounter field, HtkkAutomationMode mode) {
+  HtkkNativeAutomationWireMap.ToWireString(mode);
+  if(mode==HtkkAutomationMode.None)throw new ArgumentException("Launch-only mode");
+  switch(field) {
+   case HtkkNativeResultCounter.Annex12NumericActionCount:
+    return 5;
+   case HtkkNativeResultCounter.Annex12NumericCaseCount:
+    return 3;
+   case HtkkNativeResultCounter.AmendmentOpenLoadedSheets:
+    return 32;
+   case HtkkNativeResultCounter.AmendmentOpenKhbsRows:
+    return 10000;
+   case HtkkNativeResultCounter.AmendmentOpenKhbsColumns:
+    return 512;
+   case HtkkNativeResultCounter.AmendmentOpenExplanationRows:
+    return 10000;
+   case HtkkNativeResultCounter.AmendmentOpenExplanationColumns:
+    return 512;
+   case HtkkNativeResultCounter.Annex12InputActionCount:
+    return 14;
+   case HtkkNativeResultCounter.AmendmentPriorFileBytes:
+    return 262144;
+   case HtkkNativeResultCounter.AmendmentPriorSavedMoneyCount:
+    return 27;
+   case HtkkNativeResultCounter.VisibleForms:
+    return 64;
+   case HtkkNativeResultCounter.SpreadCount:
+    return 512;
+   case HtkkNativeResultCounter.SheetRows:
+    return 10000;
+   case HtkkNativeResultCounter.SheetColumns:
+    return 10000;
+   case HtkkNativeResultCounter.PerformedInputCount:
+    return 7;
+   case HtkkNativeResultCounter.SavedHeaderCheckedFieldCount:
+    return 8;
+   case HtkkNativeResultCounter.SavedHeaderMismatchMask:
+    return 255;
+   case HtkkNativeResultCounter.MenuRowCount:
+    return 2048;
+   case HtkkNativeResultCounter.MenuClickCount:
+    if(mode==HtkkAutomationMode.GtgtAmendmentOpenInspect)return 6;
+    return 3;
+   case HtkkNativeResultCounter.PeriodControlCount:
+    return 512;
+   case HtkkNativeResultCounter.Annex12SelectionActionCount:
+    return 1;
+   case HtkkNativeResultCounter.Annex12SheetRows:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12SheetColumns:
+    return 512;
+   case HtkkNativeResultCounter.Annex12NumericCount:
+    return 8;
+   case HtkkNativeResultCounter.Annex12NumericEmptyMask:
+    return 255;
+   case HtkkNativeResultCounter.Annex12NumericNonzeroMask:
+    return 255;
+   case HtkkNativeResultCounter.Annex12GroupCount:
+    return 512;
+   case HtkkNativeResultCounter.Annex12FirstGroupId:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12FirstGroupRows:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12RowBeforeRows:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12RowAfterRows:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12RowBeforeGroupRows:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12RowAfterGroupRows:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12RowAfterGroupId:
+    return 10000;
+   case HtkkNativeResultCounter.Annex12RowInsertActionCount:
+    return 1;
+   case HtkkNativeResultCounter.AnnexSelectedCount:
+    return 512;
+   case HtkkNativeResultCounter.GtgtSheetRows:
+    return 10000;
+   case HtkkNativeResultCounter.GtgtSheetColumns:
+    return 10000;
+   case HtkkNativeResultCounter.GtgtSheetCount:
+    return 32;
+   case HtkkNativeResultCounter.GtgtEmptyMonetaryCount:
+    return 27;
+   case HtkkNativeResultCounter.ExportScopedFileCount:
+    return 32;
+   case HtkkNativeResultCounter.ExportScopedXmlCount:
+    return 32;
+   case HtkkNativeResultCounter.ExportBytes:
+    return 262144;
+   case HtkkNativeResultCounter.RoundtripImportCheckedMoneyCount:
+    return 27;
+   case HtkkNativeResultCounter.RoundtripReexportBytes:
+    return 262144;
+   case HtkkNativeResultCounter.WebTaxLeafCount:
+    return 70;
+   case HtkkNativeResultCounter.WebCaseEditCount:
+    return 3;
+   case HtkkNativeResultCounter.GtgtCaseMoneyCount:
+    return 27;
+   case HtkkNativeResultCounter.GtgtCaseMismatchMask:
+    return 134217727;
+   case HtkkNativeResultCounter.GtgtCaseNonzeroMask:
+    return 134217727;
+   default: throw new ArgumentException("Unknown result counter");
+  }
+ }
+}

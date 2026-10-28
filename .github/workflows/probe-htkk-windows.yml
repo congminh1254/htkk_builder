@@ -54,6 +54,15 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
+      - name: Check generated native automation contract is synchronized
+        shell: pwsh
+        run: python ./scripts/generate-native-automation-registry.py --check
+      - name: Test complete builder contracts without network
+        shell: pwsh
+        run: python -m unittest discover -s scripts -p 'test_*.py'
+      - name: Check generated typed flags counters defaults and mode ranges
+        shell: pwsh
+        run: ./scripts/Test-HtkkNativeResultContract.ps1
       - name: Check safe reference-result boundary
         shell: pwsh
         run: ./scripts/Test-HtkkSafeGuiReferenceResult.ps1
@@ -99,6 +108,14 @@ jobs:
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
         run: python ./scripts/fetch-htkk-web-input.py
+      - name: Queue separate native harness sample status before supplier launch
+        if: inputs.install_and_probe && inputs.gui_automation == 'gtgt-roundtrip-inspect'
+        shell: pwsh
+        env:
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          SAMPLE_STATE: pending
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/report-native-sample.py
       - name: Kiểm tra nguồn và điều kiện Windows
         id: native_probe
         shell: pwsh
@@ -155,6 +172,22 @@ jobs:
           WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-htkk-web-native-output.py
+      - name: Retain native-first harness sample and report its separate status privately
+        id: native_sample_publish
+        if: always() && inputs.install_and_probe && steps.native_probe.outcome == 'success' && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && inputs.gui_automation == 'gtgt-roundtrip-inspect'
+        shell: pwsh
+        env:
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/publish-htkk-native-sample.py
+      - name: Report unsuccessful native harness sample after verified cleanup
+        if: always() && inputs.install_and_probe && inputs.gui_automation == 'gtgt-roundtrip-inspect' && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && (steps.native_probe.outcome != 'success' || steps.native_sample_publish.outcome != 'success')
+        shell: pwsh
+        env:
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          SAMPLE_STATE: failure
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python ./scripts/report-native-sample.py
       - name: Report fixed native-case status privately
         if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect'
         shell: pwsh

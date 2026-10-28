@@ -9,7 +9,21 @@
       "permit": null,
       "terminalStage": "not-started",
       "timeoutSeconds": 30,
-      "orderedCompileInputs": [],
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
+      ],
       "successPolicyId": "none",
       "privateArtifactPolicy": "none",
       "contextPolicy": "none"
@@ -23,7 +37,18 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
-        "HtkkGuiReferenceAutomation.cs"
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "profile-inspected",
       "privateArtifactPolicy": "none",
@@ -38,7 +63,18 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
-        "HtkkGuiReferenceAutomation.cs"
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "original-profile-saved-verified",
       "privateArtifactPolicy": "synthetic-window-diagnostic",
@@ -55,7 +91,16 @@
         "HtkkNativeAutomationEnums.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
-        "HtkkGtgtPeriodAndSheet.cs"
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-period-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -72,7 +117,16 @@
         "HtkkNativeAutomationEnums.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
-        "HtkkGtgtPeriodAndSheet.cs"
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-sheet-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -90,7 +144,15 @@
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
-        "HtkkGtgtAmendmentInspection.cs"
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-saved",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -108,8 +170,15 @@
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
         "HtkkGtgtAmendmentInspection.cs",
-        "HtkkGtgtAmendmentOpenInspection.cs"
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-open-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -126,7 +195,16 @@
         "HtkkNativeAutomationEnums.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
-        "HtkkGtgtPeriodAndSheet.cs"
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -143,7 +221,16 @@
         "HtkkNativeAutomationEnums.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
-        "HtkkGtgtPeriodAndSheet.cs"
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-row-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -160,7 +247,16 @@
         "HtkkNativeAutomationEnums.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
-        "HtkkGtgtPeriodAndSheet.cs"
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-input-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -178,7 +274,15 @@
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
-        "HtkkGtgtAnnex12NumericInspection.cs"
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-numeric-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -197,7 +301,14 @@
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
         "HtkkGtgtExportInspection.cs",
-        "HtkkGtgtAnnex12ExportInspection.cs"
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-export-inspected",
       "privateArtifactPolicy": "raw-annex12-export",
@@ -215,7 +326,15 @@
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
-        "HtkkGtgtExportInspection.cs"
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-export-inspected",
       "privateArtifactPolicy": "raw-gtgt-export",
@@ -234,7 +353,14 @@
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
         "HtkkGtgtExportInspection.cs",
-        "HtkkGtgtRoundtripInspection.cs"
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-roundtrip-inspected",
       "privateArtifactPolicy": "synthetic-common-header",
@@ -255,7 +381,12 @@
         "HtkkGtgtExportInspection.cs",
         "HtkkGtgtRoundtripInspection.cs",
         "HtkkWebInputReference.cs",
-        "HtkkWebTaxComparison.cs"
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-web-import-inspected",
       "privateArtifactPolicy": "raw-web-reexport",
@@ -1149,5 +1280,1067 @@
     "cboCQTChiCuc",
     "cboTinh",
     "cboXa"
-  ]
+  ],
+  "resultFields": {
+    "annex12NumericTextSnapshots": {
+      "kind": "string",
+      "default": "",
+      "validator": "annex-numeric-snapshots-v1",
+      "maximumLength": 4096
+    },
+    "annex12NumericTypeSnapshots": {
+      "kind": "string",
+      "default": "",
+      "validator": "annex-numeric-snapshots-v1",
+      "maximumLength": 4096
+    },
+    "annex12NumericDoubleBits": {
+      "kind": "string",
+      "default": "",
+      "validator": "annex-numeric-snapshots-v1",
+      "maximumLength": 4096
+    },
+    "annex12NumericActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 5,
+      "activeModes": [
+        "gtgt-annex12-numeric-inspect"
+      ]
+    },
+    "annex12NumericCaseCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3,
+      "activeModes": [
+        "gtgt-annex12-numeric-inspect"
+      ]
+    },
+    "annex12NumericSnapshots": {
+      "kind": "string",
+      "default": "",
+      "validator": "annex-numeric-snapshots-v1",
+      "maximumLength": 4096,
+      "activeModes": [
+        "gtgt-annex12-numeric-inspect"
+      ]
+    },
+    "amendmentOpenLoadedSheets": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 32,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenCloseInvoked": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenPriorClosed": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenDefaultsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenConfirmInvoked": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenPeriodMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenSourcesMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenKhbsSheetsObserved": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenPriorUnchanged": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenKhbsRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenKhbsColumns": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenExplanationRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentOpenExplanationColumns": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512,
+      "activeModes": [
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "annex12ExportMainZeroMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12ExportShapeMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12ExportSchemaVerified": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputReadOnlyIdentityMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputIdentityMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputTypesMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputGeographyMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputTaxAuthoritiesMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputPercentagesMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputZeroTaxMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "annex12InputActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 14,
+      "activeModes": [
+        "gtgt-annex12-input-inspect",
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-inspect"
+      ]
+    },
+    "amendmentPriorSaveInvoked": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorSaveSuccessAcknowledged": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorDirtyCleared": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorFileFresh": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorFileScopeMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorXmlParsed": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorMoneyZero": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorSavedMoneyZero": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentLifecycleVerified": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": []
+    },
+    "amendmentPriorFileBytes": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 262144,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorFileSha256": {
+      "kind": "hex",
+      "default": "",
+      "length": 64,
+      "allowEmpty": true,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "amendmentPriorSavedMoneyCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 27,
+      "activeModes": [
+        "gtgt-amendment-inspect",
+        "gtgt-amendment-open-inspect"
+      ]
+    },
+    "format": {
+      "kind": "enum",
+      "default": "htkk-gui-reference-automation-v1",
+      "values": [
+        "htkk-gui-reference-automation-v1"
+      ]
+    },
+    "mode": {
+      "kind": "enum",
+      "default": "inspect",
+      "valuesFrom": "automation-modes"
+    },
+    "stage": {
+      "kind": "enum",
+      "default": "not-started",
+      "valuesFrom": "stages"
+    },
+    "failureCategory": {
+      "kind": "enum",
+      "default": "none",
+      "values": [
+        "none",
+        "reflection-invocation",
+        "operation-not-established",
+        "argument",
+        "com",
+        "io",
+        "other-standard"
+      ]
+    },
+    "editorKind": {
+      "kind": "enum",
+      "default": "not-started",
+      "values": [
+        "not-started",
+        "combo",
+        "text-box",
+        "other-control"
+      ]
+    },
+    "runtime": {
+      "kind": "enum",
+      "default": "clr2-x86-custom-reference",
+      "values": [
+        "clr2-x86-custom-reference"
+      ]
+    },
+    "sourcePinsVerified": {
+      "kind": "boolean",
+      "default": false
+    },
+    "visibleForms": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 64
+    },
+    "spreadCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512
+    },
+    "sheetRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "sheetColumns": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "mstBoxesMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "initialRequiredTextBlank": {
+      "kind": "boolean",
+      "default": false
+    },
+    "editingApiAvailable": {
+      "kind": "boolean",
+      "default": false
+    },
+    "performedInputCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 7
+    },
+    "originalSaveInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "savedHeaderExists": {
+      "kind": "boolean",
+      "default": false
+    },
+    "savedHeaderChecksMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "savedHeaderCheckedFieldCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 8
+    },
+    "saveDialogKind": {
+      "kind": "enum",
+      "default": "not-observed",
+      "values": [
+        "not-observed",
+        "success-0002",
+        "invalid-0015",
+        "other-original-message"
+      ]
+    },
+    "savedHeaderMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    },
+    "profileClosed": {
+      "kind": "boolean",
+      "default": false
+    },
+    "mainMenuObserved": {
+      "kind": "boolean",
+      "default": false
+    },
+    "d1MenuClicked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtPeriodObserved": {
+      "kind": "boolean",
+      "default": false
+    },
+    "menuRowCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2048
+    },
+    "menuClickCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3,
+      "modeMaximums": {
+        "gtgt-amendment-open-inspect": 6
+      }
+    },
+    "periodControlCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512
+    },
+    "periodControls": {
+      "kind": "object",
+      "default": {},
+      "validator": "period-controls-v1"
+    },
+    "periodYearMonthMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "periodFirstDeclarationMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "periodActivityMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "periodGeographyMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "periodNoAnnexMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "periodConfirmInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtWorkbookPinsVerified": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtMenuVersionMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtPeriodModelMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtSheetObserved": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtSheetNameMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtDimensionsMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtIdentityMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21Ready": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21CaseMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21ConfirmationMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21LocksMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21BeforeExportMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21AfterImportMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt21UncheckMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtSignatureReady": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtMonetaryZero": {
+      "kind": "boolean",
+      "default": false
+    },
+    "periodAnnex12Matched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12SourcePinsMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12SheetObserved": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12StructureMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12GroupMetadataMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12SttMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12LocksMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12SelectionActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1
+    },
+    "annex12SheetRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12SheetColumns": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512
+    },
+    "annex12NumericCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 8
+    },
+    "annex12NumericEmptyMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    },
+    "annex12NumericNonzeroMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    },
+    "annex12GroupCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512
+    },
+    "annex12FirstGroupId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12FirstGroupRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12RowTabClickInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12F5Visible": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12F5Invoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12RowBeforeMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12RowAfterMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12RowSttMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12RowLocksMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "annex12RowBeforeRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12RowAfterRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12RowBeforeGroupRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12RowAfterGroupRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12RowAfterGroupId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "annex12RowInsertActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1
+    },
+    "annexSelectedCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512
+    },
+    "gtgtSheetRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "gtgtSheetColumns": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10000
+    },
+    "gtgtSheetCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 32
+    },
+    "gtgtEmptyMonetaryCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 27
+    },
+    "exportCommandInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportSelectorMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportButtonInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportDialogMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportDestinationFresh": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportDialogSubmitted": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportFileExists": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportXmlRootMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportSyntheticIdentityMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportSuccessAcknowledged": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportSchemaPinnedVerified": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportFilenameKeyboardCommitted": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportFilenameParentKind": {
+      "kind": "enum",
+      "default": "not-observed",
+      "values": [
+        "not-observed",
+        "combobox",
+        "combobox-ex",
+        "other"
+      ]
+    },
+    "exportOriginalPathMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "exportOriginalPathKind": {
+      "kind": "enum",
+      "default": "not-observed",
+      "values": [
+        "not-observed",
+        "empty",
+        "expected-path",
+        "expected-double-extension",
+        "same-directory-other-name",
+        "other-directory"
+      ]
+    },
+    "exportScopedFileCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 32
+    },
+    "exportScopedXmlCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 32
+    },
+    "exportBytes": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 262144
+    },
+    "exportSha256": {
+      "kind": "hex",
+      "default": "",
+      "length": 64,
+      "allowEmpty": true
+    },
+    "roundtripImportCommandInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportDialogMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportKeyboardCommitted": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportDialogSubmitted": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportPathMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportSheetMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportSucceeded": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripReexportCommandInvoked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripReexportSucceeded": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripXmlExactMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "roundtripImportCheckedMoneyCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 27
+    },
+    "roundtripReexportBytes": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 262144
+    },
+    "roundtripReexportSha256": {
+      "kind": "hex",
+      "default": "",
+      "length": 64,
+      "allowEmpty": true
+    },
+    "gtgtCt42BeforeExportObserved": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt42LockedBeforeExport": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt42AfterImportObserved": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt42LockedAfterImport": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtAutoCalculationReady": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtBusinessInstanceMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCaseMoneyMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "gtgtCt42Locked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webTaxValuesMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webCreationDateMatchedNativeBaseline": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webServiceIdentityMatched": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webInputVerified": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webImportInputSha256": {
+      "kind": "hex",
+      "default": "",
+      "length": 64,
+      "allowEmpty": true
+    },
+    "webSourceSha": {
+      "kind": "hex",
+      "default": "",
+      "length": 40,
+      "allowEmpty": true
+    },
+    "webTaxLeafCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 70
+    },
+    "webCaseId": {
+      "kind": "enum",
+      "default": "01GTGT-zero-M10-2026",
+      "values": [
+        "01GTGT-zero-M10-2026",
+        "01GTGT-sale10-M10-2026",
+        "01GTGT-sale10-half-M10-2026",
+        "01GTGT-sale10-manual-M10-2026",
+        "01GTGT-sale5-half-M10-2026",
+        "01GTGT-sale5-manual-M10-2026",
+        "01GTGT-noactivity-zero-M10-2026",
+        "01GTGT-noactivity-reset-sale10-M10-2026",
+        "01GTGT-noactivity-cancel-sale10-M10-2026",
+        "01GTGT-noactivity-uncheck-sale10-M10-2026",
+        "01GTGT-noactivity-keep-credit-M10-2026",
+        "01GTGT-zero-Q4-2026",
+        "01GTGT-native-import-sale10-M10-2026"
+      ]
+    },
+    "webCaseEditCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3
+    },
+    "gtgtCaseMoneyCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 27
+    },
+    "gtgtCaseMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 134217727
+    },
+    "gtgtCaseNonzeroMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 134217727
+    },
+    "controlKinds": {
+      "kind": "object",
+      "default": {
+        "form": 0,
+        "button": 0,
+        "combo": 0,
+        "text": 0,
+        "spread": 0,
+        "other": 0
+      },
+      "validator": "control-kinds-v1"
+    },
+    "realTaxpayerDataUsed": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": []
+    },
+    "runtimeRoundTrip": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": []
+    }
+  }
 }

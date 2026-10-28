@@ -88,7 +88,8 @@ class NativeEditorCountBoundary(unittest.TestCase):
  def test_powershell_negative_fixture_exceeds_accepted_editor_count(self):
   boundary=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
   fixtures=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
-  maximum=int(re.search(r'webCaseEditCount=(\d+)',boundary).group(1))
+  maximum=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']['webCaseEditCount']['maximum']
+  self.assertIn("$value['webCaseEditCount'] -gt "+str(maximum),boundary)
   rejected=int(re.search(r"@\{key='webCaseEditCount';value=(\d+)\}",fixtures).group(1))
   self.assertEqual(rejected,maximum+1)
 

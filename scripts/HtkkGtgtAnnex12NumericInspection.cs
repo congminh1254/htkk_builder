@@ -17,23 +17,23 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // canonical expected value independent from the text typed into that editor.
   string editorValue=values[index];
   if(index==2||index==3){
-   stage="gtgt-annex12-numeric-format-checking";Record();
+   SetStage(HtkkAutomationStage.GtgtAnnex12NumericFormatChecking);Record();
    object cellType=Get(Cell(annex,row,column),"CellType");
    if(cellType==null||Convert.ToString(Get(cellType,"DecimalSeparator"),CultureInfo.InvariantCulture)!=","||Convert.ToString(Get(cellType,"Separator"),CultureInfo.InvariantCulture)!=".")throw new InvalidOperationException();
    editorValue=values[index].Replace('.',',');
   }
   if(Convert.ToBoolean(Get(Cell(annex,row,column),"Locked")))throw new InvalidOperationException();
-  stage="gtgt-annex12-numeric-editing";Record();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
+  SetStage(HtkkAutomationStage.GtgtAnnex12NumericEditing);Record();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
   grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});
-  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();stage="gtgt-annex12-numeric-editor-ready";Record();
+  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();SetStage(HtkkAutomationStage.GtgtAnnex12NumericEditorReady);Record();
   foreach(string keys in new string[]{"^a",EscapeSendKeys(editorValue),"{TAB}"}){Annex12InputOwner(grid,annex);if(!editor.ContainsFocus)throw new InvalidOperationException();SendKeys.SendWait(keys);}
   grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();Annex12InputOwner(grid,annex);
-  stage="gtgt-annex12-numeric-committed";Record();
-  if(!Annex12NumberMatched(annex,row,column,Decimal.Parse(values[index],CultureInfo.InvariantCulture))){stage="gtgt-annex12-numeric-value-mismatch";Record();throw new InvalidOperationException();}
+  SetStage(HtkkAutomationStage.GtgtAnnex12NumericCommitted);Record();
+  if(!Annex12NumberMatched(annex,row,column,Decimal.Parse(values[index],CultureInfo.InvariantCulture))){SetStage(HtkkAutomationStage.GtgtAnnex12NumericValueMismatch);Record();throw new InvalidOperationException();}
   annex12NumericActionCount++;Record();
  }
  private void SnapshotAnnex12Numeric(Control grid,object annex){
-  Annex12InputOwner(grid,annex);if(annex12NumericCaseCount>=3)throw new InvalidOperationException();stage="gtgt-annex12-numeric-observing";Record();
+  Annex12InputOwner(grid,annex);if(annex12NumericCaseCount>=3)throw new InvalidOperationException();SetStage(HtkkAutomationStage.GtgtAnnex12NumericObserving);Record();
   // Header T/U/X; child T/U/X/AO; footer T/X. Values come ONLY from original cells.
   int[,] cells=new int[,]{{42,19},{42,20},{42,23},{43,19},{43,20},{43,23},{43,40},{44,19},{44,20},{44,23},{46,19},{46,23}};
   StringBuilder snapshot=new StringBuilder(),texts=new StringBuilder(),types=new StringBuilder(),bits=new StringBuilder();
@@ -56,6 +56,6 @@ public sealed partial class HtkkGuiReferenceAutomation {
   EditAnnex12Numeric(grid,annex,0);SnapshotAnnex12Numeric(grid,annex);
   EditAnnex12Numeric(grid,annex,1);EditAnnex12Numeric(grid,annex,2);EditAnnex12Numeric(grid,annex,3);SnapshotAnnex12Numeric(grid,annex);
   EditAnnex12Numeric(grid,annex,4);SnapshotAnnex12Numeric(grid,annex);
-  finished=true;stage="gtgt-annex12-numeric-inspected";Record();
+  finished=true;SetStage(HtkkAutomationStage.GtgtAnnex12NumericInspected);Record();
  }
 }

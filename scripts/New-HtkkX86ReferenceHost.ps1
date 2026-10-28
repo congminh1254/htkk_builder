@@ -11,6 +11,7 @@ function New-HtkkX86ReferenceHost {
   )
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
+  . (Join-Path $PSScriptRoot 'HtkkNativeCompileInputs.ps1')
   $safe = [ordered]@{
     status='not-prepared'; mode='custom-x86-clr2-reference-host'; launched=$false
     originalExeHashVerified=$false; businessDllHashVerified=$false; originalConfigHashVerified=$false
@@ -177,33 +178,21 @@ internal static class HtkkX86ReferenceHost {
 }
 '@
     $hostSource.Replace('__GUI_AUTOMATION_MODE__',$GuiAutomation) | Set-Content -LiteralPath $source -Encoding ASCII
-    $enumsSource=Join-Path $directory 'HtkkNativeAutomationEnums.cs'
-    [IO.File]::WriteAllText($enumsSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkNativeAutomationEnums.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $automationSource=Join-Path $directory 'HtkkGuiReferenceAutomation.cs'
-    [IO.File]::WriteAllText($automationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGuiReferenceAutomation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
+    # The generated contract is the exact compilation closure, including launch-only.
+    # Copy only repository-owned, bounded leaf files into the private compiler directory.
+    $compilerSources=@($source)
+    foreach($name in @(Get-HtkkNativeCompileInputs -Mode $GuiAutomation)) {
+      if($name -cnotmatch '\AHtkk[A-Za-z0-9]+\.cs\z') { throw 'Invalid compiler source contract.' }
+      $inputPath=Join-Path $PSScriptRoot $name
+      $inputFile=Get-Item -LiteralPath $inputPath
+      if($inputFile.PSIsContainer -or ($inputFile.Attributes -band [IO.FileAttributes]::ReparsePoint) -or $inputFile.Length -gt 524288) { throw 'Invalid compiler source file.' }
+      $copiedPath=Join-Path $directory $name
+      [IO.File]::WriteAllText($copiedPath,[IO.File]::ReadAllText($inputPath,[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
+      $compilerSources+= $copiedPath
+    }
     '<?xml version="1.0"?><configuration><startup><supportedRuntime version="v2.0.50727"/></startup></configuration>' | Set-Content -LiteralPath $hostConfig -Encoding ASCII
-    $navigationSource=Join-Path $directory 'HtkkGtgtReferenceNavigation.cs'
-    [IO.File]::WriteAllText($navigationSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtReferenceNavigation.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $periodSource=Join-Path $directory 'HtkkGtgtPeriodAndSheet.cs'
-    [IO.File]::WriteAllText($periodSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtPeriodAndSheet.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $amendmentSource=Join-Path $directory 'HtkkGtgtAmendmentInspection.cs'
-    [IO.File]::WriteAllText($amendmentSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAmendmentInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $annexNumericSource=Join-Path $directory 'HtkkGtgtAnnex12NumericInspection.cs'
-[IO.File]::WriteAllText($annexNumericSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAnnex12NumericInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $annexExportSource=Join-Path $directory 'HtkkGtgtAnnex12ExportInspection.cs'
-    [IO.File]::WriteAllText($annexExportSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAnnex12ExportInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $amendmentOpenSource=Join-Path $directory 'HtkkGtgtAmendmentOpenInspection.cs'
-    [IO.File]::WriteAllText($amendmentOpenSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtAmendmentOpenInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $webComparisonSource=Join-Path $directory 'HtkkWebTaxComparison.cs'
-    [IO.File]::WriteAllText($webComparisonSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWebTaxComparison.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $webInputSource=Join-Path $directory 'HtkkWebInputReference.cs'
-    [IO.File]::WriteAllText($webInputSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkWebInputReference.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $roundtripSource=Join-Path $directory 'HtkkGtgtRoundtripInspection.cs'
-    [IO.File]::WriteAllText($roundtripSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtRoundtripInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
-    $exportSource=Join-Path $directory 'HtkkGtgtExportInspection.cs'
-    [IO.File]::WriteAllText($exportSource,[IO.File]::ReadAllText((Join-Path $PSScriptRoot 'HtkkGtgtExportInspection.cs'),[Text.Encoding]::UTF8),[Text.UTF8Encoding]::new($true))
     $safe.compilerJobCleanupVerified=$false
-    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments @('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll',$source,$enumsSource,$automationSource,$navigationSource,$periodSource,$exportSource,$roundtripSource,$webInputSource,$webComparisonSource,$amendmentSource,$amendmentOpenSource,$annexNumericSource,$annexExportSource) -TimeoutMilliseconds 30000
+    $compilerRun=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $directory -Arguments (@('/nologo','/target:winexe','/platform:x86','/optimize+',('/out:'+$program),'/reference:System.Windows.Forms.dll')+$compilerSources) -TimeoutMilliseconds 30000
     $safe.compilerJobCleanupVerified=$compilerRun.jobCleanupVerified;$safe.compilerExitCode=$compilerRun.exitCode;$safe.compilerErrorCodes=$compilerRun.compilerErrorCodes
     if(-not $compilerRun.jobCleanupVerified -or $compilerRun.status -notin @('exited','process-timeout')){$safe.status='host-or-tool-failure';return $safe}
     if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}

@@ -936,10 +936,7 @@ try {
   $nativeHelperJobsStopped=$htkkHelperJobsStopped -is [bool] -and $htkkHelperJobsStopped
   $report['nativeHelperJobsStopped']=$nativeHelperJobsStopped
   if(-not $nativeHelperJobsStopped){$report.stage='blocked';$report['blockedReason']='NATIVE_HELPER_PROCESS_NOT_STOPPED'}
-  if($env:GITHUB_OUTPUT){
-    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped) -and $supplierCleanupVerified -and $nativeHelperJobsStopped
-    [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
-  }
+
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {
     try {
       $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath
@@ -1034,6 +1031,33 @@ try {
       if($nativeEvidenceCreated){Remove-Item -LiteralPath $nativeEvidence -Recurse -Force -ErrorAction SilentlyContinue}
       $report.privateWebNativeOutputEvidence=@{status='not-staged';stage=$nativeEvidenceStage;supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$false;fullRoundTrip=$false}
     }
+  }
+  if($GuiAutomation -eq 'gtgt-roundtrip-inspect' -and $report.stage -eq 'synthetic-original-gtgt-roundtrip-inspected') {
+    $sampleHelper=$null;$sampleFailure='NOT_STAGED'
+    try {
+      if(-not $supplierStopped -or -not $report.originalSourcesUnmodified -or -not $script:htkkHelperJobsStopped){throw 'STAGING_NOT_VERIFIED'}
+      $sampleRoot=Split-Path (Split-Path $exe)
+      $sampleSchemaPath=Join-Path $work 'native-sample-schema.json'
+      $sampleHelper=Invoke-HtkkBoundedJobProcess -Executable (Join-Path $PSHOME 'pwsh.exe') -WorkingDirectory $work -Arguments @('-NoProfile','-NonInteractive','-File',(Join-Path $PSScriptRoot 'Test-HtkkNativeSampleSchema.ps1'),'-InstalledRoot',$sampleRoot,'-ResultPath',$sampleSchemaPath) -TimeoutMilliseconds 30000
+      if($sampleHelper.status -cne 'exited' -or $sampleHelper.exitCode -ne 0 -or $sampleHelper.timedOut -or -not $sampleHelper.processStopped -or -not $sampleHelper.jobCleanupVerified){throw 'STAGING_NOT_VERIFIED'}
+      $sampleInput=[ordered]@{installedRoot=$sampleRoot;gui=$report.guiReferenceAutomation;supplierStopped=[bool]$supplierStopped;sourcesUnmodified=[bool]$report.originalSourcesUnmodified;schemaPath=$sampleSchemaPath} | ConvertTo-Json -Depth 6 -Compress
+      $sampleOutput=$sampleInput | & python (Join-Path $PSScriptRoot 'stage-htkk-native-sample.py')
+      $sampleExit=$LASTEXITCODE
+      $sampleResult=$sampleOutput | ConvertFrom-Json -AsHashtable
+      if($sampleResult.format -ceq 'htkk-native-harness-sample-status-v1' -and $sampleResult.status -ceq 'rejected' -and $sampleResult.code -cin @('PROVENANCE','COMPARE','SCHEMA','FILES','STAGING','HASH','AUTH','PRIVATE_REPO','STALE_SOURCE','API_SHAPE','BUILDER','XML_PRIVACY','INTERNAL')){$sampleFailure=$sampleResult.code}
+      if($sampleExit -ne 0 -or $sampleResult.format -cne 'htkk-native-harness-sample-status-v1' -or $sampleResult.status -cne 'staged' -or $sampleResult.rawBytesPreserved -isnot [bool] -or -not $sampleResult.rawBytesPreserved -or $sampleResult.independentSchemaVerification -isnot [bool] -or -not $sampleResult.independentSchemaVerification){throw 'STAGING_NOT_VERIFIED'}
+      $report.privateNativeHarnessSample=@{status='staged';supplierStopped=$true;rawBytesPreserved=$true;independentSchemaVerification=$true;allLeavesMatched=$true;fullCompatibilityVerified=$false;schemaHelper=$sampleHelper}
+    } catch {
+      $report.privateNativeHarnessSample=@{status='not-staged';failureCode=$sampleFailure;rawBytesPreserved=$false;independentSchemaVerification=$false;fullCompatibilityVerified=$false;schemaHelper=$sampleHelper}
+      $report.stage='blocked';$report['blockedReason']='NATIVE_SAMPLE_NOT_VERIFIED'
+    }
+  }
+  # Credential gate is emitted only after ALL token-free helpers, including the
+  # new sample's independent schema Job, have been stopped and accounted for.
+  $report.nativeHelperJobsStopped=$script:htkkHelperJobsStopped -is [bool] -and $script:htkkHelperJobsStopped
+  if($env:GITHUB_OUTPUT){
+    $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped) -and $supplierCleanupVerified -and $report.nativeHelperJobsStopped
+    [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
   }
   foreach($registration in $registrationProcesses) { try { $registration.Dispose() } catch { } }
   foreach($rule in $firewallNames) { Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue }

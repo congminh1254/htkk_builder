@@ -1,22 +1,23 @@
 """Mode routing and bounded metadata contracts; no synthetic test is native proof."""
 import ast,pathlib,re,unittest
+from native_contract_test_support import wire_source, field, registry, assert_compile_input
 ROOT=pathlib.Path(__file__).parent
 MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')
 class AnnexInspectionContract(unittest.TestCase):
  def test_actual_csharp_start_rejects_unknown_modes_and_accepts_every_existing_mode(self):
-  text=(ROOT/'HtkkGuiReferenceAutomation.cs').read_text()
-  expression=re.search(r'if\((requestedMode[^\n]+)\)throw new ArgumentException\(\)',text).group(1).replace('&&',' and ').replace('||',' or ')
-  parsed=ast.parse(expression,mode='eval')
-  for node in ast.walk(parsed):self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.And,ast.Or,ast.Compare,ast.Eq,ast.NotEq,ast.Name,ast.Load,ast.Constant))
-  for mode in (*MODES,'none','unknown','gtgt-annex12-inspect-extra'):
-   self.assertEqual(eval(compile(parsed,'<original helper mode guard>','eval'),{'__builtins__':{}},{'requestedMode':mode}),mode not in MODES)
+  text=wire_source('HtkkGuiReferenceAutomation.cs')
+  self.assertIn('modeEnum=HtkkNativeAutomationWireMap.ParseMode(requestedMode);',text)
+  self.assertIn('if(modeEnum==HtkkAutomationMode.None)throw new ArgumentException();',text)
+  self.assertIn('mode=HtkkNativeAutomationWireMap.ToWireString(modeEnum);',text)
+  self.assertNotIn('requestedMode!=',text)
+  self.assertEqual(set(registry()['modes'])-{'none'},set(MODES))
  def test_annex_metadata_keys_are_unique_typed_and_defaulted_in_real_powershell_fixture(self):
   text=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
   keys=re.findall(r"'([^']+)'",re.search(r'\$keys=@\(([^\n]+)\)',text).group(1));self.assertEqual(len(keys),len(set(keys)))
   for key in ('periodAnnex12Matched','annex12SourcePinsMatched','annex12SheetObserved','annex12StructureMatched','annex12GroupMetadataMatched','annex12SttMatched','annex12LocksMatched'):
    self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
   for key,maximum in {'annex12SelectionActionCount':1,'annex12NumericCount':8,'annex12NumericNonzeroMask':255,'annex12NumericEmptyMask':255,'annex12FirstGroupId':10000}.items():
-   self.assertIn(key,keys);self.assertIn(key+'='+str(maximum)+';',text);self.assertIn(key+'=0;',fixture)
+   self.assertIn(key,keys);self.assertEqual(field(key)['maximum'],maximum);self.assertIn(key+'=0;',fixture)
   self.assertIn("$annex.mode='gtgt-annex12-inspect'",fixture);self.assertIn("@('annex12FirstGroupId',10001)",fixture)
  def test_annex_mode_is_inspection_only_with_separate_period_predicate(self):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
@@ -35,7 +36,7 @@ class AnnexInspectionContract(unittest.TestCase):
   self.assertEqual(guarded,declared)
 
  def test_annex_selector_uses_both_original_checkbox_captions_not_a_label_column(self):
-  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  source=wire_source('HtkkGtgtPeriodAndSheet.cs')
   expression=re.search(r'bool Annex12CaptionMatched\([^)]*\)\{return ([^;]+);\}',source).group(1).replace('&&',' and ')
   tree=ast.parse(expression,mode='eval')
   for node in ast.walk(tree):self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.And,ast.Compare,ast.Eq,ast.Name,ast.Load,ast.Constant))
@@ -52,7 +53,7 @@ class AnnexRowInspectionContract(unittest.TestCase):
    text=(ROOT/file).read_text()
    self.assertIsNone(re.search(r"-(?:c?eq|c?ne)\s+'[^']+'\s*,\s*'",text),file)
  def test_row_mode_has_bounded_real_f5_and_keeps_the_original_inspection_branch(self):
-  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  source=wire_source('HtkkGtgtPeriodAndSheet.cs')
   self.assertIn('mode=="gtgt-annex12-row-inspect"',source)
   self.assertIn('owner.Controls.Find("pnF5",true)',source)
   self.assertIn('SendKeys.SendWait("{F5}")',source)
@@ -67,14 +68,14 @@ class AnnexRowInspectionContract(unittest.TestCase):
   for key in ('annex12RowTabClickInvoked','annex12F5Visible','annex12F5Invoked','annex12RowBeforeMatched','annex12RowAfterMatched','annex12RowSttMatched','annex12RowLocksMatched'):
    self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
   for key,maximum in {'annex12RowBeforeRows':10000,'annex12RowAfterRows':10000,'annex12RowBeforeGroupRows':10000,'annex12RowAfterGroupRows':10000,'annex12RowAfterGroupId':10000,'annex12RowInsertActionCount':1}.items():
-   self.assertIn(key,keys);self.assertIn(key+'=0;',fixture);self.assertIn(key+'='+str(maximum)+';',reader)
+   self.assertIn(key,keys);self.assertIn(key+'=0;',fixture);self.assertEqual(field(key)['maximum'],maximum)
   line=next(line for line in probe.splitlines() if "if($GuiAutomation -in @('gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect')){$matched=" in line)
   for term in ('$lastGui.annex12F5Visible','$lastGui.annex12F5Invoked','$lastGui.annex12RowBeforeMatched','$lastGui.annex12RowAfterMatched','$lastGui.annex12RowAfterRows -eq 67','$lastGui.annex12RowAfterGroupRows -eq 2','$lastGui.annex12RowInsertActionCount -eq 1'):self.assertIn(term,line)
   self.assertIn("@('annex12RowInsertActionCount',2)",fixture);self.assertIn("$row.mode='gtgt-annex12-row-inspect'",fixture)
 
 class AnnexOriginalTabClickContract(unittest.TestCase):
  def test_mouse_click_uses_guarded_public_tab_geometry_and_precedes_original_f5_context(self):
-  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  source=wire_source('HtkkGtgtPeriodAndSheet.cs')
   block=source[source.index(' private void ClickOriginalAnnex12Tab('):source.index(' private void InspectOriginalAnnex12Row(')]
   for term in ('GetMethod("GetSheetTabRectangle",new Type[]{typeof(int)})','geometry.IsPublic','Get(grid,"ClientRectangle")','GetWindowThreadProcessId(grid.Handle','GetForegroundWindow()','grid.ContainsFocus','PostMessage(grid.Handle,0x0201','PostMessage(grid.Handle,0x0202','annex12RowTabClickInvoked=true;Application.DoEvents()'):
    self.assertIn(term,block)
@@ -94,7 +95,7 @@ class AnnexOriginalTabClickContract(unittest.TestCase):
 
 class AnnexFixedInputsInspectionContract(unittest.TestCase):
  def test_input_edits_are_fixed_fake_ui_inputs_without_hidden_or_derived_assignment(self):
-  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  source=wire_source('HtkkGtgtPeriodAndSheet.cs')
   block=source[source.index(' private void EditAnnex12FixedInput('):source.index(' private static bool Annex12NumberMatched(')]
   coordinates=re.search(r'int\[,] locations=new int\[,]\{([^;]+)\};',block).group(1)
   pairs=[tuple(map(int,pair)) for pair in re.findall(r'\{(\d+),(\d+)\}',coordinates)]
@@ -105,7 +106,7 @@ class AnnexFixedInputsInspectionContract(unittest.TestCase):
   for term in ('9999999997-001','NHA MAY GIA LAP - KHONG NOP','FindVendorCombo(editor,0)','SetPublic(vendor,"SelectedIndex",selected)','EscapeSendKeys(value)','SendKeys.SendWait(keys)','annex12InputActionCount++','index!=annex12InputActionCount','"Locked"','!editor.ContainsFocus'):
    self.assertIn(term,block)
  def test_input_observations_are_independent_reads_and_do_not_enable_export(self):
-  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  source=wire_source('HtkkGtgtPeriodAndSheet.cs')
   block=source[source.index(' private void InspectOriginalAnnex12Inputs('):source.index(' private static bool Annex12CaptionMatched')]
   for term in ('CellText(annex,43,32)=="01"','CellText(annex,44,32)=="02"','CellText(annex,row,33)!="101"','CellText(annex,row,42)!="10129087"','CellText(annex,row,35)!="10100"','CellText(annex,row,36)!="10129"','Annex12NumberMatched(annex,42,20,100)','stage="gtgt-annex12-input-inspected"'):
    self.assertIn(term,block)
@@ -115,15 +116,15 @@ class AnnexFixedInputsInspectionContract(unittest.TestCase):
   for term in ('annex12InputActionCount -eq 14','annex12InputReadOnlyIdentityMatched','annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):self.assertIn(term,line)
  def test_input_report_is_bounded_and_rejected_outside_its_own_mode(self):
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
-  self.assertIn('annex12InputActionCount=14;',reader)
+  self.assertEqual(field('annex12InputActionCount')['maximum'],14)
   for key in ('annex12InputReadOnlyIdentityMatched','annex12InputIdentityMatched','annex12InputTypesMatched','annex12InputGeographyMatched','annex12InputTaxAuthoritiesMatched','annex12InputPercentagesMatched','annex12InputZeroTaxMatched'):
    self.assertIn(key+'=$false;',fixture)
-  self.assertIn("$ExpectedMode -notin @('gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect')",reader)
+  self.assertEqual(field('annex12InputActionCount')['activeModes'],['gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect'])
   self.assertIn("@('annex12InputActionCount',15)",fixture)
   self.assertLess(fixture.index('$inputCase=[ordered]'),fixture.index('}finally{'))
 
  def test_source_locked_child_identity_is_observed_without_unlock_or_input(self):
-  source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
+  source=wire_source('HtkkGtgtPeriodAndSheet.cs')
   block=source[source.index(' private void InspectOriginalAnnex12Inputs('):source.index(' private static bool Annex12CaptionMatched')]
   self.assertIn('for(int row=43;row<=44;row++)foreach(int column in new int[]{4,9})',block)
   self.assertIn('!Convert.ToBoolean(Get(Cell(annex,row,column),"Locked"))||CellText(annex,row,column)!=String.Empty',block)

@@ -1,5 +1,6 @@
 """Offline mode, metadata and publication gates; not original Windows evidence."""
 import pathlib,re,unittest
+from native_contract_test_support import wire_source, field, registry, assert_compile_input
 ROOT=pathlib.Path(__file__).parent
 MODE='gtgt-amendment-inspect'
 FLAGS=('amendmentPriorSaveInvoked','amendmentPriorSaveSuccessAcknowledged','amendmentPriorDirtyCleared','amendmentPriorFileFresh','amendmentPriorFileScopeMatched','amendmentPriorXmlParsed','amendmentPriorMoneyZero','amendmentPriorSavedMoneyZero')
@@ -11,8 +12,8 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertIn(MODE,re.search(r'options: \[([^\n]+)\]',workflow).group(1))
   guard=re.search(r'if \(\$guiAutomation -notin @\(([^\n]+)\)',workflow).group(1);self.assertIn("'"+MODE+"'",guard)
   host=(ROOT/'New-HtkkX86ReferenceHost.ps1').read_text()
-  self.assertIn("$amendmentSource=Join-Path $directory 'HtkkGtgtAmendmentInspection.cs'",host)
-  for source in ('$amendmentSource','$amendmentOpenSource','$annexExportSource'):self.assertIn(source,host)
+  for name in ('HtkkGtgtAmendmentInspection.cs','HtkkGtgtAmendmentOpenInspection.cs','HtkkGtgtAnnex12ExportInspection.cs'):
+   assert_compile_input(self,MODE,name)
  def test_actual_success_condition_requires_all_saved_file_checks_and_closed_amendment_gate(self):
   text=(ROOT/'probe-htkk-windows.ps1').read_text()
   terminal=next(line for line in text.splitlines() if '$terminal=$nextGui.failureCategory' in line)
@@ -48,11 +49,11 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   keys=re.findall(r"'([^']+)'",re.search(r'\$keys=@\(([^\n]+)\)',text).group(1));self.assertEqual(len(keys),len(set(keys)))
   for key in (*FLAGS,'amendmentLifecycleVerified'):
    self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
-  self.assertIn('amendmentPriorFileBytes=262144;',text)
-  self.assertIn('or $value.amendmentLifecycleVerified)',text)
-  self.assertIn("$ExpectedMode -cne 'gtgt-amendment-inspect'",text)
+  self.assertEqual(field('amendmentPriorFileBytes')['maximum'],262144)
+  self.assertEqual(field('amendmentLifecycleVerified')['activeModes'],[])
+  self.assertEqual(field('amendmentPriorSaveInvoked')['activeModes'],[MODE,'gtgt-amendment-open-inspect'])
  def test_original_save_uses_button_and_read_only_bounded_internal_file_observation(self):
-  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  source=wire_source('HtkkGtgtAmendmentInspection.cs')
   # Loaded workbook sheets are not selected annexes: the real no-annex D1 has11.
   self.assertIn('gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0',source)
   self.assertNotIn('gtgtSheets!=1||',source)
@@ -64,13 +65,13 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertIn('amendmentLifecycleVerified',source);self.assertIn('gtgt-original-declaration-saved-inspected',source)
 
  def test_diagnostics_are_fixed_stages_without_native_message_or_path_content(self):
-  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  source=wire_source('HtkkGtgtAmendmentInspection.cs')
   for stage in ('save-modal-observed','save-modal-content-checking','save-modal-button-checking','save-modal-matched','prior-file-enumerating','prior-file-missing','prior-file-not-unique','prior-file-size-checking','prior-file-parsing','prior-money-checking'):
    self.assertIn('"gtgt-amendment-'+stage+'"',source)
   self.assertNotRegex(source,r'stage\s*=\s*(form|file|labels|amendmentPriorDirectory)\b')
 
  def test_prior_candidate_uses_exact_geographic_source_filename_for_this_fixed_case(self):
-  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  source=wire_source('HtkkGtgtAmendmentInspection.cs')
   actual=re.search(r'OriginalPriorFileName="([^"]+)"',source).group(1)
   # Source060000A3 maps NopTheoTinhCQT3 to CQTQL+authority;060000A2
   # monthlyD1 concatenates code, internal activity00, month+year and dotless XMLversion.
@@ -83,7 +84,7 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
    self.assertNotEqual(actual,wrong)
 
  def test_all_emitted_fixed_amendment_stages_are_accepted_by_actual_reader(self):
-  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  source=wire_source('HtkkGtgtAmendmentInspection.cs')
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
   allowed=set(re.findall(r"'([^']+)'",re.search(r'\$stages=@\(([^\n]+)\)',reader).group(1)))
   assignments=' '.join(re.findall(r'\bstage\s*=\s*([^;]+);',source))
@@ -92,7 +93,7 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertFalse(emitted-allowed,'Reader would hide diagnostic stage: '+str(emitted-allowed))
 
  def test_saved_filename_internal_activity_is_verified_independently_of_exported_accounting(self):
-  source=(ROOT/'HtkkGtgtAmendmentInspection.cs').read_text()
+  source=wire_source('HtkkGtgtAmendmentInspection.cs')
   self.assertIn('Get(priorPeriod,"TieuMucHachToanVal"),CultureInfo.InvariantCulture)!="00"',source)
   self.assertIn('Get(priorPeriod,"maCQTQuanLy"),CultureInfo.InvariantCulture)!="10129"',source)
   self.assertLess(source.index('object priorPeriod=Global("TTPeriodInfo")'),source.index('OriginalPriorCandidates().Length!=0'))

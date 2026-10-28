@@ -11,6 +11,17 @@ using System.Windows.Forms;
 using System.Xml;
 
 public sealed partial class HtkkGuiReferenceAutomation {
+ private void EditOriginalGtgtCase(Control spread,object sheet,int row,int column,string value,HtkkAutomationStage nextStage){
+  SetStage(nextStage);Record();Control editor=HtkkNativeUiHarness.BeginCellEdit(spread,sheet,row,column);
+  editorKind=editor is TextBoxBase?"text-box":"other-control";
+    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";
+    bool fixedInput=webInputVerified&&((CreditCt21Case()&&webCaseEditCount==0&&row==36&&column==11&&value=="7")||(!CreditCt21Case()&&row==(fivePercent?46:47)&&((webCaseEditCount==0&&column==9&&value==(webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000")&&webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026")||(webCaseEditCount==1&&column==11&&value=="7"&&(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")))));
+    if(!fixedInput||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
+    editor.Focus();if(!editor.ContainsFocus)throw new InvalidOperationException();
+    foreach(string keys in new string[]{"^a",value,"{TAB}"}){uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
+  HtkkNativeUiHarness.CommitCellEdit(spread);
+  decimal actual,expected;if(!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)throw new InvalidOperationException();webCaseEditCount++;Record();
+ }
  private bool periodDateMatched=false,periodFirstMatched=false,periodActivityMatched=false,periodGeographyMatched=false,periodNoAnnexMatched=false,periodConfirmInvoked=false;
  private bool gtgtPins=false,gtgtVersion=false,gtgtPeriod=false,gtgtSheet=false,gtgtName=false,gtgtDimensions=false,gtgtIdentity=false,gtgtCt21=false,gtgtSigner=false,gtgtZero=false;
  private int annexSelected=0,gtgtRows=0,gtgtColumns=0,gtgtSheets=0,gtgtEmptyMoney=0;
@@ -53,7 +64,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if((mode!="gtgt-annex12-row-inspect"&&mode!="gtgt-annex12-input-inspect"&&mode!="gtgt-annex12-numeric-inspect"&&mode!="gtgt-annex12-export-inspect")||annex12RowTabClickInvoked||annex12F5Invoked||!periodAnnex12Matched||annexSelected!=1||!annex12SourcePinsMatched||!annex12StructureMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||grid.FindForm()!=owner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||Convert.ToInt32(Get(grid,"ActiveSheetIndex"))!=1||OriginalMessageVisible())throw new InvalidOperationException();
   string name=Convert.ToString(Get(annex,"SheetName"),CultureInfo.InvariantCulture);if(name!="01_2"&&name!="01-2/GTGT")throw new InvalidOperationException();
   grid.Focus();uint pid,controlPid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);GetWindowThreadProcessId(grid.Handle,out controlPid);if(pid!=(uint)Process.GetCurrentProcess().Id||controlPid!=pid||!grid.ContainsFocus)throw new InvalidOperationException();
-  stage="gtgt-annex12-tab-clicking";Record();
+  SetStage(HtkkAutomationStage.GtgtAnnex12TabClicking);Record();
   MethodInfo geometry=grid.GetType().GetMethod("GetSheetTabRectangle",new Type[]{typeof(int)});if(geometry==null||!geometry.IsPublic)throw new InvalidOperationException();object tab=geometry.Invoke(grid,new object[]{1}),client=Get(grid,"ClientRectangle");if(tab==null||client==null||tab.GetType().FullName!="System.Drawing.Rectangle"||client.GetType().FullName!="System.Drawing.Rectangle")throw new InvalidOperationException();
   int left=Convert.ToInt32(Get(tab,"X")),top=Convert.ToInt32(Get(tab,"Y")),width=Convert.ToInt32(Get(tab,"Width")),height=Convert.ToInt32(Get(tab,"Height")),clientWidth=Convert.ToInt32(Get(client,"Width")),clientHeight=Convert.ToInt32(Get(client,"Height"));
   if(left<0||top<0||width<1||height<1||clientWidth<1||clientHeight<1||clientWidth>32767||clientHeight>32767||(long)left+width>clientWidth||(long)top+height>clientHeight)throw new InvalidOperationException();
@@ -78,7 +89,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=43||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=20||Get(grid,"ActiveSheet")!=annex||!owner.Enabled||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   Control[] f5=owner.Controls.Find("pnF5",true);annex12F5Visible=f5.Length==1&&f5[0].Visible&&f5[0].Enabled;if(!annex12F5Visible)throw new InvalidOperationException();
   uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus||Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible())throw new InvalidOperationException();
-  annex12F5Invoked=true;stage="gtgt-annex12-f5-invoking";Record();
+  annex12F5Invoked=true;SetStage(HtkkAutomationStage.GtgtAnnex12F5Invoking);Record();
   // REAL F5 is routed through original frmWinToKhai.ProcessCmdKey. Never call
   // InsertTableRowNoSView/InsertTable or directly write rows, values or totals.
   SendKeys.SendWait("{F5}");annex12RowInsertActionCount++;
@@ -96,7 +107,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<cells.GetLength(0);index++)if(Convert.ToBoolean(Get(Cell(annex,cells[index,0],cells[index,1]),"Locked"))!=locks[index])annex12RowLocksMatched=false;
   annex12RowAfterMatched=annex12RowAfterRows==67&&annex12RowAfterGroupRows==2&&annex12RowAfterGroupId==1&&annex12RowInsertActionCount==1&&annex12RowSttMatched&&annex12RowLocksMatched;
   if((mode=="gtgt-annex12-input-inspect"||mode=="gtgt-annex12-numeric-inspect"||mode=="gtgt-annex12-export-inspect")){if(!annex12RowAfterMatched)throw new InvalidOperationException();InspectOriginalAnnex12Inputs(grid,annex);return;}
-  finished=true;stage="gtgt-annex12-row-inspected";Record();
+  finished=true;SetStage(HtkkAutomationStage.GtgtAnnex12RowInspected);Record();
  }
 
  // Fixed synthetic input scenario, separate from the already proved row-only mode.
@@ -122,7 +133,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(index<0||index>=inputs.Length||index!=annex12InputActionCount)throw new InvalidOperationException();
   int row=locations[index,0],column=locations[index,1];string value=inputs[index];bool combo=column==2||column==12||column==16||column==17||column==18;
   grid.Focus();Annex12InputOwner(grid,annex);if(Convert.ToBoolean(Get(Cell(annex,row,column),"Locked")))throw new InvalidOperationException();
-  stage="gtgt-annex12-input-editing";Record();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
+  SetStage(HtkkAutomationStage.GtgtAnnex12InputEditing);Record();annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
   grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});
   Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
   if(combo){
@@ -159,7 +170,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<zeros.GetLength(0);index++)if(!Annex12NumberMatched(annex,zeros[index,0],zeros[index,1],0))annex12InputZeroTaxMatched=false;
   if(mode=="gtgt-annex12-export-inspect"){StartOriginalAnnex12Export(grid,annex);return;}
   if(mode=="gtgt-annex12-numeric-inspect"){InspectOriginalAnnex12Numeric(grid,annex);return;}
-  finished=true;stage="gtgt-annex12-input-inspected";Record();
+  finished=true;SetStage(HtkkAutomationStage.GtgtAnnex12InputInspected);Record();
  }
 
  private static bool Annex12CaptionMatched(string typeName,string uncheckedText,string checkedText){return typeName=="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&uncheckedText=="01-2/GTGT"&&checkedText=="01-2/GTGT";}
@@ -183,7 +194,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void InspectOriginalAnnex12(Control grid){
   if(!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||!Annex12InspectionMode()||!periodAnnex12Matched||!annex12SourcePinsMatched||annexSelected!=1||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
-  object business=Global("InstanceClass");if(business==null||business.GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(Get(grid,"ActiveSheet"),"AutoCalculation"))){stage="waiting-gtgt-sheet";Record();return;}
+  object business=Global("InstanceClass");if(business==null||business.GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(Get(grid,"ActiveSheet"),"AutoCalculation"))){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count!=11)throw new InvalidOperationException();
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();int found=-1;object annex=null;
   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(found>=0)throw new InvalidOperationException();found=index;annex=candidate;}}
@@ -196,15 +207,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<cells.GetLength(0);index++)if(Convert.ToBoolean(Get(Cell(annex,cells[index,0],cells[index,1]),"Locked"))!=locks[index])annex12LocksMatched=false;
   cells=new int[,]{{42,19},{42,20},{42,23},{43,19},{43,20},{43,23},{45,19},{45,23}};annex12NumericCount=0;annex12NumericEmptyMask=0;annex12NumericNonzeroMask=0;
   for(int index=0;index<cells.GetLength(0);index++){object raw=Get(Cell(annex,cells[index,0],cells[index,1]),"Value");decimal number;annex12NumericCount++;if(raw==null||raw==DBNull.Value||Convert.ToString(raw,CultureInfo.InvariantCulture)==String.Empty){annex12NumericEmptyMask|=1<<index;continue;}if(!Decimal.TryParse(Convert.ToString(raw,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number))throw new InvalidOperationException();if(number!=Decimal.Zero)annex12NumericNonzeroMask|=1<<index;}
-  stage="gtgt-annex12-sheet-metadata";Record();System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)throw new InvalidOperationException();object info=null;
+  SetStage(HtkkAutomationStage.GtgtAnnex12SheetMetadata);Record();System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)throw new InvalidOperationException();object info=null;
   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)throw new InvalidOperationException();info=candidate;}
-  if(info==null)throw new InvalidOperationException();stage="gtgt-annex12-table-metadata";Record();System.Collections.IList tables=Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count<1||tables.Count>512)throw new InvalidOperationException();annex12GroupCount=tables.Count;
+  if(info==null)throw new InvalidOperationException();SetStage(HtkkAutomationStage.GtgtAnnex12TableMetadata);Record();System.Collections.IList tables=Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count<1||tables.Count>512)throw new InvalidOperationException();annex12GroupCount=tables.Count;
   object first=tables[0];string id=Convert.ToString(Get(first,"TableID"),CultureInfo.InvariantCulture);if(id.Length<1||id.Length>5)throw new InvalidOperationException();foreach(char character in id)if(character<'0'||character>'9')throw new InvalidOperationException();if(!Int32.TryParse(id,NumberStyles.None,CultureInfo.InvariantCulture,out annex12FirstGroupId)||annex12FirstGroupId<1||annex12FirstGroupId>10000||id!=annex12FirstGroupId.ToString(CultureInfo.InvariantCulture))throw new InvalidOperationException();
-  stage="gtgt-annex12-row-metadata";Record();System.Collections.IList values=Get(first,"RowsValues") as System.Collections.IList;if(values==null||values.Count>10000)throw new InvalidOperationException();annex12FirstGroupRows=values.Count;
+  SetStage(HtkkAutomationStage.GtgtAnnex12RowMetadata);Record();System.Collections.IList values=Get(first,"RowsValues") as System.Collections.IList;if(values==null||values.Count>10000)throw new InvalidOperationException();annex12FirstGroupRows=values.Count;
   annex12GroupMetadataMatched=Selected(Get(info,"Active"))&&Convert.ToString(Get(first,"TableName"),CultureInfo.InvariantCulture)=="01_2_GTGT"&&Convert.ToString(Get(first,"TablePath"),CultureInfo.InvariantCulture)=="PLuc_01_2_GTGT/TenNhaMay";
   annex12StructureMatched=annex12SttMatched&&annex12LocksMatched&&annex12NumericCount==8&&annex12NumericNonzeroMask==0&&annex12GroupMetadataMatched;
   if((mode=="gtgt-annex12-row-inspect"||mode=="gtgt-annex12-input-inspect"||mode=="gtgt-annex12-numeric-inspect"||mode=="gtgt-annex12-export-inspect")){InspectOriginalAnnex12Row(grid,annex);return;}
-  finished=true;stage="gtgt-annex12-inspected";Record();
+  finished=true;SetStage(HtkkAutomationStage.GtgtAnnex12Inspected);Record();
  }
 
  private bool QuarterCase(){return webCaseId=="01GTGT-zero-Q4-2026";}
@@ -227,7 +238,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void ActivateOriginalCt21(Control grid,object sheet){
   if(!NoActivityCase()||noActivityCheckboxActivated||!webInputVerified||!gtgtCt21||Selected(Get(Cell(sheet,35,8),"Value"))||Convert.ToBoolean(Get(Cell(sheet,35,8),"Locked"))||!grid.Visible||!grid.Enabled||grid.FindForm()==null||grid.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   object type=Get(Cell(sheet,35,8),"CellType");if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")throw new InvalidOperationException();
-  noActivityCheckboxActivated=true;stage="gtgt-noactivity-checkbox-activating";Record();
+  noActivityCheckboxActivated=true;SetStage(HtkkAutomationStage.GtgtNoactivityCheckboxActivating);Record();
   grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{35,8});
   uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
   Exception modalFailure=null;Stopwatch clock=Stopwatch.StartNew();bool selected=!CancelCt21Case();
@@ -248,7 +259,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object type=Get(Cell(sheet,35,8),"CellType");if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(Cell(sheet,35,8),"Locked")))throw new InvalidOperationException();
   grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{35,8});
   uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
-  stage="gtgt-noactivity-checkbox-unchecking";Record();SendKeys.SendWait(" ");
+  SetStage(HtkkAutomationStage.GtgtNoactivityCheckboxUnchecking);Record();SendKeys.SendWait(" ");
   Stopwatch clock=Stopwatch.StartNew();while(!InspectCt21State(sheet,false,false)&&clock.Elapsed.TotalSeconds<2){if(OriginalMessageVisible())throw new InvalidOperationException();Application.DoEvents();System.Threading.Thread.Sleep(10);}
   if(!InspectCt21State(sheet,false,false)||OriginalMessageVisible())throw new InvalidOperationException();
   gtgtCt21UncheckMatched=true;webCaseEditCount++;webCaseEditClock=Stopwatch.StartNew();Record();
@@ -263,7 +274,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int messages=0,buttons=0;EnumChildWindows(dialog,delegate(IntPtr child,IntPtr unused){if(IsWindowVisible(child)){if(NativeText(child,true)=="Static"&&NativeText(child,false)==expected)messages++;if(NativeText(child,true)=="Button")buttons++;}return true;},IntPtr.Zero);
   IntPtr yes=GetDlgItem(dialog,6),no=GetDlgItem(dialog,7);
   if(messages!=1||buttons!=2||yes==IntPtr.Zero||no==IntPtr.Zero||NativeText(yes,true)!="Button"||NativeText(no,true)!="Button"||!IsWindowVisible(yes)||!IsWindowEnabled(yes)||!IsWindowVisible(no)||!IsWindowEnabled(no))throw new InvalidOperationException();
-  gtgtCt21ConfirmationMatched=true;stage="gtgt-noactivity-confirming";Record();if(!PostMessage(CancelCt21Case()?no:yes,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
+  gtgtCt21ConfirmationMatched=true;SetStage(HtkkAutomationStage.GtgtNoactivityConfirming);Record();if(!PostMessage(CancelCt21Case()?no:yes,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();
  }
  private string SheetJson(){
   string q=((char)34).ToString();string[] names=new string[]{"periodYearMonthMatched","periodFirstDeclarationMatched","periodActivityMatched","periodGeographyMatched","periodNoAnnexMatched","periodConfirmInvoked","gtgtWorkbookPinsVerified","gtgtMenuVersionMatched","gtgtPeriodModelMatched","gtgtSheetObserved","gtgtSheetNameMatched","gtgtDimensionsMatched","gtgtIdentityMatched","gtgtCt21Ready","gtgtSignatureReady","gtgtMonetaryZero"};
@@ -318,7 +329,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private static object Global(string name){Type settings=OriginalAssembly().GetType("HTKK.WinSettings",true);FieldInfo field=settings.GetField(name,BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static);if(field==null)throw new InvalidOperationException();return field.GetValue(null);}
  private void ConfigureOriginalGtgtPeriod(Control period){
-  stage="gtgt-period-configuring";Record();
+  SetStage(HtkkAutomationStage.GtgtPeriodConfiguring);Record();
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!="D1")throw new InvalidOperationException();
   if(mode=="gtgt-web-import-inspect"&&!webInputVerified)VerifyOwnWebInput();
   SetCheck(Named(period,QuarterCase()?"chkTKQuy":"chkTkhaiThang"),true);SetCheck(Named(period,"OptChinhthuc"),true);
@@ -326,12 +337,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   SetText(period,"mskYear","2026");if(QuarterCase()){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact("4");if(index<0)throw new InvalidOperationException();quarter.SelectedIndex=index;if(Convert.ToString(quarter.SelectedItem,CultureInfo.InvariantCulture)!="4")throw new InvalidOperationException();}else SetText(period,"mskMonth","10");
   periodDateMatched=Named(period,"mskYear").Text=="2026"&&(QuarterCase()?CheckValue(Named(period,"chkTKQuy"))&&!CheckValue(ReadableNamed(period,"chkTkhaiThang")):Named(period,"mskMonth").Text=="10"&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy")));
   periodDescriptions.Clear();periodControlCount=0;int currentControlCount=0;DescribePeriod(period,ref currentControlCount);
-  stage="gtgt-period-province-selecting";Record();bool provinceMatched=SelectGeography(period,"cboTinh","101","Thành phố Hà Nội","MaTinh","TenTinh");
-  stage="gtgt-period-ward-selecting";Record();bool wardMatched=SelectGeography(period,"cboXa","10129087","Phường Sơn Tây","MaXa","TenXa");
-  stage="gtgt-period-taxhead-selecting";Record();bool taxHeadMatched=SelectGeography(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội","maCQTCapCuc","tenCQTCapCuc");
-  stage="gtgt-period-taxlocal-selecting";Record();bool taxLocalMatched=SelectGeography(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội","maCQTQuanLy","tenCQTQuanLy");
+  SetStage(HtkkAutomationStage.GtgtPeriodProvinceSelecting);Record();bool provinceMatched=SelectGeography(period,"cboTinh","101","Thành phố Hà Nội","MaTinh","TenTinh");
+  SetStage(HtkkAutomationStage.GtgtPeriodWardSelecting);Record();bool wardMatched=SelectGeography(period,"cboXa","10129087","Phường Sơn Tây","MaXa","TenXa");
+  SetStage(HtkkAutomationStage.GtgtPeriodTaxheadSelecting);Record();bool taxHeadMatched=SelectGeography(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội","maCQTCapCuc","tenCQTCapCuc");
+  SetStage(HtkkAutomationStage.GtgtPeriodTaxlocalSelecting);Record();bool taxLocalMatched=SelectGeography(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội","maCQTQuanLy","tenCQTQuanLy");
   periodGeographyMatched=provinceMatched&&wardMatched&&taxHeadMatched&&taxLocalMatched;
-  stage="gtgt-period-activity-selecting";Record();periodActivityMatched=SelectSourceActivity(period);
+  SetStage(HtkkAutomationStage.GtgtPeriodActivitySelecting);Record();periodActivityMatched=SelectSourceActivity(period);
   // Exercise the ORIGINAL select-all/clear-all control, preserving its locked-row rules.
   Control all=ReadableNamed(period,"chkChonPhuLucKeKhaiAll");if(all.Enabled){SetCheck(all,true);SetCheck(all,false);}
   Control annex=ReadableNamed(period,"axfpsPhuLuc");if(!IsSpread(annex))throw new InvalidOperationException();object annexSheet=Get(annex,"ActiveSheet");int annexRows=Convert.ToInt32(Get(annexSheet,"RowCount"));if(annexRows<0||annexRows>512)throw new InvalidOperationException();annexSelected=0;
@@ -339,16 +350,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
   periodNoAnnexMatched=annexSelected==0&&!CheckValue(all);
   if(Annex12InspectionMode())SelectOriginalAnnex12(annex,annexSheet);
   if(AmendmentReopening()){ConfigureOriginalAmendmentOpen(period);return;}
-  if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(Annex12InspectionMode()?periodAnnex12Matched:periodNoAnnexMatched)){stage="gtgt-period-inputs-not-matched";finished=true;Record();return;}
+  if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(Annex12InspectionMode()?periodAnnex12Matched:periodNoAnnexMatched)){SetStage(HtkkAutomationStage.GtgtPeriodInputsNotMatched);finished=true;Record();return;}
   Button confirm=Named(period,"btnDongY") as Button;if(confirm==null||confirm.Text.Replace("&",String.Empty).Trim()!="Đồng ý")throw new InvalidOperationException();
-  navigationPhase="waiting-gtgt-sheet";stage="gtgt-period-confirm-invoking";periodConfirmInvoked=true;Record();
+  navigationPhase="waiting-gtgt-sheet";SetStage(HtkkAutomationStage.GtgtPeriodConfirmInvoking);periodConfirmInvoked=true;Record();
   // Original OpenToKhai uses ShowDialog. This timer observes its real sheet inside
   // that nested ORIGINAL message loop, without closing or bypassing any validator.
   using(System.Windows.Forms.Timer watcher=new System.Windows.Forms.Timer()){
    watcher.Interval=100;watcher.Tick+=delegate(object sender,EventArgs args){try{InspectOriginalGtgtSheet();if(finished)watcher.Stop();}catch(Exception error){watcher.Stop();Failure(error);}};
    watcher.Start();try{confirm.PerformClick();}finally{watcher.Stop();}
   }
-  if(!finished){stage="waiting-gtgt-sheet";Record();}
+  if(!finished){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();}
  }
  private static void FindWorksheets(Control root,List<Form> forms,ref int visited){
   if(++visited>512)return;Form form=root as Form;if(form!=null&&form.Visible&&!form.IsDisposed&&form.GetType().FullName=="HTKK.frmWinToKhai"&&!forms.Contains(form))forms.Add(form);
@@ -358,10 +369,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void InspectOriginalGtgtSheetCore(){
   if(finished||exportStarted)return;
   List<Form> forms=new List<Form>();int visited=0;foreach(Form top in Application.OpenForms){if(visited>=512)break;if(top.Visible&&!top.IsDisposed)FindWorksheets(top,forms,ref visited);}
-  if(forms.Count!=1){stage="waiting-gtgt-sheet";Record();return;}
-  List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){stage="waiting-gtgt-sheet";Record();return;}
+  if(forms.Count!=1){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
+  List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   Control grid=grids[0];object sheet=Get(grid,"ActiveSheet");gtgtRows=Convert.ToInt32(Get(sheet,"RowCount"));gtgtColumns=Convert.ToInt32(Get(sheet,"ColumnCount"));gtgtSheets=Convert.ToInt32(Get(Get(grid,"Sheets"),"Count"));
-  if(gtgtRows<67||gtgtColumns<15){stage="waiting-gtgt-sheet";Record();return;}
+  if(gtgtRows<67||gtgtColumns<15){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   gtgtSheet=true;gtgtDimensions=gtgtRows==72&&gtgtColumns==24;string sheetName=Convert.ToString(Get(sheet,"SheetName"),CultureInfo.InvariantCulture);gtgtName=sheetName=="01"||sheetName=="Tờ khai";
   string root=Path.GetDirectoryName(project);
   gtgtPins=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_283.xml"))=="40f5d6f711f7acb69dcc4098e3e3bb0b1849224d1c185902a50b8cae6fc50aae"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml"))=="7ba334067c52ea22cd744dcf2c0ff444190d6661f6b3e9b3ea08e5ead574830c";
@@ -373,26 +384,26 @@ public sealed partial class HtkkGuiReferenceAutomation {
   bool matched=gtgtPins&&gtgtVersion&&gtgtPeriod&&gtgtName&&gtgtDimensions&&gtgtIdentity&&gtgtCt21;
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
-  if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}
+  if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   if(matched&&AmendmentInspectionMode()){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12InspectionMode()){InspectOriginalAnnex12(grid);return;}
   if(matched&&mode=="gtgt-web-import-inspect"){
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
-   if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){stage="waiting-gtgt-sheet";Record();return;}
+   if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
    if(!webInputVerified)VerifyOwnWebInput();
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
    if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!webCaseEdited){
     if(!gtgtZero||gtgtEmptyMoney!=0||gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,caseRow,9),"Locked")))throw new InvalidOperationException();
-    webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();if(CreditCt21Case()){Edit(grid,sheet,36,11,"7",false,"gtgt-case-editing",false);return;}Edit(grid,sheet,caseRow,9,webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",false,"gtgt-case-editing",false);return;
+    webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();if(CreditCt21Case()){EditOriginalGtgtCase(grid,sheet,36,11,"7",HtkkAutomationStage.GtgtCaseEditing);return;}EditOriginalGtgtCase(grid,sheet,caseRow,9,webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",HtkkAutomationStage.GtgtCaseEditing);return;
    }
    if((webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")&&webCaseEditCount==1){
-    decimal suggested;if(Convert.ToBoolean(Get(Cell(sheet,caseRow,11),"Locked"))||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,caseRow,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out suggested)||suggested!=(fivePercent?50000:100000)){if(webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
-    webCaseEditClock=Stopwatch.StartNew();Edit(grid,sheet,caseRow,11,"7",false,"gtgt-case-editing",false);return;
+    decimal suggested;if(Convert.ToBoolean(Get(Cell(sheet,caseRow,11),"Locked"))||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,caseRow,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out suggested)||suggested!=(fivePercent?50000:100000)){if(webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}throw new InvalidOperationException();}
+    webCaseEditClock=Stopwatch.StartNew();EditOriginalGtgtCase(grid,sheet,caseRow,11,"7",HtkkAutomationStage.GtgtCaseEditing);return;
    }
    if(NoActivityCase()&&!noActivityCheckboxActivated){
     if(SaleBeforeCt21Case()){
-     decimal baseValue,taxValue;if(webCaseEditCount!=1||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,9),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out baseValue)||baseValue!=1000000||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out taxValue)||taxValue!=100000){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
+     decimal baseValue,taxValue;if(webCaseEditCount!=1||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,9),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out baseValue)||baseValue!=1000000||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,47,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out taxValue)||taxValue!=100000){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}throw new InvalidOperationException();}
     }else if(CreditCt21Case()){decimal credit;if(webCaseEditCount!=1||!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,36,11),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out credit)||credit!=7)throw new InvalidOperationException();}
     else if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0)throw new InvalidOperationException();
     ActivateOriginalCt21(grid,sheet);return;
@@ -400,10 +411,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(UncheckCt21Case()&&!gtgtCt21UncheckMatched){UncheckOriginalCt21(grid,sheet);return;}
    if(!InspectCt21Case(sheet))throw new InvalidOperationException();if(NoActivityCase())gtgtCt21BeforeExportMatched=true;
    InspectCaseMoney(sheet);
-   if(!gtgtCaseMoneyMatched){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){stage="waiting-gtgt-sheet";Record();return;}throw new InvalidOperationException();}
+   if(!gtgtCaseMoneyMatched){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}throw new InvalidOperationException();}
   }else InspectCaseMoney(sheet);
   if(matched&&(mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")){StartOriginalGtgtExport(forms[0]);return;}
-  finished=true;stage=matched?"gtgt-sheet-inspected":"gtgt-sheet-contract-not-matched";Record();
+  finished=true;SetStage(matched?HtkkAutomationStage.GtgtSheetInspected:HtkkAutomationStage.GtgtSheetContractNotMatched);Record();
  }
  private void InspectMoneyZero(object sheet){
   int[,] coordinates=new int[,] {{36,11},{39,9},{39,11},{40,9},{40,11},{41,11},{43,9},{44,9},{44,11},{45,9},{46,9},{46,11},{47,9},{47,11},{48,9},{49,9},{49,11},{50,11},{52,11},{53,11},{54,11},{56,11},{57,11},{58,11},{59,11},{60,11},{61,11}};gtgtZero=true;gtgtEmptyMoney=0;
