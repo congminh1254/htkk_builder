@@ -22,6 +22,18 @@ class UpdateTests(unittest.TestCase):
    raw=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(raw)).encode()+b'\0'+raw).hexdigest()}
   return {'sha':'c'*40}
  def publish(self,fetch=None):self.calls=[];return p.publish_bundle(self.bundle,'a'*40,'b'*40,'123',1,'source-fixture','status-fixture',fetch=fetch or self.api)
+ def test_resolve_reads_github_line_wrapped_base64_without_forwarding_credentials(self):
+  r=dict(self.good,checkedAt=u.now());packet={'format':'htkk-prepared-source-observation-v1','sourceSha':'a'*40,'origin':'authorized-cloud-source-observation','observerSha256':u.digest((ROOT/'source-watch.py').read_text(encoding='utf-8').replace('\r\n','\n').encode()),'report':r}
+  encoded=base64.encodebytes(json.dumps(packet).encode()).decode();self.assertIn('\n',encoded)
+  def api(path,token):
+   if path=='':return {'private':True,'full_name':u.REPO}
+   if path=='/branches/main':return {'commit':{'sha':'a'*40}}
+   if path.startswith('/contents/prepared-source.json?ref='):return {'content':encoded}
+   raise AssertionError('Unexpected API')
+  self.report.unlink()
+  with patch.dict(os.environ,{'SOURCE_READ_TOKEN':'test-only-source','PREPARED_OBSERVATION_COMMIT':'c'*40}),patch.object(u.watch,'api',api):u.resolve()
+  self.assertEqual(u.load(self.report),r);self.assertIn('source_sha='+('a'*40),(self.base/'outputs').read_text())
+
  def test_unchanged_scheduled_watch_does_not_download_or_claim_verification(self):
   b=self.sealed();self.assertIs(b['ready'],False);self.assertEqual(len(b['files']),4);self.assertEqual(u.load(self.bundle/'proposal.json')['trustStatus'],'not-run');self.assertIn('credentials_safe=true',(self.base/'outputs').read_text())
  def test_real_sealed_bundle_publishes_only_private_orphan_and_fixed_status(self):

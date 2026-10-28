@@ -50,14 +50,14 @@ def resolve():
  work,report,bundle=getpaths();token=os.environ['SOURCE_READ_TOKEN'];source=source_read(token,os.environ.get('REQUESTED_SOURCE_SHA',''))
  prepared=os.environ.get('PREPARED_OBSERVATION_COMMIT','')
  if prepared:
-  gitsha(prepared);entry=watch.api('/contents/prepared-source.json?ref='+prepared,token);raw=base64.b64decode(entry['content'],validate=True);require(len(raw)<=64000)
-  p=json.loads(raw);exact(p,('format','sourceSha','origin','observerSha256','report'));require(p['format']=='htkk-prepared-source-observation-v1'and p['sourceSha']==source and p['origin']=='authorized-cloud-source-observation'and p['observerSha256']==digest((ROOT/'source-watch.py').read_text().replace('\r\n','\n').encode()))
+  gitsha(prepared);entry=watch.api('/contents/prepared-source.json?ref='+prepared,token);encoded=entry['content'];require(isinstance(encoded,str)and len(encoded)<=90000 and re.fullmatch(r'[A-Za-z0-9+/=\r\n]*',encoded)is not None,'PREPARED_ENCODING');raw=base64.b64decode(encoded.replace('\r','').replace('\n',''),validate=True);require(len(raw)<=64000)
+  p=json.loads(raw);exact(p,('format','sourceSha','origin','observerSha256','report'));require(p['format']=='htkk-prepared-source-observation-v1'and p['sourceSha']==source and p['origin']=='authorized-cloud-source-observation'and p['observerSha256']==digest((ROOT/'source-watch.py').read_text(encoding='utf-8').replace('\r\n','\n').encode()))
   watch.validate_report(p['report']);age=datetime.datetime.now(datetime.timezone.utc)-datetime.datetime.fromisoformat(p['report']['checkedAt']);require(0<=age.total_seconds()<=86400,'STALE_OBSERVATION');write(report,p['report'])
  output('source_sha',source);print('Fixed private source identity resolved; no source checkout.')
 def prepare_observation(filename,token):
  # Caller creates this report in a separate credential-free observer process.
  report=watch.validate_report(load(filename,64000));require(report['result']in('unchanged','review-required'))
- source=source_read(token);packet={'format':'htkk-prepared-source-observation-v1','sourceSha':source,'origin':'authorized-cloud-source-observation','observerSha256':digest((ROOT/'source-watch.py').read_text().replace('\r\n','\n').encode()),'report':report}
+ source=source_read(token);packet={'format':'htkk-prepared-source-observation-v1','sourceSha':source,'origin':'authorized-cloud-source-observation','observerSha256':digest((ROOT/'source-watch.py').read_text(encoding='utf-8').replace('\r\n','\n').encode()),'report':report}
  body=(json.dumps(packet,ensure_ascii=False,separators=(',',':'))+'\n').encode();blob=gitsha(watch.api('/git/blobs',token,{'encoding':'base64','content':base64.b64encode(body).decode()})['sha']);tree=gitsha(watch.api('/git/trees',token,{'tree':[{'path':'prepared-source.json','mode':'100644','type':'blob','sha':blob}]})['sha']);commit=gitsha(watch.api('/git/commits',token,{'message':'Private prepared public-source observation; no activation','parents':[],'tree':tree})['sha']);require(source_read(token)==source,'STALE_SOURCE');return commit
 STAGE_KEYS=('format','checkedAt','scope','observationSha256','preparedObservationCommit','verifyCurrent','observedVersion','reference','result','failureCode','transportFailures','official','mirror','baselineArchiveMatched','trustRequested','ready','automaticActivation')
 def validate_stage(s):
@@ -176,4 +176,6 @@ def main():
  return 0
 if __name__=='__main__':
  try:raise SystemExit(main())
+ except urllib.error.HTTPError as error:
+  print(json.dumps({'result':'failed','failureCode':'PRIVATE_API_AUTH'if error.code in(401,403)else'PRIVATE_API_HTTP','httpStatus':error.code,'ready':False}));raise SystemExit(1)
  except Exception:raise SystemExit('Source update failed; no raw data, headers or credentials published.')

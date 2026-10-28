@@ -9,7 +9,7 @@ $report = [ordered]@{
   runtimeHost = $RuntimeHost; customReferenceHost = $RuntimeHost -eq 'clr2-x86-reference'
   referenceHostPreparation = $null; referenceHostResult = $null; originalSourcesUnmodified = $null
   childEnvironmentPolicy = 'not-launched'; hostOutboundBlocked = $false; originalOutboundBlocked = $false
-  officialCabMatchesMirror = $false; msiAuthenticodeValid = $false
+  officialCabMatchesMirror = $false; mirrorUsed = $false; officialDistributionFilesVerified = $false; msiAuthenticodeValid = $false
   netFx35Present = $false; installExitCode = $null; installerProcess = $null
   processStarted = $false; processAliveAfterWait = $false; windowObserved = $false
   runnerSessionId = $null; appSessionId = $null; userInteractive = [Environment]::UserInteractive
@@ -618,25 +618,23 @@ try {
   if($GuiAutomation -ne 'none' -and ($RuntimeHost -ne 'clr2-x86-reference' -or -not $SyntheticLogin -or -not $InstallAndProbe)) { throw 'GUI_REFERENCE_AUTOMATION_MODE_INVALID' }
   New-Item -ItemType Directory -Path $work | Out-Null
   $report.stage = 'download'
-  $rar = Join-Path $work 'official.rar'; $zip = Join-Path $work 'mirror.zip'
+  $rar = Join-Path $work 'official.rar'
   Get-PinnedFile 'https://www.fshare.vn/file/TPW3FMLVAJL1' $rar '5d52c06595e933a3b246480785d5d4010fad669baed6fb38311f8a09b20e1e95'
-  Get-PinnedFile 'https://fa.getpedia.net/data?q===QMzEDM2gjM3MDM0UzN4ITOzYDfxMTMxEDfwlmeuETL40SNts0SUh0L3EzLwEzL2IDMy8SZslmZvEGdhR2L' $zip '3f50ede214d802984549aa3841c3de6614fca90021ef5029a9c1ac1999776edb'
   $report.sourceHashesVerified = $true
   $report.stage = 'extract-data'
   $seven = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
   if (-not (Test-Path -LiteralPath $seven)) { throw 'TRUSTED_RUNNER_7ZIP_MISSING' }
-  # A pinned ZIP is expanded as data. The RAR's uncompressed cabinet is the only selected member.
-  $mirror = Join-Path $work 'mirror'; $official = Join-Path $work 'official'
-  Expand-Archive -LiteralPath $zip -DestinationPath $mirror
-  & $seven x '-y' "-o$official" $rar 'HTKK_5.8.1_DLL_signed/Data1.cab' *> (Join-Path $work 'extract-private.log')
-  if ($LASTEXITCODE -ne 0) { throw 'OFFICIAL_CAB_EXTRACTION_FAILED' }
-  $source = Join-Path $mirror 'HTKK_5.8.1_DLL_signed'
-  $cab = Join-Path $source 'Data1.cab'; $officialCab = Join-Path $official 'HTKK_5.8.1_DLL_signed\Data1.cab'
+  # The pinned official distribution is self-contained; no mirror fallback.
+  # Extract data only. The original MSI signature is checked before installation.
+  $official = Join-Path $work 'official'
+  & $seven x '-y' "-o$official" $rar *> (Join-Path $work 'extract-private.log')
+  if ($LASTEXITCODE -ne 0) { throw 'OFFICIAL_DISTRIBUTION_EXTRACTION_FAILED' }
+  $source = Join-Path $official 'HTKK_5.8.1_DLL_signed'
+  $cab = Join-Path $source 'Data1.cab'; $msi = Join-Path $source 'HTKK.msi'
   Assert-Hash $cab '00669905937fb29e10cb53209ece5e8a9f8097970e4cb40bb28f89baa9fc3744'
-  Assert-Hash $officialCab '00669905937fb29e10cb53209ece5e8a9f8097970e4cb40bb28f89baa9fc3744'
-  $report.officialCabMatchesMirror = $true
-  $msi = Join-Path $source 'HTKK.msi'
   Assert-Hash $msi '7c1da251ee2acd126a2363e4457502b8ad6fc0792d78dc0a92b153701dc29080'
+  Assert-Hash (Join-Path $source 'setup.exe') '19394e89351dc213306864168e16808d48401597f56d5fe4c977f9a5833d2936'
+  $report.officialDistributionFilesVerified = $true
   $report.stage = 'verify-msi'
   $signature = Get-AuthenticodeSignature -LiteralPath $msi
   if ($signature.Status -ne 'Valid' -or $null -eq $signature.SignerCertificate -or $null -eq $signature.TimeStamperCertificate) { throw 'MSI_AUTHENTICODE_NOT_VALID' }
@@ -653,7 +651,7 @@ try {
   if ($null -eq $framework -or $framework.Install -ne 1 -or $feature.State -ne 'Enabled') { throw 'NETFX35_MISSING_NO_BOOTSTRAPPER_EXECUTED' }
   $report.netFx35Present = $true
   if (-not $InstallAndProbe) { $report.stage = 'verified-install-not-requested'; return }
-  # Execute only the pinned, publisher-verified MSI after official-distribution CAB equivalence.
+  # Execute only the pinned, publisher-verified MSI from the pinned official distribution.
   $report.stage = 'install'
   # An interrupted installer can leave service-mediated work; root exit alone is insufficient.
   $installerCredentialsSafe=$false
