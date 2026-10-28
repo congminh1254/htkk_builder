@@ -9,9 +9,12 @@ function Get-HtkkDownloadFailure {
  foreach($errorItem in $chain){
   if(($errorItem -is [Net.Http.HttpRequestException] -and $errorItem.HttpRequestError -eq [Net.Http.HttpRequestError]::SecureConnectionError) -or $errorItem -is [Security.Authentication.AuthenticationException] -or ($errorItem -is [Net.WebException] -and $errorItem.Status -in @([Net.WebExceptionStatus]::TrustFailure,[Net.WebExceptionStatus]::SecureChannelFailure))){$safe.category='tls';return $safe}
  }
+ # Utility is not necessarily loaded in a fresh pwsh process. Optional type lookup
+ # must not make classification of unrelated timeout/TLS/tool failures throw.
+ $httpResponseExceptionType='Microsoft.PowerShell.Commands.HttpResponseException' -as [type]
  foreach($errorItem in $chain){
   $status=$null
-  if($errorItem -is [Microsoft.PowerShell.Commands.HttpResponseException] -and $null -ne $errorItem.Response){$status=[int]$errorItem.Response.StatusCode}
+  if($null -ne $httpResponseExceptionType -and $httpResponseExceptionType.IsInstanceOfType($errorItem) -and $null -ne $errorItem.Response){$status=[int]$errorItem.Response.StatusCode}
   elseif($errorItem -is [Net.Http.HttpRequestException] -and $null -ne $errorItem.StatusCode){$status=[int]$errorItem.StatusCode}
   elseif($errorItem -is [Net.WebException] -and $errorItem.Response -is [Net.HttpWebResponse]){$status=[int]$errorItem.Response.StatusCode}
   if($null -ne $status -and $status -ge 100 -and $status -le 599){$safe.category='http';$safe.httpStatus=$status;$safe.retryable=$status -in @(408,429,500,502,503,504);return $safe}

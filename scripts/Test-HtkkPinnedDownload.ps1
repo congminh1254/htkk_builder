@@ -1,5 +1,6 @@
 # Deterministic typed exceptions/downloaders only; no external network or source execution.
 $ErrorActionPreference='Stop'
+& (Join-Path $PSScriptRoot 'Test-HtkkPinnedDownloadColdProcess.ps1')
 . (Join-Path $PSScriptRoot 'Invoke-HtkkPinnedDownload.ps1')
 $script:checks=0
 $secret='test-only-private-message-never-emit'
