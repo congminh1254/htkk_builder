@@ -1,12 +1,20 @@
-name: Theo dõi metadata HTKK chính thức
-run-name: HTKK official source watch
+name: Theo dõi và xác thực candidate HTKK chính thức
+run-name: HTKK official source update
 on:
   schedule:
     - cron: '0 2 * * 1'
   workflow_dispatch:
     inputs:
       source_sha:
-        description: Full private main SHA supplied by trusted dispatcher (optional for manual watch)
+        description: Full private main SHA (empty resolves current main)
+        required: false
+        default: ''
+      verify_current:
+        description: Verify pinned current archive too; unchanged scheduled checks remain metadata-only
+        type: boolean
+        default: false
+      observation_commit:
+        description: Optional immutable private prepared cloud observation; recorded separately from runner observation
         required: false
         default: ''
 permissions:
@@ -17,27 +25,62 @@ concurrency:
 jobs:
   watch:
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    runs-on: windows-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout trusted public watcher only
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           persist-credentials: false
-      - name: Test source watch boundaries without network
-        run: python3 -m unittest discover -s scripts -p 'test_source_watch.py'
-      - name: Observe public release HTML (direct HTTPS first)
+      - name: Test source update boundaries without network
+        run: python -m unittest discover -s scripts -p test_source*.py
+      - name: Resolve fixed private source identity before any candidate process exists
+        id: source
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          REQUESTED_SOURCE_SHA: ${{ inputs.source_sha }}
+          PREPARED_OBSERVATION_COMMIT: ${{ inputs.observation_commit }}
+        run: python scripts/source-update.py resolve
+      - name: Observe official release page without source credentials
+        if: inputs.observation_commit == ''
         env:
           AGENT_AUTH_TOKEN: ${{ secrets.AGENT_AUTH_TOKEN }}
-        run: python3 scripts/source-watch.py observe
-      - name: Publish bounded report and status to fixed private repository
+        run: python scripts/source-watch.py observe
+      - name: Download inert candidate and fixed baseline mirror when appropriate
+        id: candidate
+        env:
+          AGENT_AUTH_TOKEN: ${{ secrets.AGENT_AUTH_TOKEN }}
+          VERIFY_CURRENT: ${{ inputs.verify_current && 'true' || 'false' }}
+          PREPARED_OBSERVATION_COMMIT: ${{ inputs.observation_commit }}
+        run: python scripts/source-update.py stage
+      - name: Verify signatures, revocation and MSI CAB payload without execution
+        if: steps.candidate.outputs.trust_requested == 'true'
+        shell: pwsh
+        run: ./scripts/Test-HtkkSourceCandidateTrust.ps1 -CandidateDirectory (Join-Path $env:RUNNER_TEMP 'htkk-source-candidate') -ResultPath (Join-Path $env:RUNNER_TEMP 'htkk-source-candidate/trust.json')
+      - name: Validate stopped worker and seal private not-ready proposal
+        id: seal
+        env:
+          SOURCE_SHA: ${{ steps.source.outputs.source_sha }}
+        run: python scripts/source-update.py seal
+      - name: Publish immutable private proposal only after verified cleanup
+        if: steps.seal.outputs.credentials_safe == 'true'
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
-          REQUESTED_SOURCE_SHA: ${{ inputs.source_sha }}
-        run: python3 scripts/source-watch.py publish
-      - name: Report fixed outcome (no installer activation)
-        run: python3 scripts/source-watch.py outcome
-      - name: Remove local public HTML metadata report
+        run: python scripts/source-update.py publish
+      - name: Report bounded outcome without activation
+        run: python scripts/source-update.py outcome
+      - name: Remove inert local candidates only after confirmed worker stop
         if: always()
-        run: rm -f "$RUNNER_TEMP/htkk-official-source-watch.json"
+        shell: pwsh
+        run: |
+          $candidate=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
+          $trust=Join-Path $candidate 'trust.json'
+          if(Test-Path -LiteralPath $trust){
+            $r=Get-Content -LiteralPath $trust -Raw | ConvertFrom-Json
+            if(-not $r.workerStopped -or -not $r.jobCleanupVerified){throw 'SOURCE_WORKER_CLEANUP_UNCONFIRMED'}
+          }
+          foreach($leaf in @('htkk-source-candidate','htkk-source-update-bundle','htkk-official-source-watch.json')){
+            $path=Join-Path $env:RUNNER_TEMP $leaf
+            if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path -Recurse -Force}
+          }

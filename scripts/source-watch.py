@@ -166,7 +166,7 @@ def observe(direct=None,relay=None,checked_at=None):
    report['attempts'].append({'transport':transport,'result':'error','errorCode':error.code,'httpStatus':error.status});report['failureCode']=error.code
    report['result']='invalid' if error.code in ('CONTENT_TYPE','CONTENT_ENCODING','UTF8','HTML_PARSE','NO_RELEASES','TOO_LARGE','RELAY_ENVELOPE') else 'unreachable'
    # No alternate transport may hide TLS/auth or malformed official content.
-   if error.code not in ('TIMEOUT','NETWORK','HTTP_DENIED','HTTP_STATUS') or error.status==401:return report
+   if error.code not in ('TIMEOUT','NETWORK','HTTP_DENIED','HTTP_STATUS') or error.status==401 or (error.code=='HTTP_STATUS'and error.status not in (408,429,500,502,503,504)):return report
  return report
 
 def report_path():return pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-official-source-watch.json'

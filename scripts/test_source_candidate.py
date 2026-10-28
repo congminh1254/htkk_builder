@@ -3,6 +3,7 @@ import base64
 import hashlib
 import importlib.util
 import io
+import http.cookiejar
 import json
 import pathlib
 import socket
@@ -109,6 +110,25 @@ class CandidateTests(unittest.TestCase):
         self.assertNotIn('ephemeral-fixture-token',json.dumps(result))
         for suffix in ('?token=one&token=two','?token=','?token=one&redirect=elsewhere'):
             with self.assertRaises(c.CandidateError):c.allowed_url(URL+suffix)
+
+    def test_server_session_cookie_is_never_forwarded_to_another_origin(self):
+        jar=http.cookiejar.CookieJar(policy=c.SourceCookiePolicy(URL))
+        jar.set_cookie(http.cookiejar.Cookie(0,'session','PRIVATE_COOKIE',None,False,'.fshare.vn',True,True,'/',True,True,None,True,None,None,{},False))
+        local=c.urllib.request.Request(URL+'?token=signed-fixture');jar.add_cookie_header(local)
+        self.assertIn('PRIVATE_COOKIE',local.get_header('Cookie'))
+        other=c.urllib.request.Request(CDN);jar.add_cookie_header(other)
+        self.assertIsNone(other.get_header('Cookie'))
+
+    def test_relay_session_cookie_stays_on_issuing_origin_and_out_of_report(self):
+        signed=URL+'?token=ephemeral-fixture'
+        meta={'content-type':'application/octet-stream','content-length':str(len(DATA)),'etag':ETAG}
+        partial={**meta,'content-range':f'bytes 0-{len(DATA)-1}/{len(DATA)}'}
+        replies=[envelope(status=302,response_headers={'location':signed,'set-cookie':['session=PRIVATE_COOKIE; Path=/; Secure; Domain=.fshare.vn']}),envelope(url=signed,status=302,response_headers={'location':CDN}),envelope(url=CDN,response_headers=meta),envelope(DATA,url=CDN,status=206,response_headers=partial)]
+        result=self.fetch(replies,transport='relay',relay_token=TOKEN)
+        requests=[json.loads(r.data) for r in self.openers.requests]
+        self.assertIn('PRIVATE_COOKIE',requests[1]['headers']['Cookie'])
+        self.assertNotIn('Cookie',requests[2]['headers']);self.assertNotIn('Cookie',requests[3]['headers'])
+        self.assertNotIn('PRIVATE_COOKIE',json.dumps(result));self.assertNotIn('ephemeral-fixture',json.dumps(result))
 
     def test_direct_stream_pins_hash_size_and_keeps_candidate_not_ready(self):
         digest = hashlib.sha256(DATA).hexdigest()

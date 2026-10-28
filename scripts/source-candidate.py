@@ -7,10 +7,14 @@ changing transports. A successful download is NOT signature or payload trust.
 import base64
 import datetime
 import email.utils
+from email.message import Message
+from urllib.response import addinfourl
 import errno
 import hashlib
 import http.client
+import http.cookiejar
 import ipaddress
+import io
 import json
 import os
 import pathlib
@@ -113,8 +117,28 @@ class CandidateRedirect(urllib.request.HTTPRedirectHandler):
         self.url_validator(newurl)
         self.trace.append({'status': code, 'fromHost': host(request.full_url), 'toHost': host(newurl), 'urlSha256': sha(newurl.encode())})
         # Rebuild with only public request headers, including across origins.
-        return urllib.request.Request(newurl, method=request.get_method(), headers={'User-Agent': USER_AGENT, 'Accept': 'application/octet-stream', 'Accept-Encoding': 'identity'})
+        return urllib.request.Request(newurl, method=request.get_method(), headers={'User-Agent': USER_AGENT, 'Accept': 'application/octet-stream', 'Accept-Encoding': 'identity', 'Cache-Control':'no-cache', 'Pragma':'no-cache'})
 
+
+class SourceCookiePolicy(http.cookiejar.DefaultCookiePolicy):
+    # Server-issued session cookies are ephemeral and stay on the initial origin.
+    # No browser/user cookies, cookie files, or cross-origin forwarding exist.
+    def __init__(self,url):
+        super().__init__();self.origin=urllib.parse.urlsplit(url)
+    def same_origin(self,request):
+        p=urllib.parse.urlsplit(request.full_url)
+        return (p.scheme,p.hostname,p.port or 443)==(self.origin.scheme,self.origin.hostname,self.origin.port or 443)
+    def set_ok(self,cookie,request):
+        return self.same_origin(request) and super().set_ok(cookie,request)
+    def return_ok(self,cookie,request):
+        return self.same_origin(request) and super().return_ok(cookie,request)
+class BoundedCookies(urllib.request.HTTPCookieProcessor):
+    def http_response(self,request,response):
+        result=super().http_response(request,response)
+        if len(self.cookiejar)>16 or sum(len(c.name)+len(c.value) for c in self.cookiejar)>16384:
+            raise CandidateError('SIZE')
+        return result
+    https_response=http_response
 
 def transport_error(error):
     if isinstance(error, CandidateError):
@@ -206,8 +230,8 @@ def check_deadline(deadline):
 
 def stream_direct(url, output, maximum, deadline, opener_factory=None, url_validator=allowed_url):
     redirects = CandidateRedirect(url_validator)
-    opener = opener_factory(redirects) if opener_factory else urllib.request.build_opener(redirects)
-    request = urllib.request.Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'application/octet-stream', 'Accept-Encoding': 'identity'})
+    opener = opener_factory(redirects) if opener_factory else urllib.request.build_opener(redirects,BoundedCookies(http.cookiejar.CookieJar(policy=SourceCookiePolicy(url))))
+    request = urllib.request.Request(url, headers={'User-Agent': USER_AGENT, 'Accept': 'application/octet-stream', 'Accept-Encoding': 'identity', 'Cache-Control':'no-cache', 'Pragma':'no-cache'})
     try:
         with opener.open(request, timeout=30) as response:
             if response.status != 200:
@@ -306,8 +330,8 @@ def relay_request(url, method, token, request_headers, timeout_ms, opener_factor
         headers = envelope.get('headers')
         if not isinstance(headers, dict) or any(not isinstance(k, str) for k in headers):
             raise CandidateError('RELAY_ENVELOPE')
-        safe_headers = {k: v for k, v in headers.items() if k.lower() in ('content-type', 'content-length', 'content-encoding', 'content-range', 'etag', 'last-modified', 'location')}
-        if any(not isinstance(v, str) for v in safe_headers.values()):
+        safe_headers = {k: v for k, v in headers.items() if k.lower() in ('content-type', 'content-length', 'content-encoding', 'content-range', 'etag', 'last-modified', 'location','set-cookie')}
+        if any((not isinstance(v,list) or len(v)>16 or any(not isinstance(c,str) or len(c)>4096 for c in v)) if k.lower()=='set-cookie' else not isinstance(v,str) for k,v in safe_headers.items()):
             raise CandidateError('RELAY_ENVELOPE')
         body = envelope.get('body')
         if not isinstance(body, str) or envelope.get('bodyEncoding') not in ('base64', 'text'):
@@ -322,12 +346,23 @@ def relay_request(url, method, token, request_headers, timeout_ms, opener_factor
         raise CandidateError('RELAY_ENVELOPE') from None
 
 
-def relay_follow(url, method, token, headers, timeout_ms, deadline, opener_factory, url_validator=allowed_url):
+def relay_follow(url, method, token, headers, timeout_ms, deadline, opener_factory, url_validator=allowed_url, cookiejar=None):
     trace = []
+    headers=dict(headers)
+    cookiejar=cookiejar if cookiejar is not None else http.cookiejar.CookieJar(policy=SourceCookiePolicy(url))
     current = url
     while True:
         check_deadline(deadline)
+        cookie_request=urllib.request.Request(current);cookiejar.add_cookie_header(cookie_request)
+        headers={k:v for k,v in headers.items() if k.lower()!='cookie'}
+        if cookie_request.has_header('Cookie'):headers['Cookie']=cookie_request.get_header('Cookie')
         status, response_headers, body = relay_request(current, method, token, headers, timeout_ms, opener_factory, url_validator)
+        cookies=next((v for k,v in response_headers.items() if k.lower()=='set-cookie'),[])
+        if cookies:
+            message=Message()
+            for value in cookies:message.add_header('Set-Cookie',value)
+            with addinfourl(io.BytesIO(b''),message,current)as cookie_response:cookiejar.extract_cookies(cookie_response,cookie_request)
+            if len(cookiejar)>16 or sum(len(c.name)+len(c.value)for c in cookiejar)>16384:raise CandidateError('SIZE')
         check_deadline(deadline)
         if status not in (301, 302, 303, 307, 308):
             if status not in (200, 206):
@@ -347,7 +382,8 @@ def relay_follow(url, method, token, headers, timeout_ms, deadline, opener_facto
 
 
 def stream_relay(url, output, maximum, deadline, token, timeout_ms, opener_factory=None, url_validator=allowed_url):
-    status, headers, body, final, redirects = relay_follow(url, 'HEAD', token, {}, timeout_ms, deadline, opener_factory, url_validator)
+    cookiejar=http.cookiejar.CookieJar(policy=SourceCookiePolicy(url))
+    status, headers, body, final, redirects = relay_follow(url, 'HEAD', token, {}, timeout_ms, deadline, opener_factory, url_validator,cookiejar)
     if status != 200 or body:
         raise CandidateError('RANGE')
     validate_binary_headers(headers)
@@ -359,7 +395,7 @@ def stream_relay(url, output, maximum, deadline, token, timeout_ms, opener_facto
     requests = 0
     while count < total:
         end = min(count + RANGE_BYTES, total) - 1
-        status, part_headers, data, part_final, trace = relay_follow(final, 'GET', token, {'Range': f'bytes={count}-{end}', 'If-Match': etag, 'Accept-Encoding': 'identity'}, timeout_ms, deadline, opener_factory, url_validator)
+        status, part_headers, data, part_final, trace = relay_follow(final, 'GET', token, {'Range': f'bytes={count}-{end}', 'If-Match': etag, 'Accept-Encoding': 'identity', 'Cache-Control':'no-cache', 'Pragma':'no-cache'}, timeout_ms, deadline, opener_factory, url_validator,cookiejar)
         # Do not mix bytes from a moving CDN route or a second entity.
         if status != 206 or part_final != final or trace or strong_etag(part_headers) != etag:
             raise CandidateError('RANGE_VALIDATOR')
