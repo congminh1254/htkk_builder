@@ -25,6 +25,7 @@ class AuthorizationTests(unittest.TestCase):
   for args in ({'sha':'$(bad)'},{'mode':'publish'},{'number':'1; bad'}):
    with self.subTest(args=args),self.assertRaises(ValueError):self.request(**args)
 class PrivateLogTests(unittest.TestCase):
+ @unittest.skipIf(os.name == 'nt', 'POSIX build subprocess fixture; exercised by Linux build workflow')
  def test_failed_build_hides_diagnostics_and_strips_tokens(self):
   with tempfile.TemporaryDirectory() as temporary:
    root=pathlib.Path(temporary);(root/'source').mkdir();(root/'bin').mkdir()

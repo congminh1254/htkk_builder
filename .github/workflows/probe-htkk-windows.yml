@@ -50,6 +50,9 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: windows-latest
     timeout-minutes: 15
+    env:
+      # Source contracts contain official Vietnamese labels; never use Windows ACP.
+      PYTHONUTF8: '1'
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
