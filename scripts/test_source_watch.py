@@ -59,7 +59,7 @@ class TransportTests(unittest.TestCase):
   handler.count=5
   with self.assertRaises(watch.SourceError):handler.redirect_request(request,None,302,'',{},'https://www.gdt.gov.vn/')
  def test_relay_uses_only_fixed_endpoint_and_validates_base64_status_truncation_and_final_host(self):
-  envelope={'status':200,'truncated':False,'url':watch.PAGE,'bodyEncoding':'base64','body':base64.b64encode(HTML).decode(),'headers':{'set-cookie':['PRIVATE_COOKIE']}}
+  envelope={'status':200,'truncated':False,'url':watch.PAGE,'bodyEncoding':'base64','body':base64.b64encode(HTML).decode(),'headers':{'content-type':'text/html; charset=UTF-8','set-cookie':['PRIVATE_COOKIE']}}
   opener=Opener(Response(json.dumps(envelope).encode(),url=watch.RELAY,content_type='application/json'))
   with patch.object(watch.urllib.request,'build_opener',return_value=opener):self.assertEqual(watch.relay_fetch('test-only-token')[0],HTML)
   self.assertEqual(opener.requests[0].full_url,watch.RELAY);self.assertEqual(opener.requests[0].get_header('Authorization'),'Bearer test-only-token');self.assertIn('HTKK',opener.requests[0].get_header('User-agent'))

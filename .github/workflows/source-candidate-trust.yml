@@ -1,0 +1,39 @@
+name: Xác thực dữ liệu nguồn HTKK đã ghim
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  trust:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check candidate URL, range, retry and privacy boundaries
+        run: python -m unittest discover -s scripts -p test_source_candidate.py
+      - name: Check data-only Cabinet extraction with own fixtures
+        shell: pwsh
+        run: ./scripts/Test-HtkkSourceCabinet.ps1
+      - name: Download only pinned inert baseline archives
+        run: python scripts/source-candidate-check.py
+      - name: Verify Authenticode, online revocation and read-only MSI CAB payload
+        shell: pwsh
+        run: |
+          & ./scripts/Test-HtkkSourceCandidateTrust.ps1 -CandidateDirectory (Join-Path $env:RUNNER_TEMP 'htkk-source-candidate') -ResultPath (Join-Path $env:RUNNER_TEMP 'htkk-source-candidate-trust.json')
+          $result=Get-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'htkk-source-candidate-trust.json') -Raw | ConvertFrom-Json
+          $result | ConvertTo-Json -Depth 8 -Compress
+          if($result.status -cne 'baseline-verified' -or -not $result.workerStopped -or -not $result.jobCleanupVerified){throw 'SOURCE_TRUST_NOT_VERIFIED'}
+      - name: Remove inert candidate files after confirmed worker stop
+        if: always()
+        shell: pwsh
+        run: |
+          $report=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate-trust.json'
+          if(Test-Path -LiteralPath $report){
+            $safe=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+            if(-not $safe.workerStopped -or -not $safe.jobCleanupVerified){throw 'SOURCE_WORKER_CLEANUP_UNCONFIRMED'}
+          }
+          $directory=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
+          if(Test-Path -LiteralPath $directory){Remove-Item -LiteralPath $directory -Recurse -Force}

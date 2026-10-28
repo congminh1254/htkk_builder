@@ -19,7 +19,7 @@ class SourceError(ValueError):
   super().__init__(code)
 
 def official_url(url):
- try:p=urllib.parse.urlsplit(url);valid=p.scheme=='https' and p.hostname in HOSTS and not p.username and not p.password and p.port in (None,443) and len(url)<=2048
+ try:p=urllib.parse.urlsplit(url);valid=isinstance(url,str) and not any(ord(c)<=32 or ord(c)==127 for c in url) and not p.fragment and p.scheme=='https' and p.hostname in HOSTS and not p.username and not p.password and p.port in (None,443) and len(url)<=2048
  except (TypeError,ValueError):valid=False
  if not valid:raise SourceError('REDIRECT')
  return url
@@ -68,6 +68,10 @@ def relay_fetch(token):
   envelope=json.loads(raw)
   if type(envelope.get('status')) is not int or envelope['status']!=200:raise SourceError('RELAY_UPSTREAM',envelope.get('status'))
   if envelope.get('truncated') is not False:raise SourceError('TOO_LARGE')
+  headers=envelope.get('headers')
+  if not isinstance(headers,dict):raise SourceError('RELAY_ENVELOPE')
+  content_type=next((v for k,v in headers.items() if k.lower()=='content-type'),None)
+  if not isinstance(content_type,str) or content_type.split(';',1)[0].strip().lower()!='text/html':raise SourceError('CONTENT_TYPE')
   final=official_url(envelope.get('url'));body=envelope.get('body')
   if not isinstance(body,str):raise SourceError('RELAY_ENVELOPE')
   if envelope.get('bodyEncoding')=='text':data=body.encode('utf-8')
@@ -161,6 +165,8 @@ def observe(direct=None,relay=None,checked_at=None):
    error=error if isinstance(error,SourceError) else SourceError('INTERNAL')
    report['attempts'].append({'transport':transport,'result':'error','errorCode':error.code,'httpStatus':error.status});report['failureCode']=error.code
    report['result']='invalid' if error.code in ('CONTENT_TYPE','CONTENT_ENCODING','UTF8','HTML_PARSE','NO_RELEASES','TOO_LARGE','RELAY_ENVELOPE') else 'unreachable'
+   # No alternate transport may hide TLS/auth or malformed official content.
+   if error.code not in ('TIMEOUT','NETWORK','HTTP_DENIED','HTTP_STATUS') or error.status==401:return report
  return report
 
 def report_path():return pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-official-source-watch.json'
