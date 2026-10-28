@@ -38,6 +38,15 @@ class PagesTests(unittest.TestCase):
   with self.assertRaises(ValueError):p.native_ready(values,self.builder,self.native)
  def test_other_builder_revision_rejected(self):
   with self.assertRaises(ValueError):p.native_ready(self.statuses(),'d'*40,self.native)
+ def test_success_callback_waits_for_native_post_steps(self):
+  def active(repo,path):return {**self.native(repo,path),'status':'in_progress','conclusion':None}
+  self.assertFalse(p.native_ready(self.statuses(),self.builder,active))
+ def test_success_callback_does_not_hide_failed_whole_workflow(self):
+  def failed(repo,path):return {**self.native(repo,path),'conclusion':'failure'}
+  with self.assertRaises(ValueError):p.native_ready(self.statuses(),self.builder,failed)
+ def test_active_foreign_builder_is_rejected_instead_of_waited(self):
+  def foreign(repo,path):return {**self.native(repo,path),'status':'in_progress','conclusion':None,'head_sha':'d'*40}
+  with self.assertRaises(ValueError):p.native_ready(self.statuses(),self.builder,foreign)
  def tree(self,root):
   (root/'dashboard').mkdir();(root/'dashboard/index.html').write_text('dashboard');(root/'index.html').write_text('home');(root/'CNAME').write_text('hotrokekhai.net\n')
  def test_static_only_site(self):

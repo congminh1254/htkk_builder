@@ -33,7 +33,11 @@ def native_ready(statuses,builder_sha,get=api):
   match=re.fullmatch(r'https://github\.com/congminh1254/htkk_builder/actions/runs/([1-9][0-9]*)',url)
   if not match:raise ValueError('NATIVE_PROVENANCE')
   run=get(BUILDER,'actions/runs/'+match[1])
-  if run.get('path')!='.github/workflows/probe-htkk-windows.yml' or run.get('head_branch')!='main' or run.get('head_sha')!=builder_sha or run.get('status')!='completed' or run.get('conclusion')!='success':raise ValueError('NATIVE_PROVENANCE')
+  if run.get('path')!='.github/workflows/probe-htkk-windows.yml' or run.get('head_branch')!='main' or run.get('head_sha')!=builder_sha:raise ValueError('NATIVE_PROVENANCE')
+  # Callback precedes runner post-steps. A successful status alone is not enough;
+  # wait for the authenticated whole workflow rather than rejecting that race.
+  if run.get('status') in ('queued','pending','in_progress','waiting','requested'):return False
+  if run.get('status')!='completed' or run.get('conclusion')!='success':raise ValueError('NATIVE_PROVENANCE')
  return True
 def static_tree(site):
  if not site.is_dir() or site.is_symlink():raise ValueError('SITE')
