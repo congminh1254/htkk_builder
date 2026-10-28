@@ -1,0 +1,68 @@
+name: Deploy verified HTKK website
+on:
+  workflow_run:
+    workflows: [HTKK trusted builder]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pages_commit:
+        description: Full immutable private pages-output commit for retry
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: htkk-production-pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.display_title == 'HTKK release' && github.event.workflow_run.repository.full_name == 'congminh1254/htkk_builder'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout trusted builder only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: builder
+          persist-credentials: false
+      - name: Resolve immutable private artifact
+        env:
+          GH_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          REQUESTED_COMMIT: ${{ inputs.pages_commit }}
+        run: |
+          PAGES_COMMIT=$(gh api repos/htkk-net/htkk_web/commits/pages-output --jq .sha)
+          [[ "$PAGES_COMMIT" =~ ^[0-9a-f]{40}$ ]] || exit 1
+          [[ -z "$REQUESTED_COMMIT" || "$REQUESTED_COMMIT" == "$PAGES_COMMIT" ]] || exit 1
+          echo "PAGES_COMMIT=$PAGES_COMMIT" >> "$GITHUB_ENV"
+      - name: Checkout generated static output only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: htkk-net/htkk_web
+          ref: ${{ env.PAGES_COMMIT }}
+          token: ${{ secrets.SOURCE_READ_TOKEN }}
+          path: output
+          persist-credentials: false
+      - name: Validate artifact, source main and all native workflows
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_BUILD_RUN: ${{ github.event.workflow_run.id }}
+        run: python3 builder/scripts/validate-pages.py
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: output/site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Remove local private artifact
+        if: always()
+        run: rm -rf output

@@ -34,7 +34,8 @@ try:
  run(['git','push','--force','https://github.com/htkk-net/htkk_web.git','HEAD:refs/heads/pages-output'],env)
  pages_commit=subprocess.run(['git','rev-parse','HEAD'],cwd=root,env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True).stdout.decode().strip()
  if not re.fullmatch('[0-9a-f]{40}',pages_commit):raise ValueError()
- api('dispatches',{'event_type':'htkk-pages-ready','client_payload':{'pages_commit':pages_commit,'source_sha':sha}})
+ # Public builder Pages workflow starts only after this release workflow succeeds.
+ # No dispatch to the retired private Pages deployment.
 except Exception:raise SystemExit('Private output publication failed; diagnostics were not published.')
 finally:shutil.rmtree(root,ignore_errors=True)
 print('Static output published to private branch.')
