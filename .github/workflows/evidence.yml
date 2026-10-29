@@ -1,0 +1,67 @@
+name: Assess scoped HTKK evidence privately
+on:
+  workflow_run:
+    workflows: [Deploy verified HTKK website]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact native producer source SHA (historical audit allowed)
+        required: true
+      native_builder_sha:
+        description: Exact builder SHA that produced the native cases
+        required: true
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: htkk-scoped-evidence
+  cancel-in-progress: false
+jobs:
+  assess:
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout trusted collector
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          path: builder
+          persist-credentials: false
+      - name: Test trusted collection/publication contracts
+        run: python3 -m unittest discover -s builder/scripts -p 'test_*.py'
+      - name: Resolve immutable producer and assessor coordinates
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          EVIDENCE_SOURCE_SHA: ${{ inputs.source_sha }}
+          NATIVE_BUILDER_SHA: ${{ inputs.native_builder_sha }}
+        run: python3 builder/scripts/prepare-scoped-evidence.py
+      - name: Collect authenticated fixed synthetic raw evidence privately
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 builder/scripts/collect-scoped-evidence.py
+      - name: Checkout current trusted assessment code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: htkk-net/htkk_web
+          ref: ${{ env.CODE_SOURCE_SHA }}
+          token: ${{ secrets.SOURCE_READ_TOKEN }}
+          path: source
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24'
+      - name: Assess byte-exact evidence without credentials
+        run: python3 builder/scripts/assess-scoped-evidence.py
+      - name: Retain blocked candidate privately without granting qualification
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python3 builder/scripts/publish-scoped-evidence.py
+      - name: Remove private source and assessment artifacts
+        if: always()
+        run: rm -rf source "$RUNNER_TEMP/htkk-scoped-evidence" "$RUNNER_TEMP/htkk-evidence-private.log"
