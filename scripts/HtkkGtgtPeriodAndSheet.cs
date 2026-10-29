@@ -22,6 +22,31 @@ public sealed partial class HtkkGuiReferenceAutomation {
   HtkkNativeUiHarness.CommitCellEdit(spread);
   decimal actual,expected;if(!Decimal.TryParse(Convert.ToString(Get(Cell(sheet,row,column),"Value"),CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(value,NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)throw new InvalidOperationException();webCaseEditCount++;Record();
  }
+ private bool webSigningDateEdited=false,webSigningDateReady=false,webSigningDateLocked=false;private int webSigningDateCellKind=0;
+ private static bool FixedWebSigningDate(object sheet){
+  object cell=Cell(sheet,65,10),value=Get(cell,"Value");DateTime date;
+  if(value is DateTime)return ((DateTime)value).Date==new DateTime(2026,10,25);
+  string text=Convert.ToString(value,CultureInfo.InvariantCulture);
+  return DateTime.TryParseExact(text,new string[]{"dd/MM/yyyy","d/M/yyyy","yyyy-MM-dd"},CultureInfo.InvariantCulture,DateTimeStyles.None,out date)&&date.Date==new DateTime(2026,10,25);
+ }
+ private void EditOriginalSigningDate(Control grid,object sheet){
+  // Pinned 01_GTGT_TT80_283.xml: K_66, Controltype 14, TKhaiThue/ngayKy.
+  // Zero-based original sheet coordinate65/10; never set Cell.Value or a model field.
+  Form owner=grid.FindForm();object dateCell=Cell(sheet,65,10),type=Get(dateCell,"CellType");
+  // Original DefaultCellFomat leaves GeneralCellType with XLS format @ unchanged:
+  // both NumberFormat and DateTimeFormat are null. It is not a DateTimeCellType.
+  webSigningDateLocked=Convert.ToBoolean(Get(dateCell,"Locked"));
+  string kind=type==null?String.Empty:type.GetType().FullName;
+  bool generalText=kind=="FarPoint.Win.Spread.CellType.GeneralCellType"&&Convert.ToString(Get(type,"FormatString"),CultureInfo.InvariantCulture)=="@"&&Get(type,"NumberFormat")==null&&Get(type,"DateTimeFormat")==null;
+  webSigningDateCellKind=generalText?1:kind=="FarPoint.Win.Spread.CellType.TextCellType"?2:kind=="FarPoint.Win.Spread.CellType.DateTimeCellType"?3:0;
+  SetStage(HtkkAutomationStage.GtgtCaseEditing);Record();
+  if(mode!="gtgt-web-import-inspect"||!webInputVerified||webSigningDateEdited||!gtgtPins||!gtgtDimensions||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible()||webSigningDateLocked||webSigningDateCellKind==0)throw new InvalidOperationException();
+  webSigningDateEdited=true;SetStage(HtkkAutomationStage.GtgtCaseEditing);Record();Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,65,10,true);
+  if(!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();
+  foreach(string keys in new string[]{"^a","25/10/2026","{TAB}"}){uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
+  HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+  webSigningDateReady=FixedWebSigningDate(sheet);if(!webSigningDateReady)throw new InvalidOperationException();Record();
+ }
  private bool periodDateMatched=false,periodFirstMatched=false,periodActivityMatched=false,periodGeographyMatched=false,periodNoAnnexMatched=false,periodConfirmInvoked=false;
  private bool gtgtPins=false,gtgtVersion=false,gtgtPeriod=false,gtgtSheet=false,gtgtName=false,gtgtDimensions=false,gtgtIdentity=false,gtgtCt21=false,gtgtSigner=false,gtgtZero=false;
  private int annexSelected=0,gtgtRows=0,gtgtColumns=0,gtgtSheets=0,gtgtEmptyMoney=0;
@@ -413,6 +438,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
    InspectCaseMoney(sheet);
    if(!gtgtCaseMoneyMatched){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}throw new InvalidOperationException();}
   }else InspectCaseMoney(sheet);
+  if(matched&&mode=="gtgt-web-import-inspect"){
+   if(!webSigningDateReady){EditOriginalSigningDate(grid,sheet);return;}
+   if(!FixedWebSigningDate(sheet))throw new InvalidOperationException();
+  }
   if(matched&&(mode=="gtgt-export-inspect"||mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")){StartOriginalGtgtExport(forms[0]);return;}
   finished=true;SetStage(matched?HtkkAutomationStage.GtgtSheetInspected:HtkkAutomationStage.GtgtSheetContractNotMatched);Record();
  }

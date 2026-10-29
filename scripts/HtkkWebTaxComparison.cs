@@ -10,7 +10,7 @@ public static class HtkkWebTaxComparison {
  private const string ServicePath="HSoThueDTu/HSoKhaiThue/TTinChung/TTinDVu/";
  private static XmlElement Leaf(XmlDocument document,string path){string query="";foreach(string name in path.Split('/'))query+="/*[local-name()='"+name+"']";XmlNodeList nodes=document.SelectNodes(query);if(nodes.Count!=1||nodes[0].NamespaceURI!=Ns)throw new InvalidOperationException();return (XmlElement)nodes[0];}
  public static bool NativeIdentity(XmlDocument baseline,XmlDocument output){
-  foreach(string name in new string[]{"maDVu","tenDVu","pbanDVu"})if(Leaf(output,ServicePath+name).InnerText!=Leaf(baseline,ServicePath+name).InnerText)return false;
+  foreach(string name in new string[]{"maDVu","tenDVu","pbanDVu","ttinNhaCCapDVu"})if(Leaf(output,ServicePath+name).InnerText!=Leaf(baseline,ServicePath+name).InnerText)return false;
   return Leaf(output,ServicePath+"maDVu").InnerText=="HTKK"&&Leaf(output,ServicePath+"tenDVu").InnerText=="HỖ TRỢ KÊ KHAI THUẾ"&&Leaf(output,ServicePath+"pbanDVu").InnerText=="5.8.1"&&Regex.IsMatch(Leaf(output,ServicePath+"ttinNhaCCapDVu").InnerText,"^[A-F0-9]{32}$");
  }
  public static bool CreationDateMatchesNativeBaseline(XmlDocument baseline,XmlDocument output){string date=Leaf(output,DatePath).InnerText;return Regex.IsMatch(date,"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")&&date==Leaf(baseline,DatePath).InnerText;}

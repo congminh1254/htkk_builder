@@ -18,8 +18,13 @@ internal static class HtkkNativeUiHarness {
   for(Type type=root.GetType();type!=null;type=type.BaseType)if(type.FullName=="FarPoint.Win.FpCombo")return root;
   Control found=null;foreach(Control child in root.Controls){Control candidate=FindVendorCombo(child,depth+1);if(candidate!=null){if(found!=null)throw new InvalidOperationException();found=candidate;}}return found;
  }
- internal static Control BeginCellEdit(Control spread,object sheet,int row,int column){
+ internal static Control BeginCellEdit(Control spread,object sheet,int row,int column){return BeginCellEdit(spread,sheet,row,column,false);}
+ internal static Control BeginCellEdit(Control spread,object sheet,int row,int column,bool showActiveCell){
   spread.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{row,column});
+  if(showActiveCell){
+   Type vertical=spread.GetType().Assembly.GetType("FarPoint.Win.Spread.VerticalPosition",true),horizontal=spread.GetType().Assembly.GetType("FarPoint.Win.Spread.HorizontalPosition",true);
+   spread.GetType().GetMethod("ShowActiveCell",new Type[]{vertical,horizontal}).Invoke(spread,new object[]{Enum.Parse(vertical,"Center"),Enum.Parse(horizontal,"Center")});
+  }
   spread.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(spread,new object[]{EventArgs.Empty,false});
   Control editor=Get(spread,"EditingControl") as Control;if(editor==null)throw new InvalidOperationException();return editor;
  }
