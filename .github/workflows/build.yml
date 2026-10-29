@@ -73,6 +73,13 @@ jobs:
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
           COMMIT_SHA: ${{ inputs.commit_sha }}
         run: python3 builder/scripts/dispatch-native-cases.py
+      - name: Authenticate complete immutable native cohort
+        if: inputs.mode == 'release'
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ inputs.commit_sha }}
+        run: python3 builder/scripts/native_batch.py
       - name: Publish static output to private source repository
         if: inputs.mode == 'release'
         env:
@@ -81,7 +88,7 @@ jobs:
         run: python3 builder/scripts/publish.py
       - name: Remove local source and diagnostic files
         if: always()
-        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output" "$RUNNER_TEMP/htkk-web-reference-zero-input" "$RUNNER_TEMP/htkk-web-reference-sale10-input" "$RUNNER_TEMP/htkk-web-reference-sale10-half-input" "$RUNNER_TEMP/htkk-web-reference-sale10-manual-input" "$RUNNER_TEMP/htkk-web-reference-sale5-half-input" "$RUNNER_TEMP/htkk-web-reference-sale5-manual-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-zero-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-reset-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-cancel-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-uncheck-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-keep-credit-input" "$RUNNER_TEMP/htkk-web-reference-quarter-zero-input" "$RUNNER_TEMP/htkk-web-reference-native-import-sale10-input" "$RUNNER_TEMP/htkk-web-input-publication.json"
+        run: rm -rf source "$RUNNER_TEMP/htkk-builder-log.txt" "$RUNNER_TEMP/htkk-pages-output" "$RUNNER_TEMP/htkk-web-reference-zero-input" "$RUNNER_TEMP/htkk-web-reference-sale10-input" "$RUNNER_TEMP/htkk-web-reference-sale10-half-input" "$RUNNER_TEMP/htkk-web-reference-sale10-manual-input" "$RUNNER_TEMP/htkk-web-reference-sale5-half-input" "$RUNNER_TEMP/htkk-web-reference-sale5-manual-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-zero-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-reset-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-cancel-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-uncheck-sale10-input" "$RUNNER_TEMP/htkk-web-reference-noactivity-keep-credit-input" "$RUNNER_TEMP/htkk-web-reference-quarter-zero-input" "$RUNNER_TEMP/htkk-web-reference-native-import-sale10-input" "$RUNNER_TEMP/htkk-web-input-publication.json" "$RUNNER_TEMP/htkk-native-batch-verification.json" "$RUNNER_TEMP/htkk-source-case-plan.json"
   report:
     if: always() && github.ref == 'refs/heads/main'
     needs: build

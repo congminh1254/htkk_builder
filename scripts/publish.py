@@ -15,7 +15,9 @@ try:
  safe_copy(pathlib.Path('source/out'),root/'site')
  if (root/'site/downloads').exists():raise ValueError('Retired downloads must not be published')
  (root/'site/.nojekyll').touch()
- (root/'.htkk-build.json').write_text(json.dumps({'sourceSha':sha,'checks':'passed','builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'builderRepository':os.environ.get('GITHUB_REPOSITORY',''),'builderRunId':os.environ.get('GITHUB_RUN_ID','')}))
+ batch=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-native-batch-verification.json').read_text())
+ if batch.get('format')!='htkk-native-batch-v1'or batch.get('sourceCommit')!=sha or batch.get('builderCommit')!=os.environ.get('GITHUB_SHA')or batch.get('qualificationGranted')is not False:raise ValueError('Native cohort missing')
+ (root/'.htkk-build.json').write_text(json.dumps({'nativeBatch':batch,'sourceSha':sha,'checks':'passed','builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'builderRepository':os.environ.get('GITHUB_REPOSITORY',''),'builderRunId':os.environ.get('GITHUB_RUN_ID','')}))
  env={key:os.environ[key] for key in ('PATH','HOME','RUNNER_TEMP') if key in os.environ}
  env.update(GIT_TERMINAL_PROMPT='0',GIT_CONFIG_NOSYSTEM='1',GIT_CONFIG_GLOBAL='/dev/null')
  run(['git','init','-b','pages-output'],env)

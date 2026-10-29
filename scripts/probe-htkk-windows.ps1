@@ -701,21 +701,8 @@ try {
       foreach($path in @($stage,$xml,$manifestPath)) {if(-not (Test-Path -LiteralPath $path) -or ((Get-Item -LiteralPath $path).Attributes -band [IO.FileAttributes]::ReparsePoint)){throw 'WEB_REFERENCE_INPUT_INVALID'}}
       if((Get-Item -LiteralPath $manifestPath).Length -gt 16384){throw 'WEB_REFERENCE_INPUT_INVALID'}
       $manifest=Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
-      $expectedFormats=@{
-        '01GTGT-zero-M10-2026'='htkk-web-zero-input-v1'
-        '01GTGT-sale10-M10-2026'='htkk-web-sale10-input-v1'
-        '01GTGT-sale10-half-M10-2026'='htkk-web-sale10-half-input-v1'
-        '01GTGT-sale10-manual-M10-2026'='htkk-web-sale10-manual-input-v1'
-        '01GTGT-sale5-half-M10-2026'='htkk-web-sale5-half-input-v1'
-        '01GTGT-sale5-manual-M10-2026'='htkk-web-sale5-manual-input-v1'
-        '01GTGT-noactivity-zero-M10-2026'='htkk-web-noactivity-zero-input-v1'
-        '01GTGT-noactivity-reset-sale10-M10-2026'='htkk-web-noactivity-reset-sale10-input-v1'
-        '01GTGT-noactivity-cancel-sale10-M10-2026'='htkk-web-noactivity-cancel-sale10-input-v1'
-        '01GTGT-noactivity-uncheck-sale10-M10-2026'='htkk-web-noactivity-uncheck-sale10-input-v1'
-        '01GTGT-noactivity-keep-credit-M10-2026'='htkk-web-noactivity-keep-credit-input-v1'
-        '01GTGT-zero-Q4-2026'='htkk-web-quarter-zero-input-v1'
-        '01GTGT-native-import-sale10-M10-2026'='htkk-web-native-import-sale10-input-v1'
-      }
+      . (Join-Path $PSScriptRoot 'HtkkNativeCaseFormats.ps1')
+      $expectedFormats=$HtkkNativeCaseFormats
       $expectedFormat=$expectedFormats[$env:EXPECTED_WEB_CASE_ID]
       if($manifest.caseId -cne $env:EXPECTED_WEB_CASE_ID -or $manifest.format -cne $expectedFormat -or $manifest.sourceRepository -cne 'htkk-net/htkk_web' -or $manifest.inputsSynthetic -ne $true -or $manifest.sourceCommit -cne $env:EXPECTED_WEB_SOURCE_SHA -or $manifest.xmlSha256 -cnotmatch '^[a-f0-9]{64}$' -or $manifest.bytes -le 0 -or $manifest.bytes -gt 262144 -or (Get-Item -LiteralPath $xml).Length -ne $manifest.bytes){throw 'WEB_REFERENCE_INPUT_INVALID'}
       Assert-Hash $xml $manifest.xmlSha256

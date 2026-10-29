@@ -6,14 +6,14 @@ def request(env):
  if env.get('READINESS_RESULT')not in ('failure','cancelled') or env.get('GUI_AUTOMATION')!='gtgt-web-import-inspect':raise ValueError('RESULT')
  commit=callback.dispatch.sha(env.get('COMMIT_SHA'));run=env.get('GITHUB_RUN_ID','')
  if not re.fullmatch('[1-9][0-9]{0,19}',run):raise ValueError('RUN')
- payload=callback.payload(env.get('WEB_CASE_ID'),'failure',env.get('GITHUB_SERVER_URL'),run)
+ payload=callback.payload(env.get('WEB_CASE_ID'),'failure',env.get('GITHUB_SERVER_URL'),run,env.get('WEB_ARTIFACT_COMMIT')or None)
  return 'https://api.github.com/repos/'+callback.dispatch.REPO+'/statuses/'+commit,payload
 def main():
  try:
   url,payload=request(os.environ)
   token=os.environ.get('SOURCE_STATUS_TOKEN')
   if not token:raise ValueError('AUTH')
-  callback.dispatch.post(url,token,payload)
+  if not callback.publish_status(os.environ['COMMIT_SHA'],payload,os.environ):print('Superseded native failure callback ignored.');return
  except Exception:raise SystemExit('Native failure callback rejected or unavailable; no raw response or credential published.')
  print('Whole native job failure reported privately from isolated job.')
 if __name__=='__main__':main()

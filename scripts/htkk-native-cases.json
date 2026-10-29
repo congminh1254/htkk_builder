@@ -1,0 +1,264 @@
+{
+  "format": "htkk-native-case-registry-v1",
+  "adapters": [
+    {
+      "adapterId": "01-gtgt-2.8.3",
+      "htkkVersion": "5.8.1",
+      "menuId": "D1",
+      "xmlVersion": "2.8.3",
+      "producer": "scripts/generate-htkk-web-reference.mjs",
+      "driver": "gtgt-web-import-inspect",
+      "privacyValidator": "gtgt-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    }
+  ],
+  "cases": [
+    {
+      "caseId": "01GTGT-zero-M10-2026",
+      "producerCase": "zero",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-zero-input-v1",
+      "stagingDirectory": "htkk-web-reference-zero-input",
+      "inputBranch": "gtgt-web-reference-zero-input",
+      "outputBranch": "gtgt-web-native-zero-output",
+      "statusContext": "htkk-native/zero",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-sale10-M10-2026",
+      "producerCase": "sale10",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-sale10-input",
+      "inputBranch": "gtgt-web-reference-sale10-input",
+      "outputBranch": "gtgt-web-native-sale10-output",
+      "statusContext": "htkk-native/sale10",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-sale10-half-M10-2026",
+      "producerCase": "sale10-half",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-sale10-half-input-v1",
+      "stagingDirectory": "htkk-web-reference-sale10-half-input",
+      "inputBranch": "gtgt-web-reference-sale10-half-input",
+      "outputBranch": "gtgt-web-native-sale10-half-output",
+      "statusContext": "htkk-native/sale10-half",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-sale10-manual-M10-2026",
+      "producerCase": "sale10-manual",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-sale10-manual-input-v1",
+      "stagingDirectory": "htkk-web-reference-sale10-manual-input",
+      "inputBranch": "gtgt-web-reference-sale10-manual-input",
+      "outputBranch": "gtgt-web-native-sale10-manual-output",
+      "statusContext": "htkk-native/sale10-manual",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-sale5-half-M10-2026",
+      "producerCase": "sale5-half",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-sale5-half-input-v1",
+      "stagingDirectory": "htkk-web-reference-sale5-half-input",
+      "inputBranch": "gtgt-web-reference-sale5-half-input",
+      "outputBranch": "gtgt-web-native-sale5-half-output",
+      "statusContext": "htkk-native/sale5-half",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-sale5-manual-M10-2026",
+      "producerCase": "sale5-manual",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-sale5-manual-input-v1",
+      "stagingDirectory": "htkk-web-reference-sale5-manual-input",
+      "inputBranch": "gtgt-web-reference-sale5-manual-input",
+      "outputBranch": "gtgt-web-native-sale5-manual-output",
+      "statusContext": "htkk-native/sale5-manual",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-noactivity-zero-M10-2026",
+      "producerCase": "noactivity-zero",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-noactivity-zero-input-v1",
+      "stagingDirectory": "htkk-web-reference-noactivity-zero-input",
+      "inputBranch": "gtgt-web-reference-noactivity-zero-input",
+      "outputBranch": "gtgt-web-native-noactivity-zero-output",
+      "statusContext": "htkk-native/noactivity-zero",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-noactivity-reset-sale10-M10-2026",
+      "producerCase": "noactivity-reset-sale10",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-noactivity-reset-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-noactivity-reset-sale10-input",
+      "inputBranch": "gtgt-web-reference-noactivity-reset-sale10-input",
+      "outputBranch": "gtgt-web-native-noactivity-reset-sale10-output",
+      "statusContext": "htkk-native/noactivity-reset-sale10",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-noactivity-cancel-sale10-M10-2026",
+      "producerCase": "noactivity-cancel-sale10",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-noactivity-cancel-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-noactivity-cancel-sale10-input",
+      "inputBranch": "gtgt-web-reference-noactivity-cancel-sale10-input",
+      "outputBranch": "gtgt-web-native-noactivity-cancel-sale10-output",
+      "statusContext": "htkk-native/noactivity-cancel-sale10",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-noactivity-uncheck-sale10-M10-2026",
+      "producerCase": "noactivity-uncheck-sale10",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-noactivity-uncheck-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-noactivity-uncheck-sale10-input",
+      "inputBranch": "gtgt-web-reference-noactivity-uncheck-sale10-input",
+      "outputBranch": "gtgt-web-native-noactivity-uncheck-sale10-output",
+      "statusContext": "htkk-native/noactivity-uncheck-sale10",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-noactivity-keep-credit-M10-2026",
+      "producerCase": "noactivity-keep-credit",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-noactivity-keep-credit-input-v1",
+      "stagingDirectory": "htkk-web-reference-noactivity-keep-credit-input",
+      "inputBranch": "gtgt-web-reference-noactivity-keep-credit-input",
+      "outputBranch": "gtgt-web-native-noactivity-keep-credit-output",
+      "statusContext": "htkk-native/noactivity-keep-credit",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-zero-Q4-2026",
+      "producerCase": "quarter-zero",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-quarter-zero-input-v1",
+      "stagingDirectory": "htkk-web-reference-quarter-zero-input",
+      "inputBranch": "gtgt-web-reference-quarter-zero-input",
+      "outputBranch": "gtgt-web-native-quarter-zero-output",
+      "statusContext": "htkk-native/quarter-zero",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "quarter",
+        "periodValue": "4/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-native-import-sale10-M10-2026",
+      "producerCase": "native-import-sale10",
+      "adapterId": "01-gtgt-2.8.3",
+      "format": "htkk-web-native-import-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-native-import-sale10-input",
+      "inputBranch": "gtgt-web-reference-native-import-sale10-input",
+      "outputBranch": "gtgt-web-native-native-import-sale10-output",
+      "statusContext": "htkk-native/native-import-sale10",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    }
+  ]
+}

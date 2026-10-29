@@ -1,8 +1,9 @@
 """Verify immutable private static output before publishing on the public builder."""
-import json,os,pathlib,re,time,urllib.request
+import json,os,pathlib,re,urllib.request,importlib.util
 SOURCE='htkk-net/htkk_web'
 BUILDER='congminh1254/htkk_builder'
-CONTEXTS=tuple('htkk-native/'+x for x in ('zero','sale10','sale10-half','sale10-manual','sale5-half','sale5-manual','noactivity-zero','noactivity-reset-sale10','noactivity-cancel-sale10','noactivity-uncheck-sale10','noactivity-keep-credit','quarter-zero','native-import-sale10'))
+_spec=importlib.util.spec_from_file_location('pages_case_registry',pathlib.Path(__file__).with_name('htkk_native_cases.py'));case_registry=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(case_registry)
+CONTEXTS=tuple(c['statusContext']for c in case_registry.CASES.values())
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 def api(repo,path):
@@ -54,11 +55,9 @@ def main():
  event_run=os.environ.get('EXPECTED_BUILD_RUN','')
  if event_run and event_run!=run_id:raise ValueError('EVENT_ARTIFACT_MISMATCH')
  static_tree(root/'site')
- deadline=time.monotonic()+1200
- while not native_ready(api(SOURCE,'commits/'+source+'/status?per_page=100')['statuses'],run['head_sha']):
-  if time.monotonic()>=deadline:raise ValueError('NATIVE_TIMEOUT')
-  print('Waiting for all 13 immutable native regression workflows.',flush=True);time.sleep(15)
- # Recheck after waiting, immediately before artifact upload.
+ batch_spec=importlib.util.spec_from_file_location('pages_pinned_native_batch',pathlib.Path(__file__).with_name('native_batch.py'));batch_module=importlib.util.module_from_spec(batch_spec);batch_spec.loader.exec_module(batch_module)
+ batch_module.verify_pinned(metadata.get('nativeBatch'),source,run['head_sha'])
+ # Recheck immediately before artifact upload.
  if api(SOURCE,'commits/main')['sha']!=source or api(SOURCE,'commits/pages-output')['sha']!=expected:raise ValueError('SUPERSEDED')
  print('Verified current-main static artifact and all 13 native regression workflows.')
 if __name__=='__main__':

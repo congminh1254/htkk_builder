@@ -45,6 +45,10 @@ on:
         required: true
 permissions:
   contents: read
+  actions: read
+concurrency:
+  group: native-${{ inputs.web_source_sha || github.run_id }}-${{ inputs.web_case_id }}-${{ inputs.gui_automation }}
+  cancel-in-progress: false
 jobs:
   readiness:
     if: github.ref == 'refs/heads/main'
@@ -60,6 +64,9 @@ jobs:
       - name: Check generated native automation contract is synchronized
         shell: pwsh
         run: python ./scripts/generate-native-automation-registry.py --check
+      - name: Check trusted case registry is synchronized
+        shell: pwsh
+        run: python ./scripts/generate-native-cases.py --check
       - name: Test complete builder contracts without network
         shell: pwsh
         run: python -m unittest discover -s scripts -p 'test_*.py'
@@ -118,6 +125,8 @@ jobs:
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
           SAMPLE_STATE: pending
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: python ./scripts/report-native-sample.py
       - name: Kiểm tra nguồn và điều kiện Windows
         id: native_probe
@@ -167,7 +176,7 @@ jobs:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-htkk-annex12-export.py
       - name: Retain verified raw native web reexport privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect' && inputs.web_artifact_commit != '' && steps.native_probe.outputs.supplier_stopped == 'true'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect' && inputs.web_artifact_commit != ''
         shell: pwsh
         env:
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
@@ -190,14 +199,19 @@ jobs:
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
           SAMPLE_STATE: failure
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
         run: python ./scripts/report-native-sample.py
       - name: Report fixed native-case status privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && inputs.gui_automation == 'gtgt-web-import-inspect'
         shell: pwsh
         env:
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           COMMIT_SHA: ${{ inputs.web_source_sha }}
           WEB_CASE_ID: ${{ inputs.web_case_id }}
+          WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           PROBE_RESULT: ${{ steps.native_probe.outcome }}
         run: python ./scripts/report-native-case.py
       # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
@@ -212,6 +226,7 @@ jobs:
     timeout-minutes: 3
     permissions:
       contents: read
+      actions: read
     steps:
       - name: Checkout trusted failure callback only
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -220,8 +235,11 @@ jobs:
       - name: Clear pending native case after unsuccessful whole job
         env:
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
           COMMIT_SHA: ${{ inputs.web_source_sha }}
           WEB_CASE_ID: ${{ inputs.web_case_id }}
+          WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           GUI_AUTOMATION: ${{ inputs.gui_automation }}
           READINESS_RESULT: ${{ needs.readiness.result }}
         run: python3 scripts/report-native-failure.py

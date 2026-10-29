@@ -77,7 +77,8 @@ class NativeManifestFormatRouting(unittest.TestCase):
  def test_powershell_staging_routes_every_fixed_case_to_its_exact_manifest(self):
   reader=load('native_manifest_reader_test','fetch-htkk-web-input.py')
   script=(ROOT/'probe-htkk-windows.ps1').read_text()
-  table=re.search(r'\$expectedFormats=@\{(.*?)\n      \}',script,re.S)
+  table=re.search(r'\$HtkkNativeCaseFormats=@\{(.*?)\n\}',(ROOT/'HtkkNativeCaseFormats.ps1').read_text(),re.S)
+  self.assertIn("HtkkNativeCaseFormats.ps1",script)
   self.assertIsNotNone(table)
   pairs=re.findall(r"'([^']+)'='([^']+)'",table.group(1))
   self.assertEqual(len(pairs),len(reader.CASES))
