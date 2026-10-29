@@ -202,3 +202,26 @@ jobs:
         run: python ./scripts/report-native-case.py
       # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
       # Only bounded verified supplier windows may enter the fixed PRIVATE diagnostic branch.
+  report_failure:
+    # This fresh Linux job never runs the supplier, private source or its outputs.
+    # It may only downgrade a fixed case to failure after preflight/body/post-step
+    # failure; an early successful callback is not whole-workflow acceptance.
+    if: always() && github.ref == 'refs/heads/main' && inputs.gui_automation == 'gtgt-web-import-inspect' && (needs.readiness.result == 'failure' || needs.readiness.result == 'cancelled')
+    needs: readiness
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout trusted failure callback only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Clear pending native case after unsuccessful whole job
+        env:
+          SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          COMMIT_SHA: ${{ inputs.web_source_sha }}
+          WEB_CASE_ID: ${{ inputs.web_case_id }}
+          GUI_AUTOMATION: ${{ inputs.gui_automation }}
+          READINESS_RESULT: ${{ needs.readiness.result }}
+        run: python3 scripts/report-native-failure.py
