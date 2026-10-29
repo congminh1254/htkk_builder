@@ -34,3 +34,13 @@ all13fixed cases, inspect whole workflows and raw immutable outputs, independent
 validate39XSD documents and full comparisons, and keep the parent TASK open if
 mandatory branch coverage or independent review is missing. Archived failed
 experiments40781676341/40782248741 remain failed evidence, not successful runs.
+
+Canary40914285102 stopped before supplier launch at the safe-result fixture:
+its handwritten baseline did not include the four new typed fields. The baseline
+now initializes from generated defaults and then applies the explicit positive
+fixture overrides; the production reader still rejects every missing runtime key.
+Date diagnostics are active only for web-import mode. Portable PowerShell now runs
+the actual safe-reader and tax-comparison fixtures from Python CI, including a
+well-formed-but-wrong provider checksum negative case. All376local tests execute
+with PowerShell available, without skips. This preflight fix is not native proof;
+the next canary uses a new main SHA rather than rerunning the old implementation.

@@ -97,6 +97,19 @@ class NativeResultContract(unittest.TestCase):
 
 
 class ActualPowerShellReaderBoundary(unittest.TestCase):
+    def test_handwritten_reader_and_tax_comparison_fixtures_run_on_the_actual_portable_runtime(self):
+        pwsh=shutil.which('pwsh')
+        if pwsh is None:
+            candidate=pathlib.Path('/tmp/htkk-pwsh/runtime/pwsh');pwsh=str(candidate) if candidate.is_file() else None
+        if pwsh is None:self.skipTest('PowerShell unavailable; Windows preflight executes these contracts')
+        with tempfile.TemporaryDirectory() as tmp:
+            env={k:os.environ[k] for k in ('PATH','HOME','LANG','TMPDIR','SystemRoot','WINDIR','TEMP','TMP') if k in os.environ}
+            env.update(RUNNER_TEMP=tmp,POWERSHELL_TELEMETRY_OPTOUT='1',POWERSHELL_UPDATECHECK='Off')
+            for name,expected in [('Test-HtkkSafeGuiReferenceResult.ps1','Safe GUI result boundary tests passed'),('Test-HtkkWebTaxComparison.ps1','Synthetic C# web-tax comparison boundaries passed')]:
+                with self.subTest(script=name):
+                    result=subprocess.run([pwsh,'-NoLogo','-NoProfile','-NonInteractive','-File',str(ROOT/name)],env=env,capture_output=True,text=True,timeout=90)
+                    self.assertEqual(result.returncode,0,result.stderr[-3000:]);self.assertIn(expected,result.stdout)
+
     def test_generated_reader_rejects_every_field_type_missing_field_range_and_inactive_value(self):
         pwsh=shutil.which('pwsh')
         if pwsh is None:

@@ -22,8 +22,10 @@ internal static class HtkkNativeUiHarness {
  internal static Control BeginCellEdit(Control spread,object sheet,int row,int column,bool showActiveCell){
   spread.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{row,column});
   if(showActiveCell){
-   Type vertical=spread.GetType().Assembly.GetType("FarPoint.Win.Spread.VerticalPosition",true),horizontal=spread.GetType().Assembly.GetType("FarPoint.Win.Spread.HorizontalPosition",true);
-   spread.GetType().GetMethod("ShowActiveCell",new Type[]{vertical,horizontal}).Invoke(spread,new object[]{Enum.Parse(vertical,"Center"),Enum.Parse(horizontal,"Center")});
+   MethodInfo show=spread.GetType().GetMethod("ShowActiveCell",BindingFlags.Public|BindingFlags.Instance);
+   if(show==null)throw new InvalidOperationException();ParameterInfo[] parameters=show.GetParameters();
+   if(parameters.Length!=2||parameters[0].ParameterType.FullName!="FarPoint.Win.Spread.VerticalPosition"||parameters[1].ParameterType.FullName!="FarPoint.Win.Spread.HorizontalPosition")throw new InvalidOperationException();
+   show.Invoke(spread,new object[]{Enum.Parse(parameters[0].ParameterType,"Center"),Enum.Parse(parameters[1].ParameterType,"Center")});
   }
   spread.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(spread,new object[]{EventArgs.Empty,false});
   Control editor=Get(spread,"EditingControl") as Control;if(editor==null)throw new InvalidOperationException();return editor;

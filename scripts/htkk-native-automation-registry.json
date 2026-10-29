@@ -2348,21 +2348,33 @@
     },
     "webSigningDateEdited": {
       "kind": "boolean",
-      "default": false
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
     },
     "webSigningDateReady": {
       "kind": "boolean",
-      "default": false
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
     },
     "webSigningDateLocked": {
       "kind": "boolean",
-      "default": false
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
     },
     "webSigningDateCellKind": {
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 3
+      "maximum": 3,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
     }
   }
 }
