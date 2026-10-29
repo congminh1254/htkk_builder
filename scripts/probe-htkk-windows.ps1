@@ -1003,7 +1003,7 @@ try {
        if($gui.webCaseId -cin @('01GTGT-noactivity-zero-M10-2026','01GTGT-noactivity-reset-sale10-M10-2026','01GTGT-noactivity-cancel-sale10-M10-2026','01GTGT-noactivity-uncheck-sale10-M10-2026','01GTGT-noactivity-keep-credit-M10-2026')){foreach($flag in @('gtgtCt21CaseMatched','gtgtCt21ConfirmationMatched','gtgtCt21LocksMatched','gtgtCt21BeforeExportMatched','gtgtCt21AfterImportMatched')){if($gui[$flag] -isnot [bool] -or -not $gui[$flag]){throw 'STAGING_NOT_VERIFIED'}}}
        if($gui.webCaseId -ceq '01GTGT-noactivity-uncheck-sale10-M10-2026' -and ($gui.gtgtCt21UncheckMatched -isnot [bool] -or -not $gui.gtgtCt21UncheckMatched)){throw 'STAGING_NOT_VERIFIED'}
       foreach($flag in @('webSigningDateEdited','webSigningDateReady')){if($gui[$flag] -isnot [bool] -or -not $gui[$flag]){throw 'STAGING_NOT_VERIFIED'}}
-      if($gui.webSigningDateLocked -isnot [bool] -or $gui.webSigningDateLocked -or $gui.webSigningDateCellKind -notin @(1,2,3)){throw 'STAGING_NOT_VERIFIED'}
+      if($gui.webSigningDateLocked -isnot [bool] -or $gui.webSigningDateLocked -or $gui.webSigningDateCellKind -ne 4){throw 'STAGING_NOT_VERIFIED'}
       if($gui.roundtripXmlExactMatched -isnot [bool] -or -not $gui.roundtripXmlExactMatched){throw 'STAGING_NOT_VERIFIED'}
       $nativeEvidenceStage='input-provenance'
       $inputDirectory=Join-Path $env:RUNNER_TEMP 'htkk-web-reference-input'
