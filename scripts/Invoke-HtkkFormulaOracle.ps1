@@ -12,7 +12,7 @@ try{
  $c=Invoke-HtkkBoundedCompiler -Executable $compiler -WorkingDirectory $work -Arguments @('/nologo','/target:exe','/platform:x86','/optimize+',('/out:'+$exe),(Join-Path $PSScriptRoot 'HtkkFormulaOracle.cs')) -TimeoutMilliseconds 30000
  if($c.status -cne 'exited' -or $c.exitCode -ne 0 -or $c.timedOut -or -not $c.jobCleanupVerified -or -not $c.diagnosticsVerified){throw 'FORMULA_ORACLE_COMPILER_BOUNDARY'}
  $rule='HTKK fixed formula oracle '+[guid]::NewGuid().ToString('N');New-NetFirewallRule -DisplayName $rule -Direction Outbound -Program $exe -Action Block|Out-Null
- $r=Invoke-HtkkBoundedJobProcess -Executable $exe -WorkingDirectory $work -Arguments @($ProjectDirectory,$result) -TimeoutMilliseconds 60000
+ $r=Invoke-HtkkBoundedJobProcess -Executable $exe -WorkingDirectory $work -Arguments @($ProjectDirectory,$result) -TimeoutMilliseconds 30000
  if($r.status -cne 'exited' -or $r.exitCode -ne 0 -or $r.timedOut -or -not $r.jobCleanupVerified -or -not $r.processStopped){throw 'FORMULA_ORACLE_PROCESS_BOUNDARY'}
  foreach($p in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $ProjectDirectory $p) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$p]){throw 'FORMULA_ORACLE_SOURCE_CHANGED'}}
  if(-not(Test-Path -LiteralPath $result -PathType Leaf) -or (Get-Item -LiteralPath $result).Length -gt 65536){throw 'FORMULA_ORACLE_RESULT_SIZE'}
