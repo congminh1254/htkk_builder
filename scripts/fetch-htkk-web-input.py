@@ -9,7 +9,8 @@ REPO='htkk-net/htkk_web'
 BUILDER='congminh1254/htkk_builder'
 BRANCH='gtgt-web-reference-input'
 NAMES=('01GTGT-web.xml','manifest.json')
-CASES={'01GTGT-zero-M10-2026':'htkk-web-zero-input-v1','01GTGT-sale10-M10-2026':'htkk-web-sale10-input-v1','01GTGT-sale10-half-M10-2026':'htkk-web-sale10-half-input-v1','01GTGT-sale10-manual-M10-2026':'htkk-web-sale10-manual-input-v1','01GTGT-sale5-half-M10-2026':'htkk-web-sale5-half-input-v1','01GTGT-sale5-manual-M10-2026':'htkk-web-sale5-manual-input-v1','01GTGT-noactivity-zero-M10-2026':'htkk-web-noactivity-zero-input-v1','01GTGT-noactivity-reset-sale10-M10-2026':'htkk-web-noactivity-reset-sale10-input-v1','01GTGT-noactivity-cancel-sale10-M10-2026':'htkk-web-noactivity-cancel-sale10-input-v1','01GTGT-noactivity-uncheck-sale10-M10-2026':'htkk-web-noactivity-uncheck-sale10-input-v1','01GTGT-noactivity-keep-credit-M10-2026':'htkk-web-noactivity-keep-credit-input-v1','01GTGT-zero-Q4-2026':'htkk-web-quarter-zero-input-v1','01GTGT-native-import-sale10-M10-2026':'htkk-web-native-import-sale10-input-v1'}
+_case_spec=importlib.util.spec_from_file_location('trusted_case_input_metadata',pathlib.Path(__file__).with_name('htkk_native_cases.py'));case_registry=importlib.util.module_from_spec(_case_spec);_case_spec.loader.exec_module(case_registry)
+CASES={id:c['format']for id,c in case_registry.CASES.items()}
 SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
 SALE10_HALF={key:('5' if key in ('ct32','ct27','ct34') else '1') for key in SALE10}
 SALE10_MANUAL={key:('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}

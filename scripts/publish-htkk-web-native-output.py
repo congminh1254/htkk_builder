@@ -17,7 +17,7 @@ BUILDER=reader.BUILDER
 DIRECTORY='htkk-web-native-output'
 NAMES=('01GTGT-native.xml','provenance.json')
 INITIAL='01GTGT-initial.xml'
-BRANCHES={'01GTGT-zero-M10-2026':'gtgt-web-native-zero-output','01GTGT-sale10-M10-2026':'gtgt-web-native-sale10-output','01GTGT-sale10-half-M10-2026':'gtgt-web-native-sale10-half-output','01GTGT-sale10-manual-M10-2026':'gtgt-web-native-sale10-manual-output','01GTGT-sale5-half-M10-2026':'gtgt-web-native-sale5-half-output','01GTGT-sale5-manual-M10-2026':'gtgt-web-native-sale5-manual-output','01GTGT-noactivity-zero-M10-2026':'gtgt-web-native-noactivity-zero-output','01GTGT-noactivity-reset-sale10-M10-2026':'gtgt-web-native-noactivity-reset-sale10-output','01GTGT-noactivity-cancel-sale10-M10-2026':'gtgt-web-native-noactivity-cancel-sale10-output','01GTGT-noactivity-uncheck-sale10-M10-2026':'gtgt-web-native-noactivity-uncheck-sale10-output','01GTGT-noactivity-keep-credit-M10-2026':'gtgt-web-native-noactivity-keep-credit-output','01GTGT-zero-Q4-2026':'gtgt-web-native-quarter-zero-output','01GTGT-native-import-sale10-M10-2026':'gtgt-web-native-native-import-sale10-output'}
+BRANCHES={id:c['outputBranch']for id,c in reader.case_registry.CASES.items()}
 PINS={**privacy.PINS,'Project/FarPoint.Win.Spread.dll':'2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'}
 MONEY=('ct22','ct23','ct24','ct23a','ct24a','ct25','ct26','ct27','ct28','ct29','ct30','ct31','ct32','ct33','ct32a','ct34','ct35','ct36','ct37','ct38','ct39a','ct40a','ct40b','ct40','ct41','ct42','ct43')
 SERVICE={'maDVu':'HTKK','tenDVu':'HỖ TRỢ KÊ KHAI THUẾ','pbanDVu':'5.8.1'}
@@ -153,7 +153,7 @@ def compare_tax(input_body,native_body):
  if not equal(left,right,'HSoThueDTu') or count!=70:fail('COMPARE')
  return {'allTaxValuesMatched':True,'checkedTaxLeafCount':70,'creationDateRule':'native-export-current-date','independentSchemaVerification':False}
 
-def publish(native,metadata,token,fetch=None,today=None,initial=None):
+def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immutable=False):
  # Revalidate even when called independently of the fixed-path staging reader.
  aligned=metadata.get('format')=='htkk-web-native-output-staging-v3'
  metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),initial,str(metadata.get('runAttempt','')) if initial is not None else None,aligned)
@@ -164,6 +164,7 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None):
   if aligned and not compared['allLeafValuesMatched']:fail('COMPARE')
  if not isinstance(token,str) or not token:fail('AUTH')
  fetch=fetch or transport.api
+ if retain_immutable:transport.assert_current(fetch,token,metadata['sourceCommit'])
  # Only a fixed PRIVATE immutable input artifact may justify retention.
  def read_api(path,read_token):return fetch(path,read_token)
  inputs=reader.download(token,fetch=read_api,expected_source=metadata['sourceCommit'],expected_case=metadata['caseId'],artifact_commit=metadata['artifactCommit'])
@@ -190,7 +191,10 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None):
  tree_sha=exact_sha(tree.get('sha'))
  commit=fetch('/git/commits',token,{'message':'Private original native reexport '+metadata['caseId']+' '+metadata['sourceCommit'],'tree':tree_sha,'parents':[]})
  if not isinstance(commit,dict):fail('API_SHAPE')
- artifact=exact_sha(commit.get('sha'));branch=BRANCHES[metadata['caseId']];missing=False
+ artifact=exact_sha(commit.get('sha'))
+ if retain_immutable:
+  transport.assert_current(fetch,token,metadata['sourceCommit']);transport.immutable_refs.retain(fetch,token,'output',metadata['sourceCommit'],metadata['caseId'],artifact)
+ branch=BRANCHES[metadata['caseId']];missing=False
  try:existing=fetch('/git/ref/heads/'+branch,token)
  except urllib.error.HTTPError as error:
   if error.code!=404:raise
@@ -211,7 +215,7 @@ def main():
   if not token:fail('AUTH')
   native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),run_attempt=os.environ.get('GITHUB_RUN_ATTEMPT',''),aligned=True)
   initial=transport.safe_read(directory/INITIAL,reader.MAX_XML)
-  print(json.dumps(publish(native,metadata,token,initial=initial),separators=(',',':')))
+  print(json.dumps(publish(native,metadata,token,initial=initial,retain_immutable=True),separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')))
   raise SystemExit('Native synthetic output retention failed; no XML, paths, credentials or raw remote error published.')

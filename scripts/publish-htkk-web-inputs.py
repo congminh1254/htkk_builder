@@ -9,7 +9,8 @@ _spec=importlib.util.spec_from_file_location('htkk_web_input_reader',pathlib.Pat
 reader=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(reader)
 REPO=reader.REPO
 BUILDER=reader.BUILDER
-CASES=(('01GTGT-zero-M10-2026','htkk-web-reference-zero-input','gtgt-web-reference-zero-input'),('01GTGT-sale10-M10-2026','htkk-web-reference-sale10-input','gtgt-web-reference-sale10-input'),('01GTGT-sale10-half-M10-2026','htkk-web-reference-sale10-half-input','gtgt-web-reference-sale10-half-input'),('01GTGT-sale10-manual-M10-2026','htkk-web-reference-sale10-manual-input','gtgt-web-reference-sale10-manual-input'),('01GTGT-sale5-half-M10-2026','htkk-web-reference-sale5-half-input','gtgt-web-reference-sale5-half-input'),('01GTGT-sale5-manual-M10-2026','htkk-web-reference-sale5-manual-input','gtgt-web-reference-sale5-manual-input'),('01GTGT-noactivity-zero-M10-2026', 'htkk-web-reference-noactivity-zero-input', 'gtgt-web-reference-noactivity-zero-input'),('01GTGT-noactivity-reset-sale10-M10-2026', 'htkk-web-reference-noactivity-reset-sale10-input', 'gtgt-web-reference-noactivity-reset-sale10-input'),('01GTGT-noactivity-cancel-sale10-M10-2026', 'htkk-web-reference-noactivity-cancel-sale10-input', 'gtgt-web-reference-noactivity-cancel-sale10-input'),('01GTGT-noactivity-uncheck-sale10-M10-2026', 'htkk-web-reference-noactivity-uncheck-sale10-input', 'gtgt-web-reference-noactivity-uncheck-sale10-input'),('01GTGT-noactivity-keep-credit-M10-2026', 'htkk-web-reference-noactivity-keep-credit-input', 'gtgt-web-reference-noactivity-keep-credit-input'),('01GTGT-zero-Q4-2026','htkk-web-reference-quarter-zero-input','gtgt-web-reference-quarter-zero-input'),('01GTGT-native-import-sale10-M10-2026','htkk-web-reference-native-import-sale10-input','gtgt-web-reference-native-import-sale10-input'))
+_ref_spec=importlib.util.spec_from_file_location('input_immutable_refs',pathlib.Path(__file__).with_name('immutable_case_refs.py'));immutable_refs=importlib.util.module_from_spec(_ref_spec);_ref_spec.loader.exec_module(immutable_refs)
+CASES=tuple((id,c['stagingDirectory'],c['inputBranch'])for id,c in reader.case_registry.CASES.items())
 OUTPUT='htkk-web-input-publication.json'
 PRODUCER='scripts/generate-htkk-web-reference.mjs'
 MAX_PRODUCER=262144
@@ -92,7 +93,7 @@ def assert_current(fetch,token,source_commit):
  if not isinstance(current,dict) or current.get('ref')!='refs/heads/main' or not isinstance(current.get('object'),dict) or current['object'].get('type')!='commit':fail('API_SHAPE')
  if sha(current['object'].get('sha'))!=source_commit:fail('STALE_SOURCE')
 
-def publish(inputs,source_commit,token,fetch=None):
+def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,retain_immutable=False):
  sha(source_commit)
  if not isinstance(token,str) or not token:fail('AUTH')
  # Require callers to use the validated fixed-case order and unchanged bytes.
@@ -104,6 +105,8 @@ def publish(inputs,source_commit,token,fetch=None):
   body=item[2]['01GTGT-web.xml']
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
   reader.validate_web_xml(body,case_id=case)
+ if request_id is not None and (not isinstance(request_id,str)or not re.fullmatch('[1-9][0-9]*',request_id)):fail('MANIFEST')
+ if plan is not None:reader.case_registry.validate_plan(plan)
  fetch=fetch or api
  info=fetch('',token)
  if not isinstance(info,dict) or info.get('private') is not True or info.get('full_name')!=REPO:fail('PRIVATE_REPO')
@@ -121,11 +124,22 @@ def publish(inputs,source_commit,token,fetch=None):
  metadata=reader.json_object(package,'API_JSON')
  if any(item[3]['producerSha256']!=producer_hash for item in inputs):fail('SOURCE_PRODUCER')
  if any(metadata.get('version')!=item[3]['sourceVersion'] for item in inputs):fail('SOURCE_VERSION')
+ plan_sha=None
+ if plan is not None:
+  envelope=fetch('/contents/data/htkk-case-plan.json'+query,token)
+  if not isinstance(envelope,dict)or envelope.get('path')!='data/htkk-case-plan.json':fail('SOURCE_PRODUCER')
+  normalized=dict(envelope);normalized['path']='htkk-case-plan.json';raw_plan=reader.content_file(normalized,'htkk-case-plan.json',2_000_000)
+  if reader.json_object(raw_plan,'MANIFEST')!=plan:fail('MANIFEST')
+  plan_sha=hashlib.sha256(raw_plan).hexdigest()
+
  cases=[]
  for case,branch,files,manifest in inputs:
-  entries=[]
-  for name in reader.NAMES:
-   body=files[name]
+  entries=[];published=dict(files)
+  if request_id is not None:
+   c=reader.case_registry.policy(case);a=reader.case_registry.ADAPTERS[c['adapterId']]
+   context={'format':'htkk-case-context-v1','sourceCommit':source_commit,'requestId':request_id,'caseId':case,'adapterId':c['adapterId'],'unit':c['unit'],'profilePolicy':a['profilePolicy'],'producerSha256':producer_hash,'xmlSha256':manifest['xmlSha256'],'planSha256':plan_sha}
+   published['case-context.json']=(json.dumps(context,sort_keys=True,separators=(',',':'))+'\n').encode()
+  for name,body in published.items():
    blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
    if not isinstance(blob,dict) or sha(blob.get('sha'))!=hashlib.sha1(b'blob '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest():fail('HASH')
    entries.append({'path':name,'mode':'100644','type':'blob','sha':blob['sha']})
@@ -136,6 +150,7 @@ def publish(inputs,source_commit,token,fetch=None):
   if not isinstance(commit,dict):fail('API_SHAPE')
   artifact=sha(commit.get('sha'))
   assert_current(fetch,token,source_commit)
+  if retain_immutable:immutable_refs.retain(fetch,token,'input',source_commit,case,artifact)
   # GitHub PATCH of a missing ref can return 422. Only an explicit GET 404
   # establishes absence; never reinterpret a failed mutation as permission to
   # create a ref or retry authorization/validation errors.
@@ -173,7 +188,9 @@ def main():
   source=sha(os.environ.get('COMMIT_SHA'));token=os.environ.get('SOURCE_PUBLISH_TOKEN') or os.environ.get('SOURCE_READ_TOKEN')
   if not token:fail('AUTH')
   runner_temp=os.environ['RUNNER_TEMP'];inputs=read_inputs(runner_temp,source)
-  result=publish(inputs,source,token);save_result(result,runner_temp)
+  plan_path=pathlib.Path(runner_temp)/'htkk-source-case-plan.json'
+  plan=reader.json_object(safe_read(plan_path,2_000_000),'MANIFEST')if plan_path.exists()else None
+  result=publish(inputs,source,token,request_id=os.environ['GITHUB_RUN_ID'],plan=plan,retain_immutable=True);save_result(result,runner_temp)
   print(json.dumps({'format':'htkk-web-input-publication-status-v1','status':'published','sourceCommit':source,'caseCount':len(result['cases'])},separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')))

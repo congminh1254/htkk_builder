@@ -1,5 +1,5 @@
 """Keep private source diagnostics off the public Actions console."""
-import os,pathlib,subprocess,shutil,json,re,datetime
+import os,pathlib,subprocess,shutil,json,re,datetime,importlib.util
 source=pathlib.Path('source').resolve()
 log=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-builder-log.txt'
 allowed=('PATH','HOME','TMPDIR','RUNNER_TEMP','RUNNER_TOOL_CACHE','LANG')
@@ -19,17 +19,11 @@ try:
    browser=subprocess.run(['node','-e','process.stdout.write(require("@playwright/test").chromium.executablePath())'],cwd=source,env=env,stdout=subprocess.PIPE,stderr=output,check=True).stdout.decode()
  env['CHROMIUM_PATH']=browser
  run(['npm','run','test:e2e'])
+ if (source/'scripts/check-htkk-source-cases.mjs').is_file():run(['node','scripts/check-htkk-source-cases.mjs'])
  if os.environ['BUILD_MODE']=='release':
-  # Actual source producer runs only after all CI checks, without credentials.
-  # These thirteen directories contain fixed synthetic XML only; trusted publication
-  # independently revalidates the entire allowlist before any authenticated I/O.
-  reference_env=dict(env);reference_env['TMPDIR']=os.environ['RUNNER_TEMP']
-  for case,suffix in (('zero','zero'),('quarter-zero','quarter-zero'),('native-import-sale10','native-import-sale10'),('sale10','sale10'),('sale10-half','sale10-half'),('sale10-manual','sale10-manual'),('sale5-half','sale5-half'),('sale5-manual','sale5-manual'),('noactivity-zero', 'noactivity-zero'),('noactivity-reset-sale10', 'noactivity-reset-sale10'),('noactivity-cancel-sale10', 'noactivity-cancel-sale10'),('noactivity-uncheck-sale10', 'noactivity-uncheck-sale10'),('noactivity-keep-credit', 'noactivity-keep-credit')):
-   destination=pathlib.Path(os.environ['RUNNER_TEMP'])/('htkk-web-reference-'+suffix+'-input')
-   if destination.exists() or destination.is_symlink():raise RuntimeError()
-   with log.open('ab') as output:
-    result=subprocess.run(['node','scripts/generate-htkk-web-reference.mjs','--case',case,str(destination)],cwd=source,env=reference_env,stdout=output,stderr=subprocess.STDOUT)
-   if result.returncode:raise RuntimeError()
+  # Adapter/case metadata is trusted builder data, not commands supplied by a private plan.
+  spec=importlib.util.spec_from_file_location('trusted_producer_batch',pathlib.Path(__file__).with_name('produce_case_batch.py'));batch=importlib.util.module_from_spec(spec);spec.loader.exec_module(batch)
+  batch.produce(source,os.environ['RUNNER_TEMP'],env,log)
   # Public provenance only; no source files or diagnostics enter this manifest.
   sha=subprocess.run(['git','rev-parse','HEAD'],cwd=source,env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True).stdout.decode().strip()
   version=json.loads((source/'package.json').read_text())['version']
