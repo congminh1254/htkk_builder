@@ -797,7 +797,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.GtgtCaseNonzeroMask:
     return 134217727;
    case HtkkNativeResultCounter.WebSigningDateCellKind:
-    return 3;
+    return 4;
    default: throw new ArgumentException("Unknown result counter");
   }
  }

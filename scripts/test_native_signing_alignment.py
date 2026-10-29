@@ -29,12 +29,12 @@ class AlignedSigningTests(unittest.TestCase):
   with self.assertRaises(n.OutputError):n.publish(native,m,'synthetic-token',lambda *args:self.fail('No IO allowed'),f.TODAY,initial=initial)
 
 class OriginalSigningControlTests(unittest.TestCase):
- def test_original_editor_preserves_general_text_cell_type_and_protection(self):
+ def test_original_editor_requires_source_mask_and_preserves_type_and_protection(self):
   source=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text()
   block=source.split('private void EditOriginalSigningDate')[1].split('private bool periodDateMatched')[0]
   self.assertIn('FarPoint.Win.Spread.CellType.GeneralCellType',block)
   self.assertIn('Get(type,"FormatString")',block);self.assertIn('=="@"',block)
-  self.assertIn('Get(type,"NumberFormat")==null',block);self.assertIn('Get(type,"DateTimeFormat")==null',block)
+  self.assertIn('FarPoint.Win.Spread.CellType.MaskCellType',block);self.assertIn('Get(type,"Mask")',block);self.assertIn('=="00/00/0000"',block);self.assertIn('webSigningDateCellKind!=4',block);self.assertIn('"25102026"',block)
   for forbidden in ('SetValue','set_Value','set_CellType','set_Locked'):
    self.assertNotIn(forbidden,block)
   self.assertIn('BeginCellEdit(grid,sheet,65,10,true)',block)

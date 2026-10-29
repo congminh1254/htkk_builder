@@ -242,7 +242,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateReady'] -cne $false){throw 'invalid'}
   if($value['webSigningDateLocked'] -isnot [bool]){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateLocked'] -cne $false){throw 'invalid'}
-  if(($value['webSigningDateCellKind'] -isnot [int] -and $value['webSigningDateCellKind'] -isnot [long]) -or $value['webSigningDateCellKind'] -lt 0 -or $value['webSigningDateCellKind'] -gt 3){throw 'invalid'}
+  if(($value['webSigningDateCellKind'] -isnot [int] -and $value['webSigningDateCellKind'] -isnot [long]) -or $value['webSigningDateCellKind'] -lt 0 -or $value['webSigningDateCellKind'] -gt 4){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateCellKind'] -cne 0){throw 'invalid'}
   if($value.mode -cne $ExpectedMode){throw 'invalid'}
   # END GENERATED RESULT CONTRACT

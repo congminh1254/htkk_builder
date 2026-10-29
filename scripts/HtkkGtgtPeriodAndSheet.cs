@@ -27,23 +27,24 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object cell=Cell(sheet,65,10),value=Get(cell,"Value");DateTime date;
   if(value is DateTime)return ((DateTime)value).Date==new DateTime(2026,10,25);
   string text=Convert.ToString(value,CultureInfo.InvariantCulture);
-  return DateTime.TryParseExact(text,new string[]{"dd/MM/yyyy","d/M/yyyy","yyyy-MM-dd"},CultureInfo.InvariantCulture,DateTimeStyles.None,out date)&&date.Date==new DateTime(2026,10,25);
+  return DateTime.TryParseExact(text,new string[]{"dd/MM/yyyy","d/M/yyyy","yyyy-MM-dd","ddMMyyyy"},CultureInfo.InvariantCulture,DateTimeStyles.None,out date)&&date.Date==new DateTime(2026,10,25);
  }
  private void EditOriginalSigningDate(Control grid,object sheet){
   // Pinned 01_GTGT_TT80_283.xml: K_66, Controltype 14, TKhaiThue/ngayKy.
   // Zero-based original sheet coordinate65/10; never set Cell.Value or a model field.
   Form owner=grid.FindForm();object dateCell=Cell(sheet,65,10),type=Get(dateCell,"CellType");
-  // Original DefaultCellFomat leaves GeneralCellType with XLS format @ unchanged:
-  // both NumberFormat and DateTimeFormat are null. It is not a DateTimeCellType.
+  // Original fpSpBindDataCell maps control14 to InsertDateCell, overriding XLS @.
+  // InsertDateCell uses MaskCellType, mask00/00/0000 and prompt char46 ('.').
   webSigningDateLocked=Convert.ToBoolean(Get(dateCell,"Locked"));
   string kind=type==null?String.Empty:type.GetType().FullName;
   bool generalText=kind=="FarPoint.Win.Spread.CellType.GeneralCellType"&&Convert.ToString(Get(type,"FormatString"),CultureInfo.InvariantCulture)=="@"&&Get(type,"NumberFormat")==null&&Get(type,"DateTimeFormat")==null;
-  webSigningDateCellKind=generalText?1:kind=="FarPoint.Win.Spread.CellType.TextCellType"?2:kind=="FarPoint.Win.Spread.CellType.DateTimeCellType"?3:0;
+  bool dateMask=kind=="FarPoint.Win.Spread.CellType.MaskCellType"&&Convert.ToString(Get(type,"Mask"),CultureInfo.InvariantCulture)=="00/00/0000"&&Convert.ToChar(Get(type,"MaskChar"),CultureInfo.InvariantCulture)=='.';
+  webSigningDateCellKind=dateMask?4:generalText?1:kind=="FarPoint.Win.Spread.CellType.TextCellType"?2:kind=="FarPoint.Win.Spread.CellType.DateTimeCellType"?3:0;
   SetStage(HtkkAutomationStage.GtgtCaseEditing);Record();
-  if(mode!="gtgt-web-import-inspect"||!webInputVerified||webSigningDateEdited||!gtgtPins||!gtgtDimensions||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible()||webSigningDateLocked||webSigningDateCellKind==0)throw new InvalidOperationException();
+  if(mode!="gtgt-web-import-inspect"||!webInputVerified||webSigningDateEdited||!gtgtPins||!gtgtDimensions||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible()||webSigningDateLocked||webSigningDateCellKind!=4)throw new InvalidOperationException();
   webSigningDateEdited=true;SetStage(HtkkAutomationStage.GtgtCaseEditing);Record();Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,65,10,true);
   if(!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();
-  foreach(string keys in new string[]{"^a","25/10/2026","{TAB}"}){uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
+  foreach(string keys in new string[]{"^a","25102026","{TAB}"}){uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
   HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
   webSigningDateReady=FixedWebSigningDate(sheet);if(!webSigningDateReady)throw new InvalidOperationException();Record();
  }

@@ -72,7 +72,7 @@ def collect(source,builder,directory,get=api,progress=lambda done,total:None):
    check(metadata.get('format') in ('htkk-web-native-output-reference-v2','htkk-web-native-output-reference-v3') and p.get('sourceCommit')==source and p.get('builderCommit')==builder and p.get('runId')==run_id and p.get('runAttempt')==run['run_attempt'] and p.get('caseId')==case)
    initial=raw(get,'01GTGT-initial.xml',commit);native=raw(get,'01GTGT-native.xml',commit);web=raw(get,'01GTGT-web.xml',input_commit);input_bytes=raw(get,'manifest.json',input_commit);input_manifest=retention.reader.validate_manifest(input_bytes)
    aligned=metadata['format']=='htkk-web-native-output-reference-v3'
-   if aligned:check(gui.get('webSigningDateReady') is True and gui.get('webSigningDateEdited') is True and gui.get('webSigningDateLocked') is False and gui.get('webSigningDateCellKind') in (1,2,3) and gui.get('roundtripXmlExactMatched') is True)
+   if aligned:check(gui.get('webSigningDateReady') is True and gui.get('webSigningDateEdited') is True and gui.get('webSigningDateLocked') is False and gui.get('webSigningDateCellKind')==4 and gui.get('roundtripXmlExactMatched') is True)
    retention.validate_provenance(json.dumps(p).encode(),native,run_id,builder,source,case,input_commit,initial,str(run['run_attempt']),aligned=aligned)
    # Recheck fixed synthetic privacy using the authenticated run's capture date, not today's date.
    import datetime
