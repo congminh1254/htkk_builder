@@ -16,7 +16,7 @@ try{
  if($r.status -cne 'exited' -or $r.exitCode -ne 0 -or $r.timedOut -or -not $r.jobCleanupVerified -or -not $r.processStopped){throw 'FORMULA_ORACLE_PROCESS_BOUNDARY'}
  foreach($p in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $ProjectDirectory $p) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$p]){throw 'FORMULA_ORACLE_SOURCE_CHANGED'}}
  if(-not(Test-Path -LiteralPath $result -PathType Leaf) -or (Get-Item -LiteralPath $result).Length -gt 65536){throw 'FORMULA_ORACLE_RESULT_SIZE'}
- $v=Get-Content -LiteralPath $result -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable
+ $v=Get-Content -LiteralPath $result -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable -DateKind String
  if($v.format -cne 'htkk-formula-oracle-v1' -or $v.runtime -cne 'clr2-x86' -or $v.primitiveOnly -isnot [bool] -or -not $v.primitiveOnly -or $v.cases.Count -ne 84){throw 'FORMULA_ORACLE_RESULT_SHAPE'}
  for($i=0;$i -lt $v.cases.Count;$i++){$x=$v.cases[$i];if($x.id -ne $i+1 -or $x.formula -isnot [string] -or $x.formula.Length -gt 128 -or $x.fixture -cnotin @('numeric','mixed') -or $x.result.kind -cnotin @('number','text','boolean','blank','error','date') -or $x.result.value -isnot [string] -or $x.result.value.Length -gt 256){throw 'FORMULA_ORACLE_CASE_SHAPE'}}
  $safe=[ordered]@{format='htkk-formula-oracle-execution-v1';sourceHashesVerified=$true;sourceHashesUnchanged=$true;compilerJobCleanupVerified=$true;oracleJobCleanupVerified=$true;runtime='clr2-x86';primitiveOnly=$true;cases=$v.cases}
