@@ -185,6 +185,10 @@ function New-HtkkNativeResultDefaults {
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false
+  webSigningDateEdited=$false
+  webSigningDateReady=$false
+  webSigningDateLocked=$false
+  webSigningDateCellKind=0
  }
  return $result
 }

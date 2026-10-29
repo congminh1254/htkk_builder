@@ -1252,7 +1252,11 @@
     "gtgtCaseNonzeroMask",
     "controlKinds",
     "realTaxpayerDataUsed",
-    "runtimeRoundTrip"
+    "runtimeRoundTrip",
+    "webSigningDateEdited",
+    "webSigningDateReady",
+    "webSigningDateLocked",
+    "webSigningDateCellKind"
   ],
   "controlKinds": [
     "form",
@@ -2341,6 +2345,24 @@
       "kind": "boolean",
       "default": false,
       "activeModes": []
+    },
+    "webSigningDateEdited": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webSigningDateReady": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webSigningDateLocked": {
+      "kind": "boolean",
+      "default": false
+    },
+    "webSigningDateCellKind": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3
     }
   }
 }

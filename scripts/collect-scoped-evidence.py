@@ -69,12 +69,15 @@ def collect(source,builder,directory,get=api,progress=lambda done,total:None):
    reports=[d for d in docs if d.get('guiReferenceAutomation',{}).get('webCaseId')==case and d.get('guiReferenceAutomation',{}).get('webSourceSha')==source];check(len(reports)==1);report=reports[0];gui=validate_report(report,source,case)
    publications=[d for d in docs if d.get('format')=='htkk-web-native-output-publication-status-v1' and d.get('status')=='published' and d.get('caseId')==case and d.get('sourceCommit')==source];check(len(publications)==1)
    commit=sha(publications[0].get('artifactCommit'));retained_bytes=raw(get,'manifest.json',commit);metadata=json.loads(retained_bytes);p=metadata.get('provenance',{});input_commit=sha(metadata.get('input',{}).get('artifactCommit'))
-   check(metadata.get('format')=='htkk-web-native-output-reference-v2' and p.get('sourceCommit')==source and p.get('builderCommit')==builder and p.get('runId')==run_id and p.get('runAttempt')==run['run_attempt'] and p.get('caseId')==case)
+   check(metadata.get('format') in ('htkk-web-native-output-reference-v2','htkk-web-native-output-reference-v3') and p.get('sourceCommit')==source and p.get('builderCommit')==builder and p.get('runId')==run_id and p.get('runAttempt')==run['run_attempt'] and p.get('caseId')==case)
    initial=raw(get,'01GTGT-initial.xml',commit);native=raw(get,'01GTGT-native.xml',commit);web=raw(get,'01GTGT-web.xml',input_commit);input_bytes=raw(get,'manifest.json',input_commit);input_manifest=retention.reader.validate_manifest(input_bytes)
-   retention.validate_provenance(json.dumps(p).encode(),native,run_id,builder,source,case,input_commit,initial,str(run['run_attempt']))
+   aligned=metadata['format']=='htkk-web-native-output-reference-v3'
+   if aligned:check(gui.get('webSigningDateReady') is True and gui.get('webSigningDateEdited') is True and gui.get('webSigningDateLocked') is False and gui.get('webSigningDateCellKind') in (1,2,3) and gui.get('roundtripXmlExactMatched') is True)
+   retention.validate_provenance(json.dumps(p).encode(),native,run_id,builder,source,case,input_commit,initial,str(run['run_attempt']),aligned=aligned)
    # Recheck fixed synthetic privacy using the authenticated run's capture date, not today's date.
    import datetime
-   captured=datetime.date.fromisoformat(run['created_at'][:10]);retention.validate_native(initial,case,captured,initial=True);retention.validate_native(native,case,captured);retention.compare_tax(web,native)
+   captured=datetime.date.fromisoformat(run['created_at'][:10]);retention.validate_native(initial,case,captured,initial=True,aligned=aligned);retention.validate_native(native,case,captured);retention.compare_tax(web,native)
+   if aligned:check(retention.compare_native_roundtrip(initial,native)['allLeafValuesMatched'] is True)
    check(input_manifest['sourceCommit']==source and input_manifest['caseId']==case and input_manifest['producerSha256']==producer_sha==metadata['input']['producerSha256'] and input_manifest['xmlSha256']==hashlib.sha256(web).hexdigest()==p['webImportInputSha256'])
    check(hashlib.sha256(initial).hexdigest()==gui['exportSha256']==metadata['files']['01GTGT-initial.xml']['sha256'] and hashlib.sha256(native).hexdigest()==gui['roundtripReexportSha256']==publications[0]['nativeOutputSha256']==metadata['files']['01GTGT-native.xml']['sha256'])
    files={'retained.json':retained_bytes,'input-manifest.json':input_bytes,'initial.xml':initial,'native.xml':native,'web.xml':web,'producer.mjs':producer,'gui-report.json':json.dumps(report).encode(),'run.json':json.dumps(run).encode()}
