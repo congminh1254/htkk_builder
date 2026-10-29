@@ -1,13 +1,14 @@
 # Native signing alignment — TASK-005 / source issue381
 
 Original D1 maps K_66 (zero-based65/10) to signing date, control14. The pinned XLS
-uses text format `@`, unlocked, merged K66:O66. Original DefaultCellFomat preserves
-GeneralCellType when both numeric/date formats are absent. The previous experiment
-allowed only TextCellType/DateTimeCellType, excluding this source-supported shape.
-Runtime success must still be established; source inspection alone is not proof.
+uses text format `@`, unlocked, merged K66:O66. That template format alone does
+not describe the runtime editor: original fpSpBindDataCell maps control14 to
+InsertDateCell, which creates MaskCellType with mask `00/00/0000` and prompt `.`.
+Canary40916290675 rejected the earlier General/text/date guard before editing.
+Runtime success for the corrected mask still needs a fresh main-only pilot.
 
-The revised helper recognizes only the source-backed General-text shape, ordinary
-text or date cell types, on the original source-pinned D1 sheet. It refuses locked
+The revised helper requires this exact source-backed mask on the original pinned
+D1 sheet and enters eight digits (`25102026`) through its editor. It refuses locked
 cells. It scrolls the active original cell into view via vendor ShowActiveCell,
 starts the original editor, types the fixed synthetic date through keyboard input
 and commits via the vendor lifecycle. No Cell.Value/CellType/Locked or model setter
@@ -15,8 +16,8 @@ is used. The final date edit occurs after the case's original money/checkbox flo
 before original export. Failed editor attempts are not silently retried.
 
 Four bounded typed fields report edited/ready/locked and cell kind(0unknown,
-1General-text,2text,3date). Live staging-v3 requires ready/edited, unlocked, valid
-kind and full original initial/reexport equality. It compares all four native
+1General-text,2text,3date,4source-date-mask). Live staging-v3 requires ready/edited, unlocked,
+exact kind4 and full original initial/reexport equality. It compares all four native
 service fields including provider checksum exactly. Retention remains private and
 byte-exact, with schema/qualification assertions kept separate. Historical v1/v2
 reading remains explicit; it cannot satisfy the strict live aligned policy.
