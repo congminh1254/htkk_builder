@@ -237,9 +237,13 @@ function Get-HtkkSafeGuiReferenceResult {
   if($value['runtimeRoundTrip'] -isnot [bool]){throw 'invalid'}
   if(($true) -and $value['runtimeRoundTrip'] -cne $false){throw 'invalid'}
   if($value['webSigningDateEdited'] -isnot [bool]){throw 'invalid'}
+  if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateEdited'] -cne $false){throw 'invalid'}
   if($value['webSigningDateReady'] -isnot [bool]){throw 'invalid'}
+  if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateReady'] -cne $false){throw 'invalid'}
   if($value['webSigningDateLocked'] -isnot [bool]){throw 'invalid'}
+  if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateLocked'] -cne $false){throw 'invalid'}
   if(($value['webSigningDateCellKind'] -isnot [int] -and $value['webSigningDateCellKind'] -isnot [long]) -or $value['webSigningDateCellKind'] -lt 0 -or $value['webSigningDateCellKind'] -gt 3){throw 'invalid'}
+  if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['webSigningDateCellKind'] -cne 0){throw 'invalid'}
   if($value.mode -cne $ExpectedMode){throw 'invalid'}
   # END GENERATED RESULT CONTRACT
   if($value.annex12NumericSnapshots -isnot [string] -or $value.annex12NumericSnapshots.Length -gt 4096){throw 'invalid'}

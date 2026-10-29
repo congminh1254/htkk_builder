@@ -19,9 +19,10 @@ foreach($change in @(
  @{before='<f0>0</f0>';after='<f0>0</f0><extra>0</extra>'},
  @{before='<CTieuTKhaiChinh>';after='<CTieuTKhaiChinh>extra'},
  @{before='<maDVu>HTKK</maDVu>';after='<maDVu>OTHER</maDVu>'},
- @{before='0123456789ABCDEF0123456789ABCDEF';after='INVALID'}
+ @{before='0123456789ABCDEF0123456789ABCDEF';after='INVALID'},
+ @{before='0123456789ABCDEF0123456789ABCDEF';after='AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'}
 )) {Assert-Comparison ([xml]$output.OuterXml.Replace($change.before,$change.after)) $false}
 # The rule also works on the same day; no requirement that dates differ.
 $inputXml=New-Fixture $true;$inputXml.HSoThueDTu.HSoKhaiThue.TTinChung.TTinTKhaiThue.TKhaiThue.ngayLapTKhai='2026-10-26'
 Assert-Comparison $output $true
-Write-Output 'Synthetic C# web-tax comparison boundaries passed (11 cases).'
+Write-Output 'Synthetic C# web-tax comparison boundaries passed (12 cases).'
