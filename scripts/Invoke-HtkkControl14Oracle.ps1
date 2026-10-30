@@ -17,9 +17,9 @@ try{
  foreach($p in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $ProjectDirectory $p) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$p]){throw 'CONTROL14_ORACLE_SOURCE_CHANGED'}}
  if(-not(Test-Path -LiteralPath $result -PathType Leaf) -or (Get-Item -LiteralPath $result).Length -gt 65536){throw 'CONTROL14_ORACLE_RESULT_SIZE'}
  $v=Get-Content -LiteralPath $result -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable -DateKind String
- if($v.format -cne 'htkk-control14-oracle-v1' -or $v.runtime -cne 'clr2-x86' -or $v.primitiveOnly -isnot [bool] -or -not $v.primitiveOnly -or $v.cases.Count -ne 104){throw 'CONTROL14_ORACLE_RESULT_SHAPE'}
+ if($v.format -cne 'htkk-control14-oracle-v1' -or $v.runtime -cne 'clr2-x86' -or $v.primitiveOnly -isnot [bool] -or -not $v.primitiveOnly -or $v.cases.Count -ne 156){throw 'CONTROL14_ORACLE_RESULT_SHAPE'}
  for($i=0;$i -lt $v.cases.Count;$i++){
-  $x=$v.cases[$i];if($x.id -ne $i+1 -or $x.culture -cnotin @('invariant','vi-VN') -or $x.mode -cnotin @('bind','edit') -or ($null -ne $x.input -and ($x.input -isnot [string] -or $x.input.Length -gt 64)) -or $x.result -isnot [System.Collections.IDictionary]){throw 'CONTROL14_ORACLE_CASE_SHAPE'}
+  $x=$v.cases[$i];if($x.id -ne $i+1 -or $x.culture -cnotin @('invariant','vi-VN') -or $x.mode -cnotin @('bind','edit','formula') -or ($null -ne $x.input -and ($x.input -isnot [string] -or $x.input.Length -gt 64)) -or $x.result -isnot [System.Collections.IDictionary]){throw 'CONTROL14_ORACLE_CASE_SHAPE'}
   foreach($name in @('text','value','valueClrType','cellType','mask','maskChar','exported','editRejected')){if(-not $x.result.ContainsKey($name) -or ($null -ne $x.result[$name] -and ($x.result[$name] -isnot [string] -or $x.result[$name].Length -gt 256))){throw 'CONTROL14_ORACLE_RESULT_SHAPE'}}
  }
  $safe=[ordered]@{format='htkk-control14-oracle-execution-v1';sourceHashesVerified=$true;sourceHashesUnchanged=$true;compilerJobCleanupVerified=$true;oracleJobCleanupVerified=$true;runtime='clr2-x86';primitiveOnly=$true;cases=$v.cases}
