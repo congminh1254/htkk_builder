@@ -1,0 +1,26 @@
+name: Fixed original HTKK control14 oracle
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  oracle:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install authenticated original and verify supplier cleanup
+        id: original
+        shell: pwsh
+        run: ./scripts/probe-htkk-windows.ps1 -InstallAndProbe -RuntimeHost clr2-x86-reference -AcknowledgeRegistration
+      - name: Observe fixed synthetic control14 bind and edit boundaries
+        if: steps.original.outputs.credentials_safe == 'true' && steps.original.outputs.supplier_stopped == 'true'
+        shell: pwsh
+        run: |
+          $candidates=@("${env:ProgramFiles}\HTKK\Project", "${env:ProgramFiles(x86)}\HTKK\Project", 'C:\HTKK\Project')
+          $project=$candidates|Where-Object{Test-Path -LiteralPath (Join-Path $_ 'HTKK.exe')}|Select-Object -First 1
+          if(-not $project){throw 'ORIGINAL_PROJECT_NOT_FOUND'}
+          ./scripts/Invoke-HtkkControl14Oracle.ps1 -ProjectDirectory $project
