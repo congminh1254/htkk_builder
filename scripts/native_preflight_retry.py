@@ -16,6 +16,8 @@ def classify(jobs,records):
  suppliers=[r for r in records if r.get('version')=='5.8.1'and 'supplierProcessBoundary'in r]
  if len(suppliers)!=1:return None
  r=suppliers[0];login=r.get('syntheticLogin',{});boundary=r.get('supplierProcessBoundary',{})
+ permit=r.get('guiAutomationPermitBoundary',{})
+ if set(permit)!={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}or any(type(permit.get(k))is not bool or permit[k]is not v for k,v in {'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}.items()):return None
  if r.get('guiReferenceAutomationMode')!='gtgt-web-import-inspect':return None
  if r.get('stage')!='blocked'or r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED'or r.get('guiReferenceAutomation')is not None:return None
  if r.get('referenceHostResult',{}).get('status')!='original-starting':return None

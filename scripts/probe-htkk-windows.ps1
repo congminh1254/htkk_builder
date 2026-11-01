@@ -34,6 +34,7 @@ $report = [ordered]@{
   privateWebNativeOutputEvidence = $null
   syntheticLoginRequested = [bool]$SyntheticLogin; syntheticLogin = $null
   guiReferenceAutomationMode = $GuiAutomation; guiReferenceAutomation = $null
+  guiAutomationPermitBoundary = [ordered]@{uniquePathVerified=$false;initiallyAbsent=$false;authorizationAttempted=$false;absentAfterCleanup=$false}
   commonHeaderOracle = $null
   profileAliasOracle = $null
   taxIdOracle = $null
@@ -690,6 +691,9 @@ try {
     $hostFull=[IO.Path]::GetFullPath($referencePreparation.hostPath)
     $hostLeaf=[IO.Path]::GetFileName($hostFull)
     if([IO.Path]::GetDirectoryName($hostFull).TrimEnd('\') -ne $projectFull -or $hostLeaf -notmatch '^HTKK\.X86ReferenceHost\.[a-f0-9]{32}\.exe$' -or $referencePreparation.hostSha256 -notmatch '^[a-f0-9]{64}$' -or @($referencePreparation.arguments).Count -ne 0 -or $referencePreparation.hostConfigPath -ne ($hostFull+'.config') -or $referencePreparation.resultPath -ne ($hostFull+'.result.json') -or $referencePreparation.guiAutomationResultPath -ne ($hostFull+'.gui-automation.json') -or $referencePreparation.guiAutomationPermitPath -ne ($hostFull+'.gui-automation.allow') -or $referencePreparation.guiAutomationMode -cne $GuiAutomation) { throw 'X86_REFERENCE_HOST_LAYOUT_INVALID' }
+    $report.guiAutomationPermitBoundary.uniquePathVerified=$true
+    $report.guiAutomationPermitBoundary.initiallyAbsent=-not(Test-Path -LiteralPath $referencePreparation.guiAutomationPermitPath)
+    if(-not $report.guiAutomationPermitBoundary.initiallyAbsent){throw 'X86_REFERENCE_HOST_LAYOUT_INVALID'}
     $referenceOwnedFiles=@($hostFull,($hostFull+'.config'),($hostFull+'.result.json'),($hostFull+'.gui-automation.json'),($hostFull+'.gui-automation.allow'))
     if($GuiAutomation -eq 'gtgt-web-import-inspect') {
       $casePath=$hostFull+'.web-case.id';$inputPath=$hostFull+'.web-input.xml';$hashPath=$hostFull+'.web-input.sha256';$shaPath=$hostFull+'.web-source.sha'
@@ -840,6 +844,7 @@ try {
     if($GuiAutomation -in @('profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')) {
       # Only now authorize mutation: the independent original GUI login/profile
       # transition and fresh synthetic directory have already been verified above.
+      $report.guiAutomationPermitBoundary.authorizationAttempted=$true # Before I/O: failed writes cannot claim authorization never happened.
       [IO.File]::WriteAllText($referencePreparation.guiAutomationPermitPath,'profile-save',[Text.Encoding]::ASCII)
     }
     $automationLimit=if($GuiAutomation -in @('gtgt-roundtrip-inspect','gtgt-web-import-inspect','gtgt-amendment-open-inspect')){60}else{30}
@@ -1057,6 +1062,10 @@ try {
   if($env:GITHUB_OUTPUT){
     $credentialsSafe=$installerCredentialsSafe -and $installerStopped -and $uiaHelpersStopped -and ($null -eq $process -or $supplierStopped) -and $supplierCleanupVerified -and $report.nativeHelperJobsStopped
     [IO.File]::AppendAllText($env:GITHUB_OUTPUT,('supplier_stopped='+$supplierStopped.ToString().ToLowerInvariant()+"`n"+'credentials_safe='+$credentialsSafe.ToString().ToLowerInvariant()+"`n"),[Text.UTF8Encoding]::new($false))
+  }
+  # Read before deleting owned paths; absence after our own delete proves nothing.
+  if($null -ne $referencePreparation -and $report.guiAutomationPermitBoundary.uniquePathVerified -and $supplierCleanupVerified -and $supplierStopped -and $report.nativeHelperJobsStopped){
+    try{$report.guiAutomationPermitBoundary.absentAfterCleanup=-not(Test-Path -LiteralPath $referencePreparation.guiAutomationPermitPath -ErrorAction Stop)}catch{$report.guiAutomationPermitBoundary.absentAfterCleanup=$false}
   }
   foreach($registration in $registrationProcesses) { try { $registration.Dispose() } catch { } }
   foreach($rule in $firewallNames) { Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue }

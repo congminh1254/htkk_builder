@@ -12,7 +12,12 @@ for two narrow cases on the exact trusted main builder/workflow:
   and fixed public cmdlet data; it never starts HTKK.
 - The original supplier is still starting, synthetic login is hidden but the next
   profile window has not been identified, GUI declaration automation has not started,
-  and no tax data/roundtrip ran. Source/signature/isolation and complete supplier/helper
+  and no tax data/roundtrip ran. A mandatory explicit permit boundary attests a
+  unique initially-absent path, no authorization attempt and continued absence after
+  supplier/helper shutdown, checked before owned-file deletion. Missing attestation
+  disables startup retry; a null collected GUI result alone never proves no progress.
+  The helper cannot mutate/save the profile or navigate to tax without this permit.
+  Source/signature/isolation and complete supplier/helper
   shutdown must be attested. Only the registered web-import driver is eligible.
 
 Unknown errors, a GUI/tax comparison report, changed sources, missing cleanup,
