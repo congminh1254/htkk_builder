@@ -17,6 +17,7 @@ try{
  foreach($p in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $ProjectDirectory $p) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$p]){throw 'COMMON_INFO_ORACLE_SOURCE_CHANGED'}}
  if(-not(Test-Path -LiteralPath $result -PathType Leaf) -or (Get-Item -LiteralPath $result).Length -gt 65536){throw 'COMMON_INFO_ORACLE_RESULT_SIZE'}
  $v=Get-Content -LiteralPath $result -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable -DateKind String
+ if($v.format -ceq 'htkk-common-info-oracle-failure-v1' -and $v.stage -cmatch '^(host|load|fields|case[1-5]-(create|fill|assign|bind|read))$' -and $v.category -cin @('null-reference','argument','invalid-operation','type-load','file-missing','assembly-load','configuration','other')){$v|ConvertTo-Json -Compress|Write-Output;throw 'COMMON_INFO_ORACLE_NATIVE_FAILURE'}
  if($v.format -cne 'htkk-common-info-oracle-v1' -or $v.runtime -cne 'clr2-x86' -or $v.primitiveOnly -isnot [bool] -or -not $v.primitiveOnly -or $v.cases.Count -ne 5){throw 'COMMON_INFO_ORACLE_RESULT_SHAPE'}
  $fixedMenus=@('D1','D1','73','56','D1')
  for($i=0;$i -lt $v.cases.Count;$i++){
