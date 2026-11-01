@@ -8,7 +8,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 internal static class HtkkTableLifecycleOracle {
- static string project;static Type sheetType,tableType,sheetInfoType;
+ static string project,stage="load";static Type sheetType,tableType,sheetInfoType;
+ static string Category(Exception e){for(int i=0;i<8&&e.InnerException!=null;i++)e=e.InnerException;if(e is NullReferenceException)return "null-reference";if(e is ArgumentException)return "argument";if(e is InvalidOperationException)return "invalid-operation";if(e is TypeLoadException)return "type-load";if(e is FileNotFoundException)return "file-missing";return "other";}
  static object Get(object target,string property){return target.GetType().GetProperty(property).GetValue(target,null);}
  static void Set(object target,string property,object value){target.GetType().GetProperty(property).SetValue(target,value,null);}
  static Assembly Resolve(object sender,ResolveEventArgs e){string name=new AssemblyName(e.Name).Name;if(name.IndexOfAny(new char[]{'/','\\',':'})>=0)return null;string path=Path.Combine(project,name+".dll");return File.Exists(path)?Assembly.LoadFrom(path):null;}
@@ -44,11 +45,11 @@ internal static class HtkkTableLifecycleOracle {
   if(insert==null||remove==null||insert.MetadataToken!=0x060001fd||remove.MetadataToken!=0x060001fa)return 4;
   // A fixed caller-context input, never a calculated result or supplier setting.
   app.GetType("HTKK.WinSettings",true).GetField("MenuID",BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Static).SetValue(null,"D1");
-  sheet=Activator.CreateInstance(sheetType);Set(sheet,"RowCount",128);Set(sheet,"ColumnCount",8);object info=Activator.CreateInstance(sheetInfoType);IList tables=(IList)Get(info,"Tables");tables.Add(InitialTable());
+  stage="initial-table";sheet=Activator.CreateInstance(sheetType);Set(sheet,"RowCount",128);Set(sheet,"ColumnCount",8);object info=Activator.CreateInstance(sheetInfoType);IList tables=(IList)Get(info,"Tables");tables.Add(InitialTable());
   List<string> observations=new List<string>();observations.Add(Snapshot(sheet,tables,1,"initial",-1,1));
   string[] operations={"insert","insert","insert","remove","insert","remove","remove","insert"};int[] indices={0,0,1,1,0,0,2,1},counts={2,3,4,3,4,3,2,3};
-  for(int i=0;i<operations.Length;i++){MethodInfo method=operations[i]=="insert"?insert:remove;method.Invoke(null,new object[]{sheet,indices[i],info});observations.Add(Snapshot(sheet,tables,i+2,operations[i],indices[i],counts[i]));}
+  for(int i=0;i<operations.Length;i++){MethodInfo method=operations[i]=="insert"?insert:remove;stage="step"+(i+1);method.Invoke(null,new object[]{sheet,indices[i],info});tables=(IList)Get(info,"Tables");observations.Add(Snapshot(sheet,tables,i+2,operations[i],indices[i],counts[i]));}
   string json="{\"format\":\"htkk-table-lifecycle-oracle-v1\",\"runtime\":\"clr2-x86\",\"menu\":\"D1\",\"fixture\":\"synthetic-zero-data-rows-with-stt\",\"primitiveOnly\":true,\"originalMainInvoked\":false,\"realTaxpayerDataUsed\":false,\"computedTotalsWritten\":false,\"xmlAuthored\":false,\"nativeQualified\":false,\"filingEnabled\":false,\"cases\":["+String.Join(",",observations.ToArray())+"]}";
   File.WriteAllText(args[1],json,new UTF8Encoding(false));return 0;
- }catch{return 5;}finally{IDisposable disposable=sheet as IDisposable;if(disposable!=null)disposable.Dispose();}}
+ }catch(Exception e){try{File.WriteAllText(args[1],"{\"format\":\"htkk-table-lifecycle-oracle-failure-v1\",\"stage\":\""+stage+"\",\"category\":\""+Category(e)+"\"}",new UTF8Encoding(false));return 0;}catch{return 5;}}finally{IDisposable disposable=sheet as IDisposable;if(disposable!=null)disposable.Dispose();}}
 }

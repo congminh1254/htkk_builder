@@ -17,6 +17,7 @@ try{
  foreach($p in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $ProjectDirectory $p) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$p]){throw 'TABLE_LIFECYCLE_ORACLE_SOURCE_CHANGED'}}
  if(-not(Test-Path -LiteralPath $result -PathType Leaf) -or (Get-Item -LiteralPath $result).Length -gt 65536){throw 'TABLE_LIFECYCLE_ORACLE_RESULT_SIZE'}
  $v=Get-Content -LiteralPath $result -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable -DateKind String
+ if($v.format -ceq 'htkk-table-lifecycle-oracle-failure-v1'){if($v.stage -cnotmatch '^(load|initial-table|step[1-8])$' -or $v.category -cnotin @('null-reference','argument','invalid-operation','type-load','file-missing','other')){throw 'TABLE_LIFECYCLE_ORACLE_FAILURE_SHAPE'};$v|ConvertTo-Json -Compress|Write-Output;throw 'TABLE_LIFECYCLE_ORACLE_NATIVE_FAILURE'}
  if($v.format -cne 'htkk-table-lifecycle-oracle-v1' -or $v.runtime -cne 'clr2-x86' -or $v.menu -cne 'D1' -or $v.fixture -cne 'synthetic-zero-data-rows-with-stt' -or $v.primitiveOnly -isnot [bool] -or -not $v.primitiveOnly -or $v.cases.Count -ne 9){throw 'TABLE_LIFECYCLE_ORACLE_RESULT_SHAPE'}
  foreach($name in @('originalMainInvoked','realTaxpayerDataUsed','computedTotalsWritten','xmlAuthored','nativeQualified','filingEnabled')){if($v[$name] -isnot [bool] -or $v[$name]){throw 'TABLE_LIFECYCLE_ORACLE_SUPPLIER_SCOPE'}}
  $operations=@('initial','insert','insert','insert','remove','insert','remove','remove','insert');$indices=@(-1,0,0,1,1,0,0,2,1);$counts=@(1,2,3,4,3,4,3,2,3)
