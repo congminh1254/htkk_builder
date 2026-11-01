@@ -72,12 +72,14 @@ if(-not $operationFailed){Set-FrameworkPhase 'result-writing'}
 [IO.File]::WriteAllText($OutputFile,$json,[Text.UTF8Encoding]::new($false))
 if($ready){Set-FrameworkPhase 'complete';exit 0}else{exit 2}
 '@|Set-Content -LiteralPath $child -Encoding utf8BOM
+ # A hosted runner completed all assertions but exceeded the former 15s process-exit budget.
+ # Keep a hard 30s ceiling and require actual exit0, stopped process and every identity/result check.
  $clock=[Diagnostics.Stopwatch]::StartNew()
- $run=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $directory -Arguments @('-STA','-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',$child,'-OutputFile',$resultPath,'-PhaseFile',$phasePath) -TimeoutMilliseconds 15000
+ $run=Invoke-HtkkBoundedNativeProcess -Executable $legacy -WorkingDirectory $directory -Arguments @('-STA','-NoLogo','-NoProfile','-NonInteractive','-ExecutionPolicy','RemoteSigned','-File',$child,'-OutputFile',$resultPath,'-PhaseFile',$phasePath) -TimeoutMilliseconds 30000
  $boundary=[ordered]@{format='htkk-framework-uia-boundary-v1';status=$run.status;timedOut=$run.timedOut;processStopped=$run.processStopped;exitCode=$run.exitCode;phase=(Read-HtkkFrameworkUiaPhase $phasePath)}
  Write-Host ('Framework assembly/cmdlet boundary: '+($boundary|ConvertTo-Json -Compress))
  if($run.status -cne 'exited' -or $run.exitCode -ne 0 -or -not $run.processStopped -or $run.timedOut){throw 'FRAMEWORK_UIA_ASSEMBLY_LOAD_PROCESS_NOT_VERIFIED'}
- if($clock.Elapsed.TotalMilliseconds -gt 15000){throw 'FRAMEWORK_UIA_ASSEMBLY_LOAD_EXCEEDED_DEADLINE'}
+ if($clock.Elapsed.TotalMilliseconds -gt 30000){throw 'FRAMEWORK_UIA_ASSEMBLY_LOAD_EXCEEDED_DEADLINE'}
  if(-not(Test-Path -LiteralPath $resultPath -PathType Leaf) -or (Get-Item -LiteralPath $resultPath).Length -gt 2048){throw 'FRAMEWORK_UIA_ASSEMBLY_LOAD_RESULT_UNAVAILABLE'}
  $result=Get-Content -LiteralPath $resultPath -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable
  $flags=@('clientIdentityMatched','typesIdentityMatched','elementTypeReady','controlTypeReady','apartmentMatched','runtimeMatched','sortObjectMatched','jsonSerializationMatched','setContentMatched','modulesImported')
@@ -89,5 +91,5 @@ if($ready){Set-FrameworkPhase 'complete';exit 0}else{exit 2}
  $fixture=Get-Content -LiteralPath $fixturePath -Raw -Encoding UTF8|ConvertFrom-Json -AsHashtable
  if($fixture.Count -ne 3 -or @($fixture.Keys|Where-Object{$_ -cnotin @('format','values','synthetic')}).Count -or $fixture.format -cne 'htkk-uia-framework-fixed-v1' -or $fixture.synthetic -isnot [bool] -or -not $fixture.synthetic -or $fixture.values -isnot [Array] -or $fixture.values.Count -ne 3){throw 'FRAMEWORK_UIA_CMDLET_FIXTURE_INVALID'}
  for($index=0;$index -lt 3;$index++){if($fixture.values[$index] -isnot [long] -and $fixture.values[$index] -isnot [int]){throw 'FRAMEWORK_UIA_CMDLET_FIXTURE_INVALID'};if($fixture.values[$index] -ne ($index+1)){throw 'FRAMEWORK_UIA_CMDLET_SORT_NOT_VERIFIED'}}
- Write-Host 'Clean Windows PowerShell Framework UIA assembly identities/types/STA and fixed-data cmdlets verified within 15 seconds.'
+ Write-Host 'Clean Windows PowerShell Framework UIA assembly identities/types/STA and fixed-data cmdlets verified within 30 seconds.'
 }finally{Remove-Item -LiteralPath $directory -Recurse -Force -ErrorAction SilentlyContinue}

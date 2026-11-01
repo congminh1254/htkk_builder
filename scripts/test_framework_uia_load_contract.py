@@ -20,9 +20,9 @@ class FrameworkUiaLoadContract(unittest.TestCase):
         source = (ROOT / 'Test-HtkkFrameworkUiaAssemblyLoad.ps1').read_text()
         self.assertIn(". (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedNativeProcess.ps1')", source)
         self.assertIn('Invoke-HtkkBoundedNativeProcess -Executable $legacy', source)
-        self.assertIn('-TimeoutMilliseconds 15000', source)
+        self.assertIn('-TimeoutMilliseconds 30000', source)
         self.assertIn('-not $run.processStopped', source)
-        self.assertIn('$clock.Elapsed.TotalMilliseconds -gt 15000', source)
+        self.assertIn('$clock.Elapsed.TotalMilliseconds -gt 30000', source)
         self.assertIn('no Windows readiness proven', source)
         for forbidden in ('RootElement', 'FindAll', 'HTKK.exe', 'SOURCE_READ_TOKEN'):
             self.assertNotIn(forbidden, source)
