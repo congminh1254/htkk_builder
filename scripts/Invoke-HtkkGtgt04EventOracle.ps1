@@ -11,9 +11,9 @@ if(Test-Path -LiteralPath $fixture){throw 'GTGT04_FRESH_PROFILE_REQUIRED'}
 $pins=@{'TAX.HTKK.Utilities.dll'='ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec';'FarPoint.CalcEngine.dll'='19183e5a0ad1d74bed1fc151178a8a118ae6544cddb7e3aabc64940f45900d5a';'FarPoint.Win.dll'='fae1320c67dbbfb97fafc0fb8716e4743a4728b4c0d7155e270d684568ef4d2a';'HTKK.exe'='411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938';'HTKK.exe.config'='b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047';'TAX.HTKK.Business.dll'='281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7';'FarPoint.Win.Spread.dll'='2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'}
 $work=Join-Path $env:RUNNER_TEMP ('htkk-gtgt04-event-'+[guid]::NewGuid().ToString('N'))
 $hostPath=Join-Path $project ('HTKK.Gtgt04EventHost.'+[guid]::NewGuid().ToString('N')+'.exe')
-$created=@($hostPath,($hostPath+'.config'),($hostPath+'.gui-automation.json'),($hostPath+'.gui-automation.allow'),($hostPath+'.event.json'))
+$created=@($hostPath,($hostPath+'.config'),($hostPath+'.gui-automation.json'),($hostPath+'.gui-automation.allow'),($hostPath+'.event.json'),($hostPath+'.startup.json'))
 foreach($path in $created){if(Test-Path -LiteralPath $path){throw 'GTGT04_OWNED_PATH_PREEXISTS'}}
-$owner=$null;$rules=@();$login=$null;$raw=$null;$failure='none';$compilerSafe=$false;$clean=$false;$sourceSafe=$false
+$owner=$null;$rules=@();$login=$null;$raw=$null;$failure='none';$compilerSafe=$false;$clean=$false;$sourceSafe=$false;$startup=@{stage='not-observed';category='none'}
 try{
  foreach($name in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $project $name) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$name]){throw 'GTGT04_SOURCE_PIN'}}
  New-Item -ItemType Directory -Path $work|Out-Null
@@ -49,6 +49,7 @@ try{
  $message=$_.Exception.Message
  $failure=if($message -cmatch '\AGTGT04_[A-Z0-9_]{1,100}\z'){$message}else{'GTGT04_WRAPPER_FAILURE'}
 }finally{
+ $startupPath=$hostPath+'.startup.json';if((Test-Path -LiteralPath $startupPath -PathType Leaf) -and (Get-Item -LiteralPath $startupPath).Length -le 512){try{$v=Get-Content -LiteralPath $startupPath -Raw|ConvertFrom-Json -AsHashtable;if($v.stage -cin @('source','profile-helper','observer-helper','original-entry','original-exited','exception') -and $v.category -cin @('none','remoting','type-init','type-load','file-missing','assembly-load','invalid-operation','argument','null-reference','other')){$startup=$v}}catch{}}
  if($null -ne $owner){try{$stopped=$owner.Stop(5000);$clean=$stopped -and $owner.WaitForRootExit(0) -and $owner.ActiveProcesses -eq 0 -and $owner.CleanupVerified;$owner.Dispose();$clean=$clean -and $owner.CleanupVerified}catch{$clean=$false}}
  try{$sourceSafe=$true;foreach($name in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $project $name) -Algorithm SHA256).Hash.ToLowerInvariant() -cne $pins[$name]){$sourceSafe=$false}}}catch{$sourceSafe=$false}
  foreach($rule in $rules){Remove-NetFirewallRule -DisplayName $rule -ErrorAction SilentlyContinue}
@@ -58,7 +59,7 @@ try{
 }
 if(-not $clean -or -not $compilerSafe -or -not $sourceSafe){throw 'GTGT04_CLEANUP_OR_SOURCE_BOUNDARY'}
 $loginStatus=if($null -ne $login -and $login.status -in @('synthetic-profile-window-observed','exact-login-controls-not-found','new-id-not-posted','root-exited','synthetic-input-not-verified','login-not-posted','next-window-not-yet-identified','login-transition-not-verified','native-login-helper-unavailable')){$login.status}else{'not-verified'}
-$report=[ordered]@{loginStatus=$loginStatus;format='htkk-gtgt04-event-execution-v1';compilerJobCleanupVerified=$compilerSafe;supplierJobCleanupVerified=$clean;sourceHashesUnchanged=$sourceSafe;failure=$failure;observation=$null;primitiveOnly=$true;nativeQualified=$false;filingEnabled=$false}
+$report=[ordered]@{startup=$startup;loginStatus=$loginStatus;format='htkk-gtgt04-event-execution-v1';compilerJobCleanupVerified=$compilerSafe;supplierJobCleanupVerified=$clean;sourceHashesUnchanged=$sourceSafe;failure=$failure;observation=$null;primitiveOnly=$true;nativeQualified=$false;filingEnabled=$false}
 if($null -ne $raw){
  if($raw.format -cne 'htkk-gtgt04-event-ui-v1' -or $raw.runtime -cne 'clr2-x86' -or $raw.stage -cnotin @('observed','blocked') -or $raw.failure -cnotin @('none','ui-contract','sheet-contract','timeout') -or $raw.observations.Count -gt 13){throw 'GTGT04_RESULT_SHAPE'}
  if($raw.stage -ceq 'observed'){foreach($flag in @('profileVerified','profileClosed','periodConfigured','annexSelected','sourcePinsVerified','contextMatched')){if($raw[$flag] -isnot [bool] -or -not $raw[$flag]){throw 'GTGT04_CONTEXT_BOUNDARY'}}}
