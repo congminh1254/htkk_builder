@@ -37,6 +37,10 @@ def recover(status,case,source,builder,input_commit,get,records,send,actions_tok
  if not match:return False
  rid=match[1];run=get(BUILDER,'actions/runs/'+rid)
  if run.get('id')!=int(rid)or run.get('repository',{}).get('full_name')!=BUILDER or run.get('path')!='.github/workflows/probe-htkk-windows.yml'or run.get('event')!='workflow_dispatch'or run.get('head_branch')!='main'or run.get('head_sha')!=builder:return False
+ if type(run.get('run_attempt'))is not int or run['run_attempt']not in (1,2):return False
+ # A failure callback can precede final job cleanup; wait for complete evidence.
+ if run.get('status')in ('queued','pending','in_progress','waiting','requested'):return True
+ if run.get('status')=='completed'and run.get('conclusion')=='success':return True
  if rid in retried:
   return run.get('run_attempt')in (1,2)and (run.get('run_attempt')==1 or run.get('status')!='completed'or run.get('conclusion')=='success')
  if run.get('run_attempt')!=1 or run.get('status')!='completed'or run.get('conclusion')!='failure':return False

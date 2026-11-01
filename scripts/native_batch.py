@@ -30,17 +30,25 @@ def verify_case(case,source,builder,input_commit,run_id,get=collector.api):
  return {'caseId':case,'runId':str(run_id),'runAttempt':run['run_attempt'],'inputCommit':input_commit,'nativeCommit':artifact}
 
 def discover(publication,builder,statuses,get=collector.api,retry=None):
- source=publication['sourceCommit'];latest={s['context']:s for s in reversed(statuses)};result=[];seen=set()
+ source=publication['sourceCommit'];latest={s['context']:s for s in reversed(statuses)};result=[];seen=set();ready=[];pending=False
  for item in publication['cases']:
   case=item['caseId'];check(case in registry.CASES);status=latest.get(registry.CASES[case]['statusContext'],{})
   if status.get('state')in ('failure','error'):
    if 'input:'+item['artifactCommit']in status.get('description',''):
-    if retry is not None and retry(status,registry.CASES[case]['statusContext'],source,builder,item['artifactCommit']):return None
+    if retry is not None and retry(status,registry.CASES[case]['statusContext'],source,builder,item['artifactCommit']):pending=True;continue
     raise ValueError('NATIVE_FAILED')
-   return None
-  if status.get('state')!='success':return None
+   pending=True;continue
+  if status.get('state')!='success':pending=True;continue
   match=re.fullmatch(r'https://github\.com/congminh1254/htkk_builder/actions/runs/([1-9][0-9]*)',status.get('target_url',''));check(match and match[1]not in seen);seen.add(match[1])
-  proof=verify_case(case,source,builder,item['artifactCommit'],match[1],get)
+  ready.append((case,item['artifactCommit'],match[1]))
+ # Do not repeatedly download completed logs/artifacts while another case is pending.
+ if pending:return None
+ for _,_,run_id in ready:
+  run=get(BUILDER,'actions/runs/'+run_id)
+  if run.get('status')in ('queued','pending','in_progress','waiting','requested'):return None
+  collector.validate_run(run,builder,run_id)
+ for case,input_commit,run_id in ready:
+  proof=verify_case(case,source,builder,input_commit,run_id,get)
   if proof is None:return None
   result.append(proof)
  return {'format':'htkk-native-batch-v1','sourceCommit':source,'builderCommit':builder,'cases':result,'qualificationGranted':False}

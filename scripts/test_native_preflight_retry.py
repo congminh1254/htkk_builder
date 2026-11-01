@@ -82,3 +82,23 @@ class NativePreflightRetry(unittest.TestCase):
   self.assertLess(source.index('$report.guiAutomationPermitBoundary.authorizationAttempted=$true'),source.index("[IO.File]::WriteAllText($referencePreparation.guiAutomationPermitPath,'profile-save'"))
   self.assertLess(source.index('guiAutomationPermitBoundary.absentAfterCleanup=-not'),source.index('foreach($owned in $referenceOwnedFiles)'))
   self.assertTrue("WaitingForProfileSavePermit" in (root/'HtkkGuiReferenceAutomation.cs').read_text())
+
+ def test_failure_callback_while_workflow_cleanup_is_running_waits_without_rerun(self):
+  f=self.fixture();f['run'].update(status='in_progress',conclusion=None);self.assertTrue(f['recover']());self.assertEqual(f['calls'],[])
+  f['run'].update(status='completed',conclusion='failure');self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
+ def test_discovery_scans_failures_but_never_fetches_case_proofs_until_all_statuses_ready(self):
+  import test_caseflow_batch as original
+  f=original.fixture();f['statuses'][-1]['state']='pending';calls=[]
+  def no_read(*args):calls.append(args);raise AssertionError('No evidence reads while cohort pending')
+  self.assertIsNone(original.batch.discover(f['publication'],original.BUILDER,f['statuses'],no_read));self.assertEqual(calls,[])
+  f['statuses'][0]['state']='pending';f['statuses'][-1].update(state='failure',description='failed input:'+f['publication']['cases'][-1]['artifactCommit']);retries=[]
+  self.assertIsNone(original.batch.discover(f['publication'],original.BUILDER,f['statuses'],no_read,retry=lambda *args:retries.append(args)or True));self.assertEqual(len(retries),1);self.assertEqual(calls,[])
+
+ def test_no_log_or_artifact_download_while_last_success_callback_still_has_poststeps_running(self):
+  import test_caseflow_batch as original
+  f=original.fixture();f['runs'][112]['status']='in_progress';calls=[]
+  def metadata_only(repo,path):
+   calls.append(path)
+   if not path.startswith('actions/runs/')or '/jobs' in path:raise AssertionError('No heavy evidence reads before all runs complete')
+   return f['get'](repo,path)
+  self.assertIsNone(original.batch.discover(f['publication'],original.BUILDER,f['statuses'],metadata_only));self.assertEqual(len(calls),13)

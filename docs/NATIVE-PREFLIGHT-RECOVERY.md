@@ -41,3 +41,12 @@ Offline tests exercise known/unknown classifications, wrong workflow/builder/inp
 cleanup/type/callback failures, attempt2 refusal, eventual consistency, status-post
 failure and the unchanged final cohort gate. Fabricated API fixtures do not qualify
 an original Windows execution.
+
+
+Discovery first scans all statuses (including failures behind pending cases), then
+waits for every workflow to finish before downloading any logs or artifacts. This
+avoids repeatedly fetching already-completed proofs on every 15-second poll when a
+later case is still queued, retrying or cleaning up. A failure callback posted before
+workflow cleanup finishes waits for terminal job evidence without queuing another
+rerun. All full proof checks and final pinned revalidation remain unchanged; no
+status or metadata-only result grants qualification.
