@@ -23,7 +23,7 @@ try{
  for($i=0;$i -lt $v.cases.Count;$i++){
   $x=$v.cases[$i];if($x.id -ne $i+1 -or $x.menu -cne $fixedMenus[$i] -or $x.supplemental -isnot [bool] -or $x.supplemental -ne ($i -eq 1) -or $x.emptyProfile -isnot [bool] -or $x.emptyProfile -ne ($i -eq 4) -or $x.values -isnot [System.Collections.IDictionary] -or $x.values.Count -ne 69){throw 'COMMON_INFO_ORACLE_CASE_SHAPE'}
   foreach($day in @($x.beforeDate,$x.afterDate)){if($day -isnot [string] -or $day -cnotmatch '^[0-9]{2}/[0-9]{2}/[0-9]{4}$'){throw 'COMMON_INFO_ORACLE_CLOCK_SHAPE'}}
-  foreach($key in $x.values.Keys){$value=$x.values[$key];if($key -cnotmatch '^[A-Za-z][A-Za-z0-9]{0,63}$' -or ($null -ne $value -and ($value -isnot [string] -or $value.Length -gt 512))){throw 'COMMON_INFO_ORACLE_VALUE_SHAPE'}}
+  foreach($key in $x.values.Keys){$value=$x.values[$key];if($key -ceq 'soluong'){if(($value -isnot [int] -and $value -isnot [long]) -or $value -ne 0){throw 'COMMON_INFO_ORACLE_COUNT_SHAPE'};continue};if($key -cnotmatch '^[A-Za-z][A-Za-z0-9]{0,63}$' -or ($null -ne $value -and ($value -isnot [string] -or $value.Length -gt 512))){throw 'COMMON_INFO_ORACLE_VALUE_SHAPE'}}
  }
  $safe=[ordered]@{format='htkk-common-info-oracle-execution-v1';sourceHashesVerified=$true;sourceHashesUnchanged=$true;compilerJobCleanupVerified=$true;oracleJobCleanupVerified=$true;runtime='clr2-x86';primitiveOnly=$true;cases=$v.cases}
  $safe|ConvertTo-Json -Depth 8 -Compress|Write-Output
