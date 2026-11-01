@@ -1043,6 +1043,11 @@
       "id": "gtgt-noactivity-checkbox-unchecking",
       "enumName": "GtgtNoactivityCheckboxUnchecking",
       "category": "sheet"
+    },
+    {
+      "id": "gtgt-annex12-lifecycle-inspecting",
+      "enumName": "GtgtAnnex12LifecycleInspecting",
+      "category": "annex12"
     }
   ],
   "dynamicStageMappings": {
@@ -1256,7 +1261,11 @@
     "webSigningDateEdited",
     "webSigningDateReady",
     "webSigningDateLocked",
-    "webSigningDateCellKind"
+    "webSigningDateCellKind",
+    "annex12LifecycleMatched",
+    "annex12LifecycleActionCount",
+    "annex12LifecycleEditCount",
+    "annex12LifecycleObservedMask"
   ],
   "controlKinds": [
     "form",
@@ -2375,6 +2384,40 @@
       "activeModes": [
         "gtgt-web-import-inspect"
       ]
+    },
+    "annex12LifecycleMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-row-inspect"
+      ]
+    },
+    "annex12LifecycleActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "activeModes": [
+        "gtgt-annex12-row-inspect"
+      ],
+      "minimum": 0,
+      "maximum": 9
+    },
+    "annex12LifecycleEditCount": {
+      "kind": "integer",
+      "default": 0,
+      "activeModes": [
+        "gtgt-annex12-row-inspect"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "annex12LifecycleObservedMask": {
+      "kind": "integer",
+      "default": 0,
+      "activeModes": [
+        "gtgt-annex12-row-inspect"
+      ],
+      "minimum": 0,
+      "maximum": 1023
     }
   }
 }

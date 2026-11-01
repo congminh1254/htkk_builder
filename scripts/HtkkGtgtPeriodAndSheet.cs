@@ -65,7 +65,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+Bool(flags[index]));
   names=new string[]{"annex12SelectionActionCount","annex12SheetRows","annex12SheetColumns","annex12NumericCount","annex12NumericEmptyMask","annex12NumericNonzeroMask","annex12GroupCount","annex12FirstGroupId","annex12FirstGroupRows"};
   int[] counts=new int[]{annex12SelectionActionCount,annex12SheetRows,annex12SheetColumns,annex12NumericCount,annex12NumericEmptyMask,annex12NumericNonzeroMask,annex12GroupCount,annex12FirstGroupId,annex12FirstGroupRows};
-  for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString()+Annex12RowJson()+Annex12InputJson()+Annex12NumericJson()+Annex12ExportJson();
+  for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString()+Annex12LifecycleJson()+Annex12RowJson()+Annex12InputJson()+Annex12NumericJson()+Annex12ExportJson();
  }
  private bool Annex12InspectionMode(){return mode=="gtgt-annex12-inspect"||mode=="gtgt-annex12-row-inspect"||mode=="gtgt-annex12-input-inspect"||mode=="gtgt-annex12-numeric-inspect"||mode=="gtgt-annex12-export-inspect";}
  private bool annex12RowTabClickInvoked=false,annex12F5Visible=false,annex12F5Invoked=false,annex12RowBeforeMatched=false,annex12RowAfterMatched=false,annex12RowSttMatched=false,annex12RowLocksMatched=false;
@@ -133,7 +133,76 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<cells.GetLength(0);index++)if(Convert.ToBoolean(Get(Cell(annex,cells[index,0],cells[index,1]),"Locked"))!=locks[index])annex12RowLocksMatched=false;
   annex12RowAfterMatched=annex12RowAfterRows==67&&annex12RowAfterGroupRows==2&&annex12RowAfterGroupId==1&&annex12RowInsertActionCount==1&&annex12RowSttMatched&&annex12RowLocksMatched;
   if((mode=="gtgt-annex12-input-inspect"||mode=="gtgt-annex12-numeric-inspect"||mode=="gtgt-annex12-export-inspect")){if(!annex12RowAfterMatched)throw new InvalidOperationException();InspectOriginalAnnex12Inputs(grid,annex);return;}
+  InspectOriginalAnnex12Lifecycle(grid,annex);
   finished=true;SetStage(HtkkAutomationStage.GtgtAnnex12RowInspected);Record();
+ }
+
+ // Fixed original-UI lifecycle sequence; only keys and one public input editor.
+ // No row/DTO mutation, no private business helper, no authored XML or totals.
+ private bool annex12LifecycleMatched=false;
+ private int annex12LifecycleActionCount=0,annex12LifecycleEditCount=0,annex12LifecycleObservedMask=0;
+ private string Annex12LifecycleJson(){
+  string q=((char)34).ToString();StringBuilder value=new StringBuilder();
+  string[] names=new string[]{"annex12LifecycleMatched"};bool[] flags=new bool[]{annex12LifecycleMatched};
+  for(int i=0;i<names.Length;i++)value.Append(","+q+names[i]+q+":"+Bool(flags[i]));
+  names=new string[]{"annex12LifecycleActionCount","annex12LifecycleEditCount","annex12LifecycleObservedMask"};int[] counts=new int[]{annex12LifecycleActionCount,annex12LifecycleEditCount,annex12LifecycleObservedMask};
+  for(int i=0;i<names.Length;i++)value.Append(","+q+names[i]+q+":"+counts[i].ToString(CultureInfo.InvariantCulture));return value.ToString();
+ }
+ private System.Collections.IList Annex12LifecycleTables(){
+  System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)throw new InvalidOperationException();object info=null;
+  foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)throw new InvalidOperationException();info=candidate;}
+  if(info==null||!Selected(Get(info,"Active")))throw new InvalidOperationException();System.Collections.IList tables=Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count<1||tables.Count>3)throw new InvalidOperationException();return tables;
+ }
+ private void Annex12LifecycleOwner(Control grid,object annex){
+  Form owner=grid.FindForm();uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
+  if(mode!="gtgt-annex12-row-inspect"||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||!grid.ContainsFocus||Get(grid,"ActiveSheet")!=annex||pid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible()||Global("InstanceClass")==null||Global("InstanceClass").GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(annex,"AutoCalculation"))||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)throw new InvalidOperationException();
+ }
+ private void Annex12LifecycleSelect(Control grid,object annex,int tableIndex,int rowIndex){
+  grid.Focus();Annex12LifecycleOwner(grid,annex);System.Collections.IList tables=Annex12LifecycleTables();if(tableIndex<0||tableIndex>=tables.Count)throw new InvalidOperationException();object table=tables[tableIndex];System.Collections.IList rows=Get(table,"RowsValues") as System.Collections.IList;if(rows==null||rowIndex<0||rowIndex>=rows.Count)throw new InvalidOperationException();
+  int row=Convert.ToInt32(Get(Get(table,"Location"),"DataLocationTemplateRowStart"))-1+rowIndex;if(row<43||row>=Convert.ToInt32(Get(annex,"RowCount"))||Convert.ToBoolean(Get(Cell(annex,row,20),"Locked")))throw new InvalidOperationException();
+  annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,20});Application.DoEvents();Annex12LifecycleOwner(grid,annex);if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=20)throw new InvalidOperationException();
+ }
+ private bool Annex12LifecycleState(Control grid,object annex,int[] rowCounts){
+  Annex12LifecycleOwner(grid,annex);System.Collections.IList tables=Annex12LifecycleTables();if(tables.Count!=rowCounts.Length)return false;
+  for(int i=0;i<tables.Count;i++){
+   object table=tables[i];if(Convert.ToString(Get(table,"TableName"),CultureInfo.InvariantCulture)!="01_2_GTGT"||Convert.ToString(Get(table,"TablePath"),CultureInfo.InvariantCulture)!="PLuc_01_2_GTGT/TenNhaMay")throw new InvalidOperationException();
+   if(Convert.ToString(Get(table,"TableID"),CultureInfo.InvariantCulture)!=(i+1).ToString(CultureInfo.InvariantCulture)||Convert.ToString(Get(Get(table,"CellTableSTT"),"Value"),CultureInfo.InvariantCulture)!=(i+1).ToString(CultureInfo.InvariantCulture))return false;
+   System.Collections.IList rows=Get(table,"RowsValues") as System.Collections.IList;if(rows==null||rows.Count!=rowCounts[i])return false;
+   int start=Convert.ToInt32(Get(Get(table,"Location"),"DataLocationTemplateRowStart"))-1;if(start<43||start+rows.Count>=Convert.ToInt32(Get(annex,"RowCount")))throw new InvalidOperationException();
+   for(int j=0;j<rows.Count;j++)if(CellText(annex,start+j,1)!=(i+1).ToString(CultureInfo.InvariantCulture)+"."+(j+1).ToString(CultureInfo.InvariantCulture))return false;
+  }
+  return true;
+ }
+ private void Annex12LifecycleObserve(Control grid,object annex,int step,int[] rowCounts){
+  if(step<0||step>9||annex12LifecycleObservedMask!=((1<<step)-1))throw new InvalidOperationException();Stopwatch clock=Stopwatch.StartNew();
+  do{if(Annex12LifecycleState(grid,annex,rowCounts)){annex12LifecycleObservedMask|=1<<step;Record();return;}Application.DoEvents();System.Threading.Thread.Sleep(10);}while(clock.Elapsed.TotalSeconds<2);
+  throw new InvalidOperationException();
+ }
+ private void Annex12LifecycleKey(Control grid,object annex,int action,string key,int tableIndex,int rowIndex){
+  if(action!=annex12LifecycleActionCount||action<0||action>8||(key!="{F5}"&&key!="{F6}"&&key!="{F7}"&&key!="{F8}"))throw new InvalidOperationException();Annex12LifecycleSelect(grid,annex,tableIndex,rowIndex);
+  Control[] panel=grid.FindForm().Controls.Find(key=="{F5}"||key=="{F6}"?"pnF5":"pnF7",true);if(panel.Length!=1||!panel[0].Visible||!panel[0].Enabled)throw new InvalidOperationException();
+  Annex12LifecycleOwner(grid,annex);annex12LifecycleActionCount++;Record();SendKeys.SendWait(key);Application.DoEvents();grid.Focus();Annex12LifecycleOwner(grid,annex);
+ }
+ private void Annex12LifecycleEdit(Control grid,object annex){
+  if(annex12LifecycleEditCount!=0||annex12LifecycleActionCount!=1)throw new InvalidOperationException();Annex12LifecycleSelect(grid,annex,0,0);
+  grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();editor.Focus();
+  foreach(string key in new string[]{"^a","50","{TAB}"}){Annex12LifecycleOwner(grid,annex);if(!editor.ContainsFocus)throw new InvalidOperationException();SendKeys.SendWait(key);}
+  grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();Annex12LifecycleOwner(grid,annex);if(!Annex12NumberMatched(annex,43,20,50))throw new InvalidOperationException();annex12LifecycleEditCount++;Record();
+ }
+ private void InspectOriginalAnnex12Lifecycle(Control grid,object annex){
+  if(!annex12RowAfterMatched||annex12LifecycleMatched||annex12LifecycleActionCount!=0||annex12LifecycleEditCount!=0||annex12LifecycleObservedMask!=0)throw new InvalidOperationException();SetStage(HtkkAutomationStage.GtgtAnnex12LifecycleInspecting);Record();
+  Annex12LifecycleObserve(grid,annex,0,new int[]{2});
+  Annex12LifecycleKey(grid,annex,0,"{F6}",0,1);Annex12LifecycleObserve(grid,annex,1,new int[]{1});
+  Annex12LifecycleEdit(grid,annex);
+  Annex12LifecycleKey(grid,annex,1,"{F6}",0,0);Annex12LifecycleObserve(grid,annex,2,new int[]{1});if(!Annex12NumberMatched(annex,43,20,0))throw new InvalidOperationException();
+  Annex12LifecycleKey(grid,annex,2,"{F5}",0,0);Annex12LifecycleObserve(grid,annex,3,new int[]{2});
+  Annex12LifecycleKey(grid,annex,3,"{F7}",0,0);Annex12LifecycleObserve(grid,annex,4,new int[]{2,1});
+  Annex12LifecycleKey(grid,annex,4,"{F7}",0,0);Annex12LifecycleObserve(grid,annex,5,new int[]{2,1,1});
+  Annex12LifecycleKey(grid,annex,5,"{F8}",1,0);Annex12LifecycleObserve(grid,annex,6,new int[]{2,1});
+  Annex12LifecycleKey(grid,annex,6,"{F8}",0,0);Annex12LifecycleObserve(grid,annex,7,new int[]{1});
+  Annex12LifecycleKey(grid,annex,7,"{F8}",0,0);Annex12LifecycleObserve(grid,annex,8,new int[]{1});
+  Annex12LifecycleKey(grid,annex,8,"{F5}",0,0);Annex12LifecycleObserve(grid,annex,9,new int[]{2});
+  annex12LifecycleMatched=annex12LifecycleActionCount==9&&annex12LifecycleEditCount==1&&annex12LifecycleObservedMask==1023&&Convert.ToInt32(Get(annex,"RowCount"))==67;if(!annex12LifecycleMatched)throw new InvalidOperationException();Record();
  }
 
  // Fixed synthetic input scenario, separate from the already proved row-only mode.

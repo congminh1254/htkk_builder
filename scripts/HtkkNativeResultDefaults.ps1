@@ -189,6 +189,10 @@ function New-HtkkNativeResultDefaults {
   webSigningDateReady=$false
   webSigningDateLocked=$false
   webSigningDateCellKind=0
+  annex12LifecycleMatched=$false
+  annex12LifecycleActionCount=0
+  annex12LifecycleEditCount=0
+  annex12LifecycleObservedMask=0
  }
  return $result
 }
