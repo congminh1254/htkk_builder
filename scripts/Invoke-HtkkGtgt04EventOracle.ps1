@@ -31,6 +31,8 @@ try{
  foreach($exe in @($hostPath,(Join-Path $project 'HTKK.exe'))){$rule='HTKK04 event '+[guid]::NewGuid().ToString('N');New-NetFirewallRule -DisplayName $rule -Direction Outbound -Program $exe -Action Block|Out-Null;$rules+=$rule}
  $owner=[HtkkWindowsJobProcess]::Launch($hostPath,$project,[string[]]@(),$false,$true)
  $process=$owner.RootProcess;$started=$process.StartTime
+ if(-not $process.WaitForInputIdle(30000)){throw 'GTGT04_STARTUP_BOUNDARY'}
+ $process.Refresh();if($process.HasExited -or $process.MainWindowHandle -eq [IntPtr]::Zero){throw 'GTGT04_STARTUP_BOUNDARY'}
  $login=Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $started -ProjectDirectory $project
  if($login.status -cne 'synthetic-profile-window-observed'){throw 'GTGT04_LOGIN_BOUNDARY'}
  [IO.File]::WriteAllText(($hostPath+'.gui-automation.allow'),'profile-save',[Text.Encoding]::ASCII)
@@ -55,7 +57,8 @@ try{
  if($clean -and $null -ne $login -and $login.fixtureDirectoryCreated){Remove-Item -LiteralPath $fixture -Recurse -Force -ErrorAction SilentlyContinue}
 }
 if(-not $clean -or -not $compilerSafe -or -not $sourceSafe){throw 'GTGT04_CLEANUP_OR_SOURCE_BOUNDARY'}
-$report=[ordered]@{format='htkk-gtgt04-event-execution-v1';compilerJobCleanupVerified=$compilerSafe;supplierJobCleanupVerified=$clean;sourceHashesUnchanged=$sourceSafe;failure=$failure;observation=$null;primitiveOnly=$true;nativeQualified=$false;filingEnabled=$false}
+$loginStatus=if($null -ne $login -and $login.status -in @('synthetic-profile-window-observed','exact-login-controls-not-found','new-id-not-posted','root-exited','synthetic-input-not-verified','login-not-posted','next-window-not-yet-identified','login-transition-not-verified','native-login-helper-unavailable')){$login.status}else{'not-verified'}
+$report=[ordered]@{loginStatus=$loginStatus;format='htkk-gtgt04-event-execution-v1';compilerJobCleanupVerified=$compilerSafe;supplierJobCleanupVerified=$clean;sourceHashesUnchanged=$sourceSafe;failure=$failure;observation=$null;primitiveOnly=$true;nativeQualified=$false;filingEnabled=$false}
 if($null -ne $raw){
  if($raw.format -cne 'htkk-gtgt04-event-ui-v1' -or $raw.runtime -cne 'clr2-x86' -or $raw.stage -cnotin @('observed','blocked') -or $raw.failure -cnotin @('none','ui-contract','sheet-contract','timeout') -or $raw.observations.Count -gt 13){throw 'GTGT04_RESULT_SHAPE'}
  if($raw.stage -ceq 'observed'){foreach($flag in @('profileVerified','profileClosed','periodConfigured','annexSelected','sourcePinsVerified','contextMatched')){if($raw[$flag] -isnot [bool] -or -not $raw[$flag]){throw 'GTGT04_CONTEXT_BOUNDARY'}}}
