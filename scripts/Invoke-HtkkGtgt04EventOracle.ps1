@@ -32,7 +32,8 @@ try{
  $owner=[HtkkWindowsJobProcess]::Launch($hostPath,$project,[string[]]@(),$false,$true)
  $process=$owner.RootProcess;$started=$process.StartTime
  if(-not $process.WaitForInputIdle(30000)){throw 'GTGT04_STARTUP_BOUNDARY'}
- $process.Refresh();if($process.HasExited -or $process.MainWindowHandle -eq [IntPtr]::Zero){throw 'GTGT04_STARTUP_BOUNDARY'}
+ $startupClock=[Diagnostics.Stopwatch]::StartNew();do{$process.Refresh();if($process.HasExited){throw 'GTGT04_HOST_EXITED'};if($process.MainWindowHandle -ne [IntPtr]::Zero){break};Start-Sleep -Milliseconds 200}while($startupClock.Elapsed.TotalSeconds -lt 30)
+ if($process.MainWindowHandle -eq [IntPtr]::Zero){throw 'GTGT04_STARTUP_BOUNDARY'}
  $login=Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $started -ProjectDirectory $project
  if($login.status -cne 'synthetic-profile-window-observed'){throw 'GTGT04_LOGIN_BOUNDARY'}
  [IO.File]::WriteAllText(($hostPath+'.gui-automation.allow'),'profile-save',[Text.Encoding]::ASCII)
