@@ -9,6 +9,8 @@ class Gtgt04OracleContract(unittest.TestCase):
   self.assertIn('TAX.HTKK.Business.Gtgt04TT89Nckt309',observer)
   self.assertIn('BeginCellEdit(grid,sheet,86+r,16,true)',observer)
   self.assertIn('CommitCellEdit(grid)',observer)
+  self.assertIn('typeof(CheckBox).GetMethod("OnClick"',observer)
+  self.assertNotIn('Check(all,true)',observer)
   self.assertIn('new int[]{16,25,48}',observer)
   self.assertNotRegex(observer,r'\.SetValue\(|\.SetFormula\(')
   self.assertNotIn('TinhLaiChiTieu',observer)
