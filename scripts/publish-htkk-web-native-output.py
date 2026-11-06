@@ -1,4 +1,4 @@
-"""Privately retain byte-exact native reexports of thirteen fixed synthetic web cases.
+"""Privately retain byte-exact native reexports of the fixed synthetic web cases.
 
 Privacy adapters operate only on an in-memory copy. Original output bytes are
 never rewritten. Neither this publisher nor its fixtures establish filing-wide
@@ -12,6 +12,7 @@ def module(name,file):
 transport=module('native_output_transport','publish-htkk-web-inputs.py')
 reader=transport.reader
 privacy=reader.privacy
+annex12=reader.annex12
 REPO=reader.REPO
 BUILDER=reader.BUILDER
 DIRECTORY='htkk-web-native-output'
@@ -25,6 +26,14 @@ PREFIX='HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/'
 SERVICE_PREFIX='HSoThueDTu/HSoKhaiThue/TTinChung/TTinDVu/'
 CREATION='HSoThueDTu/'+PREFIX+'ngayLapTKhai'
 CODES=transport.CODES|frozenset(('PROVENANCE','COMPARE','FILES','NATIVE_IDENTITY','NATIVE_DATE'))
+def tax_leaf_count(case_id):
+ return annex12.tax_leaves(case_id) if annex12.is_case(case_id) else 70
+def baseline_matches_input(case_id):
+ # The UI-built baseline of the two-plant case is deliberately the proven
+ # one-plant zero annex; only the imported web input carries two plants.
+ return case_id!=annex12.TWO_PLANTS_CASE
+def signing_date(case_id):
+ return annex12.FIXED_DATE if annex12.is_case(case_id) else '2026-10-25'
 
 class OutputError(ValueError):
  def __init__(self,code):
@@ -68,7 +77,7 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False):
  provider=leaf(root,'HSoKhaiThue/TTinChung/TTinDVu/ttinNhaCCapDVu').text
  if not isinstance(provider,str) or not re.fullmatch('[0-9A-F]{32}',provider):fail('NATIVE_IDENTITY')
  created=leaf(root,PREFIX+'ngayLapTKhai');signed=leaf(root,PREFIX+'ngayKy')
- if (signed.text!=created.text if initial and not aligned else signed.text!='2026-10-25') or not isinstance(created.text,str) or not re.fullmatch('[0-9]{4}-[0-9]{2}-[0-9]{2}',created.text):fail('NATIVE_DATE')
+ if (signed.text!=created.text if initial and not aligned else signed.text!=signing_date(case_id)) or not isinstance(created.text,str) or not re.fullmatch('[0-9]{4}-[0-9]{2}-[0-9]{2}',created.text):fail('NATIVE_DATE')
  try:created_date=datetime.date.fromisoformat(created.text)
  except ValueError:fail('NATIVE_DATE')
  today=today or datetime.datetime.now(datetime.timezone.utc).date()
@@ -82,6 +91,11 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False):
    node=leaf(root,PREFIX+'KyKKhaiThue/'+name)
    if node.text!=expected:fail('XML_PRIVACY')
    node.text=baseline
+ if annex12.is_case(case_id):
+  # Every annex baseline is the proven UI-built zero annex; reexports must carry
+  # the exact imported case. Validate exactly, then project only IN MEMORY.
+  try:annex12.validate_annex(root,annex12.ZERO_CASE if initial else case_id);annex12.strip_annex(root)
+  except annex12.AnnexWebContractError:fail('XML_PRIVACY')
  checkbox=leaf(root,'HSoKhaiThue/CTieuTKhaiChinh/ct21')
  if checkbox.text!=reader.CASE_CHECKBOX[case_id]:fail('XML_PRIVACY')
  checkbox.text='0'
@@ -93,7 +107,7 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False):
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
  checked=privacy.validate_xml(ET.tostring(root,encoding='utf-8'),today)
  if checked['leafCount']!=74:fail('XML_PRIVACY')
- return {'privacyValuesVerified':True,'leafCount':74,'fixedSyntheticCase':case_id,'historicalSigningDate':None if initial and not aligned else '2026-10-25','signingDateRule':'native-initial-creation-date' if initial and not aligned else 'fixed-web-synthetic-date','creationDateRule':'native-export-current-date','nativeServiceIdentityVerified':True}
+ return {'privacyValuesVerified':True,'leafCount':74,'fixedSyntheticCase':case_id,'historicalSigningDate':None if initial and not aligned else signing_date(case_id),'signingDateRule':'native-initial-creation-date' if initial and not aligned else 'fixed-web-synthetic-date','creationDateRule':'native-export-current-date','nativeServiceIdentityVerified':True}
 
 def compare_native_roundtrip(initial,native):
  # Record the actual whole-document result without normalization. Initial GUI
@@ -112,7 +126,7 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
  exact_run(run_id);exact_sha(builder_commit);exact_sha(source_commit);exact_sha(artifact_commit)
  if not isinstance(body,bytes) or not 0<len(body)<=reader.MAX_MANIFEST:fail('PROVENANCE')
  observed=reader.json_object(body,'MANIFEST')
- expected={'format':'htkk-web-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','caseId':case_id,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalImportSucceeded':True,'originalReexportSucceeded':True,'originalExporterValidatedSchema':True,'webTaxComparisonPassed':True,'webTaxCheckedLeafCount':70,'webImportInputSha256':observed.get('webImportInputSha256'),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'artifactCommit':artifact_commit,'creationDateRule':'native-export-current-date','fullRoundTrip':False}
+ expected={'format':'htkk-web-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','caseId':case_id,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalImportSucceeded':True,'originalReexportSucceeded':True,'originalExporterValidatedSchema':True,'webTaxComparisonPassed':True,'webTaxCheckedLeafCount':tax_leaf_count(case_id),'webImportInputSha256':observed.get('webImportInputSha256'),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'artifactCommit':artifact_commit,'creationDateRule':'native-export-current-date','fullRoundTrip':False}
  if initial is not None:
   if not isinstance(initial,bytes) or not 0<len(initial)<=reader.MAX_XML or not isinstance(run_attempt,str) or not re.fullmatch('[1-9][0-9]{0,5}',run_attempt):fail('PROVENANCE')
   expected.update(format='htkk-web-native-output-staging-v2',runAttempt=int(run_attempt),initialOutputSha256=hashlib.sha256(initial).hexdigest(),initialOutputBytes=len(initial))
@@ -133,10 +147,10 @@ def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact
  if initial is not None:
   validate_native(initial,case_id,today,initial=True,aligned=aligned)
   compared=compare_native_roundtrip(initial,native)
-  if aligned and not compared['allLeafValuesMatched']:fail('COMPARE')
+  if aligned and baseline_matches_input(case_id) and not compared['allLeafValuesMatched']:fail('COMPARE')
  return native,metadata
 
-def compare_tax(input_body,native_body):
+def compare_tax(input_body,native_body,case_id=None):
  # Reader already validates the sole known web disclaimer before ET parsing.
  left=ET.fromstring(input_body);right=native_document(native_body);count=0
  def equal(a,b,path):
@@ -150,8 +164,9 @@ def compare_tax(input_body,native_body):
   if path.startswith(SERVICE_PREFIX):return path[len(SERVICE_PREFIX):] in (*SERVICE,'ttinNhaCCapDVu')
   count+=1
   return path==CREATION or (a.text or '')==(b.text or '')
- if not equal(left,right,'HSoThueDTu') or count!=70:fail('COMPARE')
- return {'allTaxValuesMatched':True,'checkedTaxLeafCount':70,'creationDateRule':'native-export-current-date','independentSchemaVerification':False}
+ expected=70 if case_id is None else tax_leaf_count(case_id)
+ if not equal(left,right,'HSoThueDTu') or count!=expected:fail('COMPARE')
+ return {'allTaxValuesMatched':True,'checkedTaxLeafCount':expected,'creationDateRule':'native-export-current-date','independentSchemaVerification':False}
 
 def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immutable=False):
  # Revalidate even when called independently of the fixed-path staging reader.
@@ -161,7 +176,7 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immu
  if initial is not None:
   validate_native(initial,metadata['caseId'],today,initial=True,aligned=aligned)
   compared=compare_native_roundtrip(initial,native)
-  if aligned and not compared['allLeafValuesMatched']:fail('COMPARE')
+  if aligned and baseline_matches_input(metadata['caseId']) and not compared['allLeafValuesMatched']:fail('COMPARE')
  if not isinstance(token,str) or not token:fail('AUTH')
  fetch=fetch or transport.api
  if retain_immutable:transport.assert_current(fetch,token,metadata['sourceCommit'])
@@ -170,7 +185,7 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immu
  inputs=reader.download(token,fetch=read_api,expected_source=metadata['sourceCommit'],expected_case=metadata['caseId'],artifact_commit=metadata['artifactCommit'])
  input_manifest=reader.validate_manifest(inputs['manifest.json'])
  if hashlib.sha256(inputs['01GTGT-web.xml']).hexdigest()!=metadata['webImportInputSha256']:fail('HASH')
- comparison=compare_tax(inputs['01GTGT-web.xml'],native)
+ comparison=compare_tax(inputs['01GTGT-web.xml'],native,metadata['caseId'])
  manifest={'format':'htkk-web-native-output-reference-v1','scope':'single-fixed-synthetic-web-native-reexport','provenance':metadata,'sourcePins':PINS,'privacyCheck':checked,'comparison':comparison,'input':{'artifactCommit':metadata['artifactCommit'],'sourceCommit':metadata['sourceCommit'],'caseId':metadata['caseId'],'sha256':metadata['webImportInputSha256'],'bytes':input_manifest['bytes'],'producerSha256':input_manifest['producerSha256']},'files':{'01GTGT-native.xml':{'sha256':metadata['originalOutputSha256'],'bytes':len(native)}},'fullRoundTrip':False,'independentSchemaVerification':False}
  if initial is not None:
   manifest['initialReexportComparison']=compare_native_roundtrip(initial,native)

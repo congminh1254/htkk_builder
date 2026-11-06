@@ -11,6 +11,18 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool webInputVerified=false;private string webInputPath="",webImportInputSha256="",webSourceSha="";
  private string SigningDateJson(){string q=((char)34).ToString();return ","+q+"webSigningDateEdited"+q+":"+Bool(webSigningDateEdited)+","+q+"webSigningDateReady"+q+":"+Bool(webSigningDateReady)+","+q+"webSigningDateLocked"+q+":"+Bool(webSigningDateLocked)+","+q+"webSigningDateCellKind"+q+":"+webSigningDateCellKind;}
  private string WebInputJson(){string q=((char)34).ToString();return ","+q+"webCaseId"+q+":"+q+webCaseId+q+","+q+"webCaseEditCount"+q+":"+webCaseEditCount+","+q+"webTaxValuesMatched"+q+":"+Bool(webTaxValuesMatched)+","+q+"webCreationDateMatchedNativeBaseline"+q+":"+Bool(webCreationDateMatchedNativeBaseline)+","+q+"webServiceIdentityMatched"+q+":"+Bool(webServiceIdentityMatched)+","+q+"webTaxLeafCount"+q+":"+webTaxLeafCount+","+q+"webInputVerified"+q+":"+Bool(webInputVerified)+","+q+"webImportInputSha256"+q+":"+q+webImportInputSha256+q+","+q+"webSourceSha"+q+":"+q+webSourceSha+q+SigningDateJson();}
+ // Fixed 01-2/GTGT web cases. Their UI baseline is the proven 14-input zero
+ // annex; only the original import control loads the case's web annex.
+ private const string Annex12WebZeroCaseId="01GTGT-annex12-zero-two-locations-M10-2026";
+ private const string Annex12WebTwoPlantsCaseId="01GTGT-annex12-two-plants-nonzero-M10-2026";
+ private bool Annex12WebCaseId(){return webCaseId==Annex12WebZeroCaseId||webCaseId==Annex12WebTwoPlantsCaseId;}
+ private bool Annex12WebCase(){return mode=="gtgt-web-import-inspect"&&webInputVerified&&Annex12WebCaseId();}
+ private bool Annex12WebTwoPlantsCase(){return Annex12WebCase()&&webCaseId==Annex12WebTwoPlantsCaseId;}
+ // Exact compared tax leaves: 70 main leaves, plus 38 (one plant, two rows) or
+ // 89 (two plants, 2+3 rows) annex leaves; service identity leaves excluded.
+ private int WebTaxLeafTarget(){return !Annex12WebCaseId()?70:webCaseId==Annex12WebTwoPlantsCaseId?159:108;}
+ // The annex producer pins both declaration dates to 2026-10-27.
+ private DateTime WebFixedSigningDate(){return Annex12WebCaseId()?new DateTime(2026,10,27):new DateTime(2026,10,25);}
  private string RoundtripInputPath(){return mode=="gtgt-web-import-inspect"?webInputPath:firstExportPath;}
  private string RoundtripInputHash(){return mode=="gtgt-web-import-inspect"?webImportInputSha256:firstExportSha256;}
  private static string ReadOwnHexSidecar(string path,int count){
@@ -23,7 +35,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void VerifyOwnWebInput(){
   string host=Assembly.GetExecutingAssembly().Location;if(!String.Equals(Path.GetDirectoryName(host),project,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException();
-  FileInfo caseFile=new FileInfo(host+".web-case.id");if(!caseFile.Exists||(caseFile.Attributes&FileAttributes.ReparsePoint)!=0||caseFile.Length<1||caseFile.Length>64)throw new InvalidOperationException();webCaseId=File.ReadAllText(caseFile.FullName,Encoding.ASCII);if(webCaseId!="01GTGT-zero-M10-2026"&&webCaseId!="01GTGT-sale10-M10-2026"&&webCaseId!="01GTGT-sale10-half-M10-2026"&&webCaseId!="01GTGT-sale10-manual-M10-2026"&&webCaseId!="01GTGT-sale5-half-M10-2026"&&webCaseId!="01GTGT-sale5-manual-M10-2026"&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&webCaseId!="01GTGT-noactivity-reset-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-cancel-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-uncheck-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-keep-credit-M10-2026"&&webCaseId!="01GTGT-zero-Q4-2026"&&webCaseId!="01GTGT-native-import-sale10-M10-2026")throw new InvalidOperationException();
+  FileInfo caseFile=new FileInfo(host+".web-case.id");if(!caseFile.Exists||(caseFile.Attributes&FileAttributes.ReparsePoint)!=0||caseFile.Length<1||caseFile.Length>64)throw new InvalidOperationException();webCaseId=File.ReadAllText(caseFile.FullName,Encoding.ASCII);if(webCaseId!="01GTGT-zero-M10-2026"&&webCaseId!="01GTGT-sale10-M10-2026"&&webCaseId!="01GTGT-sale10-half-M10-2026"&&webCaseId!="01GTGT-sale10-manual-M10-2026"&&webCaseId!="01GTGT-sale5-half-M10-2026"&&webCaseId!="01GTGT-sale5-manual-M10-2026"&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&webCaseId!="01GTGT-noactivity-reset-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-cancel-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-uncheck-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-keep-credit-M10-2026"&&webCaseId!="01GTGT-zero-Q4-2026"&&webCaseId!="01GTGT-native-import-sale10-M10-2026"&&webCaseId!=Annex12WebZeroCaseId&&webCaseId!=Annex12WebTwoPlantsCaseId)throw new InvalidOperationException();
   webInputPath=host+".web-input.xml";webImportInputSha256=ReadOwnHexSidecar(host+".web-input.sha256",64);webSourceSha=ReadOwnHexSidecar(host+".web-source.sha",40);
   XmlDocument document=ReadBoundedOriginalXml(webInputPath);if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/tenNNT")!=FakeName||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/nguoiKy")!=FakeSigner)throw new InvalidOperationException();

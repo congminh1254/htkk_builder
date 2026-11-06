@@ -12,7 +12,35 @@ def web_fixture():
  root.find('.//'+ns+'ct21').text='0'
  for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text='2026-10-25'
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
+def annex_tree(root,case):
+ """Synthetic PLuc built from the trusted contract (no application fixture is copied)."""
+ ns='{'+w.privacy.NS+'}';spec=w.annex12.CASES[case];pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+ if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
+ for child in list(pluc):pluc.remove(child)
+ pluc.text=None;annex=ET.SubElement(pluc,ns+'PLuc_01_2_GTGT')
+ for plant in spec['plants']:
+  group=ET.SubElement(annex,ns+'TenNhaMay',{'id':plant['id']})
+  for name in ('sTT','ten_nhaMay','ma_nhaMay'):ET.SubElement(group,ns+name).text=plant['values'][name]
+  for row in plant['rows']:
+   location=ET.SubElement(group,ns+'DiaBanPhanBo',{'id':row['id']})
+   for name in w.annex12.LOCATION_ORDER:ET.SubElement(location,ns+name).text=row['values'][name] or None
+  for name in ('ct10_a','ct11_a','ct12_a'):ET.SubElement(group,ns+name).text=plant['totals'][name]
+ ET.SubElement(annex,ns+'ct13').text=spec['ct13'];ET.SubElement(annex,ns+'ct14').text=spec['ct14']
+ return root
+def annex_fixture(case):
+ root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
+ for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text=w.annex12.FIXED_DATE
+ annex_tree(root,case);ET.register_namespace('',w.privacy.NS)
+ return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
+def case_manifest(body,case,producer_sha='c'*64):
+ """Exact manifest shape of the registered producer for one fixed case."""
+ value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
+ if w.annex12.is_case(case):
+  compared,nodes=w.ANNEX_NATIVE_NODES[case]
+  value.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=w.ANNEX_PRODUCER,nativeAnnexReferenceSha256=w.ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False,expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode().replace(w.COMMENT,''))))
+ return value
 def sale_fixture(case="01GTGT-sale10-M10-2026"):
+ if w.annex12.is_case(case):return annex_fixture(case)
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  root.find('.//'+ns+'ct21').text=w.CASE_CHECKBOX[case]

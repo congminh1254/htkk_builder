@@ -7,13 +7,13 @@ BRANCH='gtgt-scoped-evidence-candidates'
 FILES=('retained.json','input-manifest.json','initial.xml','native.xml','web.xml','producer.mjs','gui-report.json','run.json','roundtrip-v2.json','execution-v2.json')
 def payload(directory,source,builder):
  source=c.sha(source);builder=c.sha(builder);directory=pathlib.Path(directory)
- paths=['bundle.json','assessment.json','evidence-v2.json']+[case+'/'+name for case in c.cases.CASES for name in FILES]
+ paths=['bundle.json','assessment.json','evidence-v2.json']+[case+'/'+name for case in c.cases.GATE_CASES for name in FILES]
  c.check(not t.unsafe_path(directory) and directory.is_dir())
  actual=sorted(p.relative_to(directory).as_posix() for p in directory.rglob('*') if p.is_file() or p.is_symlink())
  c.check(actual==sorted(paths))
  files={name:t.safe_read(directory/name,2_000_000) for name in paths}
  bundle=json.loads(files['bundle.json']);report=json.loads(files['assessment.json']);manifest=json.loads(files['evidence-v2.json'])
- c.check(bundle.get('format')=='htkk-native-evidence-bundle-v1' and bundle.get('sourceCommit')==source and bundle.get('builderCommit')==builder and [x.get('caseId') for x in bundle.get('cases',[])]==list(c.cases.CASES))
+ c.check(bundle.get('format')=='htkk-native-evidence-bundle-v1' and bundle.get('sourceCommit')==source and bundle.get('builderCommit')==builder and [x.get('caseId') for x in bundle.get('cases',[])]==list(c.cases.GATE_CASES))
  c.check(report.get('format')=='htkk-evidence-assessment-v1' and report.get('status')=='blocked' and report.get('caseCount')==13 and report.get('sourceCommit')==source and report.get('builderCommit')==builder and report.get('fullCompatibility') is False and report.get('nativeQualified') is False and report.get('filingEnabled') is False)
  c.check(manifest.get('format')=='htkk-windows-evidence-v2' and manifest.get('reviewer')=='' and len(manifest.get('cases',[]))==13)
  for case in bundle['cases']:

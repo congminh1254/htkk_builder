@@ -7,12 +7,14 @@ spec=importlib.util.spec_from_file_location('web_publisher',ROOT/'publish-htkk-w
 spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 SHA='a'*40
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
+ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
+PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER}
 
 def fixtures():
  result=[]
  for case,_,branch in p.CASES:
   body=f.web_fixture() if case=='01GTGT-zero-M10-2026' else f.sale_fixture(case)
-  metadata=f.manifest(body);metadata.update(format=p.reader.CASES[case],caseId=case,producerSha256=hashlib.sha256(PRODUCER).hexdigest())
+  metadata=f.case_manifest(body,case,hashlib.sha256(PRODUCERS[p.CASE_PRODUCERS[case]]).hexdigest())
   files={'01GTGT-web.xml':body,'manifest.json':(json.dumps(metadata,ensure_ascii=False)+'\n').encode()}
   result.append((case,branch,files,metadata))
  return result
@@ -30,12 +32,13 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/git/commits/'+SHA:return {'sha':SHA}
   if path=='/git/ref/heads/main':return {'ref':'refs/heads/main','object':{'type':'commit','sha':main}}
   if path=='/contents/'+p.PRODUCER+'?ref='+SHA:return contents(PRODUCER,'generate-htkk-web-reference.mjs',p.PRODUCER)
+  if path=='/contents/scripts/generate-htkk-web-annex12-reference.mjs?ref='+SHA:return contents(ANNEX_PRODUCER,'generate-htkk-web-annex12-reference.mjs','scripts/generate-htkk-web-annex12-reference.mjs')
   if path=='/contents/package.json?ref='+SHA:return contents(b'{"version":"0.9.2"}','package.json')
   if path=='/git/blobs':
    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
   if path=='/git/trees':return {'sha':'c'*40}
   if path=='/git/commits':
-   self_sha=('d','e','f','1','2','3','4','5','6','7','8','9','a')[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
+   self_sha=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0')[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
   if path.startswith('/git/ref/heads/'):
    if not existing:raise urllib.error.HTTPError('https://api.github.com/',404,'PRIVATE REMOTE TEXT',{},None)
    return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':'f'*40}}
@@ -96,7 +99,7 @@ class StagingTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
  def test_orphan_private_publication_preserves_bytes_and_metadata_only_result(self):
   inputs=fixtures();fetch,calls,commits=fake_api();result=p.publish(inputs,SHA,'synthetic-token',fetch)
-  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,('d','e','f','1','2','3','4','5','6','7','8','9','a'))]})
+  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0'))]})
   self.assertTrue(all(item['parents']==[] for item in commits));self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
   blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
   self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.NAMES])

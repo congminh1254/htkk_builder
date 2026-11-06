@@ -32,7 +32,8 @@ class AnnexExportProbeContract(unittest.TestCase):
   assert_compile_input(self,'gtgt-annex12-export-inspect','HtkkGtgtAnnex12ExportInspection.cs')
   for flag in ('annex12ExportMainZeroMatched','annex12ExportShapeMatched','annex12ExportSchemaVerified'):
    self.assertIn(flag+'=$false;',fixture);self.assertGreaterEqual(reader.count("'"+flag+"'"),2)
-  self.assertEqual(field('annex12ExportMainZeroMatched')['activeModes'],['gtgt-annex12-export-inspect'])
+  self.assertEqual(field('annex12ExportMainZeroMatched')['activeModes'],['gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-web-import-inspect'])
+  for flag in ('annex12ExportShapeMatched','annex12ExportSchemaVerified'):self.assertEqual(field(flag)['activeModes'],['gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero'])
 
  def test_every_new_native_stage_is_allowlisted_and_success_stage_is_terminal(self):
   source=wire_source('HtkkGtgtAnnex12ExportInspection.cs');reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();probe=(ROOT/'probe-htkk-windows.ps1').read_text()

@@ -96,7 +96,7 @@ class NativePreflightRetry(unittest.TestCase):
   f=original.fixture();f['statuses'][-1]['state']='pending';calls=[]
   def no_read(*args):calls.append(args);raise AssertionError('No evidence reads while cohort pending')
   self.assertIsNone(original.batch.discover(f['publication'],original.BUILDER,f['statuses'],no_read));self.assertEqual(calls,[])
-  f['statuses'][0]['state']='pending';f['statuses'][-1].update(state='failure',description='failed input:'+f['publication']['cases'][-1]['artifactCommit']);retries=[]
+  f['statuses'][0]['state']='pending';f['statuses'][-1].update(state='failure',description='failed input:'+f['publication']['cases'][len(original.batch.registry.GATE_CASES)-1]['artifactCommit']);retries=[]
   self.assertIsNone(original.batch.discover(f['publication'],original.BUILDER,f['statuses'],no_read,retry=lambda *args:retries.append(args)or True));self.assertEqual(len(retries),1);self.assertEqual(calls,[])
 
  def test_no_log_or_artifact_download_while_last_success_callback_still_has_poststeps_running(self):

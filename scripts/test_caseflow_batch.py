@@ -10,6 +10,8 @@ def fixture():
  runs={};jobs={};reports={};publications={};manifests={};inputs={};statuses=[]
  for index,case in enumerate(batch.registry.CASES):
   rid=100+index;input_id=hashlib.sha1(('input'+case).encode()).hexdigest();native_id=hashlib.sha1(('native'+case).encode()).hexdigest();inputs[case]=input_id
+  # Candidate cases are published and dispatched but never part of the release cohort.
+  if not batch.registry.CASES[case]['releaseGate']:continue
   runs[rid]={'id':rid,'repository':{'full_name':batch.BUILDER},'path':'.github/workflows/probe-htkk-windows.yml','event':'workflow_dispatch','head_branch':'main','head_sha':BUILDER,'run_attempt':1,'status':'completed','conclusion':'success'}
   jobs[rid]={'total_count':2,'jobs':[{'id':rid+1000,'name':'readiness','conclusion':'success'},{'id':rid+2000,'name':'report_failure','conclusion':'skipped'}]}
   oracle=lambda n:{'status':'matched','cases':n,'matched':n,'compilerJobCleanupVerified':True,'oracleJobCleanupVerified':True}
@@ -34,7 +36,7 @@ def fixture():
 
 class NativeCohortTests(unittest.TestCase):
  def test_whole_cohort_and_pinned_revalidation_ignore_mutable_status_after_discovery(self):
-  f=fixture();proof=batch.discover(f['publication'],BUILDER,f['statuses'],f['get']);self.assertEqual(len(proof['cases']),13);self.assertFalse(proof['qualificationGranted']);self.assertTrue(batch.verify_pinned(proof,SOURCE,BUILDER,f['get']))
+  f=fixture();proof=batch.discover(f['publication'],BUILDER,f['statuses'],f['get']);self.assertEqual(len(proof['cases']),13);self.assertEqual([c['caseId'] for c in proof['cases']],list(batch.registry.GATE_CASES));self.assertFalse(proof['qualificationGranted']);self.assertTrue(batch.verify_pinned(proof,SOURCE,BUILDER,f['get']))
  def test_pending_and_other_release_inputs_never_qualify_new_cohort(self):
   f=fixture();f['statuses'][0]['state']='pending';self.assertIsNone(batch.discover(f['publication'],BUILDER,f['statuses'],f['get']))
   f=fixture();f['publication']['cases'][0]['artifactCommit']='0'*40;self.assertIsNone(batch.discover(f['publication'],BUILDER,f['statuses'],f['get']))
@@ -77,8 +79,12 @@ class ProducerAndCallbackTests(unittest.TestCase):
   with tempfile.TemporaryDirectory()as temp:
    source=pathlib.Path(temp)/'source';source.mkdir();calls=[]
    def execute(command,**kw):calls.append((command,kw['env']));return type('Result',(),{'returncode':0})()
-   self.assertEqual(producer.produce(source,temp,environment,pathlib.Path(temp)/'log',execute),13)
-   self.assertTrue(all(set(env)<=set(producer.ALLOWED_ENV)for _,env in calls));self.assertTrue(all(cmd[1]=='scripts/generate-htkk-web-reference.mjs'for cmd,_ in calls))
+   self.assertEqual(producer.produce(source,temp,environment,pathlib.Path(temp)/'log',execute),len(batch.registry.CASES))
+   self.assertTrue(all(set(env)<=set(producer.ALLOWED_ENV)for _,env in calls))
+   # Each case runs exactly its trusted adapter's product producer and fixed case name.
+   expected=[['node',batch.registry.ADAPTERS[c['adapterId']]['producer'],'--case',c['producerCase']] for c in batch.registry.CASES.values()]
+   self.assertEqual([cmd[:4] for cmd,_ in calls],expected)
+   self.assertEqual(sum(cmd[1]=='scripts/generate-htkk-web-annex12-reference.mjs' for cmd,_ in calls),2)
  def test_superseded_source_attempt_newer_run_or_queued_input_are_ignored(self):
   def get(repo,path,token):
    if path=='commits/main':return {'sha':SOURCE}
@@ -101,7 +107,7 @@ class InputContextTests(unittest.TestCase):
    if path=='/git/refs'and payload['ref'].startswith('refs/tags/'):refs_created.append(payload)
    return base(path,token,payload,method)
   result=publisher.publish(fixtures.fixtures(),fixtures.SHA,'fake',api,request_id='1234',retain_immutable=True)
-  self.assertEqual(len(result['cases']),13);self.assertEqual(len(contexts),13);self.assertEqual(len(refs_created),13)
+  total=len(batch.registry.CASES);self.assertEqual(len(result['cases']),total);self.assertEqual(len(contexts),total);self.assertEqual(len(refs_created),total)
   for ctx in contexts:self.assertEqual(ctx['sourceCommit'],fixtures.SHA);self.assertEqual(ctx['requestId'],'1234');self.assertEqual(ctx['unit'],batch.registry.CASES[ctx['caseId']]['unit'])
  def test_mixed_profile_plan_is_rejected_before_authenticated_io(self):
   fixtures=load('caseflow_input_bad_plan','test_htkk_web_input_publisher.py');publisher=fixtures.p
@@ -139,4 +145,4 @@ class PlanBindingTests(unittest.TestCase):
     self.assertFalse(any(path.startswith('/git/refs')for path,_,_,_ in calls))
    else:
     publisher.publish(fixtures.fixtures(),fixtures.SHA,'fake',api,request_id='1234',plan=plan)
-    self.assertEqual(len(contexts),13);self.assertTrue(all(c['planSha256']==hashlib.sha256(raw).hexdigest()for c in contexts))
+    self.assertEqual(len(contexts),len(batch.registry.CASES));self.assertTrue(all(c['planSha256']==hashlib.sha256(raw).hexdigest()for c in contexts))

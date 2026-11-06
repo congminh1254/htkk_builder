@@ -52,7 +52,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
   exportSchemaPinnedVerified=!String.IsNullOrEmpty(originalSchema)&&String.Equals(Path.GetFullPath(originalSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)&&Hash(schema)=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003"&&Hash(Path.Combine(project,"TAX.HTKK.ComputeHash.dll"))=="d9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5";
   if(!exportSchemaPinnedVerified)throw new InvalidOperationException();
-  string directory=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),mode=="gtgt-annex12-export-inspect"?"reference-annex12-output":"reference-output");if(Directory.Exists(directory)||File.Exists(directory))throw new InvalidOperationException();Directory.CreateDirectory(directory);exportPath=Path.Combine(directory,"01GTGT.xml");exportDestinationFresh=!File.Exists(exportPath);
+  string directory=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),mode=="gtgt-annex12-export-inspect"?"reference-annex12-output":mode=="gtgt-annex12-export-nonzero"?"reference-annex12-nonzero-output":"reference-output");if(Directory.Exists(directory)||File.Exists(directory))throw new InvalidOperationException();Directory.CreateDirectory(directory);exportPath=Path.Combine(directory,"01GTGT.xml");exportDestinationFresh=!File.Exists(exportPath);
   Assembly utilities=null;foreach(Assembly loaded in AppDomain.CurrentDomain.GetAssemblies())if(loaded.GetName().Name=="TAX.HTKK.Utilities")utilities=loaded;if(utilities==null)throw new InvalidOperationException();
   Type configuration=utilities.GetType("TAX.HTKK.Utilities.Core.HTKKConfig",true);PropertyInfo temporary=configuration.GetProperty("PATH_TEMP",BindingFlags.Public|BindingFlags.Static);if(temporary==null)throw new InvalidOperationException();expectedSaveTitle="Tệp XML kết xuất tới thư mục "+Convert.ToString(temporary.GetValue(null,null),CultureInfo.InvariantCulture);
   Button command=Named(owner,"cmdExport") as Button;if(command==null||command.FindForm()!=owner||command.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
@@ -60,15 +60,30 @@ public sealed partial class HtkkGuiReferenceAutomation {
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ObserveOriginalExport();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();command.PerformClick();
  }
  private void ObserveOriginalExport(){
-  if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing)return;
-  if(roundtripPhase!="not-started"&&roundtripPhase!="reexporting"){ContinueOriginalRoundtrip();return;}
+  if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing||annex12NonzeroBusy)return;
+  if(roundtripPhase=="annex12-nonzero-editing"){ContinueOriginalAnnex12Nonzero();return;}
+  if(roundtripPhase!="not-started"&&roundtripPhase!="reexporting"&&roundtripPhase!="annex12-nonzero-reexporting"){ContinueOriginalRoundtrip();return;}
   foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
    if(labels[0].Text!="Kết xuất tờ khai xml thành công."){SetStage(HtkkAutomationStage.GtgtExportOriginalMessageRejected);finished=true;Record();exportWatcher.Stop();return;}
    SetStage(HtkkAutomationStage.GtgtExportSuccessFileChecking);InspectOriginalExportDestination();Record();if(!exportOriginalPathMatched)throw new InvalidOperationException();
-   ReadOriginalExport();if(mode=="gtgt-annex12-export-inspect")ValidateOriginalAnnex12Export();if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
+   ReadOriginalExport();if(mode=="gtgt-annex12-export-inspect"||(mode=="gtgt-annex12-export-nonzero"&&roundtripPhase=="not-started"))ValidateOriginalAnnex12Export();
+   if(roundtripPhase=="annex12-nonzero-reexporting")ValidateOriginalAnnex12NonzeroSecondExport();
+   if(Annex12WebCase())ValidateOriginalAnnex12WebExport(roundtripPhase=="not-started");
+   if(!exportDialogSubmitted||!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();
    Control[] closeControls=form.Controls.Find("btn_2",true);if(form.Text.Trim()!="Thông Báo"||closeControls.Length!=1||CountVisibleButtons(form)!=1)throw new InvalidOperationException();Button close=closeControls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
    exportSuccessAcknowledged=true;
+   if(mode=="gtgt-annex12-export-nonzero"&&roundtripPhase=="not-started"){
+    firstExportPath=exportPath;firstExportSha256=exportSha256;firstExportBytes=exportBytes;annex12NonzeroExportCount=1;
+    roundtripPhase="annex12-nonzero-editing";SetStage(HtkkAutomationStage.GtgtAnnex12NonzeroEditing);Record();close.PerformClick();return;
+   }
+   if(roundtripPhase=="annex12-nonzero-reexporting"){
+    annex12NonzeroSecondExportBytes=exportBytes;annex12NonzeroSecondExportSha256=exportSha256;annex12NonzeroExportCount=2;
+    if(Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();
+    // exportBytes/exportSha256 keep the FIRST (parent 1) export; the second has its own fields.
+    exportBytes=firstExportBytes;exportSha256=firstExportSha256;SetStage(HtkkAutomationStage.GtgtAnnex12ExportNonzeroInspected);
+    finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
+   }
    if((mode=="gtgt-roundtrip-inspect"||mode=="gtgt-web-import-inspect")&&roundtripPhase=="not-started"){
     firstExportPath=exportPath;firstExportSha256=exportSha256;firstExportBytes=exportBytes;
     roundtripPhase="waiting-import-ready";SetStage(mode=="gtgt-web-import-inspect"?HtkkAutomationStage.GtgtWebImportReadyWaiting:HtkkAutomationStage.GtgtImportReadyWaiting);Record();close.PerformClick();return;
@@ -79,7 +94,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     roundtripXmlExactMatched=ReadBoundedOriginalXml(firstExportPath).DocumentElement.OuterXml==ReadBoundedOriginalXml(exportPath).DocumentElement.OuterXml;
     if(mode=="gtgt-web-import-inspect"){
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),baseline=ReadBoundedOriginalXml(firstExportPath),output=ReadBoundedOriginalXml(exportPath);
-     webCreationDateMatchedNativeBaseline=HtkkWebTaxComparison.CreationDateMatchesNativeBaseline(baseline,output);webServiceIdentityMatched=HtkkWebTaxComparison.NativeIdentity(baseline,output);webTaxValuesMatched=HtkkWebTaxComparison.Compare(input,baseline,output,out webTaxLeafCount);
+     webCreationDateMatchedNativeBaseline=HtkkWebTaxComparison.CreationDateMatchesNativeBaseline(baseline,output);webServiceIdentityMatched=HtkkWebTaxComparison.NativeIdentity(baseline,output);webTaxValuesMatched=HtkkWebTaxComparison.Compare(input,baseline,output,WebTaxLeafTarget(),out webTaxLeafCount);
     }
     exportBytes=firstExportBytes;exportSha256=firstExportSha256;if(mode=="gtgt-web-import-inspect"&&Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();SetStage(mode=="gtgt-web-import-inspect"?HtkkAutomationStage.GtgtWebImportInspected:HtkkAutomationStage.GtgtRoundtripInspected);
    }else SetStage(mode=="gtgt-annex12-export-inspect"?HtkkAutomationStage.GtgtAnnex12ExportInspected:HtkkAutomationStage.GtgtExportInspected);
@@ -100,7 +115,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   else{
    if(File.Exists(desiredPath))throw new InvalidOperationException();
    FileSystemInfo[] contents=new DirectoryInfo(Path.GetDirectoryName(desiredPath)).GetFileSystemInfos();
-   if(roundtripPhase=="reexporting"){if(contents.Length!=1||!(contents[0] is FileInfo)||!String.Equals(contents[0].FullName,firstExportPath,StringComparison.OrdinalIgnoreCase)||Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();}
+   if(roundtripPhase=="reexporting"||roundtripPhase=="annex12-nonzero-reexporting"){if(contents.Length!=1||!(contents[0] is FileInfo)||!String.Equals(contents[0].FullName,firstExportPath,StringComparison.OrdinalIgnoreCase)||Hash(firstExportPath)!=firstExportSha256)throw new InvalidOperationException();}
    else if(contents.Length!=0)throw new InvalidOperationException();
   }
   IntPtr edit=observation.Editor,parent=observation.EditorParent;string parentClass=observation.EditorParentClass;

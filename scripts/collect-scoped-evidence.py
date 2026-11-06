@@ -56,7 +56,7 @@ def collect(source,builder,directory,get=api,progress=lambda done,total:None):
   latest={s['context']:s for s in reversed(statuses['statuses'])}
   producer=raw(get,'scripts/generate-htkk-web-reference.mjs',source);producer_sha=hashlib.sha256(producer).hexdigest()
   index={'format':'htkk-native-evidence-bundle-v1','sourceCommit':source,'builderCommit':builder,'cases':[],'nativeQualified':False,'filingEnabled':False}
-  for case in cases.CASES:
+  for case in cases.GATE_CASES:
    status=latest.get(cases.CONTEXTS[case],{});check(status.get('state')=='success')
    match=re.fullmatch(r'https://github\.com/congminh1254/htkk_builder/actions/runs/([1-9][0-9]*)',status.get('target_url',''));check(match);run_id=match[1]
    run=get(BUILDER,'actions/runs/'+run_id);validate_run(run,builder,run_id)
@@ -87,7 +87,7 @@ def collect(source,builder,directory,get=api,progress=lambda done,total:None):
    folder=directory/case;folder.mkdir(mode=0o700)
    for name,body in files.items():
     with (folder/name).open('xb') as out:out.write(body)
-   index['cases'].append(item);progress(len(index['cases']),len(cases.CASES))
+   index['cases'].append(item);progress(len(index['cases']),len(cases.GATE_CASES))
   with (directory/'bundle.json').open('x') as out:json.dump(index,out)
   complete=True;return index
  finally:

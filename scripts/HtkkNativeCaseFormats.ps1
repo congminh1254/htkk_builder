@@ -12,4 +12,6 @@ $HtkkNativeCaseFormats=@{
  '01GTGT-noactivity-keep-credit-M10-2026'='htkk-web-noactivity-keep-credit-input-v1'
  '01GTGT-zero-Q4-2026'='htkk-web-quarter-zero-input-v1'
  '01GTGT-native-import-sale10-M10-2026'='htkk-web-native-import-sale10-input-v1'
+ '01GTGT-annex12-zero-two-locations-M10-2026'='htkk-web-annex12-zero-input-v1'
+ '01GTGT-annex12-two-plants-nonzero-M10-2026'='htkk-web-annex12-two-plants-input-v1'
 }

@@ -32,7 +32,10 @@ def verify_case(case,source,builder,input_commit,run_id,get=collector.api):
 def discover(publication,builder,statuses,get=collector.api,retry=None):
  source=publication['sourceCommit'];latest={s['context']:s for s in reversed(statuses)};result=[];seen=set();ready=[];pending=False
  for item in publication['cases']:
-  case=item['caseId'];check(case in registry.CASES);status=latest.get(registry.CASES[case]['statusContext'],{})
+  case=item['caseId'];check(case in registry.CASES)
+  # Candidate cases report their own status but never gate this cohort.
+  if not registry.CASES[case]['releaseGate']:continue
+  status=latest.get(registry.CASES[case]['statusContext'],{})
   if status.get('state')in ('failure','error'):
    if 'input:'+item['artifactCommit']in status.get('description',''):
     if retry is not None and retry(status,registry.CASES[case]['statusContext'],source,builder,item['artifactCommit']):pending=True;continue
@@ -55,7 +58,7 @@ def discover(publication,builder,statuses,get=collector.api,retry=None):
 
 def verify_pinned(batch,source,builder,get=collector.api):
  check(type(batch)is dict and batch.get('format')=='htkk-native-batch-v1'and batch.get('sourceCommit')==source and batch.get('builderCommit')==builder and batch.get('qualificationGranted')is False)
- cases=batch.get('cases');check(type(cases)is list and [c.get('caseId')for c in cases]==list(registry.CASES))
+ cases=batch.get('cases');check(type(cases)is list and [c.get('caseId')for c in cases]==list(registry.GATE_CASES))
  check(len({c.get('runId')for c in cases})==len(cases))
  for proof in cases:check(verify_case(proof['caseId'],source,builder,proof['inputCommit'],proof['runId'],get)==proof)
  return True
