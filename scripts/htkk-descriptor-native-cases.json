@@ -24,7 +24,7 @@
      "expectedLeaves": {"mst_cu": "9999999997", "ct16": "0", "ct18": "0", "ct23": "0", "ct31": "0", "ct40": "0", "ct41": "0"}},
     {"caseId": "05QTT-two-employees-Y2025", "adapterId": "05-qtt-tncn-2.9.3", "releaseGate": false,
      "unit": {"menuId": "B9", "adapterVersion": "2.9.3", "periodType": "year", "periodValue": "2025", "activityCode": "00", "annexes": ["05-1", "05-3"], "amendmentOrder": 0},
-     "expectedLeaves": {"mst_cu": "9999999997", "ct16": "2", "ct17": "2", "ct18": "1", "ct19": "1", "ct23": "500000000", "ct24": "500000000", "ct28": "300000000", "ct29": "300000000", "ct31": "12000000", "ct32": "12000000", "ct35": "1", "ct36": "12000000", "ct38": "10000000", "ct40": "0", "ct41": "2000000"},
+     "expectedLeaves": {"mst_cu": "9999999997", "ct16": "2", "ct17": "2", "ct18": "1", "ct19": "1", "ct23": "500000000", "ct24": "500000000", "ct28": "300000000", "ct29": "300000000", "ct31": "12000000", "ct32": "12000000", "ct35": "1", "ct36": "12000000", "ct38": "6520000", "ct40": "0", "ct41": "5480000"},
      "expectedRows": {"PLuc_05_1_BK_QTT/BKeCTietCNhan": 2, "PLuc_05_3_BK_QTT/BKeTTinNPT": 1},
      "question": "DLL có ghi đè [17]/[24] của 05-1 từ 05-3 khi nhập XML không (SetValueCt17_PL_05_1, Validate_1)?"},
     {"caseId": "02QTT-zero-Y2025", "adapterId": "02-qtt-tncn-2.7.3", "releaseGate": false,
