@@ -64,6 +64,37 @@ def _supplier_boundary(r,modes=('gtgt-web-import-inspect',)):
  if any(r.get(k)is not True for k in ('sourceHashesVerified','originalSourcesUnmodified','officialDistributionFilesVerified','msiAuthenticodeValid','nativeHelperJobsStopped','hostOutboundBlocked','originalOutboundBlocked')):return False
  if any(boundary.get(k)is not True for k in ('cleanupVerified','supplierStopped','rootStopped','jobEmpty')):return False
  return r.get('taxDataUsed')is False and r.get('runtimeRoundTrip')is False
+# Pre-HTKK Windows process/Job boundary self-tests (probe-htkk-windows.yml, in order). Each
+# spawns only its own synthetic fixture processes; they run before the synthetic web XML fetch,
+# the supplier download and any HTKK launch, so no web input, tax data or output exists yet.
+# Pure contract/policy self-tests (deterministic), the Framework UIA step (its own classified
+# categories need its boundary record) and the web-tax comparison step are deliberately excluded.
+SELFTEST_STEPS=('Check bounded native process and clean environment','Check bounded compiler diagnostics and complete cleanup',
+ 'Check bounded oracle Job cleanup and environment','Check supplier Job cleanup and retained identity boundary','Check UIA cleanup and bounded result boundary')
+# The only JSON a readiness log may hold this early: the builder unittest step's source-update
+# trust-check lines (metadata only, never ready). Any other record (supplier/probe report,
+# Framework boundary, retained output, web or tax fields) means it is not this failure.
+SELFTEST_NOISE_KEYS=frozenset(('result','failureCode','trustRequested','ready','trustStatus','credentialsSafe'))
+def _selftest_noise(x):
+ return type(x)is dict and set(x)<=SELFTEST_NOISE_KEYS and type(x.get('result'))is str and x.get('ready')is False and x.get('trustRequested',False)is False and all(v is None or type(v)in (bool,str)for v in x.values())
+def _selftest_fixture_failed(job,records):
+ # Exactly one readiness step failed and it is a listed self-test; every earlier step succeeded,
+ # every later step (fetch, probe, retain, report) was skipped; only the runner's own post
+ # steps may run afterwards. Attempt 1 only.
+ steps=job.get('steps',[])
+ if job.get('run_attempt')!=1 or type(job.get('run_attempt'))is not int or not steps:return False
+ numbers=[s.get('number')for s in steps]
+ if any(type(n)is not int for n in numbers)or numbers!=sorted(set(numbers)):return False
+ failed=[i for i,s in enumerate(steps)if s.get('conclusion')!='success'and s.get('conclusion')!='skipped']
+ if len(failed)!=1 or steps[failed[0]].get('conclusion')!='failure'or steps[failed[0]].get('name')not in SELFTEST_STEPS:return False
+ i=failed[0]
+ if any(s.get('conclusion')!='success'or s.get('status')!='completed'for s in steps[:i]):return False
+ later=[s for s in steps[i+1:]if not(s.get('name','').startswith('Post ')or s.get('name')=='Complete job')]
+ if any(s.get('conclusion')!='skipped'for s in later):return False
+ if any(s.get('conclusion')!='success'for s in steps[i+1:]if s not in later):return False
+ names=[s.get('name')for s in later]
+ if any(names.count(n)!=1 for n in (PROBE,RETAIN,DECLARATION_RETAIN)):return False
+ return all(_selftest_noise(x)for x in records)
 LOGIN={'fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'runtimeRoundTrip':False}
 PERMIT_KEYS={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}
 def classify(jobs,records):
@@ -71,6 +102,8 @@ def classify(jobs,records):
  if len(ready)!=1 or ready[0].get('conclusion')!='failure':return None
  if len(jobs.get('jobs',[]))!=2 or not any(j.get('name')=='report_failure'and j.get('conclusion')=='success'for j in jobs['jobs']):return None
  steps=ready[0].get('steps',[]);failed={s.get('name')for s in steps if s.get('conclusion')=='failure'}
+ if failed&set(SELFTEST_STEPS):
+  return 'windows-selftest-fixture-failed'if _selftest_fixture_failed(ready[0],records)else None
  if failed=={FRAMEWORK} and any(s.get('name')==PROBE and s.get('conclusion')=='skipped'for s in steps):
   bounds=[r for r in records if r.get('format')=='htkk-framework-uia-boundary-v1']
   if len(bounds)==1 and _exact(bounds[0],{'status':'process-timeout','timedOut':True,'processStopped':True,'exitCode':None}):
