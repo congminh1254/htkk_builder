@@ -5,7 +5,11 @@ log=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-builder-log.txt'
 allowed=('PATH','HOME','TMPDIR','RUNNER_TEMP','RUNNER_TOOL_CACHE','LANG')
 env={key:os.environ[key] for key in allowed if key in os.environ}
 env.update(CI='1',NEXT_TELEMETRY_DISABLED='1',NEXT_PUBLIC_ADSENSE_ENABLED='true' if os.environ.get('ADSENSE_ENABLED') == 'true' else 'false')
+STAGES={'npm ci':'install','npm run typecheck':'typecheck','npm test':'unit','npm run test:schemas':'schemas','npm audit --omit=dev --audit-level=high':'audit','npm run build':'build','npx playwright install --with-deps chromium':'browser-install','npm run test:e2e':'e2e','node scripts/check-htkk-source-cases.mjs':'source-cases'}
+stage='setup'
 def run(command):
+ global stage
+ stage=STAGES.get(' '.join(command),'other')
  with log.open('ab') as output:
   result=subprocess.run(command,cwd=source,env=env,stdout=output,stderr=subprocess.STDOUT)
  if result.returncode:raise RuntimeError()
@@ -23,7 +27,9 @@ try:
  if os.environ['BUILD_MODE']=='release':
   # Adapter/case metadata is trusted builder data, not commands supplied by a private plan.
   spec=importlib.util.spec_from_file_location('trusted_producer_batch',pathlib.Path(__file__).with_name('produce_case_batch.py'));batch=importlib.util.module_from_spec(spec);spec.loader.exec_module(batch)
+  stage='producers'
   batch.produce(source,os.environ['RUNNER_TEMP'],env,log)
+  stage='provenance'
   # Public provenance only; no source files or diagnostics enter this manifest.
   sha=subprocess.run(['git','rev-parse','HEAD'],cwd=source,env=env,stdout=subprocess.PIPE,stderr=subprocess.DEVNULL,check=True).stdout.decode().strip()
   version=json.loads((source/'package.json').read_text())['version']
@@ -31,5 +37,5 @@ try:
   (source/'out/build.json').write_text(json.dumps({'sourceSha':sha,'version':version,'builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat()},separators=(',',':'))+'\n')
   # Portable distribution is retired. Never carry stale download output forward.
   shutil.rmtree(source/'out/downloads',ignore_errors=True)
-except Exception:raise SystemExit('Build or verification failed. Private diagnostics were not published.')
+except Exception:raise SystemExit('Build or verification failed at stage=%s. Private diagnostics were not published.'%(stage if re.fullmatch('[a-z-]{1,20}',stage) else 'other'))
 print('Build and verification passed.')

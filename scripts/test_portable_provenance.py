@@ -34,7 +34,7 @@ class ReleaseProvenanceTests(unittest.TestCase):
   self.assertNotIn(['python3','scripts/fetch-node-runtime.py'],calls)
  def test_invalid_commit_prevents_runtime_fetch_and_package(self):
   metadata,calls,error=self.build(sha='bad; input')
-  self.assertIsNone(metadata);self.assertEqual(error,'Build or verification failed. Private diagnostics were not published.')
+  self.assertIsNone(metadata);self.assertEqual(error,'Build or verification failed at stage=provenance. Private diagnostics were not published.')
   self.assertNotIn(['node','scripts/package-portable.mjs'],calls)
   self.assertNotIn(['python3','scripts/fetch-node-runtime.py'],calls)
  def test_invalid_version_does_not_enter_public_manifest(self):
