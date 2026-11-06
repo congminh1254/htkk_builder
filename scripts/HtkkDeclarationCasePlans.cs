@@ -26,7 +26,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -85,6 +85,16 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/05_QTT_TNCN_TT80_293.xsd","0556354bbe766d6ff75ab4fccb456ea7bd99c6915ad20628149f170bda389635",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,149,
     new string[]{"05-1|AE24|148000000","05-1|AE25|24000000","05|U49|2","05|U51|1","05|U61|500000000","05|U71|300000000","05|U74|12000000","05|U89|1","05|U92|10000000","05|U94|0","05|U95|2000000"},
     new string[]{Main+"mst_cu|9999999997",Main+"NVuKhauTruThue/ct16|2",Main+"NVuKhauTruThue/ct17|2",Main+"NVuKhauTruThue/ct18|1",Main+"NVuKhauTruThue/ct19|1",Main+"NVuKhauTruThue/ct23|500000000",Main+"NVuKhauTruThue/ct24|500000000",Main+"NVuKhauTruThue/ct28|300000000",Main+"NVuKhauTruThue/ct29|300000000",Main+"NVuKhauTruThue/ct31|12000000",Main+"NVuKhauTruThue/ct32|12000000",Main+"NVuQToanThay/ct35|1",Main+"NVuQToanThay/ct36|12000000",Main+"NVuQToanThay/ct38|6520000",Main+"NVuQToanThay/ct40|0",Main+"NVuQToanThay/ct41|5480000"});
+   // B8 02/QTT-TNCN TT80 (non-gating): KieuKy 12 = SetLayoutToKhaiNamTuThangDenThang (hidden annex
+   // list; cmdImportXML_Click adds every annex for B8); NopTheoTinhCQT 3 (geography panel); annex 02-1.
+   // Inputs [21]/[34] and the dependant count [24] are checked on the imported sheet; the whole tree
+   // decides the case. Mapping 02_QTT_TNCN_TT80_273.xml: ct21 M_86, ct24 M_94, ct34 M_109.
+   case "02QTT-dependants-Y2025":return new HtkkDeclarationCasePlan(caseId,"B8","2.7.3","952","TncnQtt02TT80Nckt273",new string[]{"101","101_11","B8"},"year","12","2025","","01/2025","12/2025",false,
+    new string[]{"02-1/BK-QTT-TNCN"},new string[]{"02|Tờ khai","02-1|02-1/BK-QTT-TNCN"},
+    "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
+    "Validate/02_QTT_TNCN_TT80_273.xsd","9467d23b5deddd65739532ad470024df2f71af491b7cfc756e24bdd4225983cd",TKhaiThue,TKhaiThueSha256,WorkbookService,130,
+    new string[]{"02|M86|300000000","02|M94|2","02|M109|10000000"},
+    new string[]{Main+"ct20|300000000",Main+"ct21|300000000",Main+"ct24|2",Main+"ct27|79200000",Main+"ct34|10000000"});
    // U5 01/CNKD TT50: KieuKy 21 = SetLayoutToKhaiThangQuyLanPhatSinh (quarter), geography panel.
    case "01CNKD-TT50-revenue-two-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","2.9.8","1266","CnkdHkd01TT50Nckt298",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
     new string[0],new string[]{"01|Tờ khai"},

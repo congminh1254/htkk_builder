@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -106,8 +106,8 @@ class CompiledPlans(unittest.TestCase):
 
     def test_menu_chain_kieuky_and_annexes_follow_menu_xml_design_units(self):
         units = load('declaration_workbook_units', 'htkk_workbook_native_cases.py').UNITS
-        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5']}
-        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'B9': '12', 'U5': '21'}
+        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8']}
+        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'B9': '12', 'U5': '21', 'B8': '12'}
         for case in CASES:
             menu = d.CASES[case]['menuId']; block = plan_block(case)
             self.assertIn('new string[]{' + ','.join('"' + x + '"' for x in chains[menu]) + '}', block)

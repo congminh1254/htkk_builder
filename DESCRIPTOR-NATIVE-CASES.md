@@ -1,7 +1,7 @@
 # Ca native thiết kế cho họ TNCN (05/KK, 05/QTT, 02/QTT)
 
-> Cập nhật: `05KK-withheld-Q3-2026` và `05QTT-two-employees-Y2025` đã được đăng ký (releaseGate false) với driver
-> chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại (kể cả B8) vẫn design-only.
+> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025` và `02QTT-dependants-Y2025` đã được đăng ký (releaseGate false) với driver
+> chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
 **thiết kế** sáu ca giả lập (MST 9999999997), không phải bằng chứng native.
