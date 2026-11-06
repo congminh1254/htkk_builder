@@ -170,7 +170,7 @@ class NativeDriverContract(unittest.TestCase):
   self.assertLess(branch.index('EditOriginalSigningDate(grid,sheet)'),branch.index('InspectOriginalAnnex12(grid)'))
   self.assertIn('bool annexMatched=!Annex12WebCase()||InspectOriginalImportedAnnex12(grids[0]);',roundtrip)
   self.assertIn('Named(roundtripOwner,"cmdImportXML")',roundtrip)
-  inspect=annex[annex.index(' private bool InspectOriginalImportedAnnex12('):]
+  inspect=annex[annex.index(' private bool InspectOriginalImportedAnnex12('):annex.index(' private void RestoreImportedAnnex12HeadAuthorities(')]
   for forbidden in ('SetValue','set_Value','SetPublic','SendKeys','PerformClick','"Formula"','InsertTable'):self.assertNotIn(forbidden,inspect)
   for term in ('"TablePath"','"DataLocationTemplateRowStart"','Annex12CellLocked(annex,parent,20)','Annex12CellLocked(annex,row,20)','"9999999997-001","99997"','33.33m,66.67m','50m,25m,25m'):self.assertIn(term,inspect)
   self.assertIn('if(Annex12WebCase())ValidateOriginalAnnex12WebExport(roundtripPhase=="not-started");',self.source('HtkkGtgtExportInspection.cs'))
@@ -339,5 +339,38 @@ class Header66RuleContract(unittest.TestCase):
   # Snapshots whose main sheet lost the sale vector are refused before retention.
   bare=zero_export.edited(snapshot(NAMES[0]),lambda root:setattr(root.find('.//'+NS+'ct40'),'text','0'))
   with self.assertRaises(nonzero.cases.AnnexWebContractError):nonzero.validate_snapshot(bare,NAMES[0],zero_export.TODAY)
+
+
+class ImportedHeadAuthorityContract(unittest.TestCase):
+ """Runs 42182681228 (zero) and 42182684607 (two plants): import matched, then reexport refused
+ with 0016. annex12WebImportDisplayEmptyMask 264 / 8659208 = bit 3 of every child, i.e. R
+ (pathCucThue, head-CQT display) blank after the ORIGINAL import. Header row 83 of the pinned
+ workbook requires R44 ("Chỉ tiêu bắt buộc nhập"); R is not an XML leaf."""
+ def test_masks_decode_to_the_head_authority_column_of_every_child(self):
+  display=(2,12,16,17,18)
+  for mask,rows in ((264,2),(8659208,5)):
+   bits=[i for i in range(25) if mask>>i&1]
+   self.assertEqual(bits,[r*5+display.index(17) for r in range(rows)])
+  workbook_rule="A83={01_2!R44:R44}'cbo' | B83={IF(TRIM(01_2!R44:R44)=\"\",0.0,1.0)}"
+  self.assertIn('R44',workbook_rule)
+ def test_restoration_uses_original_combo_editor_only_and_precedes_the_reexport(self):
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8');roundtrip=(ROOT/'HtkkGtgtRoundtripInspection.cs').read_text(encoding='utf-8')
+  block=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):]
+  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội")',block)
+  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội")',block)
+  self.assertIn('SetPublic(vendor,"SelectedIndex",selected)',block);self.assertIn('FindVendorCombo(editor,0)',block)
+  # Only the vendor combo index and the public sheet selection are set; never a cell value or code.
+  for forbidden in ('set_Value','"Value",','"Text",','"Formula"','InsertTable','SendKeys'):self.assertNotIn(forbidden,block)
+  self.assertEqual(block.count('SetValue('),1);self.assertIn('active.SetValue(grid,found,null)',block)
+  self.assertIn('if((column!=17&&column!=18)',block)
+  for code in ('CellText(annex,row,35)!="10100"','CellText(annex,row,36)!="10129"','CellText(annex,row,33)!="101"','CellText(annex,row,42)!="10129087"'):self.assertIn(code,block)
+  phase=roundtrip[roundtrip.index('if(roundtripPhase=="waiting-reexport-ready"){'):]
+  self.assertLess(phase.index('RestoreImportedAnnex12HeadAuthorities()'),phase.index('Named(roundtripOwner,"cmdExport")'))
+  self.assertIn('if(!annex12WebHeadAuthorityRestored&&ordinal<5',annex)
+  registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
+  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(10,['gtgt-web-import-inspect']))
+  probe=(ROOT/'probe-htkk-windows.ps1').read_text()
+  self.assertIn('-and $lastGui.annex12WebHeadAuthorityRestored -and $lastGui.annex12WebHeadAuthorityRepairCount -ge $lastGui.annex12WebImportRowCount -and $lastGui.annex12WebHeadAuthorityRepairCount -le (2*$lastGui.annex12WebImportRowCount)',probe)
+  self.assertIn("'annex12WebImportSheetMatched','annex12WebHeadAuthorityRestored')",probe)
 
 if __name__=='__main__':unittest.main()
