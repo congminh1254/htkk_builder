@@ -83,7 +83,11 @@ internal static class HtkkDeclarationCasePlans {
     new string[]{"05-1/BK-TNCN|05-1/BK-QTT-TNCN","05-3/BK-TNCN|05-3/BK-QTT-TNCN"},new string[]{"05|Tờ khai","05-1|05-1/BK-TNCN"},
     "InterfaceTemplates/excel/05_QTT_TNCN_TT80_293.xls","eb948994ab364965b6545cda88294e011605a643a88bb9c5cf5412bdd6008e11","InterfaceTemplates/xml/05_QTT_TNCN_TT80_293.xml","3f8791819f9fe088b939fec20c7d4deeb46931f3e20534dc434a86abd63bd250",
     "Validate/05_QTT_TNCN_TT80_293.xsd","0556354bbe766d6ff75ab4fccb456ea7bd99c6915ad20628149f170bda389635",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,149,
-    new string[]{"05-1|AE24|148000000","05-1|AE25|24000000","05|U49|2","05|U51|1","05|U61|500000000","05|U71|300000000","05|U74|12000000","05|U89|1","05|U92|10000000","05|U94|0","05|U95|2000000"},
+    // Release 227 (run 42302313967): the import reached the sheet check and failed exactly on the four
+    // checks 56f6393 left at the pre-d86e434 values (cell mask 1283 = AE24, AE25, U92, U95). They now
+    // equal the input and the XML checks below: 05-1 [21] (AE) 95,200,000 / 68,000,000, [38] U92
+    // 6,520,000, [41] U95 5,480,000.
+    new string[]{"05-1|AE24|95200000","05-1|AE25|68000000","05|U49|2","05|U51|1","05|U61|500000000","05|U71|300000000","05|U74|12000000","05|U89|1","05|U92|6520000","05|U94|0","05|U95|5480000"},
     new string[]{Main+"mst_cu|9999999997",Main+"NVuKhauTruThue/ct16|2",Main+"NVuKhauTruThue/ct17|2",Main+"NVuKhauTruThue/ct18|1",Main+"NVuKhauTruThue/ct19|1",Main+"NVuKhauTruThue/ct23|500000000",Main+"NVuKhauTruThue/ct24|500000000",Main+"NVuKhauTruThue/ct28|300000000",Main+"NVuKhauTruThue/ct29|300000000",Main+"NVuKhauTruThue/ct31|12000000",Main+"NVuKhauTruThue/ct32|12000000",Main+"NVuQToanThay/ct35|1",Main+"NVuQToanThay/ct36|12000000",Main+"NVuQToanThay/ct38|6520000",Main+"NVuQToanThay/ct40|0",Main+"NVuQToanThay/ct41|5480000"});
    // B8 02/QTT-TNCN TT80 (non-gating): KieuKy 12 = SetLayoutToKhaiNamTuThangDenThang (hidden annex
    // list; cmdImportXML_Click adds every annex for B8); NopTheoTinhCQT 3 (geography panel); annex 02-1.

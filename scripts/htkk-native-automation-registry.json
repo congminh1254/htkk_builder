@@ -1872,7 +1872,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 10,
+      "maximum": 20,
       "activeModes": [
         "gtgt-web-import-inspect"
       ]

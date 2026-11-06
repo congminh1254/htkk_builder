@@ -80,7 +80,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebImportDisplayEmptyMask'] -cne 0){throw 'invalid'}
   if($value['annex12WebHeadAuthorityRestored'] -isnot [bool]){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebHeadAuthorityRestored'] -cne $false){throw 'invalid'}
-  if(($value['annex12WebHeadAuthorityRepairCount'] -isnot [int] -and $value['annex12WebHeadAuthorityRepairCount'] -isnot [long]) -or $value['annex12WebHeadAuthorityRepairCount'] -lt 0 -or $value['annex12WebHeadAuthorityRepairCount'] -gt 10){throw 'invalid'}
+  if(($value['annex12WebHeadAuthorityRepairCount'] -isnot [int] -and $value['annex12WebHeadAuthorityRepairCount'] -isnot [long]) -or $value['annex12WebHeadAuthorityRepairCount'] -lt 0 -or $value['annex12WebHeadAuthorityRepairCount'] -gt 20){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebHeadAuthorityRepairCount'] -cne 0){throw 'invalid'}
   if(($value['annex12WebHeadAuthorityFailureMask'] -isnot [int] -and $value['annex12WebHeadAuthorityFailureMask'] -isnot [long]) -or $value['annex12WebHeadAuthorityFailureMask'] -lt 0 -or $value['annex12WebHeadAuthorityFailureMask'] -gt 4095){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebHeadAuthorityFailureMask'] -cne 0){throw 'invalid'}

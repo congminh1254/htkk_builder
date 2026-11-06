@@ -865,7 +865,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.Annex12WebImportDisplayEmptyMask:
     return 33554431;
    case HtkkNativeResultCounter.Annex12WebHeadAuthorityRepairCount:
-    return 10;
+    return 20;
    case HtkkNativeResultCounter.Annex12WebHeadAuthorityFailureMask:
     return 4095;
    case HtkkNativeResultCounter.Annex12WebHeadAuthorityComboMask:

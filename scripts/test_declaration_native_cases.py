@@ -134,6 +134,18 @@ class CompiledPlans(unittest.TestCase):
                 if family == 'workbook':
                     self.assertEqual(leaves[path], value)
 
+    def test_05qtt_sheet_checks_agree_with_the_xml_checks(self):
+        # Release 227 (run 42302313967) failed the imported-sheet check on stale values (mask 1283):
+        # the totals cells on sheet 05 must carry the same expectations as their XML leaves
+        # (mapping 05_QTT_TNCN_TT80_293.xml: U89 ct35, U92 ct38, U94 ct40, U95 ct41).
+        block = plan_block('05QTT-two-employees-Y2025').replace('Main+"', '"HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/')
+        cells = dict((s_ + '|' + c, v) for s_, c, v in re.findall(r'"(05(?:-1)?)\|([A-Z]+[0-9]+)\|([0-9]+)"', block))
+        xml = {p.rsplit('/', 1)[1]: v for p, v in re.findall(r'"(HSoThueDTu/[^"|]+)\|([^"]*)"', block)}
+        for cell, leaf in (('05|U89', 'ct35'), ('05|U92', 'ct38'), ('05|U94', 'ct40'), ('05|U95', 'ct41')):
+            self.assertEqual(cells[cell], xml[leaf], cell)
+        # 05-1 [21] (AE) of the two rows: 300tr-184,8tr-20tr and 200tr-132tr (web d86e434 inputs).
+        self.assertEqual((cells['05-1|AE24'], cells['05-1|AE25']), ('95200000', '68000000'))
+
     def test_driver_only_acts_through_original_controls(self):
         for forbidden in ('SetPublic(', '"Value",', 'XmlWriter', '.Save(', 'InvokeMember', 'GetMethod("Tinh', 'Cell.Value='):
             self.assertNotIn(forbidden, DRIVER)

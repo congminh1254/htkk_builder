@@ -377,9 +377,15 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   self.assertLess(phase.index('RestoreImportedAnnex12HeadAuthorities()'),phase.index('Named(roundtripOwner,"cmdExport")'))
   self.assertIn('if(!annex12WebHeadAuthorityRestored&&ordinal<5',annex)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
-  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(10,['gtgt-web-import-inspect']))
+  # Release 227: a child takes at most four original combo picks (R, S, the neighbour/head re-pick
+  # of R, S again; the driver bounds it at 4*seen). The zero case restored both children with 8
+  # picks and matched every tax value but the gate allowed 2*rows (run 42302287921); the two-plants
+  # case needs up to 20 and its 11th pick made the result unreadable at maximum 10 (run 42302292502).
+  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(20,['gtgt-web-import-inspect']))
+  # Five children at most (ordinal>4 throws), four picks each.
+  self.assertIn('if(ordinal>4)throw new InvalidOperationException();',annex);self.assertEqual(registry['annex12WebHeadAuthorityRepairCount']['maximum'],4*5)
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
-  self.assertIn('-and $lastGui.annex12WebHeadAuthorityRestored -and $lastGui.annex12WebHeadAuthorityRepairCount -ge $lastGui.annex12WebImportRowCount -and $lastGui.annex12WebHeadAuthorityRepairCount -le (2*$lastGui.annex12WebImportRowCount)',probe)
+  self.assertIn('-and $lastGui.annex12WebHeadAuthorityRestored -and $lastGui.annex12WebHeadAuthorityRepairCount -ge $lastGui.annex12WebImportRowCount -and $lastGui.annex12WebHeadAuthorityRepairCount -le (4*$lastGui.annex12WebImportRowCount)',probe)
   self.assertIn("'annex12WebImportSheetMatched','annex12WebHeadAuthorityRestored')",probe)
   self.assertIn("-and ($lastGui.annex12WebHeadAuthorityFailureMask -band 2047) -eq 0",probe)
  def test_restoration_leaves_each_cell_before_reading_original_codes(self):
