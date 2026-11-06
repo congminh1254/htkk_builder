@@ -3,7 +3,7 @@
 Never executes private code. XML and manifests remain byte-for-byte unchanged;
 the public output contains only bounded commit identifiers and fixed case names.
 """
-import base64,hashlib,importlib.util,json,os,pathlib,re,stat,urllib.error,urllib.request
+import base64,hashlib,http.client,importlib.util,json,os,pathlib,re,ssl,stat,time,urllib.error,urllib.request
 
 _spec=importlib.util.spec_from_file_location('htkk_web_input_reader',pathlib.Path(__file__).with_name('fetch-htkk-web-input.py'))
 reader=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(reader)
@@ -41,7 +41,46 @@ def safe_failure(error):
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 
+# Bounded publication-transport retry. This never retries a native run, a
+# validation result (PublicationError: HASH, API_SHAPE, XML_*, ...) or a 4xx.
+RETRY_DELAYS=(2,5)
+TRANSIENT_HTTP=frozenset((500,502,503,504))
+CONTENT_ADDRESSED=frozenset(('/git/blobs','/git/trees','/git/commits'))
+def transient(error):
+ if isinstance(error,urllib.error.HTTPError):return error.code in TRANSIENT_HTTP
+ if isinstance(error,urllib.error.URLError):return not isinstance(error.reason,ssl.SSLCertVerificationError)
+ if isinstance(error,ssl.SSLCertVerificationError):return False
+ return isinstance(error,(OSError,http.client.IncompleteRead,http.client.BadStatusLine))
+def retry_kind(path,payload,method):
+ verb=method or ('GET' if payload is None else 'POST')
+ if verb=='GET' and payload is None:return 'idempotent'
+ if verb=='POST' and path in CONTENT_ADDRESSED:return 'idempotent'
+ # A forced PATCH to one exact target sha converges to the same ref state.
+ if verb=='PATCH' and path.startswith('/git/refs/') and isinstance(payload,dict) and isinstance(payload.get('sha'),str) and re.fullmatch('[0-9a-f]{40}',payload['sha']):return 'idempotent'
+ if verb=='POST' and path=='/git/refs' and isinstance(payload,dict) and isinstance(payload.get('ref'),str) and payload['ref'].startswith('refs/') and isinstance(payload.get('sha'),str) and re.fullmatch('[0-9a-f]{40}',payload['sha']):return 'ref_create'
+ return None
+def created_by_ambiguous_attempt(payload,token):
+ # A prior ref-create attempt may have succeeded before the transport failed.
+ # Accept only an existing commit ref pointing exactly at the intended sha.
+ existing=api('/git/ref/'+payload['ref'][len('refs/'):],token)
+ if isinstance(existing,dict) and existing.get('ref')==payload['ref'] and isinstance(existing.get('object'),dict) and existing['object'].get('type')=='commit' and existing['object'].get('sha')==payload['sha']:return existing
+ return None
 def api(path,token,payload=None,method=None):
+ kind=retry_kind(path,payload,method);ambiguous=False
+ for attempt in range(len(RETRY_DELAYS)+1):
+  try:return api_once(path,token,payload,method)
+  except PublicationError:raise
+  except Exception as error:
+   if kind=='ref_create' and ambiguous and isinstance(error,urllib.error.HTTPError) and error.code==422:
+    existing=created_by_ambiguous_attempt(payload,token)
+    if existing is not None:return existing
+    raise
+   if kind is None or attempt>=len(RETRY_DELAYS) or not transient(error):raise
+   ambiguous=True
+   if isinstance(error,urllib.error.HTTPError):error.close()
+  time.sleep(RETRY_DELAYS[attempt])
+
+def api_once(path,token,payload=None,method=None):
  if not isinstance(token,str) or not token:fail('AUTH')
  request=urllib.request.Request('https://api.github.com/repos/'+REPO+path,data=None if payload is None else json.dumps(payload,separators=(',',':')).encode('utf-8'),method=method or ('GET' if payload is None else 'POST'),headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','Content-Type':'application/json','Accept-Encoding':'identity','User-Agent':'HTKK-Private-Synthetic-Input-Publisher/1.0'})
  with urllib.request.build_opener(NoRedirect()).open(request,timeout=30) as response:
