@@ -1,4 +1,6 @@
 name: Kiểm tra điều kiện chạy HTKK Windows
+# Public fixed case id only; lets the release dispatcher detect an already-created run before any retry.
+run-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})
 on:
   workflow_dispatch:
     inputs:
