@@ -1,6 +1,7 @@
 // Own fixed synthetic ORIGINAL annex export observation. No tax XML is authored.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -17,14 +18,17 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Fixed web annex cases: original import observations and pinned XSD checks of native files.
  private bool annex12WebImportSheetMatched=false,annex12WebBaselineSchemaVerified=false,annex12WebReexportSchemaVerified=false;
  private int annex12WebImportGroupCount=0,annex12WebImportRowCount=0,annex12WebImportDisplayEmptyMask=0;
+ // Original import leaves R (head CQT display, pathCucThue: not an XML leaf) blank; Header row 83
+ // makes R44 mandatory (0016). Restored only through the original combo editor.
+ private bool annex12WebHeadAuthorityRestored=false;private int annex12WebHeadAuthorityRepairCount=0;
  private bool annex12NonzeroBusy=false;private Control annex12ExportGrid=null;private object annex12ExportSheet=null;
  private string Annex12ExportJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
-  string[] names=new string[]{"annex12ExportMainZeroMatched","annex12ExportShapeMatched","annex12ExportSchemaVerified","annex12NonzeroEditsMatched","annex12NonzeroSecondShapeMatched","annex12NonzeroSecondSchemaVerified","annex12WebImportSheetMatched","annex12WebBaselineSchemaVerified","annex12WebReexportSchemaVerified"};
-  bool[] flags=new bool[]{annex12ExportMainZeroMatched,annex12ExportShapeMatched,annex12ExportSchemaVerified,annex12NonzeroEditsMatched,annex12NonzeroSecondShapeMatched,annex12NonzeroSecondSchemaVerified,annex12WebImportSheetMatched,annex12WebBaselineSchemaVerified,annex12WebReexportSchemaVerified};
+  string[] names=new string[]{"annex12ExportMainZeroMatched","annex12ExportShapeMatched","annex12ExportSchemaVerified","annex12NonzeroEditsMatched","annex12NonzeroSecondShapeMatched","annex12NonzeroSecondSchemaVerified","annex12WebImportSheetMatched","annex12WebBaselineSchemaVerified","annex12WebReexportSchemaVerified","annex12WebHeadAuthorityRestored"};
+  bool[] flags=new bool[]{annex12ExportMainZeroMatched,annex12ExportShapeMatched,annex12ExportSchemaVerified,annex12NonzeroEditsMatched,annex12NonzeroSecondShapeMatched,annex12NonzeroSecondSchemaVerified,annex12WebImportSheetMatched,annex12WebBaselineSchemaVerified,annex12WebReexportSchemaVerified,annex12WebHeadAuthorityRestored};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(flags[index]));
-  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask"};
-  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask};
+  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask","annex12WebHeadAuthorityRepairCount"};
+  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask,annex12WebHeadAuthorityRepairCount};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   json.Append(","+q+"annex12NonzeroSecondExportSha256"+q+":"+q+annex12NonzeroSecondExportSha256+q);return json.ToString();
  }
@@ -133,7 +137,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Values/locks are read from original cells and table metadata; nothing is written.
  private bool InspectOriginalImportedAnnex12(Control grid){
   if(!Annex12WebCase())throw new InvalidOperationException();
-  SetStage(HtkkAutomationStage.GtgtAnnex12WebImportChecking);annex12WebImportSheetMatched=false;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;annex12WebImportDisplayEmptyMask=0;
+  SetStage(HtkkAutomationStage.GtgtAnnex12WebImportChecking);annex12WebImportSheetMatched=false;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;if(!annex12WebHeadAuthorityRestored)annex12WebImportDisplayEmptyMask=0;
   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count!=11)return false;
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object annex=null;
   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(annex!=null)return false;annex=candidate;}}
@@ -162,7 +166,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
     // Observation only: which original display cells (type, province, ward, tax head,
     // local CQT) the import left blank. Five bits per child in document order.
     int[] display=new int[]{2,12,16,17,18};int ordinal=seen+j;
-    for(int k=0;k<display.Length;k++)if(ordinal<5&&CellText(annex,row,display[k])==String.Empty)annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k);
+    // The mask keeps the state right after the original import, before any restoration.
+    for(int k=0;k<display.Length;k++)if(!annex12WebHeadAuthorityRestored&&ordinal<5&&CellText(annex,row,display[k])==String.Empty)annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k);
     if(CellText(annex,row,1)!=id+"."+(j+1).ToString(CultureInfo.InvariantCulture)||CellText(annex,row,32)!=types[i][j]||CellText(annex,row,33)!="101"||CellText(annex,row,42)!="10129087"||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!="10129"||CellText(annex,row,4)!=String.Empty||CellText(annex,row,9)!=String.Empty||!Annex12NumberMatched(annex,row,20,percentages[i][j]))return false;
     // Child: source-locked name/MST/amount and allocated tax; only the percentage is editable.
     if(!Annex12CellLocked(annex,row,4)||!Annex12CellLocked(annex,row,9)||!Annex12CellLocked(annex,row,19)||Annex12CellLocked(annex,row,20)||!Annex12CellLocked(annex,row,23))return false;
@@ -170,5 +175,59 @@ public sealed partial class HtkkGuiReferenceAutomation {
    seen+=rows.Count;
   }
   annex12WebImportGroupCount=tables.Count;annex12WebImportRowCount=seen;annex12WebImportSheetMatched=true;Record();return true;
+ }
+ // Runs 42182681228/42182684607: after the ORIGINAL import every child R was blank (mask
+ // 264 / 8659208) and the reexport was refused with 0016 (Header row 83: R44 required).
+ // R is the parent-catalogue display of the imported child CQT; the XML carries only
+ // ct09_cqt_ma/ten. Select the same fixed synthetic head CQT through the original combo
+ // editor, as a user must, then the same local CQT if the original change handler
+ // cleared it. Codes are re-read, never written; the XML comparison stays exact.
+ private void RestoreImportedAnnex12HeadAuthorities(){
+  if(!Annex12WebCase()||annex12WebHeadAuthorityRestored||!roundtripImportSucceeded||!annex12WebImportSheetMatched)throw new InvalidOperationException();
+  List<Control> grids=new List<Control>();int visited=0;GatherSpreads(roundtripOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();Control grid=grids[0];
+  object sheets=Get(grid,"Sheets");if(Convert.ToInt32(Get(sheets,"Count"))!=11)throw new InvalidOperationException();PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();
+  object annex=null;int found=-1;
+  for(int index=0;index<11;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(annex!=null)throw new InvalidOperationException();annex=candidate;found=index;}}
+  if(annex==null)throw new InvalidOperationException();
+  annex12NonzeroBusy=true;exportWatcher.Stop();
+  try{
+   if(Get(grid,"ActiveSheet")!=annex){PropertyInfo active=grid.GetType().GetProperty("ActiveSheetIndex");if(active==null||!active.CanWrite)throw new InvalidOperationException();active.SetValue(grid,found,null);}
+   if(Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible())throw new InvalidOperationException();
+   SetStage(HtkkAutomationStage.GtgtAnnex12WebImportChecking);Record();
+   System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;object info=null;if(infos==null||infos.Count>32)throw new InvalidOperationException();
+   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)throw new InvalidOperationException();info=candidate;}
+   System.Collections.IList tables=info==null?null:Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count!=annex12WebImportGroupCount)throw new InvalidOperationException();
+   int seen=0;
+   for(int i=0;i<tables.Count;i++){
+    System.Collections.IList rows=Get(tables[i],"RowsValues") as System.Collections.IList;if(rows==null||rows.Count<1||rows.Count>5)throw new InvalidOperationException();
+    int start=Convert.ToInt32(Get(Get(tables[i],"Location"),"DataLocationTemplateRowStart"))-1;
+    for(int j=0;j<rows.Count;j++){
+     int row=start+j;
+     if(CellText(annex,row,17)==String.Empty){SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");annex12WebHeadAuthorityRepairCount++;Record();}
+     if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"){SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội");annex12WebHeadAuthorityRepairCount++;Record();}
+     if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội"||CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!="10129"||CellText(annex,row,33)!="101"||CellText(annex,row,42)!="10129087")throw new InvalidOperationException();
+    }
+    seen+=rows.Count;
+   }
+   if(seen!=annex12WebImportRowCount||annex12WebHeadAuthorityRepairCount<1||annex12WebHeadAuthorityRepairCount>2*seen)throw new InvalidOperationException();
+   annex12WebHeadAuthorityRestored=true;Record();
+  }finally{annex12NonzeroBusy=false;if(!finished)exportWatcher.Start();}
+ }
+ private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){
+  Form owner=grid.FindForm();uint pid;
+  if((column!=17&&column!=18)||owner==null||owner!=roundtripOwner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible()||Annex12CellLocked(annex,row,column))throw new InvalidOperationException();
+  grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
+  annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});
+  grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});
+  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
+  // Same public vendor combo selection used by the proven 14-input scenario.
+  Control vendor=FindVendorCombo(editor,0);if(vendor==null)throw new InvalidOperationException();editorKind="combo";SetPublic(vendor,"DroppedDown",true);
+  object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
+  if(count<1||count>4096)throw new InvalidOperationException();PropertyInfo entryItem=list.GetType().GetProperty("Item",new Type[]{typeof(int)});if(entryItem==null&&sequence==null)throw new InvalidOperationException();int selected=-1;
+  for(int offset=0;offset<count;offset++){object entry=sequence!=null?sequence[offset]:entryItem.GetValue(list,new object[]{offset});if(entry!=null&&entry.ToString()==value){if(selected>=0)throw new InvalidOperationException();selected=offset;}}
+  if(selected<0)throw new InvalidOperationException();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible())throw new InvalidOperationException();
+  SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
+  grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();
+  if(CellText(annex,row,column)!=value||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
  }
 }
