@@ -263,7 +263,7 @@ class NativePreflightRetry(unittest.TestCase):
    'tax-mismatch':('gtgtCaseMismatchMask',4),'money-unmatched':('gtgtCaseMoneyMatched',False),'web-input':('webInputVerified',False),
    'rejected':('exportRejectedMessageId',16),'import-rejected':('importRejectedMessageId',478),'rejected-stage':('stage','gtgt-export-original-message-rejected'),
    'success-stage':('stage','gtgt-export-success-file-checking'),'file':('exportFileExists',True),'bytes':('exportBytes',10),'sha':('exportSha256','a'*64),
-   'scoped':('exportScopedFileCount',1),'scoped-xml':('exportScopedXmlCount',1),'selector':('exportSelectorMatched',True),'button':('exportButtonInvoked',True),
+   'scoped':('exportScopedFileCount',1),'scoped-xml':('exportScopedXmlCount',1),'button':('exportButtonInvoked',True),
    'dialog':('exportDialogMatched',True),'submitted':('exportDialogSubmitted',True),'ack':('exportSuccessAcknowledged',True),'xml-root':('exportXmlRootMatched',True),
    'filename':('exportFilenameKeyboardCommitted',True),'parent':('exportFilenameParentKind','combo'),'path':('exportOriginalPathMatched',True),
    'not-invoked':('exportCommandInvoked',False),'destination':('exportDestinationFresh',False),'schema':('exportSchemaPinnedVerified',False),
@@ -280,6 +280,10 @@ class NativePreflightRetry(unittest.TestCase):
   for name,(key,value) in mutations.items():
    f=self.fixture('export');f['records'][1]['guiReferenceAutomation'][key]=value
    self.assertFalse(f['recover'](),name);self.assertEqual(f['calls'],[],name)
+  # A matched selector (no file yet) is no longer this exact shape; the general pre-export
+  # timeout category subsumes it, so it retries under that name instead.
+  f=self.fixture('export');f['records'][1]['guiReferenceAutomation']['exportSelectorMatched']=True
+  self.assertEqual(retry.classify(f['jobs'],f['records']),'gui-pre-export-timeout')
   for name in ['dialog-cue','dialog-cue-missing','export-evidence','output-evidence','evidence-missing','published','retention-missing','tax','permit','login','reason','attempt2','other-step']:
    f=self.fixture('export');r=f['records'][1]
    if name=='dialog-cue':r['nativeDialogCueCounts']={'message':1}
@@ -405,3 +409,174 @@ class NativePreflightRetry(unittest.TestCase):
   order=[wf.index('- name: '+n+'\n')for n in retry.SELFTEST_STEPS];self.assertEqual(order,sorted(order))
   self.assertNotIn(retry.FRAMEWORK,retry.SELFTEST_STEPS)
   for name,_ in self.SELFTEST_RUN_STEPS[2:-2]:self.assertIn('- name: '+name+'\n',wf)
+
+# Exact readiness steps of runs 42268915757 / 42268930430 (release 218, attempt 1): only the probe
+# and the gtgt retain step failed; every other retain/publish step was skipped.
+REAL_PROBE_STEPS=[(n,'success')for n,_ in NativePreflightRetry.SELFTEST_RUN_STEPS[:21]]+[('Queue separate native harness sample status before supplier launch','skipped'),
+ (retry.PROBE,'failure'),('Publish supplier startup window privately','skipped'),('Retain synthetic common-header reference privately','skipped'),
+ ('Retain verified synthetic GTGT export privately','skipped'),('Retain fixed original 01-2 GTGT export privately','skipped'),
+ ('Retain fixed original nonzero 01-2 GTGT exports privately','skipped'),(retry.RETAIN,'failure'),(retry.DECLARATION_RETAIN,'skipped'),
+ ('Retain native-first harness sample and report its separate status privately','skipped'),('Report unsuccessful native harness sample after verified cleanup','skipped'),
+ ('Report fixed native-case status privately','success'),('Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262','success'),('Complete job','success')]
+FILES={'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}
+class GuiPreExportTimeout(unittest.TestCase):
+ def fixture(self,kind='gui'):
+  base=NativePreflightRetry();f=base.fixture('export')
+  f['steps'][:]=[{'number':i+1,'name':n,'conclusion':c,'status':'completed'}for i,(n,c)in enumerate(REAL_PROBE_STEPS)]
+  r=f['records'][1];gui=r['guiReferenceAutomation']
+  # Run 42268915757 (01GTGT-noactivity-zero-M10-2026): web input verified, money matched,
+  # original Kết xuất clicked, selector matched and its button pressed; the file dialog never
+  # appeared within the 60s budget. No file, hash, message, import, re-export or comparison.
+  gui.update(stage='gtgt-export-file-dialog-waiting',exportSelectorMatched=True,exportButtonInvoked=True,declarationPeriodRejectedMessageId=0,
+   annex12WebHeadAuthorityComboMask=0,annex12WebHeadAuthorityFailureMask=0,gtgtAutoCalculationReady=True,gtgtBusinessInstanceMatched=True,
+   gtgtCt21ConfirmationMatched=True,gtgtCt21LocksMatched=True,periodFirstDeclarationMatched=True,periodActivityMatched=True,periodGeographyMatched=True,
+   declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,controlKinds={'form':1,'button':18,'combo':3,'text':2,'spread':1,'other':18})
+  del gui['annex12NumericSnapshots'] # Absent keys are fine; only present ones are judged.
+  if kind=='oracle':
+   # Run 42268930430 (01GTGT-noactivity-uncheck-sale10-M10-2026): the tax-id oracle compiler
+   # timed out after HTKK started but before login; no permit, profile, web input or GUI.
+   r.update(blockedReason='TAX_ID_ORACLE_NOT_VERIFIED',syntheticLogin=None,guiReferenceAutomation=None,
+    guiAutomationPermitBoundary={'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True},
+    taxIdOracle={'status':'compile-timeout','cases':0,'matched':0,'mismatches':0,'runtime':'unknown','compilerExitCode':None,'compilerErrorCodes':[],
+     'compilerJobCleanupVerified':True,'oracleExitCode':None,'oracleJobCleanupVerified':True,'dllHashVerified':True,'originalMethodInvoked':False,'fullRoundTrip':False,'userDataUsed':False},
+    profileAliasOracle={'status':'matched','cases':12,'matched':12,'mismatches':0,'compilerExitCode':0,'compilerErrorCodes':[],'compilerJobCleanupVerified':True,
+     'oracleExitCode':0,'oracleJobCleanupVerified':True,'originalMethodInvoked':True,'userDataUsed':False},
+    commonHeaderOracle={'status':'matched','cases':43,'matched':43,'failedCaseIndices':[],'compilerExitCode':0,'compilerErrorCodes':[],'compilerJobCleanupVerified':True,
+     'oracleExitCode':0,'oracleJobCleanupVerified':True,'userDataUsed':False})
+  if kind in ('declaration','declaration-oracle'):
+   f['steps'][28]['conclusion']='skipped';f['steps'][29]['conclusion']='success';r['guiReferenceAutomationMode']=retry.DECLARATION_MODE
+   f['records'][2]=dict(retry.DECLARATION_NOT_STAGED)
+   gui.clear();gui.update(retry.GUI_TIMEOUT_REQUIRED,mode=retry.DECLARATION_MODE,stage='declaration-web-input-checking',waitSeconds=120,webCaseId='03TNDN-profit20-Y2025',
+    webImportInputSha256='a'*64,webSourceSha='b'*40,declarationMenuClicked=True,declarationPeriodObserved=True,declarationPeriodMatched=True,declarationAnnexMatched=True,
+    declarationSheetObserved=True,declarationIdentityMatched=True,declarationSourcePinsMatched=True,declarationSheetCount=2,declarationPeriodRejectedMessageId=0,
+    declarationCellMismatchMask=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,roundtripImportCommandInvoked=False,roundtripImportSucceeded=False,
+    exportCommandInvoked=False,exportSelectorMatched=False,exportDialogSubmitted=False,declarationTreeMatched=False,periodConfirmInvoked=True)
+   if kind=='declaration-oracle':
+    o=GuiPreExportTimeout().fixture('oracle')['records'][1]
+    r.update({k:copy.deepcopy(o[k])for k in ('blockedReason','syntheticLogin','guiReferenceAutomation','guiAutomationPermitBoundary','taxIdOracle','profileAliasOracle','commonHeaderOracle')})
+  return f
+ def assertRetried(self,f,name='',reasons=('gui-pre-export-timeout',)):
+  self.assertIn(retry.classify(f['jobs'],f['records']),reasons,name)
+  self.assertTrue(f['recover'](),name);self.assertEqual(len(f['calls']),2,name);self.assertIn('/rerun-failed-jobs',f['calls'][0][0])
+  self.assertEqual(f['calls'][1][2]['state'],'pending');self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
+  f['run'].update(run_attempt=2,status='completed',conclusion='failure');self.assertFalse(f['recover'](),name);self.assertEqual(len(f['calls']),2,name)
+ def assertRejected(self,f,name):
+  if f['run']['run_attempt']==1:self.assertNotEqual(retry.classify(f['jobs'],f['records']),'gui-pre-export-timeout',name)
+  self.assertFalse(f['recover'](),name);self.assertEqual(f['calls'],[],name)
+ def test_real_release_218_shapes_retry_once_on_attempt_one_only(self):
+  for kind in ('gui','oracle','declaration','declaration-oracle'):self.assertRetried(self.fixture(kind),kind)
+ def test_other_gui_timing_shapes_before_any_file_are_subsumed(self):
+  # Run 42223236597's exact shape (selector never appeared) also satisfies the general invariants.
+  self.assertTrue(retry._gui_pre_export_timeout(NativePreflightRetry().export_records()[1]['guiReferenceAutomation'],'gtgt-web-import-inspect'))
+  variants={'command-only':dict(stage='gtgt-export-command-invoking',exportSelectorMatched=False,exportButtonInvoked=False),
+   'dialog-matched':dict(exportDialogMatched=True),'before-export':dict(stage='gtgt-case-editing',exportCommandInvoked=False,exportSelectorMatched=False,exportButtonInvoked=False),
+   'focus-wait':dict(stage='gtgt-export-filename-focus-waiting',exportDialogMatched=True),'longer-budget':dict(waitSeconds=120)}
+  for name,update in variants.items():
+   # The exact older selector shape keeps its own specific name; both retry identically.
+   f=self.fixture();f['records'][1]['guiReferenceAutomation'].update(update);self.assertRetried(f,name,('gui-pre-export-timeout','gtgt-export-selector-not-observed')if name=='command-only'else('gui-pre-export-timeout',))
+  f=self.fixture('oracle');f['records'][1]['taxIdOracle'].update(status='oracle-timeout',compilerExitCode=0);self.assertRetried(f,'oracle-run-timeout')
+  f=self.fixture('oracle');r=f['records'][1];r['taxIdOracle']['status']='matched';r['commonHeaderOracle'].update(status='compile-timeout',cases=0,matched=0,compilerExitCode=None,oracleExitCode=None)
+  r['blockedReason']='COMMON_HEADER_ORACLE_NOT_VERIFIED';self.assertRetried(f,'common-header-timeout')
+ def test_any_export_output_message_mismatch_or_comparison_is_never_retried(self):
+  mutations={
+   'file':('exportFileExists',True),'bytes':('exportBytes',10),'sha':('exportSha256','a'*64),'scoped':('exportScopedFileCount',1),'scoped-xml':('exportScopedXmlCount',1),
+   'export-rejected':('exportRejectedMessageId',16),'import-rejected':('importRejectedMessageId',478),'period-rejected':('declarationPeriodRejectedMessageId',12),
+   'money-mismatch':('gtgtCaseMismatchMask',4),'money-unmatched':('gtgtCaseMoneyMatched',False),'money-not-run':('gtgtCaseMoneyCount',0),
+   'header-mismatch':('savedHeaderMismatchMask',1),'cell-mismatch':('declarationCellMismatchMask',1),'xml-mismatch':('declarationXmlMismatchMask',2),
+   'tree-mismatch':('declarationTreeMismatchMask',1),'annex-authority':('annex12WebHeadAuthorityFailureMask',1),
+   'roundtrip-command':('roundtripImportCommandInvoked',True),'roundtrip-import':('roundtripImportSucceeded',True),'reexport':('roundtripReexportSucceeded',True),
+   'reexport-bytes':('roundtripReexportBytes',100),'xml-exact':('roundtripXmlExactMatched',True),'web-tax':('webTaxValuesMatched',True),'web-leaf':('webTaxLeafCount',3),
+   'web-identity':('webServiceIdentityMatched',True),'web-date':('webCreationDateMatchedNativeBaseline',True),'tree':('declarationTreeMatched',True),
+   'annex-web':('annex12WebImportSheetMatched',True),'after-import':('gtgtCt42AfterImportObserved',True),'amendment-file':('amendmentPriorFileBytes',10),
+   'submitted':('exportDialogSubmitted',True),'filename':('exportFilenameKeyboardCommitted',True),'ack':('exportSuccessAcknowledged',True),
+   'xml-root':('exportXmlRootMatched',True),'path':('exportOriginalPathMatched',True),'path-kind':('exportOriginalPathKind','expected-path'),
+   'status-failed':('status','failed'),'status-exited':('status','root-exited'),'status-matched':('status','matched'),'status-none':('status','no-valid-result'),
+   'category':('failureCategory','io'),'stage-rejected':('stage','gtgt-export-original-message-rejected'),'stage-success':('stage','gtgt-export-success-file-checking'),
+   'stage-writing':('stage','gtgt-export-original-writing'),'stage-import':('stage','gtgt-import-file-dialog-waiting'),'stage-reexport':('stage','gtgt-reexport-command-invoking'),
+   'stage-saved':('stage','gtgt-original-declaration-save-invoking'),'stage-unknown':('stage','gtgt-export-future-waiting'),'stage-profile':('stage','waiting-profile-close'),'stage-period':('stage','gtgt-period-configuring'),'stage-menu':('stage','gtgt-menu-click-D1'),'stage-declaration':('stage','declaration-sheet-waiting'),
+   'order-button':('exportSelectorMatched',False),'no-command':('exportCommandInvoked',False),'destination':('exportDestinationFresh',False),'schema':('exportSchemaPinnedVerified',False),
+   'web-input':('webInputVerified',False),'identity':('gtgtIdentityMatched',False),'menu':('mainMenuObserved',False),'profile':('profileClosed',False),
+   'annex-on-no-annex':('annex12SheetObserved',True),'declaration-on-gtgt':('declarationMenuClicked',True),'lifecycle':('annex12LifecycleMatched',True),
+   'unknown':('futureProgressFlag',True),'type':('gtgtCaseMoneyCount',None),'range':('menuClickCount',9),'hex':('webImportInputSha256','A'*64),'enum':('saveDialogKind','other'),
+   'budget':('waitSeconds',30),'budget-type':('waitSeconds',60.0),'mode':('mode','gtgt-roundtrip-inspect'),'real-data':('realTaxpayerDataUsed',True),
+   'roundtrip-flag':('runtimeRoundTrip',True),'pins':('sourcePinsVerified',False),'cue':('nativeDialogCueCount',1),
+  }
+  for name,(key,value) in mutations.items():
+   f=self.fixture();f['records'][1]['guiReferenceAutomation'][key]=value;self.assertRejected(f,name)
+  f=self.fixture();del f['records'][1]['guiReferenceAutomation']['webInputVerified'];self.assertRejected(f,'web-input-missing')
+  f=self.fixture('declaration');f['records'][1]['guiReferenceAutomation'].update(stage='declaration-import-ready-waiting');self.assertRejected(f,'declaration-import')
+  f=self.fixture('declaration');f['records'][1]['guiReferenceAutomation'].update(roundtripImportCommandInvoked=True);self.assertRejected(f,'declaration-roundtrip')
+  f=self.fixture('declaration');f['records'][1]['guiReferenceAutomation'].update(declarationCellCheckCount=3);self.assertRejected(f,'declaration-cells')
+ def test_retained_evidence_dialog_cues_report_or_attempt_mismatches_are_never_retried(self):
+  for kind in ('gui','oracle','declaration','declaration-oracle'):
+   for name in ['cue','export-evidence','output-evidence','evidence-missing','published','retention-missing','retention-extra','retention-other-family','retain-success','other-retain',
+     'other-retain-failed','cancelled','tax','cleanup','host','attempt2','callback','reason','permit','login-gui']:
+    f=self.fixture(kind);r=f['records'][1];decl=kind.startswith('declaration')
+    if name=='cue':r['nativeDialogCueCounts']={'message':1}
+    if name=='export-evidence':r['privateGtgtExportEvidence']={'status':'retained'}
+    if name=='output-evidence':r['privateWebNativeOutputEvidence']={'status':'retained'}
+    if name=='evidence-missing':del r['privateWebNativeOutputEvidence']
+    if name=='published':f['records'][2]=dict(f['records'][2],status='published')
+    if name=='retention-missing':del f['records'][2]
+    if name=='retention-extra':f['records'].append(dict(f['records'][2]))
+    if name=='retention-other-family':f['records'].append(dict(FILES)if decl else dict(retry.DECLARATION_NOT_STAGED))
+    if name=='retain-success':f['steps'][28]['conclusion']='failure'if decl else 'success'
+    if name=='other-retain':f['steps'][25]['conclusion']='success'
+    if name=='other-retain-failed':f['steps'][25]['conclusion']='failure'
+    if name=='cancelled':f['steps'][31]['conclusion']='cancelled'
+    if name=='tax':r['taxDataUsed']=True
+    if name=='cleanup':r['supplierProcessBoundary']['jobEmpty']=False
+    if name=='host':r['hostOutboundBlocked']=False
+    if name=='attempt2':f['run']['run_attempt']=2
+    if name=='callback':f['jobs']['jobs'][1]['conclusion']='failure'
+    if name=='reason':r['blockedReason']='HOST_NETWORK_OR_TOOL_FAILURE'
+    if name=='permit':r['guiAutomationPermitBoundary']['authorizationAttempted']=not r['guiAutomationPermitBoundary']['authorizationAttempted']
+    if name=='login-gui':
+     if r['syntheticLogin']is None:r['syntheticLogin']={'status':'synthetic-profile-window-observed'}
+     else:r['syntheticLogin']['profileSaveCloseMatched']=False
+    self.assertRejected(f,kind+':'+name)
+ def test_oracle_mismatch_or_completed_case_is_never_retried(self):
+  for name in ['mismatch-status','runtime-blocked','tool-failure','compile-failed','cases','matched','mismatches','invoked','compiler-errors','exit-code','compile-cleanup',
+    'oracle-cleanup','user-data','other-mismatch','other-mismatch-count','other-failed-case','reason-order','gui-present','login-present','missing-oracle']:
+   f=self.fixture('oracle');r=f['records'][1];o=r['taxIdOracle']
+   if name=='mismatch-status':o['status']='mismatch'
+   if name=='runtime-blocked':o['status']='oracle-runtime-blocked'
+   if name=='tool-failure':o['status']='host-or-tool-failure'
+   if name=='compile-failed':o['status']='compile-failed'
+   if name=='cases':o['cases']=30
+   if name=='matched':o['matched']=1
+   if name=='mismatches':o['mismatches']=1
+   if name=='invoked':o['originalMethodInvoked']=True
+   if name=='compiler-errors':o['compilerErrorCodes']=['CS0103']
+   if name=='exit-code':o['oracleExitCode']=2
+   if name=='compile-cleanup':o['compilerJobCleanupVerified']=False
+   if name=='oracle-cleanup':o['oracleJobCleanupVerified']=False
+   if name=='user-data':o['userDataUsed']=True
+   if name=='other-mismatch':r['profileAliasOracle']['status']='mismatch'
+   if name=='other-mismatch-count':r['profileAliasOracle']['mismatches']=1
+   if name=='other-failed-case':r['commonHeaderOracle']['failedCaseIndices']=[3]
+   if name=='reason-order':r['blockedReason']='PROFILE_ALIAS_ORACLE_NOT_VERIFIED'
+   if name=='gui-present':r['guiReferenceAutomation']=copy.deepcopy(self.fixture()['records'][1]['guiReferenceAutomation'])
+   if name=='login-present':r['syntheticLogin']={'status':'next-window-not-yet-identified'}
+   if name=='missing-oracle':del r['commonHeaderOracle']
+   self.assertRejected(f,name)
+ def test_classification_matches_probe_and_oracle_contracts(self):
+  root=pathlib.Path(__file__).parent;probe=(root/'probe-htkk-windows.ps1').read_text(encoding='utf-8')
+  # 'timed-out' is only reported when the last valid result was neither matched nor terminal;
+  # a non-'none' failureCategory or any mismatch/rejection stage is terminal ('failed').
+  self.assertIn("$lastGui.status=if($matched){'matched'}elseif($terminal){'failed'}elseif($automationRootExited){'root-exited'}else{'timed-out'}",probe)
+  self.assertIn("$terminal=$nextGui.failureCategory -ne 'none' -or $nextGui.stage -in @(",probe)
+  # Oracles run and are checked after install, before synthetic login, permit and GUI.
+  login=probe.index('$report.syntheticLogin = Invoke-HtkkSyntheticLogin')
+  for key,reason in retry.ORACLES:
+   self.assertLess(probe.index('$report.'+key+' = Invoke-Htkk'),login);self.assertLess(probe.index("throw '"+reason+"'"),login)
+  for script in ('Test-HtkkTaxIdOracle.ps1','Test-HtkkProfileAliasOracle.ps1','Test-HtkkCommonHeaderOracle.ps1'):
+   self.assertIn("if($compilerRun.timedOut){$safe.status='compile-timeout';return $safe}",(root/script).read_text(encoding='utf-8'))
+  self.assertLess(login,probe.index('$report.guiAutomationPermitBoundary.authorizationAttempted=$true'))
+  for k in retry.GUI_TIMEOUT_REQUIRED:self.assertTrue(k=='status'or k in retry.FIELDS,k)
+  for mode,categories in retry.GUI_TIMEOUT_STAGE_CATEGORIES.items():self.assertNotIn('lifecycle',categories,mode)
+  for k in retry.PRE_FILE_EXPORT+retry.PRE_FILE_EXPORT_PINS+tuple(retry.WEB_INPUT_HASHES)+retry.COMPARISON_FIELDS:self.assertIn(k,retry.FIELDS)
+  self.assertTrue(all(any(k.startswith(p)for k in retry.FIELDS)for p in retry.COMPARISON_PREFIXES))
+  # Every output/hash/rejection/mismatch field the harness reports must stay at its default.
+  for k in retry.FIELDS:
+   if k.endswith(('Bytes','Sha256','RejectedMessageId','MismatchMask','FileExists'))and k!='webImportInputSha256':self.assertTrue(retry._must_stay_default(k),k)

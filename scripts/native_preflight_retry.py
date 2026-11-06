@@ -1,5 +1,5 @@
 """One classified retry before tax execution; never retries mismatches or weakens evidence."""
-import re
+import json,pathlib,re
 BUILDER='congminh1254/htkk_builder';SOURCE='htkk-net/htkk_web'
 FRAMEWORK='Check clean Framework UIA assembly readiness'
 PROBE='Kiểm tra nguồn và điều kiện Windows'
@@ -95,6 +95,120 @@ def _selftest_fixture_failed(job,records):
  names=[s.get('name')for s in later]
  if any(names.count(n)!=1 for n in (PROBE,RETAIN,DECLARATION_RETAIN)):return False
  return all(_selftest_noise(x)for x in records)
+# ---- gui-pre-export-timeout: one general, invariant-defined pre-tax timing category ----
+# A bounded helper ran out of time before any native export file existed. It is defined by
+# invariants instead of an exact stage so new GUI timing shapes need no new category: the helper
+# result is 'timed-out' with failureCategory 'none' (the probe only reports 'timed-out' when the
+# last valid result was neither matched nor terminal, and every mismatch/rejection stage is
+# terminal), no export/output file or hash exists, no original HTKK message or dialog cue was
+# seen, no import/re-export/web or declaration comparison progressed, every money or identity
+# check that ran matched, and no private evidence was retained. Nothing exists that could
+# mismatch, so a rerun can only reproduce the same fully verified evidence path.
+REGISTRY=json.loads(pathlib.Path(__file__).with_name('htkk-native-automation-registry.json').read_text(encoding='utf-8'))
+FIELDS=REGISTRY['resultFields'];STAGE_CATEGORIES={s['id']:s['category']for s in REGISTRY['stages']}
+GUI_TIMEOUT_REQUIRED={'status':'timed-out','failureCategory':'none','format':'htkk-gui-reference-automation-v1','runtime':'clr2-x86-custom-reference',
+ 'sourcePinsVerified':True,'mstBoxesMatched':True,'initialRequiredTextBlank':True,'editingApiAvailable':True,'spreadCount':1,'performedInputCount':7,
+ 'originalSaveInvoked':True,'savedHeaderExists':True,'savedHeaderChecksMatched':True,'savedHeaderCheckedFieldCount':8,'saveDialogKind':'success-0002',
+ 'savedHeaderMismatchMask':0,'profileClosed':True,'mainMenuObserved':True,'webInputVerified':True,'realTaxpayerDataUsed':False,'runtimeRoundTrip':False,
+ 'exportFileExists':False,'exportBytes':0,'exportSha256':'','exportScopedFileCount':0,'exportScopedXmlCount':0,'exportRejectedMessageId':0,'importRejectedMessageId':0}
+# Navigation/identity checks that precede the verified web input in each family.
+GUI_TIMEOUT_NAVIGATION={'gtgt-web-import-inspect':('d1MenuClicked','gtgtPeriodObserved','periodConfirmInvoked','gtgtWorkbookPinsVerified','gtgtMenuVersionMatched',
+  'gtgtPeriodModelMatched','gtgtSheetObserved','gtgtSheetNameMatched','gtgtDimensionsMatched','gtgtIdentityMatched'),
+ DECLARATION_MODE:('declarationMenuClicked',)}
+# Stage families that follow the verified web input (never profile lifecycle, menu or period).
+GUI_TIMEOUT_STAGE_CATEGORIES={'gtgt-web-import-inspect':('sheet','annex12','export-roundtrip'),DECLARATION_MODE:('declaration',)}
+# The only export flags that may have progressed: command, selector, button and dialog, each
+# requiring the previous one. Submission, filename, path, file, XML, ack and hashes may not.
+PRE_FILE_EXPORT=('exportCommandInvoked','exportSelectorMatched','exportButtonInvoked','exportDialogMatched')
+PRE_FILE_EXPORT_PINS=('exportSchemaPinnedVerified','exportDestinationFresh')
+WEB_INPUT_HASHES={'webImportInputSha256':64,'webSourceSha':40}
+COMPARISON_PREFIXES=('roundtrip','declarationImport','declarationCell','declarationSchema','declarationServiceIdentity','declarationCreationDate','declarationXml',
+ 'declarationTree','annex12Web','annex12Export','annex12Nonzero','amendment')
+COMPARISON_FIELDS=('webTaxValuesMatched','webCreationDateMatchedNativeBaseline','webServiceIdentityMatched','webTaxLeafCount')
+# Stage words that mean an original message, a mismatch, an output being written/checked, a
+# saved declaration, or a later import/re-export/comparison phase.
+GUI_TIMEOUT_STAGE_WORDS=('mismatch','not-matched','unmatched','rejected','not-unique','hidden','missing','unavailable','invalid','not-verified','not-established',
+ 'preexists','success','inspected','saved','save','writing','validating','import','reexport','roundtrip','amendment','lifecycle')
+def _field_ok(k,v):
+ spec=FIELDS.get(k)
+ if spec is None:return False
+ kind=spec['kind']
+ if kind=='boolean':return type(v)is bool
+ if kind=='integer':return type(v)is int and spec.get('minimum',0)<=v<=spec.get('maximum',v)
+ if kind=='hex':return type(v)is str and (v==''or re.fullmatch('[0-9a-f]{%d}'%spec['length'],v)is not None)
+ if kind=='string':return type(v)is str and len(v)<=spec.get('maximumLength',4096)
+ if kind=='enum':return type(v)is str and (v in spec['values']if 'values'in spec else True)
+ if kind=='object':return type(v)is dict and all(type(a)is str and (type(b)is int or(type(b)is dict and all(type(x)is str and type(y)in(bool,int,str)for x,y in b.items())))for a,b in v.items())
+ return False
+def _must_stay_default(k):
+ low=k.lower()
+ if 'export'in low and 'beforeexport'not in low and k not in PRE_FILE_EXPORT+PRE_FILE_EXPORT_PINS:return True
+ if k.startswith(COMPARISON_PREFIXES)or k in COMPARISON_FIELDS or 'AfterImport'in k or 'Reexport'in k:return True
+ if 'mismatch'in low or 'FailureMask'in k or 'RejectedMessageId'in k or 'Cue'in k:return True
+ return (FIELDS[k]['kind']=='hex'and k not in WEB_INPUT_HASHES)or k.endswith(('Bytes','FileExists','FileCount','XmlCount'))
+def _gui_pre_export_timeout(gui,mode):
+ if type(gui)is not dict or mode not in GUI_TIMEOUT_NAVIGATION or not _exact(gui,dict(GUI_TIMEOUT_REQUIRED,mode=mode)):return False
+ if type(gui.get('waitSeconds'))is not int or gui['waitSeconds']<PROFILE_CLOSE_LIMIT:return False
+ stage=gui.get('stage')
+ if type(stage)is not str or STAGE_CATEGORIES.get(stage)not in GUI_TIMEOUT_STAGE_CATEGORIES[mode]or any(w in stage for w in GUI_TIMEOUT_STAGE_WORDS):return False
+ for k,v in gui.items():
+  if k in ('status','waitSeconds'):continue
+  if not _field_ok(k,v):return False # Unknown keys or out-of-contract values never qualify.
+  default=FIELDS[k]['default'];active=FIELDS[k].get('activeModes')
+  if (_must_stay_default(k)or(active is not None and mode not in active))and not(type(v)is type(default)and v==default):return False
+ if any(gui.get(k)is not True for k in GUI_TIMEOUT_NAVIGATION[mode]):return False
+ if any(type(gui.get(k,''))is not str or not re.fullmatch('[0-9a-f]{%d}'%n,gui.get(k,''))for k,n in WEB_INPUT_HASHES.items()):return False
+ if type(gui.get('webCaseId'))is not str:return False
+ flags=[gui.get(k,False)for k in PRE_FILE_EXPORT]
+ if any(type(x)is not bool for x in flags)or any(flags[i]and not flags[i-1]for i in range(1,len(flags))):return False
+ if flags[0]and any(gui.get(k)is not True for k in PRE_FILE_EXPORT_PINS):return False
+ if stage.startswith(('gtgt-export-','declaration-export-'))and not flags[0]:return False
+ if mode=='gtgt-web-import-inspect':
+  # Pre-export money check: it ran (and must have matched) before any export command.
+  money=gui.get('gtgtCaseMoneyCount',0)
+  if (flags[0]or money)and(gui.get('gtgtCaseMoneyMatched')is not True or not money):return False
+  if gui.get('periodNoAnnexMatched')is True and any(k.startswith(('annex12','annexSelected'))and gui[k]!=FIELDS[k]['default']for k in gui if k in FIELDS):return False
+ return True
+# Pre-GUI equivalent: one bounded original-DLL oracle helper (compile or run) timed out before
+# login, permit, web input or GUI; no oracle case ran, and every other oracle matched or also
+# only timed out (a mismatch is never retried).
+ORACLES=(('taxIdOracle','TAX_ID_ORACLE_NOT_VERIFIED'),('profileAliasOracle','PROFILE_ALIAS_ORACLE_NOT_VERIFIED'),('commonHeaderOracle','COMMON_HEADER_ORACLE_NOT_VERIFIED'))
+ORACLE_TIMEOUTS=('compile-timeout','oracle-timeout')
+def _oracle_clean(o):
+ return type(o)is dict and o.get('mismatches',0)==0 and type(o.get('mismatches',0))is int and o.get('failedCaseIndices',[])==[] and o.get('userDataUsed')is False and o.get('compilerJobCleanupVerified')is True and o.get('oracleJobCleanupVerified')is True
+def _oracle_helper_timeout(r):
+ states=[r.get(k)for k,_ in ORACLES]
+ if not all(_oracle_clean(o)and o.get('status')in ('matched',)+ORACLE_TIMEOUTS for o in states):return False
+ first=[i for i,o in enumerate(states)if o['status']!='matched']
+ if not first or r.get('blockedReason')!=ORACLES[first[0]][1]:return False
+ for o in (states[i]for i in first):
+  if o.get('cases',0)!=0 or o.get('matched',0)!=0 or o.get('originalMethodInvoked',False)is not False or o.get('compilerErrorCodes',[])!=[]:return False
+  if o.get('oracleExitCode')is not None or(o['status']=='compile-timeout'and o.get('compilerExitCode')is not None)or(o['status']=='oracle-timeout'and o.get('compilerExitCode')!=0):return False
+ return r.get('syntheticLogin')is None and 'syntheticLogin'in r and 'guiReferenceAutomation'in r and r['guiReferenceAutomation']is None
+EVIDENCE_STEP_PREFIXES=('Retain ','Publish ')
+def _no_retained_evidence(steps,own,conclusion):
+ # Every other retain/publish step after the probe was skipped; only the mode's own retain step
+ # ran, with the fixed no-output conclusion. No step was cancelled or otherwise unknown.
+ names=[s.get('name')for s in steps]
+ if names.count(PROBE)!=1 or names.count(own)!=1 or names.index(own)<names.index(PROBE):return False
+ if any(s.get('conclusion')not in ('success','skipped','failure')for s in steps):return False
+ for s in steps[names.index(PROBE)+1:]:
+  if s.get('name')==own:
+   if s.get('conclusion')!=conclusion:return False
+  elif str(s.get('name')).startswith(EVIDENCE_STEP_PREFIXES)and s.get('conclusion')!='skipped':return False
+ return True
+def _declaration_status(records):return any(x.get('format')==DECLARATION_NOT_STAGED['format']for x in records)
+def _pre_export_report(r,mode):
+ return all(k in r and r[k]is None for k in ('privateGtgtExportEvidence','privateWebNativeOutputEvidence'))and r.get('nativeDialogCueCounts',{})=={} and r.get('taxDataUsed')is False and _supplier_boundary(r,(mode,))
+def _gui_pre_export_branch(r,mode,permit,login):
+ if not _pre_export_report(r,mode):return False
+ if r.get('blockedReason')=='GUI_REFERENCE_AUTOMATION_NOT_VERIFIED':
+  if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':True,'absentAfterCleanup':False}):return False
+  if type(login)is not dict or not _exact(login,dict(LOGIN,status='synthetic-profile-window-observed',profileWindowObserved=True,newIdClicked=True,nextOwnedWindowObserved=True,profileMainCaptionMatched=True,profileSaveCloseMatched=True)):return False
+  return _gui_pre_export_timeout(r.get('guiReferenceAutomation'),mode)and r['guiReferenceAutomation'].get('mode')==r.get('guiReferenceAutomationMode')
+ if any(r.get('blockedReason')==reason for _,reason in ORACLES):
+  return _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True})and _oracle_helper_timeout(r)
+ return False
 LOGIN={'fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'runtimeRoundTrip':False}
 PERMIT_KEYS={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}
 def classify(jobs,records):
@@ -114,18 +228,27 @@ def classify(jobs,records):
  if len(suppliers)!=1:return None
  r=suppliers[0];login=r.get('syntheticLogin',{});permit=r.get('guiAutomationPermitBoundary',{})
  if failed=={PROBE} and r.get('guiReferenceAutomationMode')==DECLARATION_MODE:
-  # Declaration startup flake: HTKK never reached its main window (original-starting), the
-  # synthetic login saw no profile window, no permit was issued, nothing was staged.
-  if type(login)is not dict or type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r,(DECLARATION_MODE,)):return None
+  if type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r,(DECLARATION_MODE,)):return None
   if not any(s.get('name')==DECLARATION_RETAIN and s.get('conclusion')=='success'for s in steps):return None
   declared=[x for x in records if x.get('format')==DECLARATION_NOT_STAGED['format']]
   if len(declared)!=1 or not _exact(declared[0],DECLARATION_NOT_STAGED) or set(declared[0])!=set(DECLARATION_NOT_STAGED):return None
+  if r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED':
+   if not _no_retained_evidence(steps,DECLARATION_RETAIN,'success')or any(x.get('format')=='htkk-web-native-output-publication-status-v1'for x in records):return None
+   return 'gui-pre-export-timeout'if _gui_pre_export_branch(r,DECLARATION_MODE,permit,login if type(login)is dict else None)else None
+  # Declaration startup flake: HTKK never reached its main window (original-starting), the
+  # synthetic login saw no profile window, no permit was issued, nothing was staged.
+  if type(login)is not dict:return None
   if r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED' or r.get('guiReferenceAutomation')is not None:return None
   if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None
   if not _exact(login,dict(LOGIN,status='next-window-not-yet-identified',profileWindowObserved=False)):return None
   return 'synthetic-profile-startup-not-observed'
  if failed!={PROBE,RETAIN}:return None
- if type(login)is not dict or type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r):return None
+ if type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r):return None
+ if any(r.get('blockedReason')==reason for _,reason in ORACLES):
+  retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
+  if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]or not _no_retained_evidence(steps,RETAIN,'failure')or _declaration_status(records):return None
+  return 'gui-pre-export-timeout'if _gui_pre_export_branch(r,'gtgt-web-import-inspect',permit,None)else None
+ if type(login)is not dict:return None
  if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_VERIFIED':
   if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None
   if r.get('guiReferenceAutomation')is not None:return None
@@ -143,6 +266,7 @@ def classify(jobs,records):
   # No native dialog cue and no retained private export/output evidence may exist.
   if any(k not in r or r[k]is not None for k in ('privateGtgtExportEvidence','privateWebNativeOutputEvidence'))or r.get('nativeDialogCueCounts')!={}:return None
   if _export_selector_not_observed(gui):return 'gtgt-export-selector-not-observed'
+  if _no_retained_evidence(steps,RETAIN,'failure')and not _declaration_status(records)and _gui_pre_export_branch(r,'gtgt-web-import-inspect',permit,login):return 'gui-pre-export-timeout'
   return None
  return None
 
