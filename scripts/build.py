@@ -6,12 +6,14 @@ allowed=('PATH','HOME','TMPDIR','RUNNER_TEMP','RUNNER_TOOL_CACHE','LANG')
 env={key:os.environ[key] for key in allowed if key in os.environ}
 env.update(CI='1',NEXT_TELEMETRY_DISABLED='1',NEXT_PUBLIC_ADSENSE_ENABLED='true' if os.environ.get('ADSENSE_ENABLED') == 'true' else 'false')
 STAGES={'npm ci':'install','npm run typecheck':'typecheck','npm test':'unit','npm run test:schemas':'schemas','npm audit --omit=dev --audit-level=high':'audit','npm run build':'build','npx playwright install --with-deps chromium':'browser-install','npm run test:e2e':'e2e','node scripts/check-htkk-source-cases.mjs':'source-cases'}
-stage='setup'
+stage='setup';code='none'
 def run(command):
- global stage
- stage=STAGES.get(' '.join(command),'other')
+ global stage,code
+ stage=STAGES.get(' '.join(command),'cmd%d'%(len(command)))
+ code='running'
  with log.open('ab') as output:
   result=subprocess.run(command,cwd=source,env=env,stdout=output,stderr=subprocess.STDOUT)
+ code=str(result.returncode) if result.returncode>=0 else 'signal%d'%(-result.returncode)
  if result.returncode:raise RuntimeError()
 try:
  for command in (['npm','ci'],['npm','run','typecheck'],['npm','test'],['npm','run','test:schemas'],['npm','audit','--omit=dev','--audit-level=high'],['npm','run','build']):run(command)
@@ -37,5 +39,5 @@ try:
   (source/'out/build.json').write_text(json.dumps({'sourceSha':sha,'version':version,'builtAt':datetime.datetime.now(datetime.timezone.utc).isoformat()},separators=(',',':'))+'\n')
   # Portable distribution is retired. Never carry stale download output forward.
   shutil.rmtree(source/'out/downloads',ignore_errors=True)
-except Exception:raise SystemExit('Build or verification failed at stage=%s. Private diagnostics were not published.'%(stage if re.fullmatch('[a-z-]{1,20}',stage) else 'other'))
+except Exception as error:raise SystemExit('Build or verification failed at stage=%s code=%s error=%s. Private diagnostics were not published.'%(stage if re.fullmatch('[a-z0-9-]{1,20}',stage) else 'other',code if re.fullmatch('[a-z0-9-]{1,12}',code) else 'other',type(error).__name__ if re.fullmatch('[A-Za-z]{1,40}',type(error).__name__) else 'other'))
 print('Build and verification passed.')
