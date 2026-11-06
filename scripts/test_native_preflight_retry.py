@@ -151,7 +151,8 @@ class NativePreflightRetry(unittest.TestCase):
  def test_profile_close_classification_matches_harness_contract(self):
   root=pathlib.Path(__file__).parent;probe=(root/'probe-htkk-windows.ps1').read_text(encoding='utf-8')
   nav=(root/'HtkkGtgtReferenceNavigation.cs').read_text(encoding='utf-8');ui=(root/'HtkkNativeUiHarness.cs').read_text(encoding='utf-8')
-  self.assertIn("$automationLimit=if($GuiAutomation -in @('gtgt-roundtrip-inspect','gtgt-web-import-inspect','gtgt-amendment-open-inspect')){%d}"%retry.PROFILE_CLOSE_LIMIT,probe)
+  self.assertIn("if($GuiAutomation -in @('gtgt-roundtrip-inspect','gtgt-web-import-inspect','gtgt-amendment-open-inspect')){%d}"%retry.PROFILE_CLOSE_LIMIT,probe)
+  self.assertRegex(probe,r"\$automationLimit=if\(")
   self.assertIn('case HtkkAutomationStage.WaitingProfileClose: return "waiting-profile-close";',(root/'HtkkNativeAutomationEnums.cs').read_text(encoding='utf-8'))
   # The close wait is reached only after the original save, header checks and one close request.
   self.assertIn('if(!headerMatched||headerChecks!=8||headerMismatchMask!=0||!successAcknowledged||!profileLifecycle.IsBound)',nav)
