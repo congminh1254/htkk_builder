@@ -308,3 +308,100 @@ class NativePreflightRetry(unittest.TestCase):
   self.assertLess(export.index('SetStage(HtkkAutomationStage.GtgtExportSuccessFileChecking)'),export.index('if(!exportButtonInvoked){List<Form> selectors'))
   self.assertLess(rejected,export.index('if(!exportButtonInvoked){List<Form> selectors'))
   self.assertNotIn('waiting-main-menu',retry.EXPORT_PENDING.values())
+ # Exact readiness step structure of run42265022235 (01GTGT-sale10-M10-2026, release 217):
+ # Test-HtkkSupplierJobBoundary.ps1 failed ("Own supplier root fixture failed") before the
+ # web XML fetch, supplier download or HTKK probe; every later step was skipped.
+ SELFTEST_RUN_STEPS=[('Set up job','success'),('Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262','success'),
+  ('Check generated native automation contract is synchronized','success'),('Check trusted case registry is synchronized','success'),
+  ('Test complete builder contracts without network','success'),('Check generated typed flags counters defaults and mode ranges','success'),
+  ('Check safe reference-result boundary','success'),('Check classified pinned download and attempt limits','success'),
+  ('Check bounded native process and clean environment','success'),('Check bounded compiler diagnostics and complete cleanup','success'),
+  ('Check bounded oracle Job cleanup and environment','success'),('Check supplier Job cleanup and retained identity boundary','failure'),
+  ('Check UIA cleanup and bounded result boundary','skipped'),('Check clean Framework UIA assembly readiness','skipped'),
+  ('Check actual C# web-tax comparison boundaries','skipped'),('Test private GUI XML evidence boundaries without network','skipped'),
+  ('Test private synthetic web input boundaries without network','skipped'),('Test fixed original annex export boundaries without network','skipped'),
+  ('Test fixed annex web cases and nonzero export boundaries without network','skipped'),('Test declaration-family native cases and boundaries without network','skipped'),
+  ('Fetch fixed synthetic web XML privately','skipped'),('Queue separate native harness sample status before supplier launch','skipped'),
+  ('Kiểm tra nguồn và điều kiện Windows','skipped'),('Publish supplier startup window privately','skipped'),
+  ('Retain synthetic common-header reference privately','skipped'),('Retain verified synthetic GTGT export privately','skipped'),
+  ('Retain fixed original 01-2 GTGT export privately','skipped'),('Retain fixed original nonzero 01-2 GTGT exports privately','skipped'),
+  ('Retain verified raw native web reexport privately','skipped'),('Retain raw native declaration export privately','skipped'),
+  ('Retain native-first harness sample and report its separate status privately','skipped'),('Report unsuccessful native harness sample after verified cleanup','skipped'),
+  ('Report fixed native-case status privately','skipped'),('Post Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262','success'),('Complete job','success')]
+ # Every JSON object collector.records() extracts from that job log (builder unittest output only).
+ SELFTEST_RUN_RECORDS=[{'result':'metadata-only','failureCode':None,'trustRequested':False,'ready':False}]*2+[{'result':'unchanged','trustStatus':'not-run','ready':False,'credentialsSafe':True}]+[
+  {'result':'metadata-only','failureCode':None,'trustRequested':False,'ready':False},{'result':'unchanged','trustStatus':'not-run','ready':False,'credentialsSafe':True}]*5+[
+  {'result':'blocked','failureCode':'TLS','trustRequested':False,'ready':False},{'result':'blocked','failureCode':'HTTP_DENIED','trustRequested':False,'ready':False},
+  {'result':'blocked','failureCode':'HTTP_DENIED','trustRequested':False,'ready':False},{'result':'metadata-only','failureCode':None,'trustRequested':False,'ready':False},
+  {'result':'unchanged','trustStatus':'not-run','ready':False,'credentialsSafe':True},{'result':'blocked','failureCode':'UNREVIEWED_VERSION','trustRequested':False,'ready':False},
+  {'result':'review-required','trustStatus':'not-run','ready':False,'credentialsSafe':True}]
+ def selftest_fixture(self):
+  f=self.fixture()
+  numbers=list(range(1,34))+[66,67]
+  f['steps'][:]=[{'name':n,'status':'completed','conclusion':c,'number':k}for (n,c),k in zip(self.SELFTEST_RUN_STEPS,numbers)]
+  f['records'][:]=copy.deepcopy(self.SELFTEST_RUN_RECORDS)
+  f['jobs']['jobs'][0].update(id=128054583707,run_attempt=1,status='completed')
+  return f
+ def step(self,f,name):return next(s for s in f['steps']if s['name']==name)
+ def test_selftest_fixture_flake_retries_once_before_any_htkk_or_web_step(self):
+  f=self.selftest_fixture()
+  self.assertEqual(retry.classify(f['jobs'],f['records']),'windows-selftest-fixture-failed')
+  self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2);self.assertIn('/rerun-failed-jobs',f['calls'][0][0]);self.assertEqual(f['calls'][1][2]['state'],'pending')
+  self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
+  f['run'].update(run_attempt=2,status='completed',conclusion='failure');self.assertFalse(f['recover']());self.assertEqual(len(f['calls']),2)
+  for name in retry.SELFTEST_STEPS:
+   # Same structure with any listed self-test as the single failure (earlier ones succeeded).
+   g=self.selftest_fixture();i=[s['name']for s in g['steps']].index(name)
+   for k,s in enumerate(g['steps'][:-2]):s['conclusion']='success'if k<i else 'failure'if k==i else 'skipped'
+   self.assertEqual(retry.classify(g['jobs'],g['records']),'windows-selftest-fixture-failed',name)
+  g=self.selftest_fixture();g['records'][:]=[];self.assertEqual(retry.classify(g['jobs'],g['records']),'windows-selftest-fixture-failed')
+ def test_selftest_retry_never_applies_after_htkk_web_or_retain_progress(self):
+  supplier=self.fixture('startup')['records'][0]
+  cases={
+   'probe-ran':lambda f:self.step(f,retry.PROBE).update(conclusion='success'),
+   'probe-failed':lambda f:self.step(f,retry.PROBE).update(conclusion='failure'),
+   'retain-ran':lambda f:self.step(f,retry.RETAIN).update(conclusion='success'),
+   'declaration-retain-ran':lambda f:self.step(f,retry.DECLARATION_RETAIN).update(conclusion='success'),
+   'fetch-ran':lambda f:self.step(f,'Fetch fixed synthetic web XML privately').update(conclusion='success'),
+   'report-ran':lambda f:self.step(f,'Report fixed native-case status privately').update(conclusion='success'),
+   'later-selftest-ran':lambda f:self.step(f,'Check UIA cleanup and bounded result boundary').update(conclusion='success'),
+   'probe-missing':lambda f:f['steps'].remove(self.step(f,retry.PROBE)),
+   'retain-missing':lambda f:f['steps'].remove(self.step(f,retry.RETAIN)),
+   'earlier-skipped':lambda f:self.step(f,'Check bounded oracle Job cleanup and environment').update(conclusion='skipped'),
+   'post-failed':lambda f:self.step(f,'Complete job').update(conclusion='failure'),
+   'cancelled':lambda f:self.step(f,'Check supplier Job cleanup and retained identity boundary').update(conclusion='cancelled'),
+   'multiple-failed':lambda f:self.step(f,'Check UIA cleanup and bounded result boundary').update(conclusion='failure'),
+   'multiple-selftests-failed':lambda f:self.step(f,'Check bounded oracle Job cleanup and environment').update(conclusion='failure'),
+   'contract-step-failed':lambda f:self.step(f,'Test complete builder contracts without network').update(conclusion='failure'),
+   'different-failed-step':lambda f:(self.step(f,'Check supplier Job cleanup and retained identity boundary').update(conclusion='success'),self.step(f,'Check actual C# web-tax comparison boundaries').update(conclusion='failure'),self.step(f,'Check UIA cleanup and bounded result boundary').update(conclusion='success'),self.step(f,retry.FRAMEWORK).update(conclusion='success')),
+   'framework-failed':lambda f:(self.step(f,'Check supplier Job cleanup and retained identity boundary').update(conclusion='success'),self.step(f,'Check UIA cleanup and bounded result boundary').update(conclusion='success'),self.step(f,retry.FRAMEWORK).update(conclusion='failure')),
+   'job-attempt-2':lambda f:f['jobs']['jobs'][0].update(run_attempt=2),
+   'job-attempt-missing':lambda f:f['jobs']['jobs'][0].pop('run_attempt'),
+   'step-order':lambda f:f['steps'].reverse(),
+   'number-missing':lambda f:self.step(f,retry.PROBE).pop('number'),
+   'supplier-report':lambda f:f['records'].append(copy.deepcopy(supplier)),
+   'framework-record':lambda f:f['records'].append({'format':'htkk-framework-uia-boundary-v1','status':'process-timeout','timedOut':True,'processStopped':True,'exitCode':None,'phase':'complete'}),
+   'retained-output':lambda f:f['records'].append({'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}),
+   'declaration-output':lambda f:f['records'].append(dict(retry.DECLARATION_NOT_STAGED)),
+   'web-progress':lambda f:f['records'].append({'webInputVerified':True,'webCaseId':'01GTGT-sale10-M10-2026'}),
+   'tax-progress':lambda f:f['records'].append({'result':'metadata-only','ready':False,'taxDataUsed':True}),
+   'ready-record':lambda f:f['records'].append({'result':'staged','ready':True}),
+   'nested-record':lambda f:f['records'].append({'result':'metadata-only','ready':False,'failureCode':{'stage':'gtgt'}}),
+   'callback-failed':lambda f:f['jobs']['jobs'][1].update(conclusion='failure'),
+  }
+  for kind,mutate in cases.items():
+   f=self.selftest_fixture();mutate(f)
+   self.assertIsNone(retry.classify(f['jobs'],f['records']),kind);self.assertFalse(f['recover'](),kind);self.assertEqual(f['calls'],[],kind)
+  f=self.selftest_fixture();f['run']['run_attempt']=2
+  self.assertFalse(f['recover']());self.assertEqual(f['calls'],[])
+ def test_selftest_steps_match_workflow_and_precede_any_fetch_or_htkk_probe(self):
+  wf=(pathlib.Path(__file__).parent.parent/'.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
+  scripts=('BoundedNativeProcess','BoundedCompiler','BoundedJobProcess','SupplierJobBoundary','UiaProcessBoundary')
+  for name,script in zip(retry.SELFTEST_STEPS,scripts):
+   block='      - name: '+name+'\n        shell: pwsh\n        run: ./scripts/Test-Htkk'+script+'.ps1\n'
+   self.assertEqual(wf.count(block),1,name);self.assertEqual(wf.count('- name: '+name+'\n'),1,name)
+   self.assertLess(wf.index(block),wf.index('- name: Fetch fixed synthetic web XML privately'))
+   self.assertLess(wf.index(block),wf.index('- name: '+retry.PROBE))
+  order=[wf.index('- name: '+n+'\n')for n in retry.SELFTEST_STEPS];self.assertEqual(order,sorted(order))
+  self.assertNotIn(retry.FRAMEWORK,retry.SELFTEST_STEPS)
+  for name,_ in self.SELFTEST_RUN_STEPS[2:-2]:self.assertIn('- name: '+name+'\n',wf)
