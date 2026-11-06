@@ -155,6 +155,18 @@ class NativeOutputContract(unittest.TestCase):
 
 class NativeDriverContract(unittest.TestCase):
  def source(self,name):return (ROOT/name).read_text(encoding='utf-8')
+ def test_native_key_follows_the_hashed_content_not_the_baseline(self):
+  # WinDoWorkExportXML keys ttinNhaCCapDVu on HSoKhaiThue without TTinDVu, so the two-plant
+  # reexport (baseline = one-plant zero annex) carries another key than its baseline (run
+  # 42310299991). Keys must be equal exactly when that content is equal; tax leaves stay exact.
+  compare=self.source('HtkkWebTaxComparison.cs')
+  self.assertIn('(provider==baselineProvider)!=(HashedContent(baseline)==HashedContent(output))',compare)
+  self.assertIn('foreach(string name in new string[]{"maDVu","tenDVu","pbanDVu"})',compare)
+  self.assertIn('Regex.IsMatch(baselineProvider,"^[A-F0-9]{32}$")',compare)
+  self.assertIn("*[local-name()='TTinChung']/*[local-name()='TTinDVu']",compare)
+  self.assertIn('return NativeIdentity(baseline,output)&&CreationDateMatchesNativeBaseline(baseline,output)&&Equal(input.DocumentElement,output.DocumentElement,"HSoThueDTu",ref taxLeaves)&&taxLeaves==expectedTaxLeaves;',compare)
+  tests=self.source('Test-HtkkWebTaxComparison.ps1')
+  self.assertIn("FEDCBA9876543210FEDCBA9876543210')) $true",tests);self.assertIn('Assert-Comparison $changed $false',tests)
  def test_comparison_counts_and_dates_are_fixed_per_case(self):
   compare=self.source('HtkkWebTaxComparison.cs');reference=self.source('HtkkWebInputReference.cs');export=self.source('HtkkGtgtExportInspection.cs')
   self.assertIn('if(expectedTaxLeaves!=70&&expectedTaxLeaves!=108&&expectedTaxLeaves!=159)return false;',compare)

@@ -43,6 +43,9 @@ khai chính (NNT giả lập, C0/M10/2026, 27 số 0). Byte gốc không bao gi�
    định danh dịch vụ theo luật native đã chứng minh.
 5. `roundtripXmlExactMatched` phải true với ca zero; ca hai nhà máy có baseline là phụ lục zero nên
    được phép khác. Raw XML xuất lại được giữ nguyên byte trong nhánh output private của ca.
+   `ttinNhaCCapDVu` là khóa HTKK tính từ HSoKhaiThue bỏ TTinDVu (`WinDoWorkExportXML`), nên
+   khóa bản xuất lại bằng khóa baseline đúng khi và chỉ khi nội dung đó bằng nhau (run
+   42310299991: ca hai nhà máy có khóa khác baseline); mọi lá thuế vẫn so chính xác.
 
 Không patch EXE/DLL, không gán Cell.Value, không gọi helper nghiệp vụ, không tự viết XML.
 

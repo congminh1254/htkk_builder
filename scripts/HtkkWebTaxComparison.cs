@@ -9,9 +9,24 @@ public static class HtkkWebTaxComparison {
  private const string DatePath="HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayLapTKhai";
  private const string ServicePath="HSoThueDTu/HSoKhaiThue/TTinChung/TTinDVu/";
  private static XmlElement Leaf(XmlDocument document,string path){string query="";foreach(string name in path.Split('/'))query+="/*[local-name()='"+name+"']";XmlNodeList nodes=document.SelectNodes(query);if(nodes.Count!=1||nodes[0].NamespaceURI!=Ns)throw new InvalidOperationException();return (XmlElement)nodes[0];}
+ // Original WinDoWorkEvent.WinDoWorkExportXML (HTKK.exe 0x6000045, IL 0x08cc-0x0989) sets
+ // ttinNhaCCapDVu := HashGenerator.GenerateKey(InnerXml of HSoKhaiThue without TTinDVu,
+ // "HTKK.CMCSoft") and saves the document right after. The key is a deterministic function of
+ // the declaration content, so it equals the baseline key exactly when that content is equal:
+ // equal content with another key, or different content with the same key, is not native.
+ // A baseline built with other annex rows than the imported input (two-plant case) therefore
+ // carries another key (run 42310299991: roundtripXmlExactMatched false, identity false).
  public static bool NativeIdentity(XmlDocument baseline,XmlDocument output){
-  foreach(string name in new string[]{"maDVu","tenDVu","pbanDVu","ttinNhaCCapDVu"})if(Leaf(output,ServicePath+name).InnerText!=Leaf(baseline,ServicePath+name).InnerText)return false;
-  return Leaf(output,ServicePath+"maDVu").InnerText=="HTKK"&&Leaf(output,ServicePath+"tenDVu").InnerText=="HỖ TRỢ KÊ KHAI THUẾ"&&Leaf(output,ServicePath+"pbanDVu").InnerText=="5.8.1"&&Regex.IsMatch(Leaf(output,ServicePath+"ttinNhaCCapDVu").InnerText,"^[A-F0-9]{32}$");
+  foreach(string name in new string[]{"maDVu","tenDVu","pbanDVu"})if(Leaf(output,ServicePath+name).InnerText!=Leaf(baseline,ServicePath+name).InnerText)return false;
+  string provider=Leaf(output,ServicePath+"ttinNhaCCapDVu").InnerText,baselineProvider=Leaf(baseline,ServicePath+"ttinNhaCCapDVu").InnerText;
+  if(!Regex.IsMatch(baselineProvider,"^[A-F0-9]{32}$")||(provider==baselineProvider)!=(HashedContent(baseline)==HashedContent(output)))return false;
+  return Leaf(output,ServicePath+"maDVu").InnerText=="HTKK"&&Leaf(output,ServicePath+"tenDVu").InnerText=="HỖ TRỢ KÊ KHAI THUẾ"&&Leaf(output,ServicePath+"pbanDVu").InnerText=="5.8.1"&&Regex.IsMatch(provider,"^[A-F0-9]{32}$");
+ }
+ // The content the original key covers: HSoKhaiThue without TTinDVu (an in-memory copy only).
+ private static string HashedContent(XmlDocument document){
+  XmlElement declaration=Leaf(document,"HSoThueDTu/HSoKhaiThue");XmlDocument copy=new XmlDocument();copy.LoadXml(declaration.OuterXml);
+  XmlNodeList services=copy.DocumentElement.SelectNodes("*[local-name()='TTinChung']/*[local-name()='TTinDVu']");if(services.Count!=1)throw new InvalidOperationException();
+  services[0].ParentNode.RemoveChild(services[0]);return copy.DocumentElement.InnerXml;
  }
  public static bool CreationDateMatchesNativeBaseline(XmlDocument baseline,XmlDocument output){string date=Leaf(output,DatePath).InnerText;return Regex.IsMatch(date,"^[0-9]{4}-[0-9]{2}-[0-9]{2}$")&&date==Leaf(baseline,DatePath).InnerText;}
  public static bool Compare(XmlDocument input,XmlDocument baseline,XmlDocument output,out int taxLeaves){return Compare(input,baseline,output,70,out taxLeaves);}
