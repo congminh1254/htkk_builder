@@ -211,6 +211,7 @@ function New-HtkkNativeResultDefaults {
   declarationServiceIdentityMatched=$false
   declarationCreationDateValid=$false
   declarationTreeMatched=$false
+  declarationPeriodRejectedMessageId=0
   declarationAnnexSelectedCount=0
   declarationSheetCount=0
   declarationCellCheckCount=0

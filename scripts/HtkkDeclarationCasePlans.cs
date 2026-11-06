@@ -27,6 +27,11 @@ internal static class HtkkDeclarationCasePlans {
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
  internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-M10-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026"};
+ // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
+ // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
+ // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
+ // that hidden list's original defaults (run 42218301225: axfpsPhuLuc not visible for B9).
+ internal static bool AnnexPanelHidden(HtkkDeclarationCasePlan plan){return plan!=null&&plan.KieuKy=="12"&&plan.MenuId!="97"&&plan.MenuId!="H4"&&plan.MenuId!="C8";}
  internal static HtkkDeclarationCasePlan Find(string caseId){
   switch(caseId){
    // N8 03/TNDN TT80: KieuKy 11 = SetLayoutToKhaiNamTuNgayDenNgay (year + from/to date).

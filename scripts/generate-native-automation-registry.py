@@ -507,7 +507,7 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         'gtgt-web-import-inspected', 'gtgt-import-original-message-rejected',
         # Declaration-family driver (declaration-web-import-inspect): bounded failure terminals.
         'declaration-profile-preconditions-not-matched', 'declaration-menu-id-not-unique', 'declaration-menu-target-hidden',
-        'declaration-period-inputs-not-matched', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',
+        'declaration-period-inputs-not-matched', 'declaration-period-original-message-rejected', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',
         'declaration-import-sheet-not-matched', 'declaration-export-original-message-rejected', 'declaration-export-not-matched'
     ]
     terminal_stages = list(base_order)

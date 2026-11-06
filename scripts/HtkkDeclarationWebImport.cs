@@ -23,15 +23,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationSheetBusy=false,declarationFlowStarted=false;
  private Stopwatch declarationClock=null;
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
- private int declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
+ private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
  private bool DeclarationMode(){return modeEnum==HtkkAutomationMode.DeclarationWebImportInspect;}
  private string DeclarationJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"declarationMenuClicked","declarationPeriodObserved","declarationPeriodMatched","declarationAnnexMatched","declarationSheetObserved","declarationIdentityMatched","declarationSourcePinsMatched","declarationImportSheetMatched","declarationSchemaValid","declarationServiceIdentityMatched","declarationCreationDateValid","declarationTreeMatched"};
   bool[] values=new bool[]{declarationMenuClicked,declarationPeriodObserved,declarationPeriodMatched,declarationAnnexMatched,declarationSheetObserved,declarationIdentityMatched,declarationSourcePinsMatched,declarationImportSheetMatched,declarationSchemaValid,declarationServiceIdentityMatched,declarationCreationDateValid,declarationTreeMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount"};
-  int[] counts=new int[]{declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount};
+  names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount"};
+  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -113,7 +113,23 @@ public sealed partial class HtkkGuiReferenceAutomation {
   HtkkDeclarationCasePlan plan=declarationPlan;bool[] found=new bool[plan.Annexes.Length];
   Control[] annexes=period.Controls.Find("axfpsPhuLuc",true);
   if(annexes.Length!=1||!IsSpread(annexes[0])){declarationAnnexMatched=plan.Annexes.Length==0;return;}
-  Control grid=annexes[0];if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}
+  Control grid=annexes[0];bool hidden=HtkkDeclarationCasePlans.AnnexPanelHidden(plan);
+  if(hidden){
+   // Observation only: no click on a list the original layout hides. Matched only if the
+   // original defaults already include every reviewed annex of the case.
+   if(grid.Visible){declarationAnnexMatched=false;return;}
+   object hiddenSheet=Get(grid,"ActiveSheet");int hiddenRows=Convert.ToInt32(Get(hiddenSheet,"RowCount"));if(hiddenRows<0||hiddenRows>512)throw new InvalidOperationException();
+   bool[] present=new bool[plan.Annexes.Length];declarationAnnexSelectedCount=0;
+   for(int row=0;row<hiddenRows;row++){
+    object selector=Get(Cell(hiddenSheet,row,0),"CellType");if(selector==null||selector.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")continue;
+    if(!Selected(Get(Cell(hiddenSheet,row,0),"Value")))continue;declarationAnnexSelectedCount++;
+    string label=Convert.ToString(Get(selector,"TextTrue"),CultureInfo.InvariantCulture);
+    for(int index=0;index<plan.Annexes.Length;index++)foreach(string option in plan.Annexes[index].Split('|'))if(option==label)present[index]=true;
+   }
+   bool all=true;foreach(bool item in present)if(!item)all=false;
+   declarationAnnexMatched=all;Record();return;
+  }
+  if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}
   object sheet=Get(grid,"ActiveSheet");int rowCount=Convert.ToInt32(Get(sheet,"RowCount"));if(rowCount<0||rowCount>512)throw new InvalidOperationException();
   SetStage(HtkkAutomationStage.DeclarationPeriodAnnexSelecting);Record();
   for(int row=0;row<rowCount;row++){
@@ -193,6 +209,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void InspectDeclarationSheetCore(){
   if(finished||declarationFlowStarted)return;
   List<Form> forms=new List<Form>();int visited=0;foreach(Form top in Application.OpenForms){if(visited>=512)break;if(top.Visible&&!top.IsDisposed)FindWorksheets(top,forms,ref visited);}
+  // Runs 42218288529/42218296460 waited 120 s: the original period confirmation can refuse
+  // the reviewed period/annex set with a modal catalogue message (e.g. 0485, 0682) before
+  // any sheet opens. Report its catalogue ID only (never text) and stop; nothing is clicked.
+  Form periodMessage;string periodText;
+  if(forms.Count==0&&!declarationSheetObserved&&DeclarationMessage(out periodMessage,out periodText)){declarationPeriodRejectedMessageId=OriginalMessageCatalogueId(periodText);DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodOriginalMessageRejected);return;}
   if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   Control grid=grids[0];declarationSheetObserved=true;declarationSheetCount=Convert.ToInt32(Get(Get(grid,"Sheets"),"Count"));

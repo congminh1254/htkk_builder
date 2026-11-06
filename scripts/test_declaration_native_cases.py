@@ -298,8 +298,22 @@ class WorkflowAndProbe(unittest.TestCase):
         stages = {s['id'] for s in automation['stages'] if s['category'] == 'declaration'}
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         terminal = re.search(r"\$terminal=.*?-in @\(([^)]*)\)", probe).group(1)
-        for stage in ('declaration-web-import-inspected', 'declaration-export-not-matched', 'declaration-import-original-message-rejected', 'declaration-export-original-message-rejected', 'declaration-period-inputs-not-matched'):
+        for stage in ('declaration-web-import-inspected', 'declaration-export-not-matched', 'declaration-import-original-message-rejected', 'declaration-export-original-message-rejected', 'declaration-period-inputs-not-matched', 'declaration-period-original-message-rejected'):
             self.assertIn(stage, stages); self.assertIn("'" + stage + "'", terminal)
+        self.assertEqual(fields['declarationPeriodRejectedMessageId'], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': 9999, 'activeModes': [MODE]})
+
+    def test_hidden_period_annex_list_is_observed_never_clicked(self):
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        driver = (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8')
+        # KieuKy 12 layout hides pnVT2_PhuLucKeKhai except for menus 97/H4/C8 (frmHTKKPeriod IL).
+        self.assertIn('plan.KieuKy=="12"&&plan.MenuId!="97"&&plan.MenuId!="H4"&&plan.MenuId!="C8"', plans)
+        hidden = driver[driver.index('if(hidden){'):driver.index('if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}')]
+        self.assertNotIn('SendKeys', hidden); self.assertNotIn('SetActiveCell', hidden); self.assertNotIn('set_Value', hidden)
+        self.assertIn('if(grid.Visible){declarationAnnexMatched=false;return;}', hidden)
+        # A modal original refusal of the period confirmation is reported by catalogue ID only.
+        block = driver[driver.index('Form periodMessage;'):driver.index('if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting)')]
+        self.assertIn('declarationPeriodRejectedMessageId=OriginalMessageCatalogueId(periodText)', block)
+        self.assertNotIn('PerformClick', block)
 
     def test_probe_success_staging_and_workflow_wiring(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
