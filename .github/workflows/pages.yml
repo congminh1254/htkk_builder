@@ -33,6 +33,12 @@ jobs:
         with:
           path: builder
           persist-credentials: false
+      # deploy-pages keys the Pages deployment on the builder SHA; a second deployment on the
+      # same SHA reports success but keeps the old site. Refuse it explicitly instead.
+      - name: Refuse builder SHA already used for a Pages deployment
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 builder/scripts/pages-release-check.py guard
       - name: Resolve immutable private artifact
         env:
           GH_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
@@ -56,13 +62,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_BUILD_RUN: ${{ github.event.workflow_run.id }}
         run: python3 builder/scripts/validate-pages.py
+      - name: Record artifact source SHA for public verification
+        run: python3 builder/scripts/pages-release-check.py expect
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
           path: output/site
-      - name: Deploy
-        id: deployment
-        uses: actions/deploy-pages@v4
       - name: Remove local private artifact
         if: always()
         run: rm -rf output
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
+      - name: Verify public site serves this artifact
+        run: python3 builder/scripts/pages-release-check.py verify

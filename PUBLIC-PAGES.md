@@ -9,6 +9,7 @@ Repo nguồn vẫn private tại `htkk-net/htkk_web`. Repo `congminh1254/htkk_bu
 3. Public `pages.yml` chỉ tự chạy khi whole release workflow thành công trên main. CI, fork, failed/cancelled release không được deploy.
 4. Job Pages dùng token đọc nguồn để checkout commit artifact bất biến. Script tin cậy kiểm metadata/current main, builder run thành công và13ca Windows đúng builder SHA. Chờ native tối đa20phút; failure, artifact thay đổi hoặc source thay đổi đều chặn.
 5. Chỉ `output/site` được upload cho Pages; token checkout không lưu, `.git` của checkout không nằm trong artifact. GitHub Pages dùng `GITHUB_TOKEN` của repo public, không cần token Pages riêng.
+6. `actions/deploy-pages` (pin SHA v4.0.5) dùng SHA builder làm `pages_build_version` và ID deployment. Release thứ hai trên cùng commit builder sẽ báo success nhưng site giữ bản cũ (Pages 109). Dùng version không phải commit thì Pages API trả 404 (Pages 111), nên không tự tạo version riêng được. Vì vậy `scripts/pages-release-check.py guard` chặn ngay từ đầu nếu đã có run `pages.yml` success trên cùng builder SHA, kèm thông báo rõ: cần một thay đổi builder thật trên main rồi dispatch lại với cùng `pages_commit`. Sau deploy, `verify` poll `https://hotrokekhai.net/build.json` (cache-buster, 30s/lần, tối đa 10 phút) tới khi `sourceSha` khớp artifact; không khớp thì workflow fail. Log chỉ in SHA.
 
 ## Cấu hình một lần
 
