@@ -769,8 +769,15 @@ try {
   # ends the wait at once; polls are 2 s apart so a fast start is not delayed.
   $startupLimitSeconds = 90
   $report.startupLimitSeconds = $startupLimitSeconds
-  $startupTimeline = [Collections.Generic.List[object]]::new(); $lastStartupSignature = $null
+  $startupTimeline = [Collections.Generic.List[object]]::new(); $startupTimelineState = @{ last = $null }
   $report.startupTimelineTruncated = $false
+  # Bounded change-only startup timeline: fixed counts/booleans/status enums only, at most 24 entries.
+  $addStartupSample = {
+    param($Counts, [int]$ChildCount, [int]$AtSeconds)
+    $startupSample = [ordered]@{ atSeconds = $AtSeconds; processAlive = [bool]$report.processAliveAfterWait; mainWindowHandlePresent = [bool]$report.mainWindowHandlePresent; appVisibleWindows = [int]$Counts[1]; appHiddenWindows = [int]$Counts[2]; childVisibleWindows = [int]$Counts[3]; childHiddenWindows = [int]$Counts[4]; childProcesses = $ChildCount; registrationDialogPosts = [int]$report.registrationDialogPosts; loginReady = [bool]$report.loginReady; uiaStatus = [string]$report.uiaStatus }
+    $startupSignature = (@($startupSample.Keys | Where-Object { $_ -ne 'atSeconds' } | ForEach-Object { '{0}={1}' -f $_, $startupSample[$_] }) -join ';')
+    if ($startupSignature -cne $startupTimelineState.last) { if ($startupTimeline.Count -lt 24) { $startupTimeline.Add($startupSample) } else { $report.startupTimelineTruncated = $true }; $startupTimelineState.last = $startupSignature }
+  }
   $startupClock = [System.Diagnostics.Stopwatch]::StartNew()
   do {
     $process.Refresh()
@@ -790,10 +797,7 @@ try {
     $report.windowObserved = ($counts[1] + $counts[3]) -gt 0
     $report.startupWaitSeconds = [int][Math]::Floor($startupClock.Elapsed.TotalSeconds)
     $report.rootAppWindowObserved = $counts[1] -gt 0
-    # Bounded change-only startup timeline: fixed counts/booleans only, at most 24 entries.
-    $startupSample = [ordered]@{ atSeconds = $report.startupWaitSeconds; processAlive = [bool]$report.processAliveAfterWait; mainWindowHandlePresent = [bool]$report.mainWindowHandlePresent; appVisibleWindows = [int]$counts[1]; appHiddenWindows = [int]$counts[2]; childVisibleWindows = [int]$counts[3]; childHiddenWindows = [int]$counts[4]; childProcesses = [int]$children.Count; registrationDialogPosts = [int]$report.registrationDialogPosts }
-    $startupSignature = (@($startupSample.Keys | Where-Object { $_ -ne 'atSeconds' } | ForEach-Object { '{0}={1}' -f $_, $startupSample[$_] }) -join ';')
-    if ($startupSignature -cne $lastStartupSignature) { if ($startupTimeline.Count -lt 24) { $startupTimeline.Add($startupSample) } else { $report.startupTimelineTruncated = $true }; $lastStartupSignature = $startupSignature }
+    & $addStartupSample $counts $children.Count $report.startupWaitSeconds
     # A console/browser child is not evidence that the HTKK login is ready.
     if ($report.rootAppWindowObserved -or $startupClock.Elapsed.TotalSeconds -ge $startupLimitSeconds) { break }
     Start-Sleep -Seconds ([Math]::Min(2, [Math]::Max(1, [Math]::Ceiling($startupLimitSeconds - $startupClock.Elapsed.TotalSeconds))))
@@ -842,19 +846,45 @@ try {
     } catch { $report.descendantProcessKinds.other++ }
   }
   $report.verifiedMicrosoftChildImages = @($verifiedChildImages | Sort-Object | Select-Object -First 16)
-  try {
-    $uia = Get-HtkkSafeUiDiagnostics -AppProcessId $process.Id -Descendants ([int[]]$children) -TemporaryDirectory $work
-    $report.uiaStatus = $uia.status; $report.uiaWindowCount = $uia.windows; $report.uiaControlCount = $uia.controls
-    $report.uiaControlTypeCounts = $uia.types; $report.uiaAllowedControlIds = @($uia.ids); $report.uiaStaticLabels = @($uia.labels)
-    $report.loginReady = $uia.loginReady
-    $report.uiaWindowCategories = if ($uia.ContainsKey('categories')) { @($uia.categories) } else { @() }
-    $report.uiaLegacyRoleCounts = if ($uia.ContainsKey('legacyRoles')) { $uia.legacyRoles } else { @{} }
-    $report.uiaLegacyPatternAvailable = if ($uia.ContainsKey('legacyPatternAvailable')) { $uia.legacyPatternAvailable } else { $false }
-    $report.uiaProviderProcessMismatchCount = if ($uia.ContainsKey('providerProcessMismatchCount')) { $uia.providerProcessMismatchCount } else { 0 }
-    $report.uiaViews = if ($uia.ContainsKey('views')) { @($uia.views) } else { @() }
-    $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
-    $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory; $report.uiaHelperPhase=$uia.helperPhase
-  } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
+  # The first visible window is not yet the ready login form: run 42310240317 saw it at 27 s while
+  # the original UI thread was still busy, so one UIA scan timed out. With synthetic login, rescan
+  # the same login criteria (bounded: the 90 s startup budget, at most 8 scans, 2 s apart).
+  $report.loginReadyScanCount = 0
+  $startupClock.Start()
+  do {
+    $report.loginReadyScanCount++
+    if ($report.loginReadyScanCount -gt 1) {
+      $children = @(Get-DescendantProcessIds -AppProcessId $process.Id -RootStartTime $rootStartTime)
+      if ($AcknowledgeRegistration) {
+        Invoke-HtkkRegistrationAcknowledgement -DescendantIds ([int[]]$children) -AppProcessId $process.Id -RootStartTime $rootStartTime
+        Update-HtkkRegistrationResults
+        $children = @(Get-DescendantProcessIds -AppProcessId $process.Id -RootStartTime $rootStartTime)
+      }
+    }
+    try {
+      $uia = Get-HtkkSafeUiDiagnostics -AppProcessId $process.Id -Descendants ([int[]]$children) -TemporaryDirectory $work
+      $report.uiaStatus = $uia.status; $report.uiaWindowCount = $uia.windows; $report.uiaControlCount = $uia.controls
+      $report.uiaControlTypeCounts = $uia.types; $report.uiaAllowedControlIds = @($uia.ids); $report.uiaStaticLabels = @($uia.labels)
+      $report.loginReady = $uia.loginReady
+      $report.uiaWindowCategories = if ($uia.ContainsKey('categories')) { @($uia.categories) } else { @() }
+      $report.uiaLegacyRoleCounts = if ($uia.ContainsKey('legacyRoles')) { $uia.legacyRoles } else { @{} }
+      $report.uiaLegacyPatternAvailable = if ($uia.ContainsKey('legacyPatternAvailable')) { $uia.legacyPatternAvailable } else { $false }
+      $report.uiaProviderProcessMismatchCount = if ($uia.ContainsKey('providerProcessMismatchCount')) { $uia.providerProcessMismatchCount } else { 0 }
+      $report.uiaViews = if ($uia.ContainsKey('views')) { @($uia.views) } else { @() }
+      $report.uiaHelperEncoding = $uia.helperEncoding; $report.uiaHelperExitCode = $uia.helperExitCode
+      $report.uiaHelperParseErrorCount = $uia.helperParseErrorCount; $report.uiaHelperFailureCategory = $uia.helperFailureCategory; $report.uiaHelperPhase=$uia.helperPhase
+    } catch { $report.uiaStatus = 'uia-helper-failed'; $report.uiaHelperFailureCategory = 'helper-wrapper-failure' }
+    $process.Refresh()
+    $report.processAliveAfterWait = -not $process.HasExited
+    $report.mainWindowHandlePresent = $report.processAliveAfterWait -and ($process.MainWindowHandle -ne [IntPtr]::Zero)
+    $readyCounts = [HtkkWindowDiagnostics]::Counts($process.Id, [int[]]$children)
+    & $addStartupSample $readyCounts $children.Count ([int][Math]::Floor($startupClock.Elapsed.TotalSeconds))
+    if ($report.loginReady -or -not $SyntheticLogin -or -not $report.processAliveAfterWait -or $report.loginReadyScanCount -ge 8 -or $startupClock.Elapsed.TotalSeconds -ge $startupLimitSeconds) { break }
+    Start-Sleep -Seconds 2
+  } while ($true)
+  $startupClock.Stop()
+  $report.loginReadyWaitSeconds = [int][Math]::Floor($startupClock.Elapsed.TotalSeconds)
+  $report.startupTimeline = @($startupTimeline.ToArray())
   if ($AcknowledgeRegistration) {
     Update-HtkkRegistrationResults
     if ($report.registrationNonzeroExitCount -gt 0) { throw 'REGISTRATION_PROCESS_FAILED' }

@@ -69,7 +69,7 @@ class StartupWindowRetry(unittest.TestCase):
   self.assertIn('$startupLimitSeconds = 90',probe)
   self.assertIn('if ($report.rootAppWindowObserved -or $startupClock.Elapsed.TotalSeconds -ge $startupLimitSeconds) { break }',probe)
   self.assertIn('Start-Sleep -Seconds ([Math]::Min(2, [Math]::Max(1, [Math]::Ceiling($startupLimitSeconds - $startupClock.Elapsed.TotalSeconds))))',probe)
-  self.assertIn('if ($startupSignature -cne $lastStartupSignature) { if ($startupTimeline.Count -lt 24) { $startupTimeline.Add($startupSample) } else { $report.startupTimelineTruncated = $true }; $lastStartupSignature = $startupSignature }',probe)
+  self.assertIn('if ($startupSignature -cne $startupTimelineState.last) { if ($startupTimeline.Count -lt 24) { $startupTimeline.Add($startupSample) } else { $report.startupTimelineTruncated = $true }; $startupTimelineState.last = $startupSignature }',probe)
   self.assertNotIn('-ge 45) { break }',probe)
   self.assertGreaterEqual(90,retry.STARTUP_WAIT_FLOOR)
 if __name__=='__main__':unittest.main()

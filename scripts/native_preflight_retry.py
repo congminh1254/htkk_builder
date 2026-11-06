@@ -236,11 +236,10 @@ STARTUP_REPORT={'processStarted':True,'processAliveAfterWait':True,'windowObserv
  'startupContext':'only-hidden-app-windows','appVisibleWindowCount':0,'childProcessCount':0,'childVisibleWindowCount':0,'preexistingHtkkProcessCount':0,
  'loginReady':False,'uiaStatus':'not-probed','registrationNonzeroExitCount':0,'registrationUnverifiedExitCount':0,'registrationPostFailureCount':0,
  'registrationAcknowledgementLimitReached':False,'syntheticLoginRequested':True,'nativeDialogCueCounts':{}}
-def _startup_window_not_observed(r,mode,permit):
- if r.get('blockedReason')!='STARTUP_WINDOW_NOT_OBSERVED' or not _exact(r,STARTUP_REPORT):return False
+def _pre_login_clean(r,mode,permit):
+ # Shared pre-login evidence: no permit, login, GUI automation, export/output evidence, crash
+ # event, dialog cue or unexpected process/window kind; all oracles matched; clean supplier.
  if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return False
- if type(r.get('startupWaitSeconds'))is not int or r['startupWaitSeconds']<STARTUP_WAIT_FLOOR:return False
- if type(r.get('appHiddenWindowCount'))is not int or r['appHiddenWindowCount']<1:return False
  if any(k not in r or r[k]is not None for k in ('syntheticLogin','guiReferenceAutomation','privateGtgtExportEvidence','privateWebNativeOutputEvidence','privateSyntheticLoginDiagnostic')):return False
  if not all(_oracle_clean(r.get(k))and r[k].get('status')=='matched' for k,_ in ORACLES):return False
  events=r.get('applicationEvents')
@@ -251,6 +250,24 @@ def _startup_window_not_observed(r,mode,permit):
  kinds=r.get('descendantProcessKinds')
  if type(kinds)is not dict or any(type(v)is not int or v!=0 for v in kinds.values()):return False
  return _supplier_boundary(r,(mode,))
+def _startup_window_not_observed(r,mode,permit):
+ if r.get('blockedReason')!='STARTUP_WINDOW_NOT_OBSERVED' or not _exact(r,STARTUP_REPORT):return False
+ if type(r.get('startupWaitSeconds'))is not int or r['startupWaitSeconds']<STARTUP_WAIT_FLOOR:return False
+ if type(r.get('appHiddenWindowCount'))is not int or r['appHiddenWindowCount']<1:return False
+ return _pre_login_clean(r,mode,permit)
+# Login-not-ready flake (run 42310240317 attempt 2, 01GTGT-zero-M10-2026): the first visible root
+# window appeared at 27 s while the original UI thread was still busy, so the bounded UIA login
+# scan timed out (or, after rescans, still saw no ready login form). No login was attempted.
+LOGIN_NOT_READY_REPORT={'processStarted':True,'processAliveAfterWait':True,'windowObserved':True,'rootAppWindowObserved':True,'startupContext':'visible-app-or-child-window',
+ 'childProcessCount':0,'childVisibleWindowCount':0,'preexistingHtkkProcessCount':0,'loginReady':False,'registrationNonzeroExitCount':0,'registrationUnverifiedExitCount':0,
+ 'registrationPostFailureCount':0,'registrationAcknowledgementLimitReached':False,'syntheticLoginRequested':True,'nativeDialogCueCounts':{},'uiaHelpersStopped':True,
+ 'uiaProviderProcessMismatchCount':0,'uiaHelperParseErrorCount':0}
+LOGIN_NOT_READY_UIA=(('uia-timeout','helper-timeout'),('scanned','none'),('bounded-partial','none'))
+def _login_not_ready(r,mode,permit):
+ if r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_READY' or not _exact(r,LOGIN_NOT_READY_REPORT):return False
+ if (r.get('uiaStatus'),r.get('uiaHelperFailureCategory'))not in LOGIN_NOT_READY_UIA or any(type(r.get(k))is not str for k in ('uiaStatus','uiaHelperFailureCategory')):return False
+ if type(r.get('appVisibleWindowCount'))is not int or r['appVisibleWindowCount']<1 or type(r.get('startupWaitSeconds'))is not int:return False
+ return _pre_login_clean(r,mode,permit)
 LOGIN={'fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'runtimeRoundTrip':False}
 PERMIT_KEYS={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}
 def classify(jobs,records):
@@ -277,6 +294,9 @@ def classify(jobs,records):
   if r.get('blockedReason')=='STARTUP_WINDOW_NOT_OBSERVED':
    if not _no_retained_evidence(steps,DECLARATION_RETAIN,'success')or any(x.get('format')=='htkk-web-native-output-publication-status-v1'for x in records):return None
    return 'startup-window-not-observed'if _startup_window_not_observed(r,DECLARATION_MODE,permit)else None
+  if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_READY':
+   if not _no_retained_evidence(steps,DECLARATION_RETAIN,'success')or any(x.get('format')=='htkk-web-native-output-publication-status-v1'for x in records):return None
+   return 'synthetic-login-not-ready'if _login_not_ready(r,DECLARATION_MODE,permit)else None
   if r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED':
    if not _no_retained_evidence(steps,DECLARATION_RETAIN,'success')or any(x.get('format')=='htkk-web-native-output-publication-status-v1'for x in records):return None
    return 'gui-pre-export-timeout'if _gui_pre_export_branch(r,DECLARATION_MODE,permit,login if type(login)is dict else None)else None
@@ -297,6 +317,10 @@ def classify(jobs,records):
   retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
   if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]or not _no_retained_evidence(steps,RETAIN,'failure')or _declaration_status(records):return None
   return 'startup-window-not-observed'if _startup_window_not_observed(r,'gtgt-web-import-inspect',permit)else None
+ if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_READY':
+  retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
+  if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]or not _no_retained_evidence(steps,RETAIN,'failure')or _declaration_status(records):return None
+  return 'synthetic-login-not-ready'if _login_not_ready(r,'gtgt-web-import-inspect',permit)else None
  if type(login)is not dict:return None
  if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_VERIFIED':
   if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None
