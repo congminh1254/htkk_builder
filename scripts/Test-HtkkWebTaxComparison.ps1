@@ -25,4 +25,13 @@ foreach($change in @(
 # The rule also works on the same day; no requirement that dates differ.
 $inputXml=New-Fixture $true;$inputXml.HSoThueDTu.HSoKhaiThue.TTinChung.TTinTKhaiThue.TKhaiThue.ngayLapTKhai='2026-10-26'
 Assert-Comparison $output $true
-Write-Output 'Synthetic C# web-tax comparison boundaries passed (12 cases).'
+# The original key is a deterministic function of HSoKhaiThue without TTinDVu (WinDoWorkExportXML):
+# a baseline with other content carries another key, and only then may the keys differ.
+$inputXml=New-Fixture $true;$inputXml.HSoThueDTu.HSoKhaiThue.CTieuTKhaiChinh.f0='5'
+$changed=[xml]$output.OuterXml.Replace('<f0>0</f0>','<f0>5</f0>')
+Assert-Comparison ([xml]$changed.OuterXml.Replace('0123456789ABCDEF0123456789ABCDEF','FEDCBA9876543210FEDCBA9876543210')) $true
+Assert-Comparison $changed $false
+$savedBaseline=$baseline;$baseline=[xml]$baseline.OuterXml.Replace('0123456789ABCDEF0123456789ABCDEF','INVALID')
+Assert-Comparison ([xml]$changed.OuterXml.Replace('0123456789ABCDEF0123456789ABCDEF','FEDCBA9876543210FEDCBA9876543210')) $false
+$baseline=$savedBaseline
+Write-Output 'Synthetic C# web-tax comparison boundaries passed (15 cases).'
