@@ -37,6 +37,8 @@ function New-HtkkNativeResultDefaults {
   annex12WebImportGroupCount=0
   annex12WebImportRowCount=0
   annex12WebImportDisplayEmptyMask=0
+  annex12WebHeadAuthorityRestored=$false
+  annex12WebHeadAuthorityRepairCount=0
   annex12InputReadOnlyIdentityMatched=$false
   annex12InputIdentityMatched=$false
   annex12InputTypesMatched=$false

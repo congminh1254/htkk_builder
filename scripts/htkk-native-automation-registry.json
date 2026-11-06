@@ -1363,6 +1363,8 @@
     "annex12WebImportGroupCount",
     "annex12WebImportRowCount",
     "annex12WebImportDisplayEmptyMask",
+    "annex12WebHeadAuthorityRestored",
+    "annex12WebHeadAuthorityRepairCount",
     "annex12InputReadOnlyIdentityMatched",
     "annex12InputIdentityMatched",
     "annex12InputTypesMatched",
@@ -1847,6 +1849,22 @@
       "default": 0,
       "minimum": 0,
       "maximum": 33554431,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebHeadAuthorityRestored": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebHeadAuthorityRepairCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10,
       "activeModes": [
         "gtgt-web-import-inspect"
       ]
