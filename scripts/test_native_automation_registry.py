@@ -183,3 +183,25 @@ class NativeAutomationRegistryRejectionTests(unittest.TestCase):
         self.assertNotIn('HtkkSampleAdapter', (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text())
         self.assertFalse((ROOT / 'HtkkSampleAdapter.cs').exists())
         self.assertFalse((ROOT / 'publish-sample-roundtrip-evidence.py').exists())
+
+
+class AdapterModeCoverage(unittest.TestCase):
+    """Run 42153301949: a registered d1-gtgt mode missing from CanHandle made
+    HtkkGtgtAdapter.Initialize throw ArgumentException inside Start, before the
+    original window opened (STARTUP_WINDOW_NOT_OBSERVED, host 'argument')."""
+    def test_every_d1_gtgt_registry_mode_is_accepted_by_the_adapter_and_nothing_else(self):
+        registry = json.loads((ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8'))
+        navigation = (ROOT / 'HtkkGtgtReferenceNavigation.cs').read_text(encoding='utf-8')
+        body = re.search(r'public bool CanHandle\(HtkkAutomationMode mode\) \{\s*return ([^;]+);', navigation).group(1)
+        accepted = re.findall(r'mode == HtkkAutomationMode\.([A-Za-z0-9]+)', body)
+        self.assertEqual(len(accepted), len(set(accepted)))
+        expected = {''.join(part.capitalize() for part in mode.split('-')) for mode, meta in registry['modes'].items() if meta['adapterId'] == 'd1-gtgt'}
+        self.assertEqual(set(accepted), expected)
+        self.assertIn('GtgtAnnex12ExportNonzero', accepted)
+        self.assertIn('GtgtWebImportInspect', accepted)
+        # Start constructs the d1 adapter for every mode except launch/profile-only ones.
+        start = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
+        self.assertIn('if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}', start)
+        others = {mode for mode, meta in registry['modes'].items() if meta['adapterId'] != 'd1-gtgt'}
+        self.assertEqual(others, {'none', 'inspect', 'profile-save'})
+
