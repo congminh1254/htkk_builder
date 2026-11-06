@@ -30,6 +30,7 @@ def annex_tree(root,case):
 def annex_fixture(case):
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text=w.annex12.FIXED_DATE
+ for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  annex_tree(root,case);ET.register_namespace('',w.privacy.NS)
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def case_manifest(body,case,producer_sha='c'*64):

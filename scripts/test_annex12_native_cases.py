@@ -136,7 +136,9 @@ class NativeOutputContract(unittest.TestCase):
   with self.assertRaises(n.OutputError):n.validate_native(zero,TWO,native_fixture.TODAY)
   with self.assertRaises(n.OutputError):n.validate_native(two,ZERO,native_fixture.TODAY)
   # The UI baseline of both cases is the proven one-plant zero annex.
-  self.assertTrue(n.validate_native(zero,TWO,native_fixture.TODAY,initial=True,aligned=True)['privacyValuesVerified'])
+  # Two-plant baseline: proven zero annex with the sale10 main vector (Header!B66).
+  self.assertTrue(n.validate_native(native_fixture.two_plant_baseline(),TWO,native_fixture.TODAY,initial=True,aligned=True)['privacyValuesVerified'])
+  with self.assertRaises(n.OutputError):n.validate_native(zero,TWO,native_fixture.TODAY,initial=True,aligned=True)
   with self.assertRaises(n.OutputError):n.validate_native(two,TWO,native_fixture.TODAY,initial=True,aligned=True)
  def test_only_the_two_plant_case_may_differ_from_its_baseline(self):
   self.assertEqual([case for case in cases.CASES if not n.baseline_matches_input(case)],[TWO])
@@ -145,8 +147,11 @@ class NativeOutputContract(unittest.TestCase):
   self.assertIn("webTaxCheckedLeafCount=[int]$gui.webTaxLeafCount;",probe)
   self.assertIn("$gui.webTaxLeafCount -ne $(if($gui.webCaseId -ceq '"+TWO+"'){159}elseif($gui.webCaseId -ceq '"+ZERO+"'){108}else{70})",probe)
   for line in probe.splitlines():
-   if "if($env:EXPECTED_WEB_CASE_ID -cnotin @('01GTGT-zero-M10-2026'" in line or '$gui.webCaseId -cnotin @(' in line:
+   if '$gui.webCaseId -cnotin @(' in line:
     for case in ANNEX:self.assertIn("'"+case+"'",line)
+   # Edit counts: the zero annex makes no main edit; the two-plant case one J48 sale edit.
+   marker="elseif($env:EXPECTED_WEB_CASE_ID -cnotin @('01GTGT-zero-M10-2026','01GTGT-zero-Q4-2026',"
+   if marker in line:edits=line.split(marker)[1].split('){1}')[0];self.assertEqual(edits,"'"+ZERO+"')")
 
 class NativeDriverContract(unittest.TestCase):
  def source(self,name):return (ROOT/name).read_text(encoding='utf-8')
@@ -169,8 +174,10 @@ class NativeDriverContract(unittest.TestCase):
   for forbidden in ('SetValue','set_Value','SetPublic','SendKeys','PerformClick','"Formula"','InsertTable'):self.assertNotIn(forbidden,inspect)
   for term in ('"TablePath"','"DataLocationTemplateRowStart"','Annex12CellLocked(annex,parent,20)','Annex12CellLocked(annex,row,20)','"9999999997-001","99997"','33.33m,66.67m','50m,25m,25m'):self.assertIn(term,inspect)
   self.assertIn('if(Annex12WebCase())ValidateOriginalAnnex12WebExport(roundtripPhase=="not-started");',self.source('HtkkGtgtExportInspection.cs'))
-  self.assertIn('if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0)throw new InvalidOperationException();',branch)
-  self.assertIn('!Annex12WebCaseId()&&(!NoActivityCase()||CancelCt21Case())',sheet)
+  self.assertIn('if(!Annex12SaleMain()&&(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0))throw new InvalidOperationException();',branch)
+  self.assertLess(branch.index('PrepareAnnex12SaleMain(grid,sheet)'),branch.index('EditOriginalSigningDate(grid,sheet)'))
+  # Main money vector: zero annex keeps 27 zeros; the two-plant case and the nonzero probe carry sale10.
+  self.assertIn('webCaseId!=Annex12WebZeroCaseId&&(!NoActivityCase()||CancelCt21Case()))||mode=="gtgt-annex12-export-nonzero"',sheet)
  def test_success_predicate_requires_annex_baseline_import_and_both_schema_checks(self):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
   line=next(x for x in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $env:EXPECTED_WEB_CASE_ID -cin @('"+ZERO+"','"+TWO+"')){$matched=" in x)
@@ -185,6 +192,7 @@ class NativeDriverContract(unittest.TestCase):
 def snapshot(name):
  parent,first,second=(1,'50.00','50.00') if 'p1-50' in name else (7,'33.33','66.67')
  def edit(root):
+  for name,value in nonzero.SALE10.items():root.find('.//'+NS+name).text=value
   root.find('.//'+NS+'ct10_a').text=str(parent);rows=root.findall('.//'+NS+'DiaBanPhanBo')
   rows[0].find(NS+'ct11').text=first;rows[1].find(NS+'ct11').text=second
   rows[0].find(NS+'ct12').text='0.5' if parent==1 else '2.3331';rows[1].find(NS+'ct12').text='0.5' if parent==1 else '4.6669'
@@ -228,7 +236,7 @@ class NonzeroExportProbeContract(unittest.TestCase):
    with self.subTest(name=name,tag=tag,value=value),self.assertRaises((nonzero.cases.AnnexWebContractError,nonzero.fixed.AnnexContractError)):nonzero.validate_snapshot(body,name,zero_export.TODAY)
   with self.assertRaises(nonzero.cases.AnnexWebContractError):nonzero.validate_snapshot(snapshot(NAMES[0]),NAMES[1],zero_export.TODAY)
  def gui(self,bodies):
-  return {**dict.fromkeys(nonzero.GUI_FLAGS,True),'status':'matched','mode':'gtgt-annex12-export-nonzero','stage':'gtgt-annex12-export-nonzero-inspected','failureCategory':'none','webInputVerified':False,'roundtripImportCommandInvoked':False,'realTaxpayerDataUsed':False,'runtimeRoundTrip':False,'annexSelectedCount':1,'annex12InputActionCount':14,'annex12NumericActionCount':4,'annex12NonzeroExportCount':2,'annex12GroupCount':1,'annex12RowAfterGroupRows':2,'annex12RowAfterRows':67,'gtgtCaseMoneyCount':27,'gtgtCaseMismatchMask':0,'gtgtCaseNonzeroMask':0,'exportSha256':hashlib.sha256(bodies[NAMES[0]]).hexdigest(),'exportBytes':len(bodies[NAMES[0]]),'annex12NonzeroSecondExportSha256':hashlib.sha256(bodies[NAMES[1]]).hexdigest(),'annex12NonzeroSecondExportBytes':len(bodies[NAMES[1]])}
+  return {**dict.fromkeys(nonzero.GUI_FLAGS,True),'status':'matched','mode':'gtgt-annex12-export-nonzero','stage':'gtgt-annex12-export-nonzero-inspected','failureCategory':'none','webInputVerified':False,'roundtripImportCommandInvoked':False,'realTaxpayerDataUsed':False,'runtimeRoundTrip':False,'annexSelectedCount':1,'annex12InputActionCount':14,'annex12NumericActionCount':4,'annex12NonzeroExportCount':2,'annex12GroupCount':1,'annex12RowAfterGroupRows':2,'annex12RowAfterRows':67,'gtgtCaseMoneyCount':27,'gtgtCaseMismatchMask':0,'gtgtCaseNonzeroMask':nonzero.SALE10_NONZERO_MASK,'webCaseEditCount':1,'exportSha256':hashlib.sha256(bodies[NAMES[0]]).hexdigest(),'exportBytes':len(bodies[NAMES[0]]),'annex12NonzeroSecondExportSha256':hashlib.sha256(bodies[NAMES[1]]).hexdigest(),'annex12NonzeroSecondExportBytes':len(bodies[NAMES[1]])}
  def layout(self,root,bodies):
   installed=root/'installed';temporary=root/'temp';temporary.mkdir();folder=installed/nonzero.ORIGINAL_DIRECTORY;folder.mkdir(parents=True)
   for name,original in nonzero.SNAPSHOTS.items():(folder/original).write_bytes(bodies[name])
@@ -301,5 +309,35 @@ class OriginalMessageDiagnosticContract(unittest.TestCase):
   block=annex[annex.index(' private bool InspectOriginalImportedAnnex12('):]
   self.assertIn('int[] display=new int[]{2,12,16,17,18};',block);self.assertIn('annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k)',block);self.assertIn('ordinal<5',block)
   self.assertIn('annex12WebImportDisplayEmptyMask=0;',block)
+
+
+class Header66RuleContract(unittest.TestCase):
+ """Run 42173347454: exportRejectedMessageId=16 (frmWinToKhai.cmdExport_Click shows 0016
+ when a tab is pink). Pinned 01_GTGT_TT80_283.xls Header!B66 is the only workbook check
+ that depends on the edited parent tax: 01_2!AJ7 (=T46, ct13) must not exceed 01!L59 ([40])."""
+ def test_plant_tax_cases_enter_the_sale10_main_vector_through_the_original_editor(self):
+  sheet=(ROOT/'HtkkGtgtPeriodAndSheet.cs').read_text(encoding='utf-8');annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  self.assertIn('private bool Annex12SaleMain(){return mode=="gtgt-annex12-export-nonzero"||(mode=="gtgt-web-import-inspect"&&webInputVerified&&webCaseId==Annex12WebTwoPlantsCaseId);}',sheet)
+  block=sheet[sheet.index(' private bool PrepareAnnex12SaleMain('):sheet.index(' private void InspectOriginalAnnex12(Control grid){')]
+  self.assertIn('EditOriginalGtgtCase(grid,sheet,47,9,"1000000",HtkkAutomationStage.GtgtCaseEditing)',block)
+  for forbidden in ('SetValue','set_Value','SetPublic','"Formula"'):self.assertNotIn(forbidden,block)
+  self.assertIn('if(mode=="gtgt-annex12-export-nonzero")fixedInput=webCaseEditCount==0&&row==47&&column==9&&value=="1000000";',sheet)
+  probe=sheet[sheet.index('if(matched&&mode=="gtgt-annex12-export-nonzero"){'):]
+  self.assertLess(probe.index('PrepareAnnex12SaleMain(grid,sheet)'),probe.index('InspectOriginalAnnex12(grid)'))
+  # Mask of the 27 main money cells carrying the sale10 vector (ct27/28/32/33/34/35/36/40a/40).
+  order=('ct22','ct23','ct24','ct23a','ct24a','ct25','ct26','ct27','ct28','ct29','ct30','ct31','ct32','ct33','ct32a','ct34','ct35','ct36','ct37','ct38','ct39a','ct40a','ct40b','ct40','ct41','ct42','ct43')
+  mask=sum(1<<order.index(name) for name in nonzero.SALE10);self.assertEqual(mask,10727808);self.assertEqual(nonzero.SALE10_NONZERO_MASK,mask)
+  self.assertEqual(nonzero.SALE10,w.SALE10);self.assertEqual(w.CASE_MONEY[TWO],w.SALE10);self.assertEqual(w.CASE_MONEY[ZERO],{})
+  self.assertIn('gtgtCaseNonzeroMask==10727808',annex)
+  ps=(ROOT/'probe-htkk-windows.ps1').read_text()
+  self.assertIn('$lastGui.gtgtCaseNonzeroMask -eq 10727808 -and $lastGui.webCaseEditCount -eq 1',ps)
+  self.assertIn("($lastGui.gtgtMonetaryZero -or $GuiAutomation -eq 'gtgt-annex12-export-nonzero')",ps)
+ def test_plant_tax_never_exceeds_main_ct40_in_any_fixed_contract(self):
+  self.assertLessEqual(int(contract.CASES[TWO]['ct13']),int(w.CASE_MONEY[TWO]['ct40']))
+  self.assertLessEqual(max(v['parent'] for v in nonzero.VARIANTS.values()),int(nonzero.SALE10['ct40']))
+  self.assertEqual(int(contract.CASES[ZERO]['ct13']),0)
+  # Snapshots whose main sheet lost the sale vector are refused before retention.
+  bare=zero_export.edited(snapshot(NAMES[0]),lambda root:setattr(root.find('.//'+NS+'ct40'),'text','0'))
+  with self.assertRaises(nonzero.cases.AnnexWebContractError):nonzero.validate_snapshot(bare,NAMES[0],zero_export.TODAY)
 
 if __name__=='__main__':unittest.main()

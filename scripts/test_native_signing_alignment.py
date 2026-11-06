@@ -6,7 +6,7 @@ class AlignedSigningTests(unittest.TestCase):
  def make(self,case='01GTGT-zero-M10-2026'):
   web,native,im,m=f.fixture(case);initial=native.replace(b'?>',b'?>\n',1)
   # The two-plant case's UI baseline is the proven one-plant zero annex export.
-  if case==n.annex12.TWO_PLANTS_CASE:initial=f.fixture(n.annex12.ZERO_CASE)[1].replace(b'?>',b'?>\n',1)
+  if case==n.annex12.TWO_PLANTS_CASE:initial=f.two_plant_baseline()
   m.update(format='htkk-web-native-output-staging-v3',runAttempt=1,initialOutputSha256=hashlib.sha256(initial).hexdigest(),initialOutputBytes=len(initial),initialSigningDateRule='fixed-web-synthetic-date')
   return web,native,im,m,initial
  def test_all_registered_aligned_pairs_publish_without_normalization(self):

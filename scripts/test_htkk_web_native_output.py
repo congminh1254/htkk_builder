@@ -23,6 +23,12 @@ def fixture(case='01GTGT-zero-M10-2026'):
  provenance={'format':'htkk-web-native-output-staging-v1','builderRepository':n.BUILDER,'builderCommit':BUILDER_SHA,'runId':'123','sourceRepository':n.REPO,'sourceCommit':SOURCE,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','caseId':case,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalImportSucceeded':True,'originalReexportSucceeded':True,'originalExporterValidatedSchema':True,'webTaxComparisonPassed':True,'webTaxCheckedLeafCount':n.tax_leaf_count(case),'webImportInputSha256':hashlib.sha256(web).hexdigest(),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'artifactCommit':ARTIFACT,'creationDateRule':'native-export-current-date','fullRoundTrip':False}
  return web,native,input_manifest,provenance
 
+def two_plant_baseline():
+ # The UI baseline of the two-plant case: proven zero annex plus the sale10 main
+ # vector entered first (Header!B66 needs [40] >= ct13 before the import).
+ body=fixture('01GTGT-annex12-zero-two-locations-M10-2026')[1]
+ for name,value in n.reader.CASE_MONEY['01GTGT-annex12-two-plants-nonzero-M10-2026'].items():body=changed(body,name,value)
+ return body
 def changed(body,name,value):
  root=ET.fromstring(body);root.find('.//{'+n.privacy.NS+'}'+name).text=value;return ET.tostring(root,encoding='utf-8')
 

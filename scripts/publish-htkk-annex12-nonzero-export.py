@@ -21,6 +21,8 @@ DIRECTORY='htkk-annex12-nonzero-export-output';BRANCH='gtgt-annex12-nonzero-nati
 # Retained name -> original export name in the fresh native directory.
 SNAPSHOTS={'01GTGT-annex12-p1-50.xml':'01GTGT.xml','01GTGT-annex12-p7-3333.xml':'01GTGT-p7.xml'}
 NAMES=tuple(SNAPSHOTS)+('provenance.json',)
+SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
+SALE10_NONZERO_MASK=10727808
 ORIGINAL_DIRECTORY='DataFiles/9999999997/reference-annex12-nonzero-output'
 SCHEMA_PINS={'InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd':'8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003','InterfaceTemplates/TKhaiThue.xsd':'8f451719355b5a6247f65a34a37584b4a0c7f7cc81a568e1033d08b8fe9b8c1d','InterfaceTemplates/xmldsig-core-schema.xsd':'c3b5160be1852606d10f6928e0b214d418f8dd418667cb2fb88fec31e4e6f56d'}
 PINS={**privacy.PINS,**fixed.SOURCE_PINS,**SCHEMA_PINS,'Project/FarPoint.Win.Spread.dll':'2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'}
@@ -60,8 +62,13 @@ def validate_snapshot(body,name,today=None):
  cases.validate_groups(plucs[0][0],spec['plants'],(cases.bounded_decimal(spec['parent']),cases.bounded_decimal(spec['parent'])))
  leaves=sum(1 for node in root.iter() if len(node)==0)
  if leaves!=112:raise cases.AnnexWebContractError('LEAF_COUNT','pluc')
- # Main declaration stays the fixed fake profile with 27 zeros; projection is in memory only.
+ # Header!B66: plant tax needs main [40] >= ct13, so the main sheet carries the exact
+ # sale10 vector. It is verified, then zeroed only in the in-memory privacy projection.
  projected=cases.strip_annex(copy.deepcopy(root))
+ for name,value in SALE10.items():
+  nodes=projected.findall('.//'+ns+name)
+  if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=value:raise cases.AnnexWebContractError('BASE_PRIVACY','base')
+  nodes[0].text='0'
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
  try:base=privacy.validate_xml(ET.tostring(projected,encoding='utf-8'),today)
  except privacy.EvidenceError:raise cases.AnnexWebContractError('BASE_PRIVACY','base') from None
@@ -77,7 +84,7 @@ def run_number(value):
 def helper_pins():
  return {name:hashlib.sha256(transport.safe_read(pathlib.Path(__file__).with_name(name),262144)).hexdigest() for name in HELPERS}
 def expected_provenance(bodies,run_id,builder_sha,run_attempt):
- return {'format':'htkk-annex12-nonzero-export-staging-v1','builderRepository':BUILDER,'builderCommit':builder_sha,'runId':run_id,'runAttempt':run_attempt,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','probeId':PROBE_ID,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalExporterValidatedSchema':True,'independentSchemaVerification':True,'independentSchemaEngine':'System.Xml.Schema/.NET2-x86','fixedInputCount':14,'numericEditCount':4,'exportCount':2,'groupCount':1,'childRowCount':2,'checkedMainMoneyCount':27,'observedTotalLeafCount':112,'snapshots':{'01GTGT-annex12-p1-50.xml':{'parentTax':'1','percentages':['50','50'],'sha256':hashlib.sha256(bodies['01GTGT-annex12-p1-50.xml']).hexdigest(),'bytes':len(bodies['01GTGT-annex12-p1-50.xml'])},'01GTGT-annex12-p7-3333.xml':{'parentTax':'7','percentages':['33.33','66.67'],'sha256':hashlib.sha256(bodies['01GTGT-annex12-p7-3333.xml']).hexdigest(),'bytes':len(bodies['01GTGT-annex12-p7-3333.xml'])}},'inputHelperSha256':helper_pins(),'sourcePins':PINS,'nativeAnnexRoundTripVerified':False,'fullCompatibilityVerified':False}
+ return {'format':'htkk-annex12-nonzero-export-staging-v1','builderRepository':BUILDER,'builderCommit':builder_sha,'runId':run_id,'runAttempt':run_attempt,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','probeId':PROBE_ID,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalExporterValidatedSchema':True,'independentSchemaVerification':True,'independentSchemaEngine':'System.Xml.Schema/.NET2-x86','fixedInputCount':14,'numericEditCount':4,'exportCount':2,'groupCount':1,'childRowCount':2,'checkedMainMoneyCount':27,'mainMoneyVector':'sale10-ct40-100000','observedTotalLeafCount':112,'snapshots':{'01GTGT-annex12-p1-50.xml':{'parentTax':'1','percentages':['50','50'],'sha256':hashlib.sha256(bodies['01GTGT-annex12-p1-50.xml']).hexdigest(),'bytes':len(bodies['01GTGT-annex12-p1-50.xml'])},'01GTGT-annex12-p7-3333.xml':{'parentTax':'7','percentages':['33.33','66.67'],'sha256':hashlib.sha256(bodies['01GTGT-annex12-p7-3333.xml']).hexdigest(),'bytes':len(bodies['01GTGT-annex12-p7-3333.xml'])}},'inputHelperSha256':helper_pins(),'sourcePins':PINS,'nativeAnnexRoundTripVerified':False,'fullCompatibilityVerified':False}
 def validate_provenance(body,bodies,run_id,builder_sha,run_attempt):
  identifier(builder_sha);run_number(run_id);run_number(run_attempt)
  if not isinstance(body,bytes) or not 0<len(body)<=16384 or set(bodies)!=set(SNAPSHOTS):fail('PROVENANCE')
@@ -131,7 +138,7 @@ def stage_original(installed_root,gui,supplier_stopped,sources_unmodified,runner
  identifier(builder_sha);run_number(run_id);run_number(run_attempt)
  if any(gui.get(key) is not True for key in GUI_FLAGS):fail('PROVENANCE')
  if gui.get('status')!='matched' or gui.get('mode')!='gtgt-annex12-export-nonzero' or gui.get('stage')!='gtgt-annex12-export-nonzero-inspected' or gui.get('failureCategory')!='none' or gui.get('webInputVerified') is not False or gui.get('roundtripImportCommandInvoked') is not False or gui.get('realTaxpayerDataUsed') is not False or gui.get('runtimeRoundTrip') is not False:fail('PROVENANCE')
- for key,expected in (('annexSelectedCount',1),('annex12InputActionCount',14),('annex12NumericActionCount',4),('annex12NonzeroExportCount',2),('annex12GroupCount',1),('annex12RowAfterGroupRows',2),('annex12RowAfterRows',67),('gtgtCaseMoneyCount',27),('gtgtCaseMismatchMask',0),('gtgtCaseNonzeroMask',0)):
+ for key,expected in (('annexSelectedCount',1),('annex12InputActionCount',14),('annex12NumericActionCount',4),('annex12NonzeroExportCount',2),('annex12GroupCount',1),('annex12RowAfterGroupRows',2),('annex12RowAfterRows',67),('gtgtCaseMoneyCount',27),('gtgtCaseMismatchMask',0),('gtgtCaseNonzeroMask',SALE10_NONZERO_MASK),('webCaseEditCount',1)):
   if type(gui.get(key)) is not int or gui[key]!=expected:fail('PROVENANCE')
  observed={'01GTGT-annex12-p1-50.xml':(identifier(gui.get('exportSha256'),64),gui.get('exportBytes')),'01GTGT-annex12-p7-3333.xml':(identifier(gui.get('annex12NonzeroSecondExportSha256'),64),gui.get('annex12NonzeroSecondExportBytes'))}
  for _,size in observed.values():

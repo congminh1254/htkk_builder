@@ -16,6 +16,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   editorKind=editor is TextBoxBase?"text-box":"other-control";
     bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";
     bool fixedInput=webInputVerified&&((CreditCt21Case()&&webCaseEditCount==0&&row==36&&column==11&&value=="7")||(!CreditCt21Case()&&row==(fivePercent?46:47)&&((webCaseEditCount==0&&column==9&&value==(webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000")&&webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026")||(webCaseEditCount==1&&column==11&&value=="7"&&(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")))));
+    if(mode=="gtgt-annex12-export-nonzero")fixedInput=webCaseEditCount==0&&row==47&&column==9&&value=="1000000";
     if(!fixedInput||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
     editor.Focus();if(!editor.ContainsFocus)throw new InvalidOperationException();
     foreach(string keys in new string[]{"^a",value,"{TAB}"}){uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
@@ -67,6 +68,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int[] counts=new int[]{annex12SelectionActionCount,annex12SheetRows,annex12SheetColumns,annex12NumericCount,annex12NumericEmptyMask,annex12NumericNonzeroMask,annex12GroupCount,annex12FirstGroupId,annex12FirstGroupRows};
   for(int index=0;index<names.Length;index++)value.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return value.ToString()+Annex12LifecycleJson()+Annex12RowJson()+Annex12InputJson()+Annex12NumericJson()+Annex12ExportJson();
  }
+ // Source rule Header!B66 (01_GTGT_TT80_283.xls): 01_2!AJ7 (ct13, sum of plant [10]) may
+ // not exceed 01!L59 ([40]); otherwise the original Kết xuất refuses with 0016 (run
+ // 42173347454). Annex cases with plant tax therefore enter the proven sale10 vector
+ // (J48=1000000 -> [40]=100000) through the original main-sheet editor first.
+ private bool Annex12SaleMain(){return mode=="gtgt-annex12-export-nonzero"||(mode=="gtgt-web-import-inspect"&&webInputVerified&&webCaseId==Annex12WebTwoPlantsCaseId);}
  private bool Annex12InspectionMode(){return mode=="gtgt-annex12-inspect"||mode=="gtgt-annex12-row-inspect"||Annex12InputMode();}
  // Modes (and fixed web annex cases) that repeat the proven 14-input original UI scenario.
  private bool Annex12InputMode(){return mode=="gtgt-annex12-input-inspect"||mode=="gtgt-annex12-numeric-inspect"||mode=="gtgt-annex12-export-inspect"||mode=="gtgt-annex12-export-nonzero"||Annex12WebCase();}
@@ -289,8 +295,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
   periodAnnex12Matched=annexSelected==1&&Selected(Get(Cell(sheet,target,0),"Value"));periodNoAnnexMatched=false;
   if(!periodAnnex12Matched)throw new InvalidOperationException();annex12SelectionActionCount++;Record();
  }
+ // One original J48 edit, then wait (bounded) for the original sale10 recalculation.
+ private bool PrepareAnnex12SaleMain(Control grid,object sheet){
+  if(!Annex12SaleMain())throw new InvalidOperationException();
+  if(!webCaseEdited){
+   if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0||Convert.ToBoolean(Get(Cell(sheet,47,9),"Locked")))throw new InvalidOperationException();
+   webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();EditOriginalGtgtCase(grid,sheet,47,9,"1000000",HtkkAutomationStage.GtgtCaseEditing);return false;
+  }
+  InspectCaseMoney(sheet);
+  if(webCaseEditCount!=1||!gtgtCaseMoneyMatched||gtgtCaseMoneyCount!=27||gtgtCaseMismatchMask!=0){if(webCaseEditClock!=null&&webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return false;}throw new InvalidOperationException();}
+  return true;
+ }
  private void InspectOriginalAnnex12(Control grid){
-  if(!gtgtSigner||!gtgtZero||gtgtEmptyMoney!=0||!Annex12InspectionMode()||!periodAnnex12Matched||!annex12SourcePinsMatched||annexSelected!=1||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  if(Annex12SaleMain()){InspectCaseMoney(Get(grid,"ActiveSheet"));if(!gtgtCaseMoneyMatched||gtgtCaseMoneyCount!=27||gtgtCaseMismatchMask!=0||webCaseEditCount!=1)throw new InvalidOperationException();}
+  if(!gtgtSigner||(!gtgtZero&&!Annex12SaleMain())||gtgtEmptyMoney!=0||!Annex12InspectionMode()||!periodAnnex12Matched||!annex12SourcePinsMatched||annexSelected!=1||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   object business=Global("InstanceClass");if(business==null||business.GetType().FullName!="TAX.HTKK.Business.Gtgt01TT80Nckt283"||!Convert.ToBoolean(Get(Get(grid,"ActiveSheet"),"AutoCalculation"))){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count!=11)throw new InvalidOperationException();
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();int found=-1;object annex=null;
@@ -488,9 +506,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
    // then build the proven zero baseline annex through original controls only.
    gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object annexBusiness=Global("InstanceClass");gtgtBusinessInstanceMatched=annexBusiness!=null&&annexBusiness.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
    if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
-   if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0)throw new InvalidOperationException();
+   if(!Annex12SaleMain()&&(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0))throw new InvalidOperationException();
+   if(Annex12SaleMain()&&!PrepareAnnex12SaleMain(grid,sheet))return;
    if(!webSigningDateReady){EditOriginalSigningDate(grid,sheet);return;}
    if(!FixedWebSigningDate(sheet,WebFixedSigningDate()))throw new InvalidOperationException();
+   InspectOriginalAnnex12(grid);return;
+  }
+  if(matched&&mode=="gtgt-annex12-export-nonzero"){
+   gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object probeBusiness=Global("InstanceClass");gtgtBusinessInstanceMatched=probeBusiness!=null&&probeBusiness.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
+   if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!forms[0].Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
+   if(!PrepareAnnex12SaleMain(grid,sheet))return;
    InspectOriginalAnnex12(grid);return;
   }
   if(matched&&Annex12InspectionMode()){InspectOriginalAnnex12(grid);return;}
@@ -537,7 +562,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<coordinates.GetLength(0);index++){
    int row=coordinates[index,0],column=coordinates[index,1];decimal expected=Decimal.Zero;
    if(CreditCt21Case()&&column==11&&(row==36||row==59||row==61))expected=7;
-   if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&!Annex12WebCaseId()&&(!NoActivityCase()||CancelCt21Case())){
+   if((webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!=Annex12WebZeroCaseId&&(!NoActivityCase()||CancelCt21Case()))||mode=="gtgt-annex12-export-nonzero"){
     bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
     if(column==9&&(row==44||row==caseRow||row==49))expected=webCaseId=="01GTGT-sale5-half-M10-2026"?10:webCaseId=="01GTGT-sale10-half-M10-2026"?5:1000000;
     if(column==11&&(row==44||row==caseRow||row==49||row==50||row==56||row==58))expected=(webCaseId=="01GTGT-sale10-half-M10-2026"||webCaseId=="01GTGT-sale5-half-M10-2026")?1:(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")?7:100000;

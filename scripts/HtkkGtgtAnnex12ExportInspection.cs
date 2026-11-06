@@ -40,7 +40,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object sheets=Get(grid,"Sheets");if(Convert.ToInt32(Get(sheets,"Count"))!=11)throw new InvalidOperationException();PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();object main=item.GetValue(sheets,new object[]{0});
   if(Convert.ToInt32(Get(main,"RowCount"))!=72||Convert.ToInt32(Get(main,"ColumnCount"))!=24||CellText(main,9,3)!=FakeName||CellText(main,10,3).Replace("-",String.Empty)!=Mst||CellText(main,63,10)!=FakeSigner||Selected(Get(Cell(main,35,8),"Value"))||!Convert.ToBoolean(Get(main,"AutoCalculation")))throw new InvalidOperationException();
   InspectMoneyZero(main);InspectCaseMoney(main);
-  annex12ExportMainZeroMatched=gtgtZero&&gtgtEmptyMoney==0&&gtgtCaseMoneyMatched&&gtgtCaseMoneyCount==27&&gtgtCaseMismatchMask==0&&gtgtCaseNonzeroMask==0;
+  // Main sheet equals the fixed case vector: 27 zeros, or the sale10 vector when plant tax is entered (Header!B66).
+  annex12ExportMainZeroMatched=(Annex12SaleMain()?gtgtCaseNonzeroMask==10727808:gtgtZero&&gtgtCaseNonzeroMask==0)&&gtgtEmptyMoney==0&&gtgtCaseMoneyMatched&&gtgtCaseMoneyCount==27&&gtgtCaseMismatchMask==0;
   if(!annex12ExportMainZeroMatched)throw new InvalidOperationException();SetStage(HtkkAutomationStage.GtgtAnnex12ExportMainChecked);Record();StartOriginalGtgtExport(grid.FindForm());
  }
  private sealed class Annex12PinnedSchemaResolver : XmlResolver {
@@ -120,7 +121,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!annex12NonzeroEditsMatched)throw new InvalidOperationException();
    object main=item.GetValue(sheets,new object[]{0});
    if(Convert.ToInt32(Get(main,"RowCount"))!=72||Convert.ToInt32(Get(main,"ColumnCount"))!=24||CellText(main,9,3)!=FakeName||CellText(main,10,3).Replace("-",String.Empty)!=Mst||CellText(main,63,10)!=FakeSigner||Selected(Get(Cell(main,35,8),"Value")))throw new InvalidOperationException();
-   InspectMoneyZero(main);InspectCaseMoney(main);if(!gtgtZero||gtgtEmptyMoney!=0||!gtgtCaseMoneyMatched||gtgtCaseMoneyCount!=27||gtgtCaseNonzeroMask!=0)throw new InvalidOperationException();
+   InspectMoneyZero(main);InspectCaseMoney(main);if(gtgtEmptyMoney!=0||!gtgtCaseMoneyMatched||gtgtCaseMoneyCount!=27||gtgtCaseMismatchMask!=0||gtgtCaseNonzeroMask!=10727808)throw new InvalidOperationException();
    exportPath=Path.Combine(Path.GetDirectoryName(firstExportPath),"01GTGT-p7.xml");if(File.Exists(exportPath))throw new InvalidOperationException();
    Button export=Named(roundtripOwner,"cmdExport") as Button;if(export==null||export.FindForm()!=roundtripOwner||export.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
    exportButtonInvoked=false;exportDialogSubmitted=false;exportSuccessAcknowledged=false;roundtripPhase="annex12-nonzero-reexporting";SetStage(HtkkAutomationStage.GtgtAnnex12NonzeroReexportInvoking);Record();

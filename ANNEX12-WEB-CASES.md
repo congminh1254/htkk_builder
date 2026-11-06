@@ -67,3 +67,13 @@ gh workflow run probe-htkk-windows.yml --ref main \
 Ca web dùng `gui_automation=gtgt-web-import-inspect`, `web_case_id=<ca>`,
 `web_source_sha=<commit main nguồn>`, `web_artifact_commit=<commit input bất biến>` (release tự
 dispatch). Kiểm offline: `python3 -m unittest discover -s scripts -p 'test_*.py'`.
+
+## Luật nguồn Header!B66 (run 42173347454)
+
+Probe nonzero bị từ chối với `exportRejectedMessageId=16`. `frmWinToKhai.cmdExport_Click`
+hiện 0016 khi có tab hồng. Trong `Header` của workbook đã pin, B66 là kiểm tra duy nhất phụ
+thuộc tiền cha vừa nhập: `01_2!AJ7` (=T46, ct13) + tổng 01-6 không được lớn hơn `01!L59`
+([40]). Vì vậy probe và ca hai nhà máy nhập trước bộ bán ra sale10 qua editor gốc (J48=1000000,
+[40]=100000); ca zero giữ 27 số 0. Mặt nạ tiền chính phải là 10727808 (ct27/28/32/33/34/35/36/
+40a/40). Ca zero web bị từ chối ở bước xuất lại trong run 42156474982 vẫn chưa rõ nguyên nhân;
+cần `exportRejectedMessageId` và `annex12WebImportDisplayEmptyMask` của lần chạy kế tiếp.
