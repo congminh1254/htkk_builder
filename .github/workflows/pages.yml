@@ -56,24 +56,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           EXPECTED_BUILD_RUN: ${{ github.event.workflow_run.id }}
         run: python3 builder/scripts/validate-pages.py
-      - name: Record artifact source SHA for public verification
-        run: python3 builder/scripts/deploy-pages.py expect
       - uses: actions/configure-pages@v5
-      - name: Upload Pages artifact
-        id: artifact
-        uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v3
         with:
           path: output/site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
       - name: Remove local private artifact
         if: always()
         run: rm -rf output
-      # Not actions/deploy-pages@v4: it sends the builder SHA as pages_build_version, so a
-      # release on an unchanged builder reuses the previous deployment ID and is silently dropped.
-      - name: Deploy with artifact-unique build version
-        id: deployment
-        env:
-          GH_TOKEN: ${{ github.token }}
-          ARTIFACT_ID: ${{ steps.artifact.outputs.artifact_id }}
-        run: python3 builder/scripts/deploy-pages.py deploy
-      - name: Verify public site serves this artifact
-        run: python3 builder/scripts/deploy-pages.py verify
