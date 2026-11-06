@@ -535,14 +535,99 @@ class ExporterContractTests(unittest.TestCase):
             self.assertIn(pin, trust)
 
     def test_requires_verified_trust_and_bounded_job_cleanup(self):
-        self.assertIn("$trusted.status -cne 'baseline-verified'", self.code)
+        self.assertIn("$trusted['status'] -cne 'baseline-verified'", self.code)
         self.assertIn('New-HtkkBoundedJobOwner', self.code)
         self.assertIn('$owner.WaitForRootExit(420000)', self.code)
         self.assertLess(self.code.index("throw 'TRUST_NOT_VERIFIED'"), self.code.index('New-HtkkBoundedJobOwner'))
         self.assertIn("childEnvironmentPolicy='os-essentials-only'", self.code)
-        # Public console line has fixed text: status and booleans only.
-        self.assertEqual(self.code.count('[Console]::WriteLine('), 1)
         self.assertNotIn('Write-Output', self.code)
+        self.assertNotIn('Write-Host', self.code)
+
+    def parts(self):
+        worker = self.code[self.code.index('function Invoke-ExportWorker'):self.code.index('\nif($Worker){')]
+        controller = self.code[self.code.index('function Write-SafeExportLine'):]
+        return worker, controller
+
+    def array(self, name):
+        m = re.search(r'\$script:' + name + r'=@\(([^)]*)\)', self.code)
+        self.assertIsNotNone(m, name)
+        return set(re.findall(r"'([^']+)'", m.group(1)))
+
+    def test_every_failure_code_is_from_a_fixed_enum(self):
+        worker, controller = self.parts()
+        known, controller_known = self.array('known'), self.array('controllerKnown')
+        for code in known | controller_known:
+            self.assertRegex(code, r'^[A-Z0-9_]{1,48}$')
+        self.assertLessEqual(set(re.findall(r"throw '([A-Z0-9_]+)'", worker)), known)
+        self.assertLessEqual(set(re.findall(r"throw '([A-Z0-9_]+)'", controller)), controller_known)
+        self.assertLessEqual(set(re.findall(r"\$step='([A-Z0-9_]+)'", controller)), controller_known)
+        # Worker phases double as failure codes; the controller accepts exactly these.
+        phases = set(re.findall(r"\$phase='([A-Z0-9_]+)'", worker))
+        accepted = re.search(r"\$script:known\+@\(([^)]*)\)", controller)
+        self.assertIsNotNone(accepted)
+        self.assertLessEqual(phases, known | set(re.findall(r"'([^']+)'", accepted.group(1))))
+        for name in ('ARCHIVE_EXTRACTION', 'MSI_OPEN', 'MSI_QUERY_FILE', 'CABINET_HELPER', 'CAB_EXTRACTION', 'LAYOUT_WRITE'):
+            self.assertIn(name, phases)
+        # Distinct pre-launch codes instead of one opaque WORKER_POLICY.
+        for name in ('OUTPUT_PREEXISTS', 'TRUST_RESULT_MISSING', 'TRUST_NOT_VERIFIED', 'JOB_LAUNCH', 'WORKER_EXIT', 'WORKER_RESULT_MISSING', 'EXPORT_MOVE'):
+            self.assertIn(name, controller_known)
+
+    def test_exception_messages_never_reach_results_or_console(self):
+        # Messages are only compared against enums; only type names (allowlisted) and HRESULT numbers are kept.
+        for line in self.code.splitlines():
+            if '.Message' in line:
+                self.assertRegex(line, r'\.Message -cin \$|\.Message -cin \$script:|\.Message -cin \$cleanFailures')
+        self.assertIn("errorType=$(if($name -cin $script:errorTypes){$name}else{'other'})", self.code)
+        self.assertIn("errorHResult=('0x{0:X8}' -f $item.HResult)", self.code)
+        lines = [l for l in self.code.splitlines() if '[Console]::WriteLine(' in l]
+        self.assertEqual(len(lines), 2)
+        self.assertIn("'Source payload export: blocked; code=HELPER_LOAD; stage=BOOTSTRAP; ready=false'", lines[0])
+        self.assertIn("'Source payload export: '+$status+'; code='+$code+'; stage='+$stage", lines[1])
+        start = self.code.index('function Write-SafeExportLine')
+        line_writer = self.code[start:self.code.index('$result=New-SafeExportResult;$result.workerScriptSha256', start)]
+        for check in ("-cmatch '^[A-Z0-9_]{1,48}$'", "-cmatch '^0x[0-9A-F]{8}$'", "-cin (@('other')+$script:errorTypes)", "-cin @('exported','blocked')"):
+            self.assertIn(check, line_writer)
+        # Blocked workers contribute only the four bounded diagnostic fields.
+        self.assertIn("foreach($key in @('failureCode','stage','errorType','errorHResult')){$result[$key]=$child[$key]}", self.code)
+        self.assertNotIn('$result=$child', self.code)
+
+    def test_worker_bootstrap_failures_still_produce_a_coded_result(self):
+        self.assertIn("Write-HtkkBootstrapFailure $ResultPath 'HELPER_LOAD'", self.code)
+        self.assertIn("try{Invoke-ExportWorker}catch{Write-HtkkBootstrapFailure $ResultPath 'WORKER_UNHANDLED' 'WORKER';exit 4}", self.code)
+        self.assertLess(self.code.index('function Write-HtkkBootstrapFailure'), self.code.index('ParseFile('))
+        self.assertIn("if(-not [IO.File]::Exists($workerResult)){if($result.workerExitCode -ne 0)", self.code)
+
+    def test_workflow_reports_bounded_codes(self):
+        text = WORKFLOW.read_text(encoding='utf-8')
+        self.assertIn("throw ('SOURCE_EXPORT_NOT_VERIFIED:'+$code+':'+$stage)", text)
+        self.assertIn("throw ('SOURCE_TRUST_NOT_VERIFIED:'+$code)", text)
+        self.assertEqual(text.count("-cmatch '^[A-Z0-9_]{1,48}$'"), 3)
+
+
+class SafeFailureTests(unittest.TestCase):
+    def test_only_enum_shaped_values_are_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            path = pathlib.Path(d) / 'export-result.json'
+            self.assertEqual(x.safe_failure(path, 'export'), {'exportCode': 'ABSENT'})
+            path.write_text(json.dumps({'status': 'blocked', 'failureCode': 'TRUST_NOT_VERIFIED', 'stage': 'NOT_STARTED', 'controllerStage': 'TRUST_NOT_VERIFIED', 'errorHResult': '0x80131500', 'path': 'C:/secret/file.xls'}))
+            out = x.safe_failure(path, 'export')
+            self.assertEqual(out, {'exportStatus': 'blocked', 'exportCode': 'TRUST_NOT_VERIFIED', 'exportStage': 'NOT_STARTED', 'exportControllerStage': 'TRUST_NOT_VERIFIED', 'exportErrorHResult': '0x80131500'})
+            path.write_text(json.dumps({'status': 'oops', 'failureCode': 'C:\\payload\\x.dll', 'stage': 'Program Files/HTKK', 'errorHResult': 'message text'}))
+            out = x.safe_failure(path, 'export')
+            self.assertEqual(out, {'exportStatus': 'INVALID', 'exportCode': 'INVALID', 'exportStage': 'INVALID', 'exportErrorHResult': 'none'})
+            path.write_text('not json')
+            self.assertEqual(x.safe_failure(path, 'export'), {'exportCode': 'UNREADABLE'})
+
+    def test_outcome_prints_codes_when_nothing_was_published(self):
+        with tempfile.TemporaryDirectory() as d, mock.patch.dict(os.environ, {'GITHUB_REPOSITORY': x.BUILDER, 'GITHUB_REF': 'refs/heads/main', 'RUNNER_TEMP': d}), mock.patch('sys.argv', ['x', 'outcome']):
+            candidate = pathlib.Path(d) / 'htkk-source-candidate'
+            candidate.mkdir()
+            (candidate / 'trust.json').write_text(json.dumps({'status': 'baseline-verified', 'failureCode': None, 'verificationStage': 'MSI_CAB_PAYLOAD'}))
+            (candidate / 'export-result.json').write_text(json.dumps({'status': 'blocked', 'failureCode': 'ARCHIVE_EXTRACTION', 'stage': 'ARCHIVE_EXTRACTION'}))
+            with mock.patch('builtins.print') as printed:
+                self.assertEqual(x.main(), 1)
+            out = json.loads(printed.call_args[0][0])
+            self.assertEqual((out['result'], out['trustCode'], out['exportCode'], out['exportStage']), ('not-published', 'NONE', 'ARCHIVE_EXTRACTION', 'ARCHIVE_EXTRACTION'))
 
 
 if __name__ == '__main__':

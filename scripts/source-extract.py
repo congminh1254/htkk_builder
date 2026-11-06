@@ -593,6 +593,35 @@ def download(target_dir, transport, relay_token=None, fetcher=None):
     return {'status': 'downloaded-pinned-baseline', 'officialSha256': official['sha256'], 'transport': official['transport'], 'ready': False}
 
 
+SAFE_CODE = re.compile(r'[A-Z0-9_]{1,48}')
+SAFE_HRESULT = re.compile(r'0x[0-9A-F]{8}')
+
+
+def safe_failure(path, prefix):
+    """Bounded diagnostic fields of a Windows result file: enum-shaped codes only."""
+    try:
+        path = pathlib.Path(path)
+        if not path.is_file() or path.is_symlink() or path.stat().st_size > 65536:
+            return {prefix + 'Code': 'ABSENT' if not path.exists() else 'UNREADABLE'}
+        data = json.loads(path.read_text(encoding='utf-8-sig'))
+    except (OSError, ValueError):
+        return {prefix + 'Code': 'UNREADABLE'}
+    if type(data) is not dict:
+        return {prefix + 'Code': 'UNREADABLE'}
+
+    def code(value):
+        return value if isinstance(value, str) and SAFE_CODE.fullmatch(value) else ('NONE' if value is None else 'INVALID')
+    out = {prefix + 'Status': data.get('status') if data.get('status') in ('exported', 'blocked', 'baseline-verified') else 'INVALID',
+           prefix + 'Code': code(data.get('failureCode'))}
+    for key in ('stage', 'controllerStage', 'verificationStage'):
+        if key in data:
+            out[prefix + key[0].upper() + key[1:]] = code(data[key])
+    if 'errorHResult' in data:
+        value = data['errorHResult']
+        out[prefix + 'ErrorHResult'] = value if isinstance(value, str) and SAFE_HRESULT.fullmatch(value) else 'none'
+    return out
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('mode', choices=('preflight', 'download', 'stage', 'publish', 'outcome'))
@@ -618,7 +647,8 @@ def main():
     else:
         result = p['publishResult']
         if not result.exists():
-            print(json.dumps({'result': 'not-published', 'ready': False}))
+            print(json.dumps({'result': 'not-published', **safe_failure(p['candidate'] / 'trust.json', 'trust'),
+                              **safe_failure(p['exportResult'], 'export'), 'ready': False}))
             return 1
         summary = json.loads(result.read_text())
         print(json.dumps({k: summary.get(k) for k in ('result', 'branch', 'scope', 'included', 'includedBytes', 'ready')}))
