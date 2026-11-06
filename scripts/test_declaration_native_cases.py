@@ -92,7 +92,7 @@ class CompiledPlans(unittest.TestCase):
             self.assertEqual(head[:4], [spec['menuId'], spec['xmlVersion'], spec['maTKhai'], 'TAX.HTKK.Business.'[:0] + head[3]])
             self.assertIn('"' + spec['schemaId'] + '"', block)
             self.assertIn(',' + str(spec['leafCount']) + ',', block)
-            self.assertIn('"' + spec['webService'][1] + '"', block.replace('WorkbookService', '"Công cụ Kê khai — bản nháp"').replace('CnkdService', '"Hỗ trợ kê khai — bản nháp"'))
+            self.assertIn('"' + spec['webService'][1] + '"', block.replace('WorkbookService', '"Công cụ Kê khai — bản nháp"').replace('CnkdService', '"Công cụ Kê khai — bản nháp"'))
             kind = {'month': 'month', 'quarter': 'quarter', 'year': 'year'}[unit['periodType']]
             self.assertIn('"' + kind + '"', block)
 

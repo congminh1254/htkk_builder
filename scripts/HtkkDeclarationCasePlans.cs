@@ -23,7 +23,7 @@ internal static class HtkkDeclarationCasePlans {
  internal const string XmldsigSha256="c3b5160be1852606d10f6928e0b214d418f8dd418667cb2fb88fec31e4e6f56d";
  private const string TKhaiThue="TKhaiThue.xsd",TKhaiThueSha256="8f451719355b5a6247f65a34a37584b4a0c7f7cc81a568e1033d08b8fe9b8c1d";
  private const string TKhaiThueDbhc="TKhaiThue_DBHC.xsd",TKhaiThueDbhcSha256="aba7f2acbc9332caaf3eb2da9a081a3d876ddc7813d6230921da48c775460011";
- private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Hỗ trợ kê khai — bản nháp";
+ private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
  internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-M10-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026"};

@@ -69,7 +69,7 @@ NUMBER = re.compile(r'-?(0|[1-9][0-9]{0,17})(\.[0-9]{1,6})?\Z')
 DATE = re.compile(r'([0-9]{2}/[0-9]{2}/[0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{4}|[0-9]{2}/[0-9]{2})\Z')
 CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
-WEB_TOOL = 'hotrokekhai.net — công cụ hỗ trợ độc lập'
+WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
 SECTIONS = {'TTinDVu': 1, 'TKhaiThue': 2, 'NNT': 4, 'CTieuTKhaiChinh': 8, 'PLuc': 16}
 
 
@@ -77,8 +77,8 @@ def _case(producer, menu, ma, version, schema, period, dates, sign, created, lea
     kieu, ky, tu, den = period
     return {'producerCase': producer, 'menuId': menu, 'maTKhai': ma, 'xmlVersion': version, 'schemaId': schema,
             'kieuKy': kieu, 'kyKKhai': ky, 'tuNgay': tu, 'denNgay': den, 'ngayKy': sign, 'createdDate': created,
-            'leafCount': leaves, 'annexElements': tuple(annexes), 'webService': ('HTKK-WEB-DRAFT', service, '0.9.2', WEB_TOOL),
-            'texts': frozenset(texts) | {'C', kieu, version, NAME, SIGNER, 'HTKK-WEB-DRAFT', service, '0.9.2', WEB_TOOL}, 'dates': dates}
+            'leafCount': leaves, 'annexElements': tuple(annexes), 'webService': ('CCKK-DRAFT', service, '0.9.2', WEB_TOOL),
+            'texts': frozenset(texts) | {'C', kieu, version, NAME, SIGNER, 'CCKK-DRAFT', service, '0.9.2', WEB_TOOL}, 'dates': dates}
 
 
 WORKBOOK_SERVICE = 'Công cụ Kê khai — bản nháp'
@@ -93,7 +93,7 @@ CASES = {
                                     ['TK khấu trừ thuế thu nhập cá nhân Mẫu 05/KK-TNCN (TT80/2021)', TEMPLATE_TT80, ADDRESS]),
     '05QTT-two-employees-Y2025': _case('tncn05qtt-two-employees-y2025', 'B9', '953', '2.9.3', 'Validate/05_QTT_TNCN_TT80_293.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-10-27', '2026-10-27', 149, ['PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT'], WORKBOOK_SERVICE,
                                        ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu số 05/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'NGUOI LAO DONG A', 'NGUOI LAO DONG B', 'NGUOI PHU THUOC A', 'Con', 'Thẻ CCCD/Số định danh cá nhân']),
-    '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Hỗ trợ kê khai — bản nháp',
+    '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP',
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
                                                      '10129 - Thuế cơ sở 16 Thành phố Hà Nội', '1140759 - Phường Sơn Tây - Thuế cơ sở 16 Thành phố Hà Nội',
