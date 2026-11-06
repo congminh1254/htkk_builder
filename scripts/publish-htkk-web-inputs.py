@@ -78,12 +78,13 @@ def read_inputs(runner_temp,source_commit):
  result=[]
  for case,directory,branch in CASES:
   folder=parent/directory
-  if unsafe_path(folder) or not folder.is_dir() or set(p.name for p in folder.iterdir())!=set(reader.NAMES):fail('STAGING')
-  files={name:safe_read(folder/name,reader.MAX_XML if name.endswith('.xml') else reader.MAX_MANIFEST) for name in reader.NAMES}
+  names=reader.names(case)
+  if unsafe_path(folder) or not folder.is_dir() or set(p.name for p in folder.iterdir())!=set(names):fail('STAGING')
+  files={name:safe_read(folder/name,reader.MAX_XML if name.endswith('.xml') else reader.MAX_MANIFEST) for name in names}
   manifest=reader.validate_manifest(files['manifest.json'])
   if manifest['caseId']!=case:fail('MANIFEST')
   if manifest['sourceCommit']!=source_commit:fail('SOURCE_COMMIT')
-  body=files['01GTGT-web.xml']
+  body=files[reader.xml_name(case)]
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
   reader.validate_web_xml(body,case_id=case,manifest=manifest)
   result.append((case,branch,files,manifest))
@@ -102,10 +103,10 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
  # Require callers to use the validated fixed-case order and unchanged bytes.
  if not isinstance(inputs,list) or len(inputs)!=len(CASES):fail('STAGING')
  for item,(case,_,branch) in zip(inputs,CASES):
-  if not isinstance(item,tuple) or len(item)!=4 or item[0]!=case or item[1]!=branch or set(item[2])!=set(reader.NAMES):fail('STAGING')
+  if not isinstance(item,tuple) or len(item)!=4 or item[0]!=case or item[1]!=branch or set(item[2])!=set(reader.names(case)):fail('STAGING')
   manifest=reader.validate_manifest(item[2]['manifest.json'])
   if manifest!=item[3] or manifest['sourceCommit']!=source_commit or manifest['caseId']!=case:fail('MANIFEST')
-  body=item[2]['01GTGT-web.xml']
+  body=item[2][reader.xml_name(case)]
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
   reader.validate_web_xml(body,case_id=case,manifest=manifest)
  if request_id is not None and (not isinstance(request_id,str)or not re.fullmatch('[1-9][0-9]*',request_id)):fail('MANIFEST')

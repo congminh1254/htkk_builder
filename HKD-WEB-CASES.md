@@ -1,4 +1,7 @@
-# Ca ứng viên web→HTKK cho 01/CNKD TT50 (menu U5) — CHƯA có driver Windows
+# Ca ứng viên web→HTKK cho 01/CNKD TT50 (menu U5)
+
+> Cập nhật: ca `01CNKD-TT50-revenue-two-groups-Q3-2026` đã được đăng ký (releaseGate false) với driver chung
+> `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Ca annex 01-3 vẫn chỉ là thiết kế.
 
 Nhánh `work/forms-hkd`. Đây **không** phải bằng chứng native và không được đăng ký trong
 `scripts/htkk-native-cases.json`: release, Pages, cohort và scoped evidence không đổi

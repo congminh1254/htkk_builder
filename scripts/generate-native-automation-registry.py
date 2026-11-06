@@ -45,7 +45,7 @@ def validate_registry(registry):
     safe_wire = lambda x: type(x) is str and re.fullmatch(r"[A-Za-z0-9_]+(?:-[A-Za-z0-9_]+)*", x) is not None
     safe_name = lambda x: type(x) is str and re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", x) is not None
     stage_ids, enum_names = set(), set()
-    categories = {"sheet", "menu", "annex12", "export-roundtrip", "lifecycle", "period", "amendment"}
+    categories = {"sheet", "menu", "annex12", "export-roundtrip", "lifecycle", "period", "amendment", "declaration"}
     for stage in stages:
         require(type(stage) is dict and set(stage) == {"id", "enumName", "category"}, "Invalid stage properties")
         require(safe_wire(stage["id"]) and safe_name(stage["enumName"]) and stage["category"] in categories, "Invalid stage token")
@@ -54,14 +54,14 @@ def validate_registry(registry):
         enum_names.add(stage["enumName"])
     mode_fields = {"adapterId", "runtime", "login", "permit", "terminalStage", "timeoutSeconds", "orderedCompileInputs", "successPolicyId", "privateArtifactPolicy", "contextPolicy"}
     seen_mode_enums = set()
-    artifact_policies = {"none", "raw-annex12-export", "raw-annex12-nonzero-export", "raw-gtgt-export", "raw-web-reexport", "synthetic-common-header", "synthetic-window-diagnostic"}
+    artifact_policies = {"none", "raw-annex12-export", "raw-annex12-nonzero-export", "raw-declaration-reexport", "raw-gtgt-export", "raw-web-reexport", "synthetic-common-header", "synthetic-window-diagnostic"}
     success_policies = stage_ids | {"none", "gtgt-amendment-saved"}
     for mode, meta in modes.items():
         require(safe_wire(mode) and type(meta) is dict and set(meta) == mode_fields, "Invalid mode properties")
         mode_enum = "".join(part.capitalize() for part in mode.split("-"))
         require(safe_name(mode_enum) and mode_enum not in seen_mode_enums, "Duplicate mode enum")
         seen_mode_enums.add(mode_enum)
-        require(meta["adapterId"] in {"none", "profile", "d1-gtgt"}, "Unknown adapter")
+        require(meta["adapterId"] in {"none", "profile", "d1-gtgt", "declaration-web"}, "Unknown adapter")
         require(meta["runtime"] in {"none", "clr2-x86-custom-reference"}, "Unknown runtime")
         require(type(meta["login"]) is bool and meta["permit"] in (None, "profile-save"), "Invalid login/permit")
         require(meta["terminalStage"] in stage_ids and meta["successPolicyId"] in success_policies, "Unknown success stage/policy")
@@ -504,7 +504,11 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         'gtgt-annex12-inspected', 'gtgt-annex12-row-inspected', 'gtgt-annex12-input-inspected',
         'gtgt-annex12-numeric-inspected', 'gtgt-annex12-export-inspected', 'gtgt-sheet-contract-not-matched',
         'gtgt-export-inspected', 'gtgt-export-original-message-rejected', 'gtgt-roundtrip-inspected',
-        'gtgt-web-import-inspected', 'gtgt-import-original-message-rejected'
+        'gtgt-web-import-inspected', 'gtgt-import-original-message-rejected',
+        # Declaration-family driver (declaration-web-import-inspect): bounded failure terminals.
+        'declaration-profile-preconditions-not-matched', 'declaration-menu-id-not-unique', 'declaration-menu-target-hidden',
+        'declaration-period-inputs-not-matched', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',
+        'declaration-import-sheet-not-matched', 'declaration-export-original-message-rejected', 'declaration-export-not-matched'
     ]
     terminal_stages = list(base_order)
     for mode_meta in modes.values():

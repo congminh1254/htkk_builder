@@ -27,7 +27,7 @@ def edited(body,edit,preamble=True):
 
 class RegistryContract(unittest.TestCase):
  def test_two_candidate_cases_use_the_annex_product_producer_and_own_status_contexts(self):
-  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(cases.CANDIDATE_CASES,ANNEX)
+  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES),ANNEX)
   self.assertEqual(len(cases.GATE_CASES),13);self.assertTrue(set(cases.GATE_CASES).isdisjoint(ANNEX))
   for case,producer_case in ((ZERO,'annex12-zero'),(TWO,'annex12-two-plants')):
    c=cases.CASES[case];a=cases.ADAPTERS[c['adapterId']]
@@ -38,7 +38,7 @@ class RegistryContract(unittest.TestCase):
   for key in ('stagingDirectory','inputBranch','outputBranch','statusContext'):self.assertEqual(len({c[key] for c in cases.CASES.values()}),len(cases.CASES))
  def test_registry_rejects_untrusted_adapter_producer_or_annex_scope(self):
   raw=json.loads((ROOT/'htkk-native-cases.json').read_text())
-  for mutate in (lambda r:r['adapters'][1].update(producer='scripts/other.mjs'),lambda r:r['adapters'][1].update(privacyValidator='gtgt-v1'),lambda r:r['cases'][-1]['unit'].update(annexes=[]),lambda r:r['cases'][0]['unit'].update(annexes=['01-2/GTGT']),lambda r:r['cases'][-1].update(releaseGate='no'),lambda r:r['cases'][-1].pop('releaseGate')):
+  for mutate in (lambda r:r['adapters'][1].update(producer='scripts/other.mjs'),lambda r:r['adapters'][1].update(privacyValidator='gtgt-v1'),lambda r:r['cases'][14]['unit'].update(annexes=[]),lambda r:r['cases'][0]['unit'].update(annexes=['01-2/GTGT']),lambda r:r['cases'][14].update(releaseGate='no'),lambda r:r['cases'][14].pop('releaseGate')):
    value=copy.deepcopy(raw);mutate(value)
    with self.subTest(),tempfile.TemporaryDirectory() as directory,self.assertRaises((ValueError,KeyError)):
     folder=pathlib.Path(directory);(folder/'htkk-native-cases.json').write_text(json.dumps(value));target=folder/'htkk_native_cases.py';target.write_text((ROOT/'htkk_native_cases.py').read_text())
@@ -184,7 +184,7 @@ class NativeDriverContract(unittest.TestCase):
   for term in ('annex12InputActionCount -eq 14','annex12WebBaselineSchemaVerified','annex12WebReexportSchemaVerified','annex12WebImportSheetMatched','annex12WebImportGroupCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq','annex12RowInsertActionCount -eq 1','annex12ExportMainZeroMatched'):self.assertIn(term,line)
   self.assertIn("-and $lastGui.webTaxLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '"+TWO+"'){159}elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+ZERO+"'){108}else{70})",probe)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
-  self.assertEqual(registry['webTaxLeafCount']['maximum'],159);self.assertEqual(registry['webCaseId']['values'][-2:],list(ANNEX))
+  self.assertEqual(registry['webTaxLeafCount']['maximum'],159);values=registry['webCaseId']['values'];self.assertEqual(values[values.index(ANNEX[0]):values.index(ANNEX[0])+2],list(ANNEX))
   for key in ('annex12WebImportSheetMatched','annex12WebBaselineSchemaVerified','annex12WebReexportSchemaVerified','annex12WebImportGroupCount','annex12WebImportRowCount'):self.assertEqual(registry[key]['activeModes'],['gtgt-web-import-inspect'])
   csharp=(ROOT/'HtkkWebInputReference.cs').read_text(encoding='utf-8')
   for case in ANNEX:self.assertIn('"'+case+'"',csharp)

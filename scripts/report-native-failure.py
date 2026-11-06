@@ -3,10 +3,12 @@ import importlib.util,os,pathlib,re
 spec=importlib.util.spec_from_file_location('native_case_callback',pathlib.Path(__file__).with_name('report-native-case.py'));callback=importlib.util.module_from_spec(spec);spec.loader.exec_module(callback)
 def request(env):
  if env.get('GITHUB_REPOSITORY')!=callback.dispatch.BUILDER or env.get('GITHUB_REF')!='refs/heads/main':raise ValueError('BUILDER')
- if env.get('READINESS_RESULT')not in ('failure','cancelled') or env.get('GUI_AUTOMATION')!='gtgt-web-import-inspect':raise ValueError('RESULT')
+ if env.get('READINESS_RESULT')not in ('failure','cancelled') or env.get('GUI_AUTOMATION')not in callback.dispatch.case_registry.DRIVERS:raise ValueError('RESULT')
  commit=callback.dispatch.sha(env.get('COMMIT_SHA'));run=env.get('GITHUB_RUN_ID','')
  if not re.fullmatch('[1-9][0-9]{0,19}',run):raise ValueError('RUN')
- payload=callback.payload(env.get('WEB_CASE_ID'),'failure',env.get('GITHUB_SERVER_URL'),run,env.get('WEB_ARTIFACT_COMMIT')or None)
+ case=env.get('WEB_CASE_ID')
+ if case not in callback.dispatch.CASES or callback.dispatch.case_registry.driver(case)!=env.get('GUI_AUTOMATION'):raise ValueError('RESULT')
+ payload=callback.payload(case,'failure',env.get('GITHUB_SERVER_URL'),run,env.get('WEB_ARTIFACT_COMMIT')or None)
  return 'https://api.github.com/repos/'+callback.dispatch.REPO+'/statuses/'+commit,payload
 def main():
  try:

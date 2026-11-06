@@ -19,10 +19,14 @@ class WorkbookNativeCases(unittest.TestCase):
         self.assertEqual([c['caseId'] for c in w.PLAN['cases']], ['03TNDN-profit20-Y2025', '03TNDN-loss-c3b-Y2025', 'BCTC133-B01a-basic-Y2025', 'BCTC200-LT-basic-Y2025'])
     def test_not_dispatchable_until_a_driver_exists(self):
         self.assertFalse(w.PLAN['driverImplemented'])
-        self.assertTrue(set(c['caseId'] for c in w.PLAN['cases']).isdisjoint(registry.CASES))
+        # The design plan stays design-only; three of its cases are promoted separately through
+        # the reviewed declaration driver (releaseGate false), the C3b loss case is not.
+        promoted = set(c['caseId'] for c in w.PLAN['cases']) & set(registry.CASES)
+        self.assertEqual(promoted, {'03TNDN-profit20-Y2025', 'BCTC133-B01a-basic-Y2025', 'BCTC200-LT-basic-Y2025'})
+        for case in promoted: self.assertEqual(registry.driver(case), 'declaration-web-import-inspect'); self.assertIs(registry.CASES[case]['releaseGate'], False)
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
-        for case in w.PLAN['cases']: self.assertNotIn(case['caseId'], workflow)
-        self.assertTrue(all(a['menuId'] == 'D1' for a in registry.ADAPTERS.values()))
+        self.assertNotIn('03TNDN-loss-c3b-Y2025', workflow)
+        self.assertTrue(all((a['menuId'] == 'D1') == (a['driver'] == 'gtgt-web-import-inspect') for a in registry.ADAPTERS.values()))
     def test_gates_and_synthetic_identity(self):
         self.rejects(lambda v: v.update(driverImplemented=True), 'WORKBOOK_CASE_GATE')
         self.rejects(lambda v: v.update(nativeQualified=True), 'WORKBOOK_CASE_GATE')

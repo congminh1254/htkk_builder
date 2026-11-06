@@ -102,9 +102,12 @@ class HkdValidator(unittest.TestCase):
 
     def test_not_registered_as_native_or_gate_case(self):
         registry = json.loads((ROOT / 'htkk-native-cases.json').read_text())
-        text = json.dumps(registry)
-        for case_id in hkd.CASES:
-            self.assertNotIn(case_id, text)
+        promoted = {c['caseId']: c for c in registry['cases'] if c['caseId'] in hkd.CASES}
+        # Only case A is promoted (declaration driver, never a release gate); B stays design-only.
+        self.assertEqual(set(promoted), {A})
+        self.assertIs(promoted[A]['releaseGate'], False)
+        self.assertEqual(promoted[A]['adapterId'], '01-cnkd-hkd-2.9.8')
+        self.assertNotIn(B, json.dumps(registry))
 
 
 if __name__ == '__main__':

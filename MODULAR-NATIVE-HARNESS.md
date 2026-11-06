@@ -21,6 +21,13 @@ issue or qualify a new declaration, period, native sample, or status context.
   enum values. Remaining string stage assignments are validated at runtime by
   the stage property; they are **not** claimed to have compile-time checking.
 
+## Second adapter: declaration families
+
+`HtkkDeclarationAdapter` (`declaration-web`, mode `declaration-web-import-inspect`) is the first adapter
+beside D1. It reuses the shared profile lifecycle, original menu click, original file dialog and the
+pinned Message.xml diagnostics; menu chain, KieuKy period, annexes, pins and checks come from compiled
+plans (`HtkkDeclarationCasePlans.cs`). See `DECLARATION-NATIVE-CASES.md`. No native evidence yet.
+
 ## Gates that remain handwritten
 
 The registry currently describes routing metadata; timeout, permit, compile-set,

@@ -201,7 +201,9 @@ class AdapterModeCoverage(unittest.TestCase):
         self.assertIn('GtgtWebImportInspect', accepted)
         # Start constructs the d1 adapter for every mode except launch/profile-only ones.
         start = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
-        self.assertIn('if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}', start)
+        self.assertIn('if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){', start)
+        self.assertIn('if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();\n   adapter.Initialize(this,project,modeEnum);', start)
         others = {mode for mode, meta in registry['modes'].items() if meta['adapterId'] != 'd1-gtgt'}
-        self.assertEqual(others, {'none', 'inspect', 'profile-save'})
+        self.assertEqual(others, {'none', 'inspect', 'profile-save', 'declaration-web-import-inspect'})
+        self.assertEqual(registry['modes']['declaration-web-import-inspect']['adapterId'], 'declaration-web')
 

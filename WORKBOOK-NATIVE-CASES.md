@@ -1,4 +1,8 @@
-# Ca native ứng viên cho 03/TNDN và BCTC (chưa dispatch được)
+# Ca native ứng viên cho 03/TNDN và BCTC
+
+> Cập nhật: `03TNDN-profit20-Y2025`, `BCTC133-B01a-basic-Y2025`, `BCTC200-LT-basic-Y2025` đã được đăng ký
+> (releaseGate false) với driver chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`.
+> `03TNDN-loss-c3b-Y2025` vẫn chỉ là ứng viên. Bản sao plan này giữ nguyên (driverImplemented=false là cờ của plan thiết kế).
 
 `scripts/htkk-workbook-native-cases.json` là bản sao ghim SHA-256 của
 `htkk_web/data/htkk-workbook-native-cases.json` (nhánh `work/forms-tndn`). Bốn ca tổng hợp,

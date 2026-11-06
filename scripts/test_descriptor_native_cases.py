@@ -11,9 +11,12 @@ class DescriptorNativeCaseDesign(unittest.TestCase):
   self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8'})
  def test_design_cannot_be_dispatched_or_gate_a_release(self):
   self.assertFalse(design.DESIGN['dispatchable'])
-  self.assertTrue(set(design.CASE_IDS).isdisjoint(native.CASES))
+  # Only reviewed cases are promoted, through the declaration driver and never as a gate.
+  promoted=set(design.CASE_IDS)&set(native.CASES)
+  self.assertEqual(promoted,{'05KK-withheld-M10-2026','05QTT-two-employees-Y2025'})
+  for case in promoted:self.assertEqual(native.driver(case),'declaration-web-import-inspect');self.assertIs(native.CASES[case]['releaseGate'],False)
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
-  for case in design.CASE_IDS:self.assertNotIn(case,workflow)
+  for case in set(design.CASE_IDS)-promoted:self.assertNotIn(case,workflow)
   for mutate in (lambda v:v.__setitem__('dispatchable',True),lambda v:v.__setitem__('status','ready'),lambda v:v['cases'][0].__setitem__('releaseGate',True)):
    value=copy.deepcopy(RAW);mutate(value)
    with self.assertRaises(ValueError):design.validate(value)

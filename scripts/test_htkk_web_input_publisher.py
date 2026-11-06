@@ -6,16 +6,19 @@ ROOT=pathlib.Path(__file__).parent
 spec=importlib.util.spec_from_file_location('web_publisher',ROOT/'publish-htkk-web-inputs.py');p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
 spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 SHA='a'*40
+# One distinct fake orphan commit per registered case (21 = 15 GTGT + 6 declaration).
+COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6')
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
-PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER}
+DECLARATION_PRODUCER=f.dfx.PRODUCER
+PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER}
 
 def fixtures():
  result=[]
  for case,_,branch in p.CASES:
   body=f.web_fixture() if case=='01GTGT-zero-M10-2026' else f.sale_fixture(case)
   metadata=f.case_manifest(body,case,hashlib.sha256(PRODUCERS[p.CASE_PRODUCERS[case]]).hexdigest())
-  files={'01GTGT-web.xml':body,'manifest.json':(json.dumps(metadata,ensure_ascii=False)+'\n').encode()}
+  files={p.reader.xml_name(case):body,'manifest.json':(json.dumps(metadata,ensure_ascii=False)+'\n').encode()}
   result.append((case,branch,files,metadata))
  return result
 
@@ -26,6 +29,7 @@ def contents(body,name,path=None):
 
 def fake_api(info=None,main=SHA,existing=True):
  calls=[];commits=[]
+ letters=COMMIT_LETTERS
  def fetch(path,token,payload=None,method=None):
   calls.append((path,token,payload,method))
   if path=='':return info if info is not None else {'private':True,'full_name':p.REPO}
@@ -33,12 +37,13 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/git/ref/heads/main':return {'ref':'refs/heads/main','object':{'type':'commit','sha':main}}
   if path=='/contents/'+p.PRODUCER+'?ref='+SHA:return contents(PRODUCER,'generate-htkk-web-reference.mjs',p.PRODUCER)
   if path=='/contents/scripts/generate-htkk-web-annex12-reference.mjs?ref='+SHA:return contents(ANNEX_PRODUCER,'generate-htkk-web-annex12-reference.mjs','scripts/generate-htkk-web-annex12-reference.mjs')
+  if path=='/contents/scripts/generate-htkk-declaration-reference.mjs?ref='+SHA:return contents(DECLARATION_PRODUCER,'generate-htkk-declaration-reference.mjs','scripts/generate-htkk-declaration-reference.mjs')
   if path=='/contents/package.json?ref='+SHA:return contents(b'{"version":"0.9.2"}','package.json')
   if path=='/git/blobs':
    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
   if path=='/git/trees':return {'sha':'c'*40}
   if path=='/git/commits':
-   self_sha=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0')[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
+   self_sha=letters[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
   if path.startswith('/git/ref/heads/'):
    if not existing:raise urllib.error.HTTPError('https://api.github.com/',404,'PRIVATE REMOTE TEXT',{},None)
    return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':'f'*40}}
@@ -99,10 +104,10 @@ class StagingTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
  def test_orphan_private_publication_preserves_bytes_and_metadata_only_result(self):
   inputs=fixtures();fetch,calls,commits=fake_api();result=p.publish(inputs,SHA,'synthetic-token',fetch)
-  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0'))]})
+  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,COMMIT_LETTERS)]})
   self.assertTrue(all(item['parents']==[] for item in commits));self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
   blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
-  self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.NAMES])
+  self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.names(item[0])])
   patches=[(path,payload) for path,_,payload,method in calls if method=='PATCH']
   self.assertEqual([path for path,_ in patches],['/git/refs/heads/'+case[2] for case in p.CASES]);self.assertTrue(all(payload['force'] is True for _,payload in patches))
   self.assertNotIn('synthetic-token',json.dumps(result));self.assertNotIn('xml',json.dumps(result))

@@ -21,7 +21,8 @@ class NativeCompilationContractTests(unittest.TestCase):
         # This discovers real partial definitions and shared types, including future
         # partials: an omitted file must fail before reaching a Windows runner.
         required = {'HtkkNativeAutomationEnums.cs', 'HtkkNativeUiHarness.cs',
-                    'HtkkWebTaxComparison.cs'}
+                    'HtkkWebTaxComparison.cs', 'HtkkDeclarationCasePlans.cs',
+                    'HtkkDeclarationTreeComparison.cs'}
         for path in ROOT.glob('Htkk*.cs'):
             if re.search(r'\bpartial\s+class\s+HtkkGuiReferenceAutomation\b', path.read_text()):
                 required.add(path.name)

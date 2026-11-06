@@ -22,6 +22,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "none",
@@ -48,6 +51,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "profile-inspected",
@@ -74,6 +80,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "original-profile-saved-verified",
@@ -100,6 +109,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-period-inspected",
@@ -126,6 +138,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-sheet-inspected",
@@ -152,6 +167,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-saved",
@@ -178,6 +196,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-open-inspected",
@@ -204,6 +225,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-inspected",
@@ -230,6 +254,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-row-inspected",
@@ -256,6 +283,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-input-inspected",
@@ -282,6 +312,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-numeric-inspected",
@@ -308,6 +341,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-export-inspected",
@@ -334,6 +370,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-export-nonzero-inspected",
@@ -360,6 +399,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-export-inspected",
@@ -386,6 +428,9 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-roundtrip-inspected",
@@ -412,10 +457,42 @@
         "HtkkGtgtAmendmentOpenInspection.cs",
         "HtkkGtgtAnnex12NumericInspection.cs",
         "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-web-import-inspected",
       "privateArtifactPolicy": "raw-web-reexport",
+      "contextPolicy": "htkk-native/case"
+    },
+    "declaration-web-import-inspect": {
+      "adapterId": "declaration-web",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "declaration-web-import-inspected",
+      "timeoutSeconds": 180,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
+        "HtkkNativeUiHarness.cs"
+      ],
+      "successPolicyId": "declaration-web-import-inspected",
+      "privateArtifactPolicy": "raw-declaration-reexport",
       "contextPolicy": "htkk-native/case"
     }
   },
@@ -1099,6 +1176,131 @@
       "id": "gtgt-annex12-lifecycle-inspecting",
       "enumName": "GtgtAnnex12LifecycleInspecting",
       "category": "annex12"
+    },
+    {
+      "id": "declaration-profile-preconditions-not-matched",
+      "enumName": "DeclarationProfilePreconditionsNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-menu-waiting",
+      "enumName": "DeclarationMenuWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-menu-click",
+      "enumName": "DeclarationMenuClick",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-menu-id-not-unique",
+      "enumName": "DeclarationMenuIdNotUnique",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-menu-target-hidden",
+      "enumName": "DeclarationMenuTargetHidden",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-period-waiting",
+      "enumName": "DeclarationPeriodWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-period-configuring",
+      "enumName": "DeclarationPeriodConfiguring",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-period-annex-selecting",
+      "enumName": "DeclarationPeriodAnnexSelecting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-period-inputs-not-matched",
+      "enumName": "DeclarationPeriodInputsNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-period-confirm-invoking",
+      "enumName": "DeclarationPeriodConfirmInvoking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-sheet-waiting",
+      "enumName": "DeclarationSheetWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-sheet-contract-not-matched",
+      "enumName": "DeclarationSheetContractNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-web-input-checking",
+      "enumName": "DeclarationWebInputChecking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-ready-waiting",
+      "enumName": "DeclarationImportReadyWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-command-invoking",
+      "enumName": "DeclarationImportCommandInvoking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-original-message-rejected",
+      "enumName": "DeclarationImportOriginalMessageRejected",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-sheet-checking",
+      "enumName": "DeclarationImportSheetChecking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-sheet-not-matched",
+      "enumName": "DeclarationImportSheetNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-export-ready-waiting",
+      "enumName": "DeclarationExportReadyWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-export-command-invoking",
+      "enumName": "DeclarationExportCommandInvoking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-export-file-dialog-waiting",
+      "enumName": "DeclarationExportFileDialogWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-export-original-message-rejected",
+      "enumName": "DeclarationExportOriginalMessageRejected",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-export-validating",
+      "enumName": "DeclarationExportValidating",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-export-not-matched",
+      "enumName": "DeclarationExportNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-web-import-inspected",
+      "enumName": "DeclarationWebImportInspected",
+      "category": "declaration"
     }
   ],
   "dynamicStageMappings": {
@@ -1320,6 +1522,27 @@
     "gtgtCaseMoneyCount",
     "gtgtCaseMismatchMask",
     "gtgtCaseNonzeroMask",
+    "declarationMenuClicked",
+    "declarationPeriodObserved",
+    "declarationPeriodMatched",
+    "declarationAnnexMatched",
+    "declarationSheetObserved",
+    "declarationIdentityMatched",
+    "declarationSourcePinsMatched",
+    "declarationImportSheetMatched",
+    "declarationSchemaValid",
+    "declarationServiceIdentityMatched",
+    "declarationCreationDateValid",
+    "declarationTreeMatched",
+    "declarationAnnexSelectedCount",
+    "declarationSheetCount",
+    "declarationCellCheckCount",
+    "declarationCellMismatchMask",
+    "declarationCellLockedMask",
+    "declarationXmlCheckCount",
+    "declarationXmlMismatchMask",
+    "declarationTreeMismatchMask",
+    "declarationTreeLeafCount",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -2502,7 +2725,13 @@
         "01GTGT-zero-Q4-2026",
         "01GTGT-native-import-sale10-M10-2026",
         "01GTGT-annex12-zero-two-locations-M10-2026",
-        "01GTGT-annex12-two-plants-nonzero-M10-2026"
+        "01GTGT-annex12-two-plants-nonzero-M10-2026",
+        "03TNDN-profit20-Y2025",
+        "BCTC133-B01a-basic-Y2025",
+        "BCTC200-LT-basic-Y2025",
+        "05KK-withheld-M10-2026",
+        "05QTT-two-employees-Y2025",
+        "01CNKD-TT50-revenue-two-groups-Q3-2026"
       ]
     },
     "webCaseEditCount": {
@@ -2528,6 +2757,171 @@
       "default": 0,
       "minimum": 0,
       "maximum": 134217727
+    },
+    "declarationMenuClicked": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationPeriodObserved": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationPeriodMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationSheetObserved": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationIdentityMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationSourcePinsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationImportSheetMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationSchemaValid": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationServiceIdentityMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationCreationDateValid": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexSelectedCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationSheetCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 64,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationCellCheckCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 24,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationCellMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16777215,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationCellLockedMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16777215,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationXmlCheckCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 24,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationXmlMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16777215,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 63,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeLeafCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4096,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
     },
     "controlKinds": {
       "kind": "object",

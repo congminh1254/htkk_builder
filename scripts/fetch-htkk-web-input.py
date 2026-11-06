@@ -35,6 +35,17 @@ if set(annex12.CASES)!=set(case_registry.ANNEX12_CASES):raise ValueError('CASE_P
 ANNEX_PRODUCER='scripts/generate-htkk-web-annex12-reference.mjs'
 ANNEX_NATIVE_REFERENCE='6956eea0fa865e98da71ad3ce23ed6a527e7a17761c6fb11032a11fc0a97b8cb'
 ANNEX_NATIVE_NODES={annex12.ZERO_CASE:(True,131),annex12.TWO_PLANTS_CASE:(False,0)}
+# Declaration-family cases (03/TNDN, BCTC, TNCN, 01/CNKD): own producer, file names and allowlist.
+_declaration_spec=importlib.util.spec_from_file_location('htkk_declaration_web_input_contract',pathlib.Path(__file__).with_name('htkk_declaration_web_cases.py'))
+declaration=importlib.util.module_from_spec(_declaration_spec);_declaration_spec.loader.exec_module(declaration)
+if set(declaration.CASES)!=set(case_registry.DECLARATION_CASES):raise ValueError('CASE_POLICY')
+DECLARATION_NAMES=('declaration-web.xml','manifest.json')
+DECLARATION_PRODUCER='scripts/generate-htkk-declaration-reference.mjs'
+DECLARATION_ERRORS={'SIZE':'XML_SIZE','ENCODING':'XML_ENCODING','DECLARATION':'XML_DECLARATION','PARSE':'XML_PARSE','SERVICE':'XML_SERVICE','MANIFEST':'MANIFEST'}
+def names(case_id):
+ if case_id not in CASES:raise InputError('MANIFEST')
+ return DECLARATION_NAMES if declaration.is_case(case_id) else NAMES
+def xml_name(case_id):return names(case_id)[0]
 class InputError(ValueError):
  def __init__(self,code,**context):
   if code not in CODES:raise ValueError('Invalid safe input error')
@@ -96,6 +107,9 @@ def validate_manifest(body):
  if not isinstance(case,str) or case not in CASES:raise InputError('MANIFEST')
  fixed={'format':CASES[case],'sourceRepository':REPO,'sourceVersion':'0.9.2','caseId':case,'inputsSynthetic':True,'exporter':'lib/htkk-xml.ts'}
  variable={'sourceCommit','producerSha256','xmlSha256','bytes'}
+ if declaration.is_case(case):
+  spec=declaration.case(case);c=case_registry.CASES[case]
+  fixed.update(exporter='lib/htkk-declaration-engines.ts',producer=DECLARATION_PRODUCER,menuId=spec['menuId'],engine=spec['family'],xmlVersion=spec['xmlVersion'],schemaId=spec['schemaId'],annexes=c['unit']['annexes'],leafCount=spec['leafCount'],nativeQualified=False,filingEnabled=False)
  if annex12.is_case(case):
   compared,nodes=ANNEX_NATIVE_NODES[case]
   fixed.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=ANNEX_PRODUCER,nativeAnnexReferenceSha256=ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False)
@@ -124,6 +138,9 @@ def annex_manifest_leaves(root):
  return rows
 def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=None):
  if case_id not in CASES:raise InputError('MANIFEST')
+ if declaration.is_case(case_id):
+  try:return declaration.validate_web_input(body,case_id,manifest)
+  except declaration.DeclarationWebCaseError as error:raise InputError(DECLARATION_ERRORS.get(error.code,'XML_PRIVACY')) from None
  annex=annex12.is_case(case_id);fixed_day=datetime.date.fromisoformat(annex12.FIXED_DATE if annex else '2026-10-25')
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
@@ -208,20 +225,22 @@ def download(token,fetch=None,today=None,expected_source=None,expected_case=None
  if expected_source is not None and manifest['sourceCommit']!=expected_source:raise InputError('SOURCE_COMMIT')
  source=fetch('/git/commits/'+manifest['sourceCommit'],token)
  if not isinstance(source,dict) or source.get('sha')!=manifest['sourceCommit']:raise InputError('SOURCE_COMMIT')
- body=content_file(fetch('/contents/01GTGT-web.xml'+query,token),'01GTGT-web.xml',MAX_XML)
+ name=xml_name(manifest['caseId'])
+ body=content_file(fetch('/contents/'+name+query,token),name,MAX_XML)
  if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
  validate_web_xml(body,today,manifest['caseId'],manifest)
- return {'01GTGT-web.xml':body,'manifest.json':manifest_body}
+ return {name:body,'manifest.json':manifest_body}
 def stage(files,runner_temp,today=None):
- if set(files)!=set(NAMES) or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
- manifest=validate_manifest(files['manifest.json'])
- if manifest['bytes']!=len(files['01GTGT-web.xml']) or manifest['xmlSha256']!=hashlib.sha256(files['01GTGT-web.xml']).hexdigest():raise InputError('HASH')
- validate_web_xml(files['01GTGT-web.xml'],today,manifest['caseId'],manifest)
+ if not isinstance(files,dict) or 'manifest.json' not in files or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
+ manifest=validate_manifest(files['manifest.json']);xml=xml_name(manifest['caseId'])
+ if set(files)!=set(names(manifest['caseId'])):raise InputError('STAGING')
+ if manifest['bytes']!=len(files[xml]) or manifest['xmlSha256']!=hashlib.sha256(files[xml]).hexdigest():raise InputError('HASH')
+ validate_web_xml(files[xml],today,manifest['caseId'],manifest)
  parent=pathlib.Path(runner_temp);destination=parent/'htkk-web-reference-input'
  if parent.is_symlink() or not parent.is_dir() or destination.exists() or destination.is_symlink():raise InputError('STAGING')
  temporary=pathlib.Path(tempfile.mkdtemp(prefix='.htkk-web-reference-input-',dir=parent))
  try:
-  for name in NAMES:
+  for name in names(manifest['caseId']):
    with (temporary/name).open('xb') as stream:stream.write(files[name])
   # rename never overwrites an existing destination directory on Windows.
   if destination.exists() or destination.is_symlink():raise InputError('STAGING')

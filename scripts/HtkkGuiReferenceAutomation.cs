@@ -43,7 +43,11 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   modeEnum=HtkkNativeAutomationWireMap.ParseMode(requestedMode);
   if(modeEnum==HtkkAutomationMode.None)throw new ArgumentException();
   mode=HtkkNativeAutomationWireMap.ToWireString(modeEnum);string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
-  if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){adapter=new HtkkGtgtAdapter();adapter.Initialize(this,project,modeEnum);}
+  if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){
+   // Adapter by menu family: D1 keeps its reviewed driver; declaration families share one.
+   if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();
+   adapter.Initialize(this,project,modeEnum);
+  }
   try{
    pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
    if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){SetStage(HtkkAutomationStage.SourceOrRuntimeNotMatched);finished=true;Record();return;}
@@ -56,7 +60,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   Stopwatch clock=Stopwatch.StartNew();
   // Annex web cases add the proven 14-input baseline; the nonzero probe exports twice.
   // Both stay below the registry's 180-second mode ceiling.
-  double limit=modeEnum==HtkkAutomationMode.GtgtWebImportInspect||modeEnum==HtkkAutomationMode.GtgtAnnex12ExportNonzero?170:120;
+  double limit=modeEnum==HtkkAutomationMode.GtgtWebImportInspect||modeEnum==HtkkAutomationMode.GtgtAnnex12ExportNonzero||modeEnum==HtkkAutomationMode.DeclarationWebImportInspect?170:120;
   while(!finished&&clock.Elapsed.TotalSeconds<limit){
    try{
     if(!queued&&Application.OpenForms.Count>0){
