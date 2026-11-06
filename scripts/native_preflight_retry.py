@@ -146,15 +146,34 @@ def _must_stay_default(k):
  if k.startswith(COMPARISON_PREFIXES)or k in COMPARISON_FIELDS or 'AfterImport'in k or 'Reexport'in k:return True
  if 'mismatch'in low or 'FailureMask'in k or 'RejectedMessageId'in k or 'Cue'in k:return True
  return (FIELDS[k]['kind']=='hex'and k not in WEB_INPUT_HASHES)or k.endswith(('Bytes','FileExists','FileCount','XmlCount'))
+# Narrow sibling: the original GTGT export Save dialog was matched (its filename editor sits in
+# the verified common-dialog combo) and keyboard focus/typing into that editor could not be
+# established (HtkkGtgtExportInspection.TrySubmitOriginalFileDialog throws
+# InvalidOperationException -> 'operation-not-established' when focus is lost, the focus gate
+# times out, or the typed text does not read back). It fails before the filename is committed
+# or Save is pressed, so no file can exist. Only these six generated export filename stages
+# qualify: never the import dialog, annex12, declaration, period, sheet or any later stage.
+EXPORT_DIALOG_STAGES=tuple(REGISTRY['dynamicStageMappings']['filenameDialog']['export'].values())
+EXPORT_DIALOG_FAILURE={'status':'failed','failureCategory':'operation-not-established','exportDialogMatched':True,'exportFilenameKeyboardCommitted':False,'exportDialogSubmitted':False}
+EXPORT_DIALOG_EDITOR_KINDS=('combobox','combobox-ex')
+def _export_dialog_not_established(gui,mode):
+ return mode=='gtgt-web-import-inspect'and _exact(gui,EXPORT_DIALOG_FAILURE)and gui.get('stage')in EXPORT_DIALOG_STAGES and gui.get('exportFilenameParentKind')in EXPORT_DIALOG_EDITOR_KINDS
 def _gui_pre_export_timeout(gui,mode):
- if type(gui)is not dict or mode not in GUI_TIMEOUT_NAVIGATION or not _exact(gui,dict(GUI_TIMEOUT_REQUIRED,mode=mode)):return False
- if type(gui.get('waitSeconds'))is not int or gui['waitSeconds']<PROFILE_CLOSE_LIMIT:return False
+ if type(gui)is not dict or mode not in GUI_TIMEOUT_NAVIGATION:return False
+ dialog=_export_dialog_not_established(gui,mode)
+ required=dict(GUI_TIMEOUT_REQUIRED,mode=mode)
+ if dialog:required.update(status='failed',failureCategory='operation-not-established')
+ if not _exact(gui,required):return False
+ # A timeout spent the whole budget; a dialog failure ends early (terminal), at any time.
+ if type(gui.get('waitSeconds'))is not int or gui['waitSeconds']<(0 if dialog else PROFILE_CLOSE_LIMIT):return False
  stage=gui.get('stage')
  if type(stage)is not str or STAGE_CATEGORIES.get(stage)not in GUI_TIMEOUT_STAGE_CATEGORIES[mode]or any(w in stage for w in GUI_TIMEOUT_STAGE_WORDS):return False
  for k,v in gui.items():
   if k in ('status','waitSeconds'):continue
   if not _field_ok(k,v):return False # Unknown keys or out-of-contract values never qualify.
   default=FIELDS[k]['default'];active=FIELDS[k].get('activeModes')
+  # The editor's parent class is recorded just before the dialog is marked matched.
+  if k=='exportFilenameParentKind'and gui.get('exportDialogMatched')is True and v in EXPORT_DIALOG_EDITOR_KINDS:continue
   if (_must_stay_default(k)or(active is not None and mode not in active))and not(type(v)is type(default)and v==default):return False
  if any(gui.get(k)is not True for k in GUI_TIMEOUT_NAVIGATION[mode]):return False
  if any(type(gui.get(k,''))is not str or not re.fullmatch('[0-9a-f]{%d}'%n,gui.get(k,''))for k,n in WEB_INPUT_HASHES.items()):return False

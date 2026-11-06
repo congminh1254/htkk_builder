@@ -580,3 +580,114 @@ class GuiPreExportTimeout(unittest.TestCase):
   # Every output/hash/rejection/mismatch field the harness reports must stay at its default.
   for k in retry.FIELDS:
    if k.endswith(('Bytes','Sha256','RejectedMessageId','MismatchMask','FileExists'))and k!='webImportInputSha256':self.assertTrue(retry._must_stay_default(k),k)
+
+# Non-default GUI fields of the real failing results (all other registry fields at defaults).
+# Run 42270894541 (release 219, 01GTGT-noactivity-cancel-sale10): the original Save dialog was
+# matched and the path typed, but focus/read-back failed -> operation-not-established, no file.
+DIALOG_FAILURE_GUI={
+ 'status':'failed','format':'htkk-gui-reference-automation-v1','mode':'gtgt-web-import-inspect','stage':'gtgt-export-filename-keyboard-typed',
+ 'failureCategory':'operation-not-established','editorKind':'other-control','runtime':'clr2-x86-custom-reference','sourcePinsVerified':True,'visibleForms':1,'spreadCount':1,
+ 'sheetRows':75,'sheetColumns':22,'mstBoxesMatched':True,'initialRequiredTextBlank':True,'editingApiAvailable':True,'performedInputCount':7,'originalSaveInvoked':True,
+ 'savedHeaderExists':True,'savedHeaderChecksMatched':True,'savedHeaderCheckedFieldCount':8,'saveDialogKind':'success-0002','profileClosed':True,'mainMenuObserved':True,
+ 'd1MenuClicked':True,'gtgtPeriodObserved':True,'menuRowCount':314,'menuClickCount':1,'periodControlCount':137,'periodYearMonthMatched':True,'periodFirstDeclarationMatched':True,
+ 'periodActivityMatched':True,'periodGeographyMatched':True,'periodNoAnnexMatched':True,'periodConfirmInvoked':True,'gtgtWorkbookPinsVerified':True,'gtgtMenuVersionMatched':True,
+ 'gtgtPeriodModelMatched':True,'gtgtSheetObserved':True,'gtgtSheetNameMatched':True,'gtgtDimensionsMatched':True,'gtgtIdentityMatched':True,'gtgtCt21Ready':True,
+ 'gtgtCt21CaseMatched':True,'gtgtCt21ConfirmationMatched':True,'gtgtCt21LocksMatched':True,'gtgtCt21BeforeExportMatched':True,'gtgtSignatureReady':True,'gtgtSheetRows':72,
+ 'gtgtSheetColumns':24,'gtgtSheetCount':11,'exportCommandInvoked':True,'exportSelectorMatched':True,'exportButtonInvoked':True,'exportDialogMatched':True,
+ 'exportDestinationFresh':True,'exportSchemaPinnedVerified':True,'exportFilenameParentKind':'combobox','gtgtCt42BeforeExportObserved':True,'gtgtCt42LockedBeforeExport':True,
+ 'gtgtAutoCalculationReady':True,'gtgtBusinessInstanceMatched':True,'gtgtCaseMoneyMatched':True,'gtgtCt42Locked':True,'webInputVerified':True,
+ 'webImportInputSha256':'b8b7b6c01c51282a5492d698754e4d0adeef1d25a48d9e346ad2a0318a1af4de','webSourceSha':'7c01e635a426bb3d4c4a295fb05f311cf3d9fd24',
+ 'webCaseId':'01GTGT-noactivity-cancel-sale10-M10-2026','webCaseEditCount':2,'gtgtCaseMoneyCount':27,'gtgtCaseNonzeroMask':10727808,
+ 'controlKinds':{'form': 1, 'button': 18, 'combo': 3, 'text': 2, 'spread': 1, 'other': 18},'webSigningDateEdited':True,'webSigningDateReady':True,'webSigningDateCellKind':4,
+ 'waitSeconds':22,}
+# Run 42268954396 (release 218, 01GTGT-annex12-two-plants-nonzero): operation-not-established
+# while checking the imported annex12 after a real export and import. Never retryable.
+ANNEX12_FAILURE_GUI={
+ 'status':'failed','annex12ExportMainZeroMatched':True,'annex12WebImportSheetMatched':True,'annex12WebBaselineSchemaVerified':True,'annex12WebImportGroupCount':2,
+ 'annex12WebImportRowCount':5,'annex12WebImportDisplayEmptyMask':8659208,'annex12WebHeadAuthorityRepairCount':3,'annex12WebHeadAuthorityFailureMask':2116,
+ 'annex12WebHeadAuthorityComboMask':1899,'annex12InputReadOnlyIdentityMatched':True,'annex12InputIdentityMatched':True,'annex12InputTypesMatched':True,
+ 'annex12InputGeographyMatched':True,'annex12InputTaxAuthoritiesMatched':True,'annex12InputPercentagesMatched':True,'annex12InputZeroTaxMatched':True,'annex12InputActionCount':14,
+ 'format':'htkk-gui-reference-automation-v1','mode':'gtgt-web-import-inspect','stage':'gtgt-annex12-web-import-checking','failureCategory':'operation-not-established',
+ 'editorKind':'combo','runtime':'clr2-x86-custom-reference','sourcePinsVerified':True,'visibleForms':1,'spreadCount':1,'sheetRows':75,'sheetColumns':22,'mstBoxesMatched':True,
+ 'initialRequiredTextBlank':True,'editingApiAvailable':True,'performedInputCount':7,'originalSaveInvoked':True,'savedHeaderExists':True,'savedHeaderChecksMatched':True,
+ 'savedHeaderCheckedFieldCount':8,'saveDialogKind':'success-0002','profileClosed':True,'mainMenuObserved':True,'d1MenuClicked':True,'gtgtPeriodObserved':True,'menuRowCount':314,
+ 'menuClickCount':1,'periodControlCount':137,'periodYearMonthMatched':True,'periodFirstDeclarationMatched':True,'periodActivityMatched':True,'periodGeographyMatched':True,
+ 'periodConfirmInvoked':True,'gtgtWorkbookPinsVerified':True,'gtgtMenuVersionMatched':True,'gtgtPeriodModelMatched':True,'gtgtSheetObserved':True,'gtgtSheetNameMatched':True,
+ 'gtgtDimensionsMatched':True,'gtgtIdentityMatched':True,'gtgtCt21Ready':True,'gtgtSignatureReady':True,'periodAnnex12Matched':True,'annex12SourcePinsMatched':True,
+ 'annex12SheetObserved':True,'annex12StructureMatched':True,'annex12GroupMetadataMatched':True,'annex12SttMatched':True,'annex12LocksMatched':True,'annex12SelectionActionCount':1,
+ 'annex12SheetRows':66,'annex12SheetColumns':45,'annex12NumericCount':8,'annex12GroupCount':1,'annex12FirstGroupId':1,'annex12FirstGroupRows':1,'annex12RowTabClickInvoked':True,
+ 'annex12F5Visible':True,'annex12F5Invoked':True,'annex12RowBeforeMatched':True,'annex12RowAfterMatched':True,'annex12RowSttMatched':True,'annex12RowLocksMatched':True,
+ 'annex12RowBeforeRows':66,'annex12RowAfterRows':67,'annex12RowBeforeGroupRows':1,'annex12RowAfterGroupRows':2,'annex12RowAfterGroupId':1,'annex12RowInsertActionCount':1,
+ 'annexSelectedCount':1,'gtgtSheetRows':72,'gtgtSheetColumns':24,'gtgtSheetCount':11,'exportCommandInvoked':True,'exportSelectorMatched':True,'exportButtonInvoked':True,
+ 'exportDialogMatched':True,'exportDestinationFresh':True,'exportDialogSubmitted':True,'exportFileExists':True,'exportXmlRootMatched':True,'exportSyntheticIdentityMatched':True,
+ 'exportSuccessAcknowledged':True,'exportSchemaPinnedVerified':True,'exportFilenameKeyboardCommitted':True,'exportFilenameParentKind':'combobox','exportOriginalPathMatched':True,
+ 'exportOriginalPathKind':'expected-path','exportScopedFileCount':1,'exportScopedXmlCount':1,'exportBytes':5426,
+ 'exportSha256':'b7db30d17185dc86bdb4d048f82ddd9167c6aca950a7ea2298ca43ca20e3f348','roundtripImportCommandInvoked':True,'roundtripImportDialogMatched':True,
+ 'roundtripImportKeyboardCommitted':True,'roundtripImportDialogSubmitted':True,'roundtripImportPathMatched':True,'roundtripImportSheetMatched':True,'roundtripImportSucceeded':True,
+ 'roundtripImportCheckedMoneyCount':27,'gtgtCt42BeforeExportObserved':True,'gtgtCt42LockedBeforeExport':True,'gtgtCt42AfterImportObserved':True,'gtgtCt42LockedAfterImport':True,
+ 'gtgtAutoCalculationReady':True,'gtgtBusinessInstanceMatched':True,'gtgtCaseMoneyMatched':True,'gtgtCt42Locked':True,'webInputVerified':True,
+ 'webImportInputSha256':'a17f2b51b92b4eded8230dbec5df81f5757578dce28027bb32a343830ec69cae','webSourceSha':'09c8e71879fd7fb1f3f4a8f9cf53aa889f72dca0',
+ 'webCaseId':'01GTGT-annex12-two-plants-nonzero-M10-2026','webCaseEditCount':1,'gtgtCaseMoneyCount':27,'gtgtCaseNonzeroMask':10727808,
+ 'controlKinds':{'form': 1, 'button': 18, 'combo': 3, 'text': 2, 'spread': 1, 'other': 18},'webSigningDateEdited':True,'webSigningDateReady':True,'webSigningDateCellKind':4,
+ 'waitSeconds':31,}
+class ExportDialogNotEstablished(unittest.TestCase):
+ def fixture(self,gui=DIALOG_FAILURE_GUI):
+  f=GuiPreExportTimeout().fixture();r=f['records'][1]
+  shape={k:copy.deepcopy(v['default'])for k,v in retry.FIELDS.items()}
+  shape.update(copy.deepcopy(gui),periodControls=copy.deepcopy(r['guiReferenceAutomation']['periodControls']))
+  r['guiReferenceAutomation']=shape;return f
+ def test_real_export_dialog_focus_failure_retries_once_on_attempt_one(self):
+  f=self.fixture();self.assertEqual(retry.classify(f['jobs'],f['records']),'gui-pre-export-timeout')
+  GuiPreExportTimeout.assertRetried(self,f,'real')
+  for stage in retry.EXPORT_DIALOG_STAGES:
+   f=self.fixture();f['records'][1]['guiReferenceAutomation']['stage']=stage;GuiPreExportTimeout.assertRetried(self,f,stage)
+  f=self.fixture();f['records'][1]['guiReferenceAutomation']['exportFilenameParentKind']='combobox-ex';GuiPreExportTimeout.assertRetried(self,f,'combobox-ex')
+ def test_operation_not_established_outside_the_export_save_dialog_is_never_retried(self):
+  f=self.fixture(ANNEX12_FAILURE_GUI);GuiPreExportTimeout.assertRejected(self,f,'annex12-real')
+  f=self.fixture(ANNEX12_FAILURE_GUI);f['records'][1]['guiReferenceAutomation']['stage']='gtgt-export-filename-keyboard-typed';GuiPreExportTimeout.assertRejected(self,f,'annex12-real-at-dialog-stage')
+  stages=['gtgt-import-filename-focus-waiting','gtgt-import-filename-focus-timeout','gtgt-import-filename-keyboard-typed','gtgt-import-file-dialog-waiting',
+   'gtgt-import-original-reading','gtgt-annex12-web-import-checking','gtgt-annex12-input-editing','gtgt-annex12-nonzero-reexport-invoking','declaration-export-file-dialog-waiting',
+   'gtgt-period-configuring','gtgt-period-confirm-invoking','waiting-gtgt-sheet','gtgt-case-editing','gtgt-noactivity-confirming','gtgt-export-command-invoking',
+   'gtgt-export-file-dialog-waiting','gtgt-export-original-writing','gtgt-export-success-file-checking','gtgt-export-original-message-rejected','gtgt-reexport-command-invoking',
+   'gtgt-reexport-ready-waiting','gtgt-web-import-ready-waiting','gtgt-roundtrip-inspected','waiting-profile-close','gtgt-menu-click-D1']
+  self.assertTrue(set(stages)<=set(retry.STAGE_CATEGORIES))
+  for stage in stages:
+   f=self.fixture();f['records'][1]['guiReferenceAutomation']['stage']=stage;GuiPreExportTimeout.assertRejected(self,f,stage)
+  mutations={'io':('failureCategory','io'),'com':('failureCategory','com'),'argument':('failureCategory','argument'),'reflection':('failureCategory','reflection-invocation'),
+   'other':('failureCategory','other-standard'),'status-timeout':('status','timed-out'),'status-exited':('status','root-exited'),'dialog-unmatched':('exportDialogMatched',False),
+   'editor-other':('exportFilenameParentKind','other'),'editor-unobserved':('exportFilenameParentKind','not-observed'),'committed':('exportFilenameKeyboardCommitted',True),
+   'submitted':('exportDialogSubmitted',True),'file':('exportFileExists',True),'bytes':('exportBytes',5426),'sha':('exportSha256','b'*64),'scoped':('exportScopedFileCount',1),
+   'path':('exportOriginalPathKind','expected-path'),'ack':('exportSuccessAcknowledged',True),'export-rejected':('exportRejectedMessageId',16),'import-rejected':('importRejectedMessageId',478),
+   'money-unmatched':('gtgtCaseMoneyMatched',False),'money-mismatch':('gtgtCaseMismatchMask',2),'header-mismatch':('savedHeaderMismatchMask',1),
+   'roundtrip':('roundtripImportCommandInvoked',True),'reexport':('roundtripReexportCommandInvoked',True),'web-tax':('webTaxValuesMatched',True),
+   'annex-web':('annex12WebImportSheetMatched',True),'after-import':('gtgtCt42AfterImportObserved',True),'web-input':('webInputVerified',False),'selector':('exportSelectorMatched',False),
+   'destination':('exportDestinationFresh',False),'mode':('mode','gtgt-roundtrip-inspect'),'unknown':('futureProgressFlag',True),'wait-type':('waitSeconds',22.0)}
+  for name,(key,value) in mutations.items():
+   f=self.fixture();f['records'][1]['guiReferenceAutomation'][key]=value;GuiPreExportTimeout.assertRejected(self,f,name)
+  for name in ['cue','evidence','published','attempt2','declaration-mode']:
+   f=self.fixture();r=f['records'][1]
+   if name=='cue':r['nativeDialogCueCounts']={'message':1}
+   if name=='evidence':r['privateGtgtExportEvidence']={'status':'retained'}
+   if name=='published':f['records'][2]=dict(FILES,status='published')
+   if name=='attempt2':f['run']['run_attempt']=2
+   if name=='declaration-mode':self.assertFalse(retry._gui_pre_export_timeout(dict(r['guiReferenceAutomation'],mode=retry.DECLARATION_MODE,stage='declaration-export-file-dialog-waiting'),retry.DECLARATION_MODE));continue
+   GuiPreExportTimeout.assertRejected(self,f,name)
+  # A dialog-stage timeout keeps the original rule: the full budget must have elapsed.
+  f=self.fixture();f['records'][1]['guiReferenceAutomation'].update(status='timed-out',failureCategory='none');GuiPreExportTimeout.assertRejected(self,f,'short-timeout')
+  f=self.fixture();f['records'][1]['guiReferenceAutomation'].update(status='timed-out',failureCategory='none',waitSeconds=60);GuiPreExportTimeout.assertRetried(self,f,'dialog-timeout')
+ def test_dialog_stages_match_the_original_export_dialog_driver(self):
+  root=pathlib.Path(__file__).parent;export=(root/'HtkkGtgtExportInspection.cs').read_text(encoding='utf-8')
+  enums=(root/'HtkkNativeAutomationEnums.cs').read_text(encoding='utf-8');gui=(root/'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
+  self.assertEqual(set(retry.EXPORT_DIALOG_STAGES),{s for s in retry.STAGE_CATEGORIES if s.startswith('gtgt-export-filename-')})
+  self.assertEqual(len(retry.EXPORT_DIALOG_STAGES),6)
+  for stage in retry.EXPORT_DIALOG_STAGES:self.assertIn('return "'+stage+'";',enums)
+  self.assertIn('error is InvalidOperationException?"operation-not-established"',gui)
+  body=export[export.index('private bool TrySubmitOriginalFileDialog('):export.index('private int OriginalMessageCatalogueId(')]
+  # The editor parent kind is recorded, then the dialog marked matched, before any focus stage;
+  # the filename is committed and Save posted only after the last keyboard stage.
+  kind=body.index('exportFilenameParentKind=parentClass==');matched=body.index('else exportDialogMatched=true;')
+  self.assertLess(kind,matched);self.assertLess(matched,body.index('HtkkFilenameDialogAction.FocusTimeout'))
+  typed=body.index('HtkkFilenameDialogAction.KeyboardTyped');committed=body.index('else exportFilenameKeyboardCommitted=true;')
+  submitted=body.index('else exportDialogSubmitted=true;');post=body.index('PostMessage(save,245')
+  self.assertLess(typed,committed);self.assertLess(committed,submitted);self.assertLess(submitted,post)
+  self.assertIn('if(File.Exists(desiredPath))throw new InvalidOperationException();',body)
