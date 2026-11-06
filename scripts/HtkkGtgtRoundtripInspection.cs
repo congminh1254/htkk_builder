@@ -35,7 +35,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(roundtripPhase=="waiting-import-result"){
    foreach(Form message in Application.OpenForms){if(!message.Visible||message.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
     Control[] labels=message.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
-    if(labels[0].Text!="Nhập dữ liệu từ XML thành công."){SetStage(HtkkAutomationStage.GtgtImportOriginalMessageRejected);finished=true;Record();exportWatcher.Stop();return;}
+    if(labels[0].Text!="Nhập dữ liệu từ XML thành công."){importRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(HtkkAutomationStage.GtgtImportOriginalMessageRejected);finished=true;Record();exportWatcher.Stop();return;}
     SetStage(HtkkAutomationStage.GtgtImportSuccessSheetChecking);
     FieldInfo loading=OriginalAssembly().GetType("HTKK.frmWinToKhai",true).GetField("FileNameLoading",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);
     if(loading==null||loading.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)loading.GetValue(null);
