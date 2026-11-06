@@ -8,6 +8,10 @@ Build diagnostics stay in runner-local temporary files, are never uploaded, and 
 
 Releases retain verified static output on the private generated branch `htkk-net/htkk_web:pages-output`. No private source or logs are uploaded to public Actions artifacts. After a successful release, the public builder's `pages.yml` workflow checks out the exact private static artifact, verifies source main, build provenance and all 13 successful native regression workflows on the producing builder revision, then uploads **only `output/site`** to GitHub Pages. Manual retry takes an immutable `pages_commit`; stale artifacts fail closed. Private-source Pages dispatch is retired. See [PUBLIC-PAGES.md](PUBLIC-PAGES.md) for domain migration and setup.
 
+## Private source extract
+
+`source-extract.yml` (main only, `workflow_dispatch`) reverifies the pinned 5.8.1 installer, exports MSI layout/CAB members read-only without running vendor code, and pushes the priority-form resources plus all business DLLs with a SHA-256 manifest to the PRIVATE branch `htkk-net/htkk_web:htkk-source-5.8.1` using `SOURCE_PUBLISH_TOKEN` (fallback `SOURCE_READ_TOKEN`). No payload is uploaded or logged. See [SOURCE-EXTRACT.md](SOURCE-EXTRACT.md).
+
 ## Configure dedicated credentials
 
 Do not reuse a general personal/session token. Fine-grained tokens must have only the selected repository and permissions listed below; metadata read is implicit. Do not place these credentials in source files or command arguments.

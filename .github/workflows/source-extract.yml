@@ -1,0 +1,103 @@
+name: Trích xuất nguồn HTKK 5.8.1 vào nhánh private
+run-name: HTKK 5.8.1 private source extract (${{ inputs.scope }})
+on:
+  workflow_dispatch:
+    inputs:
+      scope:
+        description: 'priority = bộ biểu mẫu ưu tiên + InterfaceIni + toàn bộ DLL; full = cả 4526 tệp MSI'
+        type: choice
+        options: [priority, full]
+        default: priority
+        required: true
+      transport:
+        description: 'auto = trực tiếp, relay chỉ khi lỗi tạm thời và có AGENT_AUTH_TOKEN; direct; relay'
+        type: choice
+        options: [auto, direct, relay]
+        default: auto
+        required: true
+      publish:
+        description: Push snapshot vào htkk-net/htkk_web:htkk-source-5.8.1 (false = chỉ kiểm tra, không ghi)
+        type: boolean
+        default: true
+        required: true
+permissions:
+  contents: read
+concurrency:
+  group: htkk-source-extract-5.8.1
+  cancel-in-progress: false
+jobs:
+  extract:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      # No upload-artifact, cache or log of payload bytes/names anywhere in this job.
+      - name: Checkout trusted public builder only
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Test source boundaries without network
+        run: python -m unittest discover -s scripts -p test_source*.py
+      - name: Check data-only Cabinet extraction with own fixtures
+        shell: pwsh
+        run: ./scripts/Test-HtkkSourceCabinet.ps1
+      - name: Check read-only MSI query adapter
+        shell: pwsh
+        run: ./scripts/Test-HtkkMsiRows.ps1
+      - name: Check fail-closed source worker launch boundary
+        shell: pwsh
+        run: ./scripts/Test-HtkkSourceTrustBoundary.ps1
+      - name: Confirm fixed private target before any candidate process exists
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
+        run: python scripts/source-extract.py preflight
+      - name: Download only the pinned 5.8.1 archive as inert bytes
+        env:
+          SOURCE_TRANSPORT: ${{ inputs.transport }}
+          AGENT_AUTH_TOKEN: ${{ secrets.AGENT_AUTH_TOKEN }}
+        run: python scripts/source-extract.py download
+      - name: Verify signatures, revocation and MSI CAB payload without execution
+        shell: pwsh
+        run: |
+          $candidate=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
+          & ./scripts/Test-HtkkSourceCandidateTrust.ps1 -CandidateDirectory $candidate -ResultPath (Join-Path $candidate 'trust.json')
+          $r=Get-Content -LiteralPath (Join-Path $candidate 'trust.json') -Raw | ConvertFrom-Json
+          if($r.status -cne 'baseline-verified' -or -not $r.workerStopped -or -not $r.jobCleanupVerified){throw 'SOURCE_TRUST_NOT_VERIFIED'}
+      - name: Export MSI layout and CAB members read-only in a bounded Job
+        shell: pwsh
+        run: |
+          $candidate=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
+          & ./scripts/Export-HtkkSourcePayload.ps1 -CandidateDirectory $candidate -OutputDirectory (Join-Path $candidate 'export') -ResultPath (Join-Path $candidate 'export-result.json')
+          $r=Get-Content -LiteralPath (Join-Path $candidate 'export-result.json') -Raw | ConvertFrom-Json
+          if($r.status -cne 'exported' -or -not $r.workerStopped -or -not $r.jobCleanupVerified){throw 'SOURCE_EXPORT_NOT_VERIFIED'}
+      - name: Stage selected sources with SHA-256 manifest (no credentials)
+        id: stage
+        env:
+          EXTRACT_SCOPE: ${{ inputs.scope }}
+        run: python scripts/source-extract.py stage
+      - name: Push snapshot to fixed private branch only after verified cleanup
+        if: steps.stage.outputs.bundle_ready == 'true'
+        env:
+          EXTRACT_PUBLISH: ${{ inputs.publish && 'true' || 'false' }}
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+        run: python scripts/source-extract.py publish
+      - name: Report bounded outcome
+        if: always()
+        run: python scripts/source-extract.py outcome
+      - name: Remove local candidate, payload and Git work after confirmed worker stop
+        if: always()
+        shell: pwsh
+        run: |
+          $candidate=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
+          foreach($report in @((Join-Path $candidate 'trust.json'),(Join-Path $candidate 'export-result.json'))){
+            if(Test-Path -LiteralPath $report){
+              $r=Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
+              if(-not $r.workerStopped -or -not $r.jobCleanupVerified){throw 'SOURCE_WORKER_CLEANUP_UNCONFIRMED'}
+            }
+          }
+          foreach($leaf in @('htkk-source-candidate','htkk-source-extract-bundle','htkk-source-extract-git','htkk-source-extract-publish.json')){
+            $path=Join-Path $env:RUNNER_TEMP $leaf
+            if(Test-Path -LiteralPath $path){Remove-Item -LiteralPath $path -Recurse -Force}
+          }
