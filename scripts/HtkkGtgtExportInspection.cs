@@ -13,6 +13,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool exportStarted=false,exportCommandInvoked=false,exportSelectorMatched=false,exportButtonInvoked=false,exportDialogMatched=false,exportDestinationFresh=false,exportDialogSubmitted=false,exportFileExists=false,exportXmlRootMatched=false,exportSyntheticIdentityMatched=false,exportSuccessAcknowledged=false;
  private bool exportFilenameEditing=false,exportFilenameKeyboardCommitted=false;private string exportFilenameParentKind="not-observed";private bool exportSchemaPinnedVerified=false;private bool exportOriginalPathMatched=false;private int exportScopedFileCount=0,exportScopedXmlCount=0;private string exportOriginalPathKind="not-observed";
  private int exportBytes=0;private string exportSha256="",exportPath="",expectedSaveTitle="";
+ // Bounded diagnostic of an ORIGINAL non-success message: its ID in the pinned
+ // Project/Message.xml catalogue (0 = none observed, 9999 = text not catalogued).
+ // The message text itself is never published.
+ private int exportRejectedMessageId=0,importRejectedMessageId=0;
  private readonly HtkkFileDialogFocusGate filenameFocusGate=new HtkkFileDialogFocusGate();
  private System.Windows.Forms.Timer exportWatcher=null;
  private delegate bool WindowVisitor(IntPtr window,IntPtr parameter);
@@ -41,7 +45,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"exportSchemaPinnedVerified"+q+":"+Bool(exportSchemaPinnedVerified));
   json.Append(","+q+"exportFilenameKeyboardCommitted"+q+":"+Bool(exportFilenameKeyboardCommitted)+","+q+"exportFilenameParentKind"+q+":"+q+exportFilenameParentKind+q);
   json.Append(","+q+"exportOriginalPathMatched"+q+":"+Bool(exportOriginalPathMatched)+","+q+"exportOriginalPathKind"+q+":"+q+exportOriginalPathKind+q+","+q+"exportScopedFileCount"+q+":"+exportScopedFileCount+","+q+"exportScopedXmlCount"+q+":"+exportScopedXmlCount);
-  json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);return json.ToString()+RoundtripJson();
+  json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);
+  json.Append(","+q+"exportRejectedMessageId"+q+":"+exportRejectedMessageId+","+q+"importRejectedMessageId"+q+":"+importRejectedMessageId);return json.ToString()+RoundtripJson();
  }
  private static void FindExportSelectors(Control root,List<Form> found,ref int count){if(++count>512)return;Form form=root as Form;if(form!=null&&form.Visible&&form.GetType().FullName=="HTKK.frmWinSelectExport"&&!found.Contains(form))found.Add(form);foreach(Control child in root.Controls){if(count>=512)break;FindExportSelectors(child,found,ref count);}}
  private void StartOriginalGtgtExport(Form owner){
@@ -65,7 +70,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(roundtripPhase!="not-started"&&roundtripPhase!="reexporting"&&roundtripPhase!="annex12-nonzero-reexporting"){ContinueOriginalRoundtrip();return;}
   foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
    Control[] labels=form.Controls.Find("lblThongBao",true);if(labels.Length!=1)throw new InvalidOperationException();
-   if(labels[0].Text!="Kết xuất tờ khai xml thành công."){SetStage(HtkkAutomationStage.GtgtExportOriginalMessageRejected);finished=true;Record();exportWatcher.Stop();return;}
+   if(labels[0].Text!="Kết xuất tờ khai xml thành công."){exportRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(HtkkAutomationStage.GtgtExportOriginalMessageRejected);finished=true;Record();exportWatcher.Stop();return;}
    SetStage(HtkkAutomationStage.GtgtExportSuccessFileChecking);InspectOriginalExportDestination();Record();if(!exportOriginalPathMatched)throw new InvalidOperationException();
    ReadOriginalExport();if(mode=="gtgt-annex12-export-inspect"||(mode=="gtgt-annex12-export-nonzero"&&roundtripPhase=="not-started"))ValidateOriginalAnnex12Export();
    if(roundtripPhase=="annex12-nonzero-reexporting")ValidateOriginalAnnex12NonzeroSecondExport();
@@ -149,6 +154,22 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(opening)roundtripImportDialogSubmitted=true;else exportDialogSubmitted=true;SetStage(opening?HtkkAutomationStage.GtgtImportOriginalReading:HtkkAutomationStage.GtgtExportOriginalWriting);Record();if(!PostMessage(save,245,IntPtr.Zero,IntPtr.Zero))throw new InvalidOperationException();filenameFocusGate.ResetAfterSubmission();
   }finally{exportFilenameEditing=false;if(!finished)exportWatcher.Start();}
   return true;
+ }
+ private int OriginalMessageCatalogueId(string text){
+  // Exact match only against the pinned original catalogue; smallest matching ID.
+  try{
+   string file=Path.Combine(project,"Message.xml");FileInfo info=new FileInfo(file);
+   if(text==null||!info.Exists||(info.Attributes&FileAttributes.ReparsePoint)!=0||info.Length>2000000||Hash(file)!="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606")return 9999;
+   XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
+   using(XmlReader reader=XmlReader.Create(file,settings))document.Load(reader);
+   int found=9999;string wanted=text.Trim();
+   foreach(XmlNode node in document.SelectNodes("/Message/Infor[@ID and @Msg]")){
+    string id=node.Attributes["ID"].Value;int value;
+    if(id.Length!=4||!Int32.TryParse(id,NumberStyles.None,CultureInfo.InvariantCulture,out value)||value<1||value>9998)continue;
+    if(node.Attributes["Msg"].Value.Trim()==wanted&&value<found)found=value;
+   }
+   return found;
+  }catch{return 9999;}
  }
  private static string EscapeSendKeys(string value){StringBuilder escaped=new StringBuilder();foreach(char character in value){if("+^%~(){}[]".IndexOf(character)>=0)escaped.Append("{"+character+"}");else escaped.Append(character);}return escaped.ToString();}
  private void InspectOriginalExportDestination(){

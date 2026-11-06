@@ -1160,6 +1160,7 @@
     "annex12WebReexportSchemaVerified",
     "annex12WebImportGroupCount",
     "annex12WebImportRowCount",
+    "annex12WebImportDisplayEmptyMask",
     "annex12InputReadOnlyIdentityMatched",
     "annex12InputIdentityMatched",
     "annex12InputTypesMatched",
@@ -1284,6 +1285,8 @@
     "exportScopedXmlCount",
     "exportBytes",
     "exportSha256",
+    "exportRejectedMessageId",
+    "importRejectedMessageId",
     "roundtripImportCommandInvoked",
     "roundtripImportDialogMatched",
     "roundtripImportKeyboardCommitted",
@@ -1612,6 +1615,15 @@
       "default": 0,
       "minimum": 0,
       "maximum": 10,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebImportDisplayEmptyMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 33554431,
       "activeModes": [
         "gtgt-web-import-inspect"
       ]
@@ -2335,6 +2347,18 @@
       "default": "",
       "length": 64,
       "allowEmpty": true
+    },
+    "exportRejectedMessageId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 9999
+    },
+    "importRejectedMessageId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 9999
     },
     "roundtripImportCommandInvoked": {
       "kind": "boolean",
