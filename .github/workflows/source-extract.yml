@@ -64,14 +64,21 @@ jobs:
           $candidate=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
           & ./scripts/Test-HtkkSourceCandidateTrust.ps1 -CandidateDirectory $candidate -ResultPath (Join-Path $candidate 'trust.json')
           $r=Get-Content -LiteralPath (Join-Path $candidate 'trust.json') -Raw | ConvertFrom-Json
-          if($r.status -cne 'baseline-verified' -or -not $r.workerStopped -or -not $r.jobCleanupVerified){throw 'SOURCE_TRUST_NOT_VERIFIED'}
+          if($r.status -cne 'baseline-verified' -or -not $r.workerStopped -or -not $r.jobCleanupVerified){
+            $code=if([string]$r.failureCode -cmatch '^[A-Z0-9_]{1,48}$'){[string]$r.failureCode}else{'UNKNOWN'}
+            throw ('SOURCE_TRUST_NOT_VERIFIED:'+$code)
+          }
       - name: Export MSI layout and CAB members read-only in a bounded Job
         shell: pwsh
         run: |
           $candidate=Join-Path $env:RUNNER_TEMP 'htkk-source-candidate'
           & ./scripts/Export-HtkkSourcePayload.ps1 -CandidateDirectory $candidate -OutputDirectory (Join-Path $candidate 'export') -ResultPath (Join-Path $candidate 'export-result.json')
           $r=Get-Content -LiteralPath (Join-Path $candidate 'export-result.json') -Raw | ConvertFrom-Json
-          if($r.status -cne 'exported' -or -not $r.workerStopped -or -not $r.jobCleanupVerified){throw 'SOURCE_EXPORT_NOT_VERIFIED'}
+          if($r.status -cne 'exported' -or -not $r.workerStopped -or -not $r.jobCleanupVerified){
+            $code=if([string]$r.failureCode -cmatch '^[A-Z0-9_]{1,48}$'){[string]$r.failureCode}else{'UNKNOWN'}
+            $stage=if([string]$r.stage -cmatch '^[A-Z0-9_]{1,48}$'){[string]$r.stage}else{'UNKNOWN'}
+            throw ('SOURCE_EXPORT_NOT_VERIFIED:'+$code+':'+$stage)
+          }
       - name: Stage selected sources with SHA-256 manifest (no credentials)
         id: stage
         env:

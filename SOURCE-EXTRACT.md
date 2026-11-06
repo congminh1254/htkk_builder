@@ -45,3 +45,17 @@ replacement, dry run, public target refusal), the Git environment allowlist,
 download transport rules and workflow/exporter text contracts. Windows-only
 behaviour (COM MSI reading, FDI extraction, Job cleanup) is only exercised on the
 Windows runner.
+
+## Failure diagnostics
+
+`export-result.json` and the single public console line carry only bounded fields:
+`code` (`failureCode`, fixed enums `$script:known`/`$script:controllerKnown` or a
+worker stage name), `stage` (worker stage), `controller` (controller step),
+`error` (innermost .NET exception type from a fixed allowlist, else `other`),
+`hresult` (numeric HRESULT) and `workerExit`. The failing step throws
+`SOURCE_EXPORT_NOT_VERIFIED:<code>:<stage>` / `SOURCE_TRUST_NOT_VERIFIED:<code>`,
+and `source-extract.py outcome` repeats the same enum-shaped fields. Exception
+messages, file names and paths are never written. Bootstrap failures (helper
+loading, unhandled worker errors) still write a coded result (`HELPER_LOAD`,
+`WORKER_UNHANDLED`); a worker that wrote a blocked result is reported by its own
+code even when it exits nonzero.
