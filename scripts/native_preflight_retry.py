@@ -4,6 +4,32 @@ BUILDER='congminh1254/htkk_builder';SOURCE='htkk-net/htkk_web'
 FRAMEWORK='Check clean Framework UIA assembly readiness'
 PROBE='Kiểm tra nguồn và điều kiện Windows'
 RETAIN='Retain verified raw native web reexport privately'
+PROFILE_CLOSE_LIMIT=60
+# Exact pre-close progress of the timed-out GUI helper; every other field must still be unprogressed.
+PROFILE_SAVED={'status':'timed-out','format':'htkk-gui-reference-automation-v1','mode':'gtgt-web-import-inspect','stage':'waiting-profile-close','failureCategory':'none','runtime':'clr2-x86-custom-reference','sourcePinsVerified':True,'spreadCount':1,'mstBoxesMatched':True,'initialRequiredTextBlank':True,'editingApiAvailable':True,'performedInputCount':7,'originalSaveInvoked':True,'savedHeaderExists':True,'savedHeaderChecksMatched':True,'savedHeaderCheckedFieldCount':8,'saveDialogKind':'success-0002','savedHeaderMismatchMask':0,'profileClosed':False,'realTaxpayerDataUsed':False,'runtimeRoundTrip':False}
+DESCRIPTIVE=frozenset(('editorKind','visibleForms','sheetRows','sheetColumns','controlKinds','webCaseId','waitSeconds'))
+UNPROGRESSED=(False,0,'','not-observed')
+def _exact(value,expected):return all(type(value.get(k))is type(v)and value.get(k)==v for k,v in expected.items())
+def _profile_close_not_observed(gui):
+ # The original profile Save succeeded and one Close was requested, but the retained
+ # owner never hid within the fixed budget. No menu, period, sheet, web input, money,
+ # export, import or comparison progressed; a mismatch or terminal stage never matches.
+ if type(gui)is not dict or not _exact(gui,PROFILE_SAVED):return False
+ if type(gui.get('waitSeconds'))is not int or gui['waitSeconds']<PROFILE_CLOSE_LIMIT or type(gui.get('webCaseId'))is not str:return False
+ if type(gui.get('periodControls'))is not dict or gui['periodControls']:return False
+ for k,v in gui.items():
+  if k in PROFILE_SAVED or k in DESCRIPTIVE or k=='periodControls':continue
+  if type(v)not in (bool,int,str)or not any(type(v)is type(u)and v==u for u in UNPROGRESSED):return False
+ return True
+def _supplier_boundary(r):
+ boundary=r.get('supplierProcessBoundary',{})
+ if r.get('guiReferenceAutomationMode')!='gtgt-web-import-inspect'or r.get('stage')!='blocked':return False
+ if r.get('referenceHostResult',{}).get('status')!='original-starting':return False
+ if any(r.get(k)is not True for k in ('sourceHashesVerified','originalSourcesUnmodified','officialDistributionFilesVerified','msiAuthenticodeValid','nativeHelperJobsStopped','hostOutboundBlocked','originalOutboundBlocked')):return False
+ if any(boundary.get(k)is not True for k in ('cleanupVerified','supplierStopped','rootStopped','jobEmpty')):return False
+ return r.get('taxDataUsed')is False and r.get('runtimeRoundTrip')is False
+LOGIN={'fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'runtimeRoundTrip':False}
+PERMIT_KEYS={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}
 def classify(jobs,records):
  ready=[j for j in jobs.get('jobs',[])if j.get('name')=='readiness']
  if len(ready)!=1 or ready[0].get('conclusion')!='failure':return None
@@ -15,18 +41,23 @@ def classify(jobs,records):
  if failed!={PROBE,RETAIN}:return None
  suppliers=[r for r in records if r.get('version')=='5.8.1'and 'supplierProcessBoundary'in r]
  if len(suppliers)!=1:return None
- r=suppliers[0];login=r.get('syntheticLogin',{});boundary=r.get('supplierProcessBoundary',{})
- permit=r.get('guiAutomationPermitBoundary',{})
- if set(permit)!={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}or any(type(permit.get(k))is not bool or permit[k]is not v for k,v in {'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}.items()):return None
- if r.get('guiReferenceAutomationMode')!='gtgt-web-import-inspect':return None
- if r.get('stage')!='blocked'or r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED'or r.get('guiReferenceAutomation')is not None:return None
- if r.get('referenceHostResult',{}).get('status')!='original-starting':return None
- if any(r.get(k)is not True for k in ('sourceHashesVerified','originalSourcesUnmodified','officialDistributionFilesVerified','msiAuthenticodeValid','nativeHelperJobsStopped','hostOutboundBlocked','originalOutboundBlocked')):return None
- if any(boundary.get(k)is not True for k in ('cleanupVerified','supplierStopped','rootStopped','jobEmpty')):return None
- if r.get('taxDataUsed')is not False or r.get('runtimeRoundTrip')is not False:return None
- expected={'status':'next-window-not-yet-identified','fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'profileWindowObserved':False,'runtimeRoundTrip':False}
- if any(type(login.get(k))is not type(v)or login.get(k)!=v for k,v in expected.items()):return None
- return 'synthetic-profile-startup-not-observed'
+ r=suppliers[0];login=r.get('syntheticLogin',{});permit=r.get('guiAutomationPermitBoundary',{})
+ if type(login)is not dict or type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r):return None
+ if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_VERIFIED':
+  if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None
+  if r.get('guiReferenceAutomation')is not None:return None
+  if not _exact(login,dict(LOGIN,status='next-window-not-yet-identified',profileWindowObserved=False)):return None
+  return 'synthetic-profile-startup-not-observed'
+ if r.get('blockedReason')=='GUI_REFERENCE_AUTOMATION_NOT_VERIFIED':
+  # The permit was issued (only the synthetic profile may be saved); it is still on disk
+  # when checked before owned-file deletion, so absentAfterCleanup is false by design.
+  if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':True,'absentAfterCleanup':False}):return None
+  if not _exact(login,dict(LOGIN,status='synthetic-profile-window-observed',profileWindowObserved=True,newIdClicked=True,nextOwnedWindowObserved=True,profileMainCaptionMatched=True,profileSaveCloseMatched=True)):return None
+  if not _profile_close_not_observed(r.get('guiReferenceAutomation')):return None
+  retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
+  if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]:return None
+  return 'synthetic-profile-close-not-observed'
+ return None
 
 def recover(status,case,source,builder,input_commit,get,records,send,actions_token,status_token,retried):
  if not actions_token or not status_token:return False

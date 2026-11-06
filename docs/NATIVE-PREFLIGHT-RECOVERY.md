@@ -5,7 +5,7 @@ source/input/request bindings and stopped supplier processes. Statuses only disc
 proof; a retry never grants success or qualification.
 
 `native_preflight_retry.py` permits exactly one failed-job rerun (attempt 1 → 2)
-for two narrow cases on the exact trusted main builder/workflow:
+for three narrow cases on the exact trusted main builder/workflow:
 
 - Framework UIA readiness timed out after phase `complete`, process stopped, and
   the supplier probe step was skipped. The source test loads fixed assembly identities
@@ -19,6 +19,27 @@ for two narrow cases on the exact trusted main builder/workflow:
   The helper cannot mutate/save the profile or navigate to tax without this permit.
   Source/signature/isolation and complete supplier/helper
   shutdown must be attested. Only the registered web-import driver is eligible.
+
+- The issued GUI permit let the helper save only the synthetic profile header: original
+  Save returned success 0002, all 8 saved-header checks matched with mask 0, and the
+  single original `Đóng` request was made, but the retained `frmWinToKhai` owner was
+  still visible when the fixed 60-second `gtgt-web-import-inspect` budget expired
+  (GUI status `timed-out`, stage `waiting-profile-close`, failure category `none`).
+  The permit attestation must show a unique initially-absent path, an attempted
+  authorization and the permit still present when checked before owned-file deletion.
+  Every other GUI field (main menu, D1 click, period, sheet, web input, case edits,
+  money counts/masks, export, import, re-export, comparison) must still hold its
+  unprogressed default; any unknown progressed field, terminal or later stage,
+  `failed`/`root-exited` status, header mismatch, or a retention result other than the
+  single `FILES` rejection refuses retry. Supplier/helper shutdown and source/signature/
+  isolation attestations are the same as for the startup case.
+
+Observed: run42148832165 (run 1069, case `01GTGT-sale5-half-M10-2026`, release
+42148147981) stopped at `waiting-profile-close` after 60s; the other 12 cases of that
+cohort passed, and inspected passing web-import runs (1035–1039) finished GUI
+automation in 20–36s. The root cause of the unobserved close is not yet known; the retry
+does not change any wait, close action or comparison, and the case must still pass in
+full on attempt 2.
 
 Unknown errors, a GUI/tax comparison report, changed sources, missing cleanup,
 failed callbacks, or a failed second attempt are rejected. The 20-minute batch
