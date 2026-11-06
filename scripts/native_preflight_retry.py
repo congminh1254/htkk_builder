@@ -228,6 +228,29 @@ def _gui_pre_export_branch(r,mode,permit,login):
  if any(r.get('blockedReason')==reason for _,reason in ORACLES):
   return _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True})and _oracle_helper_timeout(r)
  return False
+# Pre-login startup flake (run 42293586893, also 42250602039): the clean HTKK root stayed alive
+# at original-starting with only hidden windows until the bounded startup wait ran out. No login,
+# UIA scan, permit, GUI automation, web input, tax data or export existed; all oracles matched.
+STARTUP_WAIT_FLOOR=45
+STARTUP_REPORT={'processStarted':True,'processAliveAfterWait':True,'windowObserved':False,'rootAppWindowObserved':False,'mainWindowHandlePresent':False,
+ 'startupContext':'only-hidden-app-windows','appVisibleWindowCount':0,'childProcessCount':0,'childVisibleWindowCount':0,'preexistingHtkkProcessCount':0,
+ 'loginReady':False,'uiaStatus':'not-probed','registrationNonzeroExitCount':0,'registrationUnverifiedExitCount':0,'registrationPostFailureCount':0,
+ 'registrationAcknowledgementLimitReached':False,'syntheticLoginRequested':True,'nativeDialogCueCounts':{}}
+def _startup_window_not_observed(r,mode,permit):
+ if r.get('blockedReason')!='STARTUP_WINDOW_NOT_OBSERVED' or not _exact(r,STARTUP_REPORT):return False
+ if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return False
+ if type(r.get('startupWaitSeconds'))is not int or r['startupWaitSeconds']<STARTUP_WAIT_FLOOR:return False
+ if type(r.get('appHiddenWindowCount'))is not int or r['appHiddenWindowCount']<1:return False
+ if any(k not in r or r[k]is not None for k in ('syntheticLogin','guiReferenceAutomation','privateGtgtExportEvidence','privateWebNativeOutputEvidence','privateSyntheticLoginDiagnostic')):return False
+ if not all(_oracle_clean(r.get(k))and r[k].get('status')=='matched' for k,_ in ORACLES):return False
+ events=r.get('applicationEvents')
+ if type(events)is not dict or events.get('matchedEventCount')!=0 or type(events.get('matchedEventCount'))is not int:return False
+ # Only (hidden) WinForms windows of the root may exist; no dialog or other window kind.
+ owned=r.get('ownedWindowKinds')
+ if type(owned)is not dict or set(owned)-{'winforms'} or any(type(v)is not int or v<0 for v in owned.values()):return False
+ kinds=r.get('descendantProcessKinds')
+ if type(kinds)is not dict or any(type(v)is not int or v!=0 for v in kinds.values()):return False
+ return _supplier_boundary(r,(mode,))
 LOGIN={'fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'runtimeRoundTrip':False}
 PERMIT_KEYS={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}
 def classify(jobs,records):
@@ -251,6 +274,9 @@ def classify(jobs,records):
   if not any(s.get('name')==DECLARATION_RETAIN and s.get('conclusion')=='success'for s in steps):return None
   declared=[x for x in records if x.get('format')==DECLARATION_NOT_STAGED['format']]
   if len(declared)!=1 or not _exact(declared[0],DECLARATION_NOT_STAGED) or set(declared[0])!=set(DECLARATION_NOT_STAGED):return None
+  if r.get('blockedReason')=='STARTUP_WINDOW_NOT_OBSERVED':
+   if not _no_retained_evidence(steps,DECLARATION_RETAIN,'success')or any(x.get('format')=='htkk-web-native-output-publication-status-v1'for x in records):return None
+   return 'startup-window-not-observed'if _startup_window_not_observed(r,DECLARATION_MODE,permit)else None
   if r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED':
    if not _no_retained_evidence(steps,DECLARATION_RETAIN,'success')or any(x.get('format')=='htkk-web-native-output-publication-status-v1'for x in records):return None
    return 'gui-pre-export-timeout'if _gui_pre_export_branch(r,DECLARATION_MODE,permit,login if type(login)is dict else None)else None
@@ -267,6 +293,10 @@ def classify(jobs,records):
   retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
   if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]or not _no_retained_evidence(steps,RETAIN,'failure')or _declaration_status(records):return None
   return 'gui-pre-export-timeout'if _gui_pre_export_branch(r,'gtgt-web-import-inspect',permit,None)else None
+ if r.get('blockedReason')=='STARTUP_WINDOW_NOT_OBSERVED':
+  retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
+  if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]or not _no_retained_evidence(steps,RETAIN,'failure')or _declaration_status(records):return None
+  return 'startup-window-not-observed'if _startup_window_not_observed(r,'gtgt-web-import-inspect',permit)else None
  if type(login)is not dict:return None
  if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_VERIFIED':
   if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None

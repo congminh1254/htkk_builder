@@ -764,6 +764,13 @@ try {
   $report.threadDesktop = [HtkkWindowDiagnostics]::DesktopKind()
   try { $report.appArchitecture = [HtkkWindowDiagnostics]::Architecture($process.Handle) } catch { $report.appArchitecture = 'unknown' }
   try { $rootStartTime = $process.StartTime } catch { $rootStartTime=$applicationStartTime }
+  # Slow runners need 27-45 s (fast ones 11-17 s) before the login window is visible; run
+  # 42293586893 still had only hidden HTKK windows at the former 45 s limit. Observation still
+  # ends the wait at once; polls are 2 s apart so a fast start is not delayed.
+  $startupLimitSeconds = 90
+  $report.startupLimitSeconds = $startupLimitSeconds
+  $startupTimeline = [Collections.Generic.List[object]]::new(); $lastStartupSignature = $null
+  $report.startupTimelineTruncated = $false
   $startupClock = [System.Diagnostics.Stopwatch]::StartNew()
   do {
     $process.Refresh()
@@ -783,11 +790,16 @@ try {
     $report.windowObserved = ($counts[1] + $counts[3]) -gt 0
     $report.startupWaitSeconds = [int][Math]::Floor($startupClock.Elapsed.TotalSeconds)
     $report.rootAppWindowObserved = $counts[1] -gt 0
+    # Bounded change-only startup timeline: fixed counts/booleans only, at most 24 entries.
+    $startupSample = [ordered]@{ atSeconds = $report.startupWaitSeconds; processAlive = [bool]$report.processAliveAfterWait; mainWindowHandlePresent = [bool]$report.mainWindowHandlePresent; appVisibleWindows = [int]$counts[1]; appHiddenWindows = [int]$counts[2]; childVisibleWindows = [int]$counts[3]; childHiddenWindows = [int]$counts[4]; childProcesses = [int]$children.Count; registrationDialogPosts = [int]$report.registrationDialogPosts }
+    $startupSignature = (@($startupSample.Keys | Where-Object { $_ -ne 'atSeconds' } | ForEach-Object { '{0}={1}' -f $_, $startupSample[$_] }) -join ';')
+    if ($startupSignature -cne $lastStartupSignature) { if ($startupTimeline.Count -lt 24) { $startupTimeline.Add($startupSample) } else { $report.startupTimelineTruncated = $true }; $lastStartupSignature = $startupSignature }
     # A console/browser child is not evidence that the HTKK login is ready.
-    if ($report.rootAppWindowObserved -or $startupClock.Elapsed.TotalSeconds -ge 45) { break }
-    Start-Sleep -Seconds ([Math]::Min(5, [Math]::Max(1, [Math]::Ceiling(45 - $startupClock.Elapsed.TotalSeconds))))
+    if ($report.rootAppWindowObserved -or $startupClock.Elapsed.TotalSeconds -ge $startupLimitSeconds) { break }
+    Start-Sleep -Seconds ([Math]::Min(2, [Math]::Max(1, [Math]::Ceiling($startupLimitSeconds - $startupClock.Elapsed.TotalSeconds))))
   } while ($true)
   $startupClock.Stop()
+  $report.startupTimeline = @($startupTimeline.ToArray())
   if ($AcknowledgeRegistration) { Update-HtkkRegistrationResults -WaitMilliseconds 1000 }
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation) { $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath }
   $report.applicationEvents = Get-HtkkSafeApplicationEvents -ApplicationStartTime $applicationStartTime -ReferenceHostName $referenceHostName
