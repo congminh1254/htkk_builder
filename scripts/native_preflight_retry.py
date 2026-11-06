@@ -5,6 +5,8 @@ FRAMEWORK='Check clean Framework UIA assembly readiness'
 PROBE='Kiểm tra nguồn và điều kiện Windows'
 RETAIN='Retain verified raw native web reexport privately'
 PROFILE_CLOSE_LIMIT=60
+# Valid child phases short of 'complete'; 'invalid'/'unavailable' never qualify.
+FRAMEWORK_RUNNING_PHASES=('not-started','client-loading','types-loading','modules-loading','cmdlets','result-writing')
 # Exact pre-close progress of the timed-out GUI helper; every other field must still be unprogressed.
 PROFILE_SAVED={'status':'timed-out','format':'htkk-gui-reference-automation-v1','mode':'gtgt-web-import-inspect','stage':'waiting-profile-close','failureCategory':'none','runtime':'clr2-x86-custom-reference','sourcePinsVerified':True,'spreadCount':1,'mstBoxesMatched':True,'initialRequiredTextBlank':True,'editingApiAvailable':True,'performedInputCount':7,'originalSaveInvoked':True,'savedHeaderExists':True,'savedHeaderChecksMatched':True,'savedHeaderCheckedFieldCount':8,'saveDialogKind':'success-0002','savedHeaderMismatchMask':0,'profileClosed':False,'realTaxpayerDataUsed':False,'runtimeRoundTrip':False}
 DESCRIPTIVE=frozenset(('editorKind','visibleForms','sheetRows','sheetColumns','controlKinds','webCaseId','waitSeconds'))
@@ -19,6 +21,34 @@ def _profile_close_not_observed(gui):
  if type(gui.get('periodControls'))is not dict or gui['periodControls']:return False
  for k,v in gui.items():
   if k in PROFILE_SAVED or k in DESCRIPTIVE or k=='periodControls':continue
+  if type(v)not in (bool,int,str)or not any(type(v)is type(u)and v==u for u in UNPROGRESSED):return False
+ return True
+# Original export selector never appeared within the fixed GUI budget: the synthetic web
+# input was verified and the pre-export money check matched, one original Kết xuất click was
+# made, then nothing else happened. No selector, dialog, file, original HTKK message, import,
+# re-export or web/XML comparison progressed, so no tax output exists that could mismatch.
+EXPORT_PENDING=dict({k:v for k,v in PROFILE_SAVED.items() if k not in ('stage','profileClosed')},stage='gtgt-export-command-invoking',profileClosed=True,
+ mainMenuObserved=True,d1MenuClicked=True,gtgtPeriodObserved=True,periodConfirmInvoked=True,gtgtSheetObserved=True,gtgtWorkbookPinsVerified=True,
+ gtgtMenuVersionMatched=True,gtgtPeriodModelMatched=True,gtgtSheetNameMatched=True,gtgtDimensionsMatched=True,gtgtIdentityMatched=True,
+ gtgtSignatureReady=True,gtgtCaseMoneyMatched=True,gtgtCaseMismatchMask=0,webInputVerified=True,
+ webTaxValuesMatched=False,webCreationDateMatchedNativeBaseline=False,webServiceIdentityMatched=False,webTaxLeafCount=0,
+ gtgtCt21AfterImportMatched=False,gtgtCt42AfterImportObserved=False,gtgtCt42LockedAfterImport=False,
+ exportCommandInvoked=True,exportSchemaPinnedVerified=True,exportDestinationFresh=True,exportSelectorMatched=False,exportButtonInvoked=False,
+ exportDialogMatched=False,exportDialogSubmitted=False,exportFileExists=False,exportXmlRootMatched=False,exportSyntheticIdentityMatched=False,
+ exportSuccessAcknowledged=False,exportFilenameKeyboardCommitted=False,exportFilenameParentKind='not-observed',exportOriginalPathMatched=False,
+ exportOriginalPathKind='not-observed',exportScopedFileCount=0,exportScopedXmlCount=0,exportBytes=0,exportSha256='',
+ exportRejectedMessageId=0,importRejectedMessageId=0)
+# Pre-export navigation/input state that legitimately varies per synthetic case; every
+# other field (roundtrip, import, annex, declaration, amendment, unknown) must be unprogressed.
+PRE_EXPORT_PREFIXES=('menu','period','gtgt','web')
+def _export_selector_not_observed(gui):
+ if type(gui)is not dict or not _exact(gui,EXPORT_PENDING):return False
+ if type(gui.get('waitSeconds'))is not int or gui['waitSeconds']<PROFILE_CLOSE_LIMIT or type(gui.get('webCaseId'))is not str:return False
+ for k,v in gui.items():
+  if k in EXPORT_PENDING or k in DESCRIPTIVE:continue
+  if k.startswith(PRE_EXPORT_PREFIXES)and not any(w in k for w in ('AfterImport','Reexport','Mismatch','Rejected')):
+   if type(v)in (bool,int,str)or (k=='periodControls'and type(v)is dict):continue
+   return False
   if type(v)not in (bool,int,str)or not any(type(v)is type(u)and v==u for u in UNPROGRESSED):return False
  return True
 def _supplier_boundary(r):
@@ -37,7 +67,10 @@ def classify(jobs,records):
  steps=ready[0].get('steps',[]);failed={s.get('name')for s in steps if s.get('conclusion')=='failure'}
  if failed=={FRAMEWORK} and any(s.get('name')==PROBE and s.get('conclusion')=='skipped'for s in steps):
   bounds=[r for r in records if r.get('format')=='htkk-framework-uia-boundary-v1']
-  if len(bounds)==1 and all(type(bounds[0].get(k))is type(v)and bounds[0].get(k)==v for k,v in {'status':'process-timeout','timedOut':True,'processStopped':True,'exitCode':None,'phase':'complete'}.items()):return 'framework-uia-exit-timeout'
+  if len(bounds)==1 and _exact(bounds[0],{'status':'process-timeout','timedOut':True,'processStopped':True,'exitCode':None}):
+   # The Framework readiness child runs before HTKK, web input or any tax data exists.
+   if _exact(bounds[0],{'phase':'complete'}):return 'framework-uia-exit-timeout'
+   if bounds[0].get('phase')in FRAMEWORK_RUNNING_PHASES and type(bounds[0].get('phase'))is str:return 'framework-uia-process-timeout'
  if failed!={PROBE,RETAIN}:return None
  suppliers=[r for r in records if r.get('version')=='5.8.1'and 'supplierProcessBoundary'in r]
  if len(suppliers)!=1:return None
@@ -53,10 +86,14 @@ def classify(jobs,records):
   # when checked before owned-file deletion, so absentAfterCleanup is false by design.
   if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':True,'absentAfterCleanup':False}):return None
   if not _exact(login,dict(LOGIN,status='synthetic-profile-window-observed',profileWindowObserved=True,newIdClicked=True,nextOwnedWindowObserved=True,profileMainCaptionMatched=True,profileSaveCloseMatched=True)):return None
-  if not _profile_close_not_observed(r.get('guiReferenceAutomation')):return None
   retained=[x for x in records if x.get('format')=='htkk-web-native-output-publication-status-v1']
   if retained!=[{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]:return None
-  return 'synthetic-profile-close-not-observed'
+  gui=r.get('guiReferenceAutomation')
+  if _profile_close_not_observed(gui):return 'synthetic-profile-close-not-observed'
+  # No native dialog cue and no retained private export/output evidence may exist.
+  if any(k not in r or r[k]is not None for k in ('privateGtgtExportEvidence','privateWebNativeOutputEvidence'))or r.get('nativeDialogCueCounts')!={}:return None
+  if _export_selector_not_observed(gui):return 'gtgt-export-selector-not-observed'
+  return None
  return None
 
 def recover(status,case,source,builder,input_commit,get,records,send,actions_token,status_token,retried):

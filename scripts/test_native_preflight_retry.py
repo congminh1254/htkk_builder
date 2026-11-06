@@ -14,14 +14,32 @@ class NativePreflightRetry(unittest.TestCase):
    gui=dict(retry.PROFILE_SAVED,editorKind='combo',visibleForms=1,sheetRows=75,sheetColumns=22,controlKinds={'form':1,'spread':1},webCaseId='01GTGT-zero-M10-2026',waitSeconds=60,periodControls={},mainMenuObserved=False,d1MenuClicked=False,gtgtPeriodObserved=False,menuClickCount=0,periodConfirmInvoked=False,gtgtSheetObserved=False,webInputVerified=False,webTaxValuesMatched=False,webCaseEditCount=0,gtgtCaseMoneyCount=0,gtgtCaseMismatchMask=0,gtgtCaseMoneyMatched=False,exportCommandInvoked=False,exportSha256='',exportFilenameParentKind='not-observed',roundtripImportSucceeded=False,roundtripXmlExactMatched=False)
    login={'status':'synthetic-profile-window-observed','fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'newIdClicked':True,'inputVerified':True,'loginClicked':True,'loginHidden':True,'profileWindowObserved':True,'nextOwnedWindowObserved':True,'profileMainCaptionMatched':True,'profileSaveCloseMatched':True,'runtimeRoundTrip':False}
    records=[{'format':'htkk-framework-uia-boundary-v1','status':'exited','timedOut':False,'processStopped':True,'exitCode':0,'phase':'complete'},dict(guiAutomationPermitBoundary={'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':True,'absentAfterCleanup':False},guiReferenceAutomationMode='gtgt-web-import-inspect',version='5.8.1',stage='blocked',blockedReason='GUI_REFERENCE_AUTOMATION_NOT_VERIFIED',guiReferenceAutomation=gui,referenceHostResult={'status':'original-starting'},sourceHashesVerified=True,originalSourcesUnmodified=True,officialDistributionFilesVerified=True,msiAuthenticodeValid=True,nativeHelperJobsStopped=True,hostOutboundBlocked=True,originalOutboundBlocked=True,taxDataUsed=False,runtimeRoundTrip=False,supplierProcessBoundary={k:True for k in ('cleanupVerified','supplierStopped','rootStopped','jobEmpty')},syntheticLogin=login),{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]
+  if kind=='framework-phase':records[0]['phase']='cmdlets'
+  if kind=='export':
+   steps=[{'name':retry.PROBE,'conclusion':'failure'},{'name':retry.RETAIN,'conclusion':'failure'}]
+   records=self.export_records()
   jobs={'total_count':2,'jobs':[{'name':'readiness','id':456,'conclusion':'failure','steps':steps},{'name':'report_failure','conclusion':'success'}]}
   status={'state':'failure','description':'failed input:'+INPUT,'target_url':'https://github.com/congminh1254/htkk_builder/actions/runs/123'};calls=[];state=set()
   def get(repo,path):return records if path.endswith('/logs')else jobs if '/jobs?'in path else run
   def send(*args):calls.append(args)
   def recover():return retry.recover(status,'htkk-native/zero',SOURCE,BUILDER,INPUT,get,lambda x:x,send,'actions-placeholder','status-placeholder',state)
   return locals()
- def test_only_two_known_pre_tax_failures_retry_once_and_do_not_qualify(self):
-  for kind in ['framework','startup','profile-close']:
+ def export_records(self):
+  # Shape of run42223236597 (01GTGT-noactivity-zero-M10-2026): original Kết xuất clicked once,
+  # the selector never appeared before the 60s GUI budget; no file, message or comparison.
+  gui=dict(retry.EXPORT_PENDING,editorKind='combo',visibleForms=1,sheetRows=75,sheetColumns=22,controlKinds={'form':1,'spread':1},webCaseId='01GTGT-noactivity-zero-M10-2026',waitSeconds=60,
+   menuRowCount=314,menuClickCount=1,periodControlCount=137,periodControls={'btnDongY':{'kind':'button','visible':True}},periodYearMonthMatched=True,periodNoAnnexMatched=True,periodAnnex12Matched=False,
+   gtgtCt21Ready=True,gtgtCt21CaseMatched=True,gtgtCt21BeforeExportMatched=True,gtgtCt21UncheckMatched=False,gtgtMonetaryZero=True,gtgtSheetRows=72,gtgtSheetColumns=24,gtgtSheetCount=11,
+   gtgtEmptyMonetaryCount=0,gtgtCt42BeforeExportObserved=True,gtgtCt42LockedBeforeExport=False,gtgtCt42Locked=False,gtgtCaseMoneyCount=27,gtgtCaseNonzeroMask=0,
+   webImportInputSha256='a'*64,webSourceSha='b'*40,webCaseEditCount=1,webSigningDateEdited=True,webSigningDateReady=True,webSigningDateLocked=False,webSigningDateCellKind=4,
+   annex12NumericCount=0,annex12SheetObserved=False,annex12NumericSnapshots='',amendmentPriorFileSha256='',amendmentLifecycleVerified=False,annexSelectedCount=0,
+   declarationMenuClicked=False,declarationCellMismatchMask=0,roundtripImportCommandInvoked=False,roundtripImportDialogMatched=False,roundtripImportSucceeded=False,
+   roundtripReexportCommandInvoked=False,roundtripReexportSucceeded=False,roundtripXmlExactMatched=False,roundtripImportCheckedMoneyCount=0,roundtripReexportBytes=0,roundtripReexportSha256='')
+  login={'status':'synthetic-profile-window-observed','fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'newIdClicked':True,'inputVerified':True,'loginClicked':True,'loginHidden':True,'profileWindowObserved':True,'nextOwnedWindowObserved':True,'profileMainCaptionMatched':True,'profileSaveCloseMatched':True,'runtimeRoundTrip':False}
+  report=dict(guiAutomationPermitBoundary={'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':True,'absentAfterCleanup':False},guiReferenceAutomationMode='gtgt-web-import-inspect',version='5.8.1',stage='blocked',blockedReason='GUI_REFERENCE_AUTOMATION_NOT_VERIFIED',guiReferenceAutomation=gui,referenceHostResult={'status':'original-starting'},sourceHashesVerified=True,originalSourcesUnmodified=True,officialDistributionFilesVerified=True,msiAuthenticodeValid=True,nativeHelperJobsStopped=True,hostOutboundBlocked=True,originalOutboundBlocked=True,taxDataUsed=False,runtimeRoundTrip=False,supplierProcessBoundary={k:True for k in ('cleanupVerified','supplierStopped','rootStopped','jobEmpty')},syntheticLogin=login,nativeDialogCueCounts={},privateGtgtExportEvidence=None,privateWebNativeOutputEvidence=None)
+  return [{'format':'htkk-framework-uia-boundary-v1','status':'exited','timedOut':False,'processStopped':True,'exitCode':0,'phase':'complete'},report,{'format':'htkk-web-native-output-publication-status-v1','status':'rejected','code':'FILES'}]
+ def test_only_known_pre_tax_failures_retry_once_and_do_not_qualify(self):
+  for kind in ['framework','framework-phase','startup','profile-close','export']:
    f=self.fixture(kind);self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2);self.assertIn('/rerun-failed-jobs',f['calls'][0][0]);self.assertEqual(f['calls'][1][2]['state'],'pending')
    self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
    f['run'].update(run_attempt=2,status='in_progress',conclusion=None);self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
@@ -163,3 +181,83 @@ class NativePreflightRetry(unittest.TestCase):
   self.assertLess(probe.index('$report.guiAutomationPermitBoundary.authorizationAttempted=$true'),probe.index('$automationClock=[Diagnostics.Stopwatch]::StartNew()'))
   self.assertIn("fail('FILES')",(root/'publish-htkk-web-native-output.py').read_text(encoding='utf-8'))
   self.assertNotIn('waiting-main-menu',retry.PROFILE_SAVED.values())
+
+ def test_framework_process_timeout_in_any_valid_running_phase_retries_once(self):
+  # Run42226715731: the clean Framework UIA child timed out in phase 'cmdlets', before HTKK starts.
+  for phase in retry.FRAMEWORK_RUNNING_PHASES:
+   f=self.fixture('framework-phase');f['records'][0]['phase']=phase
+   self.assertEqual(retry.classify(f['jobs'],f['records']),'framework-uia-process-timeout',phase)
+  self.assertEqual(retry.classify(self.fixture()['jobs'],self.fixture()['records']),'framework-uia-exit-timeout')
+  for name,(key,value) in {'invalid':('phase','invalid'),'unavailable':('phase','unavailable'),'phase-type':('phase',None),'exited':('status','exited'),
+   'not-timed-out':('timedOut',False),'running':('processStopped',False),'exit-code':('exitCode',0)}.items():
+   f=self.fixture('framework-phase');f['records'][0][key]=value
+   self.assertFalse(f['recover'](),name);self.assertEqual(f['calls'],[],name)
+  f=self.fixture('framework-phase');del f['records'][0]['phase'];self.assertFalse(f['recover']());self.assertEqual(f['calls'],[])
+  f=self.fixture('framework-phase');f['records'].append(dict(f['records'][0]));self.assertFalse(f['recover']());self.assertEqual(f['calls'],[])
+  root=pathlib.Path(__file__).parent;ps=(root/'Test-HtkkFrameworkUiaAssemblyLoad.ps1').read_text(encoding='utf-8')
+  self.assertIn("@('"+"','".join(retry.FRAMEWORK_RUNNING_PHASES+('complete',))+"')",ps)
+  self.assertIn('No HTKK, taxpayer fixture',ps)
+
+ def test_original_starting_startup_with_observed_owner_window_still_retries(self):
+  # Runs42223226362/42226667771: HTKK stayed at original-starting; the owned post-login window
+  # appeared but the profile main window was never identified, and no GUI permit was issued.
+  f=self.fixture('startup');f['records'][0]['syntheticLogin'].update(newIdClicked=True,nextOwnedWindowObserved=True,profileRecognition='not-verified',profileMainCaptionMatched=False)
+  self.assertEqual(retry.classify(f['jobs'],f['records']),'synthetic-profile-startup-not-observed')
+  for name in ['host','permit','gui']:
+   f=self.fixture('startup');r=f['records'][0]
+   if name=='host':r['referenceHostResult']['status']='original-exited'
+   if name=='permit':r['guiAutomationPermitBoundary']['authorizationAttempted']=True
+   if name=='gui':r['guiReferenceAutomation']=dict(retry.EXPORT_PENDING)
+   self.assertFalse(f['recover'](),name);self.assertEqual(f['calls'],[],name)
+
+ def test_export_selector_not_observed_retries_only_without_any_export_message_or_comparison(self):
+  f=self.fixture('export');self.assertEqual(retry.classify(f['jobs'],f['records']),'gtgt-export-selector-not-observed')
+  mutations={
+   'tax-mismatch':('gtgtCaseMismatchMask',4),'money-unmatched':('gtgtCaseMoneyMatched',False),'web-input':('webInputVerified',False),
+   'rejected':('exportRejectedMessageId',16),'import-rejected':('importRejectedMessageId',478),'rejected-stage':('stage','gtgt-export-original-message-rejected'),
+   'success-stage':('stage','gtgt-export-success-file-checking'),'file':('exportFileExists',True),'bytes':('exportBytes',10),'sha':('exportSha256','a'*64),
+   'scoped':('exportScopedFileCount',1),'scoped-xml':('exportScopedXmlCount',1),'selector':('exportSelectorMatched',True),'button':('exportButtonInvoked',True),
+   'dialog':('exportDialogMatched',True),'submitted':('exportDialogSubmitted',True),'ack':('exportSuccessAcknowledged',True),'xml-root':('exportXmlRootMatched',True),
+   'filename':('exportFilenameKeyboardCommitted',True),'parent':('exportFilenameParentKind','combo'),'path':('exportOriginalPathMatched',True),
+   'not-invoked':('exportCommandInvoked',False),'destination':('exportDestinationFresh',False),'schema':('exportSchemaPinnedVerified',False),
+   'roundtrip-import':('roundtripImportSucceeded',True),'roundtrip-command':('roundtripImportCommandInvoked',True),'reexport':('roundtripReexportSucceeded',True),
+   'xml':('roundtripXmlExactMatched',True),'reexport-sha':('roundtripReexportSha256','a'*64),'web-tax':('webTaxValuesMatched',True),'web-leaf':('webTaxLeafCount',3),
+   'web-identity':('webServiceIdentityMatched',True),'after-import':('gtgtCt42AfterImportObserved',True),'ct21-after':('gtgtCt21AfterImportMatched',True),
+   'future-after-import':('gtgtCt99AfterImportMatched',True),'future-mismatch':('webFutureMismatchMask',2),'future-rejected':('periodRejectedMessageId',16),'annex':('annex12SheetObserved',True),'annex-count':('annex12NumericCount',1),
+   'declaration':('declarationMenuClicked',True),'declaration-mask':('declarationCellMismatchMask',1),'amendment':('amendmentLifecycleVerified',True),
+   'unknown':('futureProgressFlag',True),'unknown-type':('futureProgressFlag',None),'pre-export-type':('gtgtCaseMoneyCount',None),
+   'status':('status','failed'),'category':('failureCategory','dialog'),'budget':('waitSeconds',30),'budget-type':('waitSeconds',60.0),'case-type':('webCaseId',None),
+   'mode':('mode','gtgt-roundtrip-inspect'),'real-data':('realTaxpayerDataUsed',True),'roundtrip-flag':('runtimeRoundTrip',True),'profile-open':('profileClosed',False),
+   'menu':('mainMenuObserved',False),'sheet':('gtgtSheetObserved',False),'identity':('gtgtIdentityMatched',False),
+  }
+  for name,(key,value) in mutations.items():
+   f=self.fixture('export');f['records'][1]['guiReferenceAutomation'][key]=value
+   self.assertFalse(f['recover'](),name);self.assertEqual(f['calls'],[],name)
+  for name in ['dialog-cue','dialog-cue-missing','export-evidence','output-evidence','evidence-missing','published','retention-missing','tax','permit','login','reason','attempt2','other-step']:
+   f=self.fixture('export');r=f['records'][1]
+   if name=='dialog-cue':r['nativeDialogCueCounts']={'message':1}
+   if name=='dialog-cue-missing':del r['nativeDialogCueCounts']
+   if name=='export-evidence':r['privateGtgtExportEvidence']={'status':'retained'}
+   if name=='output-evidence':r['privateWebNativeOutputEvidence']={'status':'retained'}
+   if name=='evidence-missing':del r['privateGtgtExportEvidence']
+   if name=='published':f['records'][2].update(status='published',code='OK')
+   if name=='retention-missing':del f['records'][2]
+   if name=='tax':r['taxDataUsed']=True
+   if name=='permit':r['guiAutomationPermitBoundary']['absentAfterCleanup']=True
+   if name=='login':r['syntheticLogin']['profileSaveCloseMatched']=False
+   if name=='reason':r['blockedReason']='SYNTHETIC_LOGIN_NOT_VERIFIED'
+   if name=='attempt2':f['run']['run_attempt']=2
+   if name=='other-step':f['steps'].append({'name':'Retain verified synthetic GTGT export privately','conclusion':'failure'})
+   self.assertFalse(f['recover'](),name);self.assertEqual(f['calls'],[],name)
+ def test_export_selector_classification_matches_harness_contract(self):
+  root=pathlib.Path(__file__).parent;export=(root/'HtkkGtgtExportInspection.cs').read_text(encoding='utf-8')
+  self.assertIn('case HtkkAutomationStage.GtgtExportCommandInvoking: return "gtgt-export-command-invoking";',(root/'HtkkNativeAutomationEnums.cs').read_text(encoding='utf-8'))
+  # The stage is recorded once immediately before the single original click; any frmMessage
+  # (rejection or success) moves the stage on before the selector is ever examined.
+  invoke=export.index('SetStage(HtkkAutomationStage.GtgtExportCommandInvoking);exportCommandInvoked=true;Record();')
+  self.assertLess(invoke,export.index('command.PerformClick();',invoke))
+  self.assertEqual(export.count('SetStage(HtkkAutomationStage.GtgtExportCommandInvoking)'),1)
+  rejected=export.index('exportRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(HtkkAutomationStage.GtgtExportOriginalMessageRejected)')
+  self.assertLess(export.index('SetStage(HtkkAutomationStage.GtgtExportSuccessFileChecking)'),export.index('if(!exportButtonInvoked){List<Form> selectors'))
+  self.assertLess(rejected,export.index('if(!exportButtonInvoked){List<Form> selectors'))
+  self.assertNotIn('waiting-main-menu',retry.EXPORT_PENDING.values())
