@@ -7,13 +7,13 @@ native=load('native_cases_for_descriptor_test','htkk_native_cases.py')
 RAW=json.loads((ROOT/'htkk-descriptor-native-cases.json').read_text())
 class DescriptorNativeCaseDesign(unittest.TestCase):
  def test_registry_has_zero_and_amount_cases_per_menu(self):
-  self.assertEqual(design.CASE_IDS,('05KK-zero-M10-2026','05KK-withheld-M10-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025'))
+  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025'))
   self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8'})
  def test_design_cannot_be_dispatched_or_gate_a_release(self):
   self.assertFalse(design.DESIGN['dispatchable'])
   # Only reviewed cases are promoted, through the declaration driver and never as a gate.
   promoted=set(design.CASE_IDS)&set(native.CASES)
-  self.assertEqual(promoted,{'05KK-withheld-M10-2026','05QTT-two-employees-Y2025'})
+  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025'})
   for case in promoted:self.assertEqual(native.driver(case),'declaration-web-import-inspect');self.assertIs(native.CASES[case]['releaseGate'],False)
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   for case in set(design.CASE_IDS)-promoted:self.assertNotIn(case,workflow)
@@ -40,7 +40,7 @@ class DescriptorNativeCaseDesign(unittest.TestCase):
    with self.assertRaises(ValueError):design.validate(value)
  def test_expectations_are_hand_computed_from_source_formulas(self):
   cases={c['caseId']:c['expectedLeaves'] for c in design.DESIGN['cases']}
-  kk=cases['05KK-withheld-M10-2026']
+  kk=cases['05KK-withheld-Q3-2026']
   self.assertEqual(int(kk['ct18']),int(kk['ct19'])+int(kk['ct20']))
   self.assertEqual(int(kk['ct21']),int(kk['ct22'])+int(kk['ct23']))
   self.assertEqual(int(kk['ct26']),int(kk['ct27'])+int(kk['ct28']))

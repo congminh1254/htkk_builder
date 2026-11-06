@@ -26,7 +26,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-M10-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -49,14 +49,16 @@ internal static class HtkkDeclarationCasePlans {
     new string[]{"01|R40|500000000","01|R42|100000000","01|R47|200000000","01|R62|1000000000","01|R69|300000000","01|R80|1500000000","01-1|J22|2000000000","01-1|J23|50000000","01-1|J25|1200000000"},
     new string[]{Main+"SoCuoiNam/ct200|1800000000",Main+"SoCuoiNam/ct500|1800000000","HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct10|1950000000","HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct20|750000000"});
    // 78 BCTC TT200: KieuKy 26; '78' shows pnQuyetToan_LienTuc (going-concern choice).
+   // Exactly one LCTT is required (CheckChonPlBctc 0395, cmdExport_Click 0478; run 42218292765): LCTTGT.
    case "BCTC200-LT-basic-Y2025":return new HtkkDeclarationCasePlan(caseId,"78","2.2.6","402","BctcTt200Nckt226",new string[]{"101","101_6","78"},"year","26","2025","","01/01/2025","31/12/2025",true,
-    new string[]{"KQHĐSXKD"},new string[]{"01|CĐKT","01-1|KQHĐSXKD"},
+    new string[]{"KQHĐSXKD","LCTTGT"},new string[]{"01|CĐKT","01-1|KQHĐSXKD","01-3|LCTTGT"},
     "InterfaceTemplates/excel/200_BCTC_226.xls","c67bdb7a874e75c0c402144711abbf08f7e00c8705a47e2e2cf7dfbdf5d5d50b","InterfaceTemplates/xml/200_01_CDKT_226.xml","b6ac0bc4efaba4e90a32ed9bad6c7ccf51322c5b3e4f2f5872b940ea9bbe2c37",
-    "Validate/200_01_CDKT_226.xsd","b2e6c14b68ffd30a09070bbf9377df3df544b23d2b3a585602714335c6b2a90f",TKhaiThue,TKhaiThueSha256,WorkbookService,455,
+    "Validate/200_01_CDKT_226.xsd","b2e6c14b68ffd30a09070bbf9377df3df544b23d2b3a585602714335c6b2a90f",TKhaiThue,TKhaiThueSha256,WorkbookService,570,
     new string[]{"01-1|I22|3000000000","01-1|I25|2000000000"},
     new string[]{Main+"hoatDongLienTuc|true",Main+"CDKT_HoatDongLienTuc/nguoiLapBieu|Người lập giả lập","HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct20|1000000000"});
-   // L7 05/KK-TNCN TT80: KieuKy 19 = SetLayoutToKhaiThangQuy (month), no activity list.
-   case "05KK-withheld-M10-2026":return new HtkkDeclarationCasePlan(caseId,"L7","2.9.3","864","TncnKk05TT80Nckt293",new string[]{"101","101_11","L7"},"month","19","2026","10","01/10/2026","31/10/2026",false,
+   // L7 05/KK-TNCN TT80: KieuKy 19 = SetLayoutToKhaiThangQuy, quarter (from 4/2026 a monthly first
+   // declaration is refused: frmHTKKPeriod.btnDongY_Click 0682, run 42218296460); no activity list.
+   case "05KK-withheld-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"L7","2.9.3","864","TncnKk05TT80Nckt293",new string[]{"101","101_11","L7"},"quarter","19","2026","3","01/07/2026","30/09/2026",false,
     new string[0],new string[]{"01|Tờ khai"},
     "InterfaceTemplates/excel/05_KK_TNCN_TT80_293.xls","3ce979a51388f872d4e881ffef944961f18c86cdd3ac6f5f8c61b7f4b5897f8f","InterfaceTemplates/xml/05_KK_TNCN_TT80_293.xml","ac49d746988fa0e18fa4f41c839b02b87d2d612988a20fae93004c5a99ed1d6e",
     "Validate/05_KK_TNCN_TT80_293.xsd","9cd4d367123ee0ac1f94fb043975738ac142420d558bb24969e4c0afe64ac846",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,57,

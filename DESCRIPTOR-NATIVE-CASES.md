@@ -1,6 +1,6 @@
 # Ca native thiết kế cho họ TNCN (05/KK, 05/QTT, 02/QTT)
 
-> Cập nhật: `05KK-withheld-M10-2026` và `05QTT-two-employees-Y2025` đã được đăng ký (releaseGate false) với driver
+> Cập nhật: `05KK-withheld-Q3-2026` và `05QTT-two-employees-Y2025` đã được đăng ký (releaseGate false) với driver
 > chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại (kể cả B8) vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
@@ -8,8 +8,8 @@ Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`)
 
 | Ca | Menu | Kỳ | Phụ lục | Chế độ |
 |---|---|---|---|---|
-| `05KK-zero-M10-2026` | L7 (05/KK-TNCN, XML 2.9.3) | 10/2026 | — | web XML → Nhập từ XML → Kết xuất |
-| `05KK-withheld-M10-2026` | L7 | 10/2026 | — | như trên, có số (kiểm ROUND [32]) |
+| `05KK-zero-Q3-2026` | L7 (05/KK-TNCN, XML 2.9.3) | quý 3/2026 | — | web XML → Nhập từ XML → Kết xuất |
+| `05KK-withheld-Q3-2026` | L7 | quý 3/2026 | — | như trên, có số (kiểm ROUND [32]) |
 | `05QTT-zero-Y2025` | B9 (05/QTT-TNCN, XML 2.9.3) | 2025 | — | như trên |
 | `05QTT-two-employees-Y2025` | B9 | 2025 | 05-1 (2 dòng), 05-3 (1 dòng) | như trên |
 | `02QTT-zero-Y2025` | B8 (02/QTT-TNCN, XML 2.7.3) | 2025 | — | nhập tay trong HTKK → Kết xuất XML gốc |

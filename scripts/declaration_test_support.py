@@ -86,6 +86,16 @@ def _tree(case_id, native=False, created=None):
         pluc = hs.find('{%s}PLuc' % NS)
         if pluc is not None:  # keep PLuc after the main body, in reviewed annex order
             hs.remove(pluc); hs.append(pluc)
+            # Annexes without an oracle leaf (e.g. LCTTGT of the TT200 case) still appear in order.
+            present = {child.tag: child for child in pluc}
+            for child in list(pluc):
+                pluc.remove(child)
+            for annex in spec['annexElements']:
+                tag = '{%s}%s' % (NS, annex)
+                node = present.get(tag)
+                if node is None:
+                    node = ET.Element(tag); _add(node, 'ct01', '0')
+                pluc.append(node)
     count = len(d.leaves(root))
     filler = _add(main, 'Filler')
     for index in range(spec['leafCount'] - count):

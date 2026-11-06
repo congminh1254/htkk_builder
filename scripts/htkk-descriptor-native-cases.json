@@ -12,11 +12,11 @@
     {"adapterId": "02-qtt-tncn-2.7.3", "menuId": "B8", "businessClass": "TncnQtt02TT80", "xmlVersion": "2.7.3", "schemaId": "Validate/02_QTT_TNCN_TT80_273.xsd", "annexes": ["02-1"], "mode": "original-entry-export"}
   ],
   "cases": [
-    {"caseId": "05KK-zero-M10-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
-     "unit": {"menuId": "L7", "adapterVersion": "2.9.3", "periodType": "month", "periodValue": "10/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
+    {"caseId": "05KK-zero-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
+     "unit": {"menuId": "L7", "adapterVersion": "2.9.3", "periodType": "quarter", "periodValue": "3/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"mst_cu": "9999999997", "ct15": "0", "ct16": "0", "ct18": "0", "ct21": "0", "ct26": "0", "ct29": "0", "ct32": "0"}},
-    {"caseId": "05KK-withheld-M10-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
-     "unit": {"menuId": "L7", "adapterVersion": "2.9.3", "periodType": "month", "periodValue": "10/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
+    {"caseId": "05KK-withheld-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
+     "unit": {"menuId": "L7", "adapterVersion": "2.9.3", "periodType": "quarter", "periodValue": "3/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"mst_cu": "9999999997", "ct16": "10", "ct17": "8", "ct18": "9", "ct19": "7", "ct20": "2", "ct21": "120000000", "ct22": "100000000", "ct23": "20000000", "ct24": "1000005", "ct25": "3000000", "ct26": "100000000", "ct27": "80000000", "ct28": "20000000", "ct29": "9000000", "ct30": "5000000", "ct31": "4000000", "ct32": "100001"},
      "question": "ROUND(1000005*10/100,0): HTKK đọc Text trước Round? Kỳ vọng 100001."},
     {"caseId": "05QTT-zero-Y2025", "adapterId": "05-qtt-tncn-2.9.3", "releaseGate": false,

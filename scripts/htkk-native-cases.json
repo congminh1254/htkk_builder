@@ -448,26 +448,27 @@
         "periodValue": "2025",
         "activityCode": "00",
         "annexes": [
-          "01-1"
+          "01-1",
+          "01-3"
         ],
         "amendmentOrder": 0
       }
     },
     {
-      "caseId": "05KK-withheld-M10-2026",
-      "producerCase": "tncn05kk-withheld-m10-2026",
+      "caseId": "05KK-withheld-Q3-2026",
+      "producerCase": "tncn05kk-withheld-q3-2026",
       "adapterId": "05-kk-tncn-2.9.3",
-      "format": "htkk-web-tncn05kk-withheld-m10-2026-input-v1",
-      "stagingDirectory": "htkk-web-reference-tncn05kk-withheld-m10-2026-input",
-      "inputBranch": "declaration-web-reference-tncn05kk-withheld-m10-2026-input",
-      "outputBranch": "declaration-web-native-tncn05kk-withheld-m10-2026-output",
-      "statusContext": "htkk-native/tncn05kk-withheld-m10-2026",
+      "format": "htkk-web-tncn05kk-withheld-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-tncn05kk-withheld-q3-2026-input",
+      "inputBranch": "declaration-web-reference-tncn05kk-withheld-q3-2026-input",
+      "outputBranch": "declaration-web-native-tncn05kk-withheld-q3-2026-output",
+      "statusContext": "htkk-native/tncn05kk-withheld-q3-2026",
       "releaseGate": false,
       "unit": {
         "menuId": "L7",
         "adapterVersion": "2.9.3",
-        "periodType": "month",
-        "periodValue": "10/2026",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
         "activityCode": "00",
         "annexes": [],
         "amendmentOrder": 0

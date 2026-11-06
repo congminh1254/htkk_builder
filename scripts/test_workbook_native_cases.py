@@ -6,7 +6,7 @@ def load(name, file):
 w = load('workbook_native_cases_test', 'htkk_workbook_native_cases.py')
 registry = load('native_cases_registry_test', 'htkk_native_cases.py')
 # Pinned to htkk_web data/htkk-workbook-native-cases.json (work/forms-tndn).
-WEB_SHA256 = 'bd0d80ad45ef5d49efc33e095555fa5c03e21fc0b2355175cc49d2ae7a8efc5b'
+WEB_SHA256 = '2561554b63d6bc48ef15babb5bd89dd17e6480fa293e705a887ef758ce39ef73'
 
 class WorkbookNativeCases(unittest.TestCase):
     def plan(self): return json.loads(w.PLAN_FILE.read_text(encoding='utf-8'))

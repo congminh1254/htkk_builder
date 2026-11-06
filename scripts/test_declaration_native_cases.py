@@ -161,12 +161,12 @@ class InputPrivacy(unittest.TestCase):
             self.assertEqual(reader.names(case), ('declaration-web.xml', 'manifest.json'))
 
     def test_identity_privacy_period_service_structure_and_values_fail_closed(self):
-        case = '05KK-withheld-M10-2026'; body = dfx.declaration_fixture(case)
+        case = '05KK-withheld-Q3-2026'; body = dfx.declaration_fixture(case)
         mutations = {
             'real name': (b'<tenNNT>NNT KIEM THU GIA LAP - KHONG NOP', b'<tenNNT>CONG TY THAT'),
             'other mst': (b'<mst>9999999997', b'<mst>0100109106'),
             'service': (d.WORKBOOK_SERVICE.encode(), b'HTKK'),
-            'period': (b'<kyKKhai>10/2026', b'<kyKKhai>11/2026'),
+            'period': (b'<kyKKhai>3/2026', b'<kyKKhai>4/2026'),
             'value': (b'<ct32>100001', b'<ct32>100000'),
             'free text': (b'<pad0>0', b'<pad0>Nguyen Van A'),
             'version': (b'<pbanTKhaiXML>2.9.3', b'<pbanTKhaiXML>2.9.2'),

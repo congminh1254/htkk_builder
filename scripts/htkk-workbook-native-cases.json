@@ -57,7 +57,7 @@
     {
       "caseId": "BCTC200-LT-basic-Y2025",
       "menuId": "78", "xmlVersion": "2.2.6", "period": {"year": 2025, "fromDate": "01/01/2025", "toDate": "31/12/2025"},
-      "selected": ["01-1"],
+      "selected": ["01-1", "01-3"],
       "overrides": {"01-1": {"I22": "3000000000", "I25": "2000000000"}, "01": {"F251": "Người lập giả lập", "F253": "Kế toán giả lập"}},
       "expected": {
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/hoatDongLienTuc": "true",

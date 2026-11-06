@@ -18,8 +18,10 @@ TRUSTED_ADAPTERS={
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
  '03-tndn-2.9.4':_declaration('N8','2.9.4',{'year':('2025',)},['03-1A']),
  '133-b01a-dnn-2.3.2':_declaration('A2','2.3.2',{'year':('2025',)},['01-1']),
- '200-bctc-2.2.6':_declaration('78','2.2.6',{'year':('2025',)},['01-1']),
- '05-kk-tncn-2.9.3':_declaration('L7','2.9.3',{'month':('10/2026',)},[]),
+ # 78 requires exactly one LCTT at export (HTKK cmdExport_Click 0478): KQHĐSXKD + LCTTGT.
+ '200-bctc-2.2.6':_declaration('78','2.2.6',{'year':('2025',)},['01-1','01-3']),
+ # L7 monthly first declarations are refused from 4/2026 (HTKK 0682): quarter only.
+ '05-kk-tncn-2.9.3':_declaration('L7','2.9.3',{'quarter':('3/2026',)},[]),
  '05-qtt-tncn-2.9.3':_declaration('B9','2.9.3',{'year':('2025',)},['05-1','05-3']),
  '01-cnkd-hkd-2.9.8':_declaration('U5','2.9.8',{'quarter':('3/2026',)},[]),
 }
