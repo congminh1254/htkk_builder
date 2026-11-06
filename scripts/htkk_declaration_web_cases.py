@@ -106,6 +106,7 @@ DATE = re.compile(r'([0-9]{2}/[0-9]{2}/[0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]
 CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
+MISMATCH_ORDINALS = 8
 SECTIONS = {'TTinDVu': 1, 'TKhaiThue': 2, 'NNT': 4, 'CTieuTKhaiChinh': 8, 'PLuc': 16}
 
 
@@ -198,6 +199,16 @@ def _parse(body, web):
     return root
 
 
+def leaf_text(node):
+    """Leaf text as the .NET XmlDocument reader sees it (PreserveWhitespace=false): a text that is
+    only XML whitespace (space, tab, CR, LF) is insignificant and reads as empty. The original
+    export writes an empty non-self-closed leaf as '<x>' CRLF indent '</x>' (release 222: A2/78
+    leaf 20, GiaHan/maLyDoGiaHan); HTKK's own import and the harness tree comparison read ''.
+    Any other character, including NBSP, is kept and compared/privacy-checked exactly."""
+    value = node.text or ''
+    return '' if value.strip(' \t\r\n') == '' else value
+
+
 def leaves(root):
     out = []
 
@@ -214,7 +225,7 @@ def leaves(root):
             if (child.tail or '').strip():
                 reject('STRUCTURE')
         if not children:
-            out.append((current, node.text or ''))
+            out.append((current, leaf_text(node)))
         for child in children:
             visit(child, current)
     visit(root, '')
@@ -337,9 +348,10 @@ def compare_tree(input_body, native_body, export_dates=()):
     Each ``export_dates`` leaf must equal its own document's creation date (never ignored).
 
     Returns a bounded diagnostic: matched flag, compared leaf count and a section mask
-    (1 TTinDVu, 2 TKhaiThue, 4 NNT, 8 CTieuTKhaiChinh, 16 PLuc, 32 structure)."""
+    (1 TTinDVu, 2 TKhaiThue, 4 NNT, 8 CTieuTKhaiChinh, 16 PLuc, 32 structure), plus the 1-based
+    document-order ordinals (the privacy diagnostic's numbering) of the first mismatching leaves."""
     left, right = _parse(input_body, True), _parse(native_body, False)
-    state = {'leaves': 0, 'mask': 0}
+    state = {'leaves': 0, 'mask': 0, 'ordinal': 0, 'ordinals': []}
     if len(export_dates) > 4:
         reject('CASE')
     created = [dict(leaves(root)).get(CREATION_PATH) for root in (left, right)]
@@ -350,25 +362,28 @@ def compare_tree(input_body, native_body, export_dates=()):
                 return bit
         return 32
 
+    def leaf_bits(a, b, path):
+        """Mismatch bits of one leaf (0 when it matches)."""
+        if path.startswith(SERVICE_PATH):
+            return 0 if path[len(SERVICE_PATH):] in SERVICE_NAMES else 32
+        state['leaves'] += 1
+        if path in export_dates:
+            return 0 if None not in created and leaf_text(a) == created[0] and leaf_text(b) == created[1] else section(path)
+        return section(path) if path != CREATION_PATH and leaf_text(a) != leaf_text(b) else 0
+
     def walk(a, b, path):
         if _local(a) != _local(b) or a.attrib != b.attrib or len(a) != len(b):
             state['mask'] |= 32 | section(path)
             return
         if len(a) == 0:
-            if path.startswith(SERVICE_PATH):
-                if path[len(SERVICE_PATH):] not in SERVICE_NAMES:
-                    state['mask'] |= 32
-                return
-            state['leaves'] += 1
-            if path in export_dates:
-                if None in created or (a.text or '') != created[0] or (b.text or '') != created[1]:
-                    state['mask'] |= section(path)
-                return
-            if path != CREATION_PATH and (a.text or '') != (b.text or ''):
-                state['mask'] |= section(path)
+            state['ordinal'] += 1
+            bits = leaf_bits(a, b, path)
+            state['mask'] |= bits
+            if bits and len(state['ordinals']) < MISMATCH_ORDINALS:
+                state['ordinals'].append(state['ordinal'])
             return
         for x, y in zip(a, b):
             walk(x, y, path + '/' + _local(x))
     walk(left, right, 'HSoThueDTu')
-    return {'allTaxValuesMatched': state['mask'] == 0, 'checkedTaxLeafCount': state['leaves'], 'mismatchSectionMask': state['mask'],
+    return {'allTaxValuesMatched': state['mask'] == 0, 'checkedTaxLeafCount': state['leaves'], 'mismatchSectionMask': state['mask'], 'mismatchLeafOrdinals': state['ordinals'],
             'normalizedInMemory': ['ngayLapTKhai', *SERVICE_NAMES], 'rawBytesPreserved': True}

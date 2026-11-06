@@ -242,7 +242,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
       EnterImportedAnnex12HeadByKey(grid,annex,row);annex12WebHeadAuthorityComboMask|=256;
       int keyed=ImportedAnnex12ComboShape(annex,row,17,"Thuế Thành phố Hà Nội","10100");if((keyed&4)!=0)annex12WebHeadAuthorityComboMask|=512;if((keyed&16)!=0)annex12WebHeadAuthorityComboMask|=1024;Record();
       if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội")throw new InvalidOperationException();
-      try{SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
+      // Release 222 (both cases, combo mask 1899 = 107|256|512|1024, still no 128): after the keyed
+      // entry ItemData held code 10100, yet the same-entry re-confirm wrote nothing. Original
+      // frmWinToKhai.cellChange (and winFpSpread_ComboSelChange) return early when the cell text
+      // equals selectValueOld[row+col] (the last value they processed) for every menu except
+      // 91/79/G1/G4/71/01; D1 is not exempt, so confirming the value already processed is a no-op.
+      // A user then picks a neighbouring entry of the same original list and picks the head CQT
+      // again: both are real changes, so the original handler runs and writes AJ from ItemData.
+      try{SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,"Thuế Thành phố Hà Nội");SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;annex12WebHeadAuthorityComboMask|=64;Record();
       MoveImportedAnnex12Cell(grid,annex,row,18);
       if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"){
@@ -259,6 +266,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(seen!=annex12WebImportRowCount||annex12WebHeadAuthorityRepairCount<1||annex12WebHeadAuthorityRepairCount>4*seen)throw new InvalidOperationException();
    annex12WebHeadAuthorityFailureMask&=2048;annex12WebHeadAuthorityRestored=true;Record();
   }finally{annex12NonzeroBusy=false;if(!finished)exportWatcher.Start();}
+ }
+ // Picks the entry next to ``value`` in the same original list (the one before it, or after it when
+ // it is first), through the same vendor combo selection; the caller then picks ``value`` again.
+ private void SelectImportedAnnex12NeighbourEntry(Control grid,object annex,int row,int column,string value){
+  if(column!=17)throw new InvalidOperationException();
+  object type=Get(Cell(annex,row,column),"CellType");string[] items=type==null?null:Get(type,"Items") as string[];
+  if(items==null||items.Length<2||items.Length>4096)throw new InvalidOperationException();
+  int at=Array.IndexOf(items,value);if(at<0||Array.LastIndexOf(items,value)!=at)throw new InvalidOperationException();
+  string neighbour=items[at>0?at-1:at+1];if(String.IsNullOrEmpty(neighbour)||neighbour==value||Array.IndexOf(items,neighbour)!=Array.LastIndexOf(items,neighbour))throw new InvalidOperationException();
+  SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);
  }
  private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){
   Form owner=grid.FindForm();uint pid;

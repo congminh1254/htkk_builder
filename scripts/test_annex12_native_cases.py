@@ -296,6 +296,11 @@ class OriginalMessageDiagnosticContract(unittest.TestCase):
   self.assertIn(pin,block);self.assertIn('Path.Combine(project,"Message.xml")',start+block);self.assertIn(pin,start)
   for term in ('settings.ProhibitDtd=true','settings.XmlResolver=null','/Message/Infor[@ID and @Msg]','node.Attributes["Msg"].Value.Trim()==wanted','return 9999;','value>9998'):self.assertIn(term,block)
   for forbidden in ('Record()','Contains(','StartsWith(','IndexOf('):self.assertNotIn(forbidden,block)
+  # Release 222 (05/QTT import: 9999): a multi-line catalogue message (0437) reaches the original
+  # label with CR/LF/tabs; exact match first, then whitespace-folded equality (never a substring).
+  self.assertIn('return found!=9999?found:folded;',block);self.assertIn('FoldMessageWhitespace(node.Attributes["Msg"].Value)==loose',block)
+  fold=block[block.index(' private static string FoldMessageWhitespace('):]
+  self.assertIn('Char.IsWhiteSpace(character)',fold)
   # The message text never enters the public JSON; only the numeric ID does.
   json_block=export[export.index(' private string ExportJson('):export.index(' private static void FindExportSelectors(')]
   self.assertIn('"exportRejectedMessageId"+q+":"+exportRejectedMessageId',json_block);self.assertNotIn('labels',json_block)
@@ -436,5 +441,22 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   for forbidden in ('SetPublic','set_Value','"Value"','"Text",','"Formula"','StartCellEditing','SetActiveCell'):self.assertNotIn(forbidden,keyed)
   ps=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
   self.assertIn("$value['annex12WebHeadAuthorityComboMask'] -gt 2047",ps)
+
+ def test_combo_mask_1899_picks_a_neighbour_entry_before_the_head_cqt_again(self):
+  """Release 222 (both annex cases): combo mask 1899 = 107|256|512|1024 (keyed entry installed
+  ItemData with code 10100), still not 128. Original cellChange/ComboSelChange return early when the
+  text equals selectValueOld[row+col] (D1 is not one of the exempt menus 91/79/G1/G4/71/01), so the
+  same-entry re-confirm is a no-op. The driver now picks the neighbouring entry of the same original
+  list and then the head CQT again: two real user selections, no cell write."""
+  self.assertEqual([i for i in range(11) if 1899>>i&1],[0,1,3,5,6,8,9,10])
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12NeighbourEntry(')]
+  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
+  order=[retry.index(x) for x in ('EnterImportedAnnex12HeadByKey(grid,annex,row);','SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,"Thuế Thành phố Hà Nội");','SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");','annex12WebHeadAuthorityComboMask|=64','MoveImportedAnnex12Cell(grid,annex,row,18);','annex12WebHeadAuthorityComboMask|=128')]
+  self.assertEqual(order,sorted(order))
+  helper=annex[annex.index(' private void SelectImportedAnnex12NeighbourEntry('):annex.index(' private void SelectImportedAnnex12Combo(')]
+  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);',helper)
+  for needed in ('items[at>0?at-1:at+1]','column!=17','Array.LastIndexOf(items,value)!=at','neighbour==value'):self.assertIn(needed,helper)
+  for forbidden in ('SetPublic','set_Value','"Value"','"Text",','"Formula"','SendKeys','Invoke('):self.assertNotIn(forbidden,helper)
 
 if __name__=='__main__':unittest.main()

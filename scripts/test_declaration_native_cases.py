@@ -278,6 +278,30 @@ class NativeOutput(unittest.TestCase):
         self.assertEqual(out.safe_failure(out.OutputError('HASH', {'nativeRule': 'PRIVACY'}))['code'], 'HASH')
         self.assertNotIn('nativeRule', out.safe_failure(out.OutputError('HASH', {'nativeRule': 'PRIVACY'})))
 
+    def test_whitespace_only_leaf_reads_empty_like_the_original_reader(self):
+        """Release 222: both BCTC native exports (tree matched in the harness) were rejected as
+        PRIVACY at leaf 20 (GiaHan/maLyDoGiaHan, section 2, text-other): the original writer emits an
+        empty non-self-closed leaf as '<x>' CRLF indent '</x>'. XmlDocument (HTKK import, harness
+        comparison) reads ''; only XML whitespace is folded, any other character still fails."""
+        for case in ('BCTC133-B01a-basic-Y2025', 'BCTC200-LT-basic-Y2025'):
+            # The synthetic contract has no GiaHan block: an empty filler leaf stands in for it.
+            web = dfx.declaration_fixture(case).replace(b'<pad0>0</pad0>', b'<pad0></pad0>', 1); dates = d.case(case)['exportDates']
+            native = export_day_of(native_of(web, case), case)
+            spaced = native.replace(b'<pad0></pad0>', b'<pad0>\r\n          \t</pad0>', 1)
+            self.assertNotEqual(spaced, native, case)
+            self.assertTrue(out.validate_native(spaced, case, TODAY)['privacyValuesVerified'])
+            result = d.compare_tree(web, spaced, dates)
+            self.assertTrue(result['allTaxValuesMatched'], case); self.assertEqual(result['checkedTaxLeafCount'], d.tax_leaf_count(case))
+            items = d.leaves(d._parse(spaced, False))
+            self.assertEqual(next(v for p, v in items if p.endswith('/pad0')), '')
+            for other in ('\u00a0', ' x ', '\u2003'):
+                body = spaced.replace(b'<pad0>\r\n', ('<pad0>' + other).encode('utf-8'), 1)
+                self.assertNotEqual(body, spaced)
+                with self.subTest(case=case, other=other), self.assertRaises(out.OutputError) as error:
+                    out.validate_native(body, case, TODAY)
+                self.assertEqual(out.safe_failure(error.exception)['nativeRule'], 'PRIVACY')
+                self.assertEqual(d.compare_tree(web, body, dates)['mismatchSectionMask'], 8)
+
     def test_bctc133_signing_date_is_the_export_day_on_both_sides_never_ignored(self):
         """A2 binds no control to TKhaiThue/ngayKy; the original export writes the day the form was
         opened (BindToKhaiInfoToTTinChung: DateTime.Now). Release 216 r1373: tree mask 2."""
@@ -304,6 +328,12 @@ class NativeOutput(unittest.TestCase):
         self.assertEqual(d.compare_tree(web, native.replace(b'<ct16>2</ct16>', b'<ct16>3</ct16>', 1))['mismatchSectionMask'], 8)
         self.assertEqual(d.compare_tree(web, native.replace(b'<ct08>0</ct08>', b'<ct08>1</ct08>', 1))['mismatchSectionMask'], 16)
         self.assertEqual(d.compare_tree(web, native.replace(b'<pad0>0</pad0>', b'', 1))['mismatchSectionMask'], 32 | 8)
+        many = native
+        for n in range(12):
+            many = many.replace(('<pad%d>0<' % n).encode(), ('<pad%d>1<' % n).encode(), 1)
+        result = d.compare_tree(web, many)
+        self.assertEqual(len(result['mismatchLeafOrdinals']), d.MISMATCH_ORDINALS); self.assertEqual(result['mismatchLeafOrdinals'], sorted(result['mismatchLeafOrdinals']))
+        self.assertEqual(d.compare_tree(web, native)['mismatchLeafOrdinals'], [])
         changed = native.replace(b'<ngayLapTKhai>2026-11-06', b'<ngayLapTKhai>2026-11-07', 1)
         self.assertTrue(d.compare_tree(web, changed)['allTaxValuesMatched'])  # creation date: proven native rule only
 
@@ -329,6 +359,10 @@ class NativeOutput(unittest.TestCase):
             fetch, calls = self.fake_api(web, manifest)
             result = out.publish(native, self.provenance(web, native, case, False, 8), 'synthetic-token', fetch, TODAY)
             self.assertFalse(result['allTaxValuesMatched']); self.assertEqual(result['mismatchSectionMask'], 8)
+            # Value-free locator of the changed leaf (release 222: BCTC200 mask 8 had no position).
+            ordinal = next(i + 1 for i, (p, _) in enumerate(d.leaves(d._parse(native, False))) if p.endswith('/' + first))
+            self.assertEqual(result['mismatchLeafOrdinals'], [ordinal])
+            self.assertEqual(d.compare_tree(web, native, d.case(case)['exportDates'])['mismatchLeafOrdinals'], [ordinal])
 
     def test_provenance_is_exact_and_publishers_are_separated(self):
         case = CASES[3]; web = dfx.declaration_fixture(case); native = native_of(web, case); value = self.provenance(web, native, case)

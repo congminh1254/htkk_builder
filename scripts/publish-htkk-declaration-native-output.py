@@ -129,7 +129,7 @@ def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False):
   exact_sha(existing['object'].get('sha'))
   updated=fetch('/git/refs/heads/'+branch,token,{'sha':artifact,'force':True},'PATCH')
  if not isinstance(updated,dict) or updated.get('ref')!='refs/heads/'+branch or not isinstance(updated.get('object'),dict) or updated['object'].get('type')!='commit' or updated['object'].get('sha')!=artifact:fail('API_SHAPE')
- return {'format':'htkk-declaration-native-output-publication-status-v1','status':'published','caseId':metadata['caseId'],'sourceCommit':metadata['sourceCommit'],'artifactCommit':artifact,'nativeOutputSha256':metadata['originalOutputSha256'],'bytes':len(native),'allTaxValuesMatched':comparison['allTaxValuesMatched'],'mismatchSectionMask':comparison['mismatchSectionMask']}
+ return {'format':'htkk-declaration-native-output-publication-status-v1','status':'published','caseId':metadata['caseId'],'sourceCommit':metadata['sourceCommit'],'artifactCommit':artifact,'nativeOutputSha256':metadata['originalOutputSha256'],'bytes':len(native),'allTaxValuesMatched':comparison['allTaxValuesMatched'],'mismatchSectionMask':comparison['mismatchSectionMask'],'mismatchLeafOrdinals':[n for n in comparison['mismatchLeafOrdinals'] if type(n) is int and 0<n<=4096][:declaration.MISMATCH_ORDINALS]}
 
 def main():
  directory=pathlib.Path(os.environ.get('RUNNER_TEMP',''))/DIRECTORY

@@ -156,21 +156,26 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return true;
  }
  private int OriginalMessageCatalogueId(string text){
-  // Exact match only against the pinned original catalogue; smallest matching ID.
+  // Match only against the pinned original catalogue; smallest matching ID. An exact match wins;
+  // otherwise whitespace runs are folded on both sides, because multi-line catalogue messages
+  // (e.g. 0437) reach the original label with their CR/LF/tab layout while this reader's
+  // attribute normalization turns them into spaces (release 222: 05/QTT import gave 9999).
   try{
    string file=Path.Combine(project,"Message.xml");FileInfo info=new FileInfo(file);
    if(text==null||!info.Exists||(info.Attributes&FileAttributes.ReparsePoint)!=0||info.Length>2000000||Hash(file)!="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606")return 9999;
    XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
    using(XmlReader reader=XmlReader.Create(file,settings))document.Load(reader);
-   int found=9999;string wanted=text.Trim();
+   int found=9999,folded=9999;string wanted=text.Trim(),loose=FoldMessageWhitespace(text);
    foreach(XmlNode node in document.SelectNodes("/Message/Infor[@ID and @Msg]")){
     string id=node.Attributes["ID"].Value;int value;
     if(id.Length!=4||!Int32.TryParse(id,NumberStyles.None,CultureInfo.InvariantCulture,out value)||value<1||value>9998)continue;
     if(node.Attributes["Msg"].Value.Trim()==wanted&&value<found)found=value;
+    if(loose.Length>0&&FoldMessageWhitespace(node.Attributes["Msg"].Value)==loose&&value<folded)folded=value;
    }
-   return found;
+   return found!=9999?found:folded;
   }catch{return 9999;}
  }
+ private static string FoldMessageWhitespace(string value){StringBuilder folded=new StringBuilder();bool space=false;foreach(char character in value){if(Char.IsWhiteSpace(character)){space=folded.Length>0;continue;}if(space)folded.Append(' ');space=false;folded.Append(character);}return folded.ToString();}
  private static string EscapeSendKeys(string value){StringBuilder escaped=new StringBuilder();foreach(char character in value){if("+^%~(){}[]".IndexOf(character)>=0)escaped.Append("{"+character+"}");else escaped.Append(character);}return escaped.ToString();}
  private void InspectOriginalExportDestination(){
   Type selector=OriginalAssembly().GetType("HTKK.frmWinSelectExport",true);FieldInfo path=selector.GetField("PathSave",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);if(path==null||path.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)path.GetValue(null);
