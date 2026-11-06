@@ -5,8 +5,8 @@ def load(name, file):
     spec = importlib.util.spec_from_file_location(name, ROOT / file); module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module); return module
 w = load('workbook_native_cases_test', 'htkk_workbook_native_cases.py')
 registry = load('native_cases_registry_test', 'htkk_native_cases.py')
-# Pinned to htkk_web data/htkk-workbook-native-cases.json (work/forms-tndn).
-WEB_SHA256 = '09efd65ce95eb23a0f2277c16acd59c9384e00e61f419a13b0e92ca383794382'
+# Pinned to htkk_web data/htkk-workbook-native-cases.json (work/tndn03-native-diff).
+WEB_SHA256 = 'b1244004ea9c9f3ce323c41630ebaea819b2f60cee29530f0c9f9cd55593a417'
 
 class WorkbookNativeCases(unittest.TestCase):
     def plan(self): return json.loads(w.PLAN_FILE.read_text(encoding='utf-8'))

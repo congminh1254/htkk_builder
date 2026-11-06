@@ -17,13 +17,17 @@
         "03": {"O38": "25000000", "O50": "1200000000", "O66": "1200000000", "O98": "200000000", "G14": "C10", "G16": "100"}
       },
       "expected": {
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/kyTaiChinh_Tu": "01/01",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/kyTaiChinh_Den": "31/12",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct04_ma": "C10",
-        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct05": "100",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct05": "100.00",
         "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22": "1175000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctA1": "1175000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctB13": "1200000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC1": "1200000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_thueSuat": "20",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC9": "240000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC17": "240000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctE1": "240000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctI1": "40000000"
       }

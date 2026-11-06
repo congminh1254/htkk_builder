@@ -49,7 +49,10 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/03_TNDN_TT80_294.xsd","5961845ccec5ca08b681ecc7a5ab91e168974a738307293406bea58464af6981",TKhaiThue,TKhaiThueSha256,WorkbookService,147,
     new string[]{"03-1A|E23|5000000000","03-1A|E26|100000000","03-1A|E29|10000000","03-1A|E32|3000000000","03-1A|E33|400000000","03-1A|E34|300000000","03-1A|E35|50000000","03-1A|E38|20000000","03-1A|E39|5000000","03|O38|25000000","03|O50|1200000000","03|O66|1200000000","03|O98|200000000"},
     // Header ct04 (control 91, DM_NganhCoDoanhThuCao) and ct05 are required by Header!B25/B26 (release 213: 0016).
-    new string[]{Main+"Header/ct04_ma|C10",Main+"Header/ct05|100","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22|1175000000",Main+"ctA1|1175000000",Main+"ctB13|1200000000",Main+"ctC1|1200000000",Main+"ctC9|240000000",Main+"ctE1|240000000",Main+"ctI1|40000000"});
+    // Release 214 (run 42243368664): AutoBindData_0 writes kyTaiChinh as profile "dd/MM" text, control
+    // "0,00" exports ct05 as 100.00, and the DC_184 rate code (R66 = ctC7_thueSuat) must be 20: an empty
+    // imported rate made HTKK compute ctC9 = ctC17 = 0.
+    new string[]{Main+"Header/kyTaiChinh_Tu|01/01",Main+"Header/kyTaiChinh_Den|31/12",Main+"Header/ct04_ma|C10",Main+"Header/ct05|100.00","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22|1175000000",Main+"ctA1|1175000000",Main+"ctB13|1200000000",Main+"ctC1|1200000000",Main+"ctC7_thueSuat|20",Main+"ctC9|240000000",Main+"ctC17|240000000",Main+"ctE1|240000000",Main+"ctI1|40000000"});
    // A2 B01a-DNN TT133: KieuKy 26 = SetLayoutToKhaiNamTuNgayDenNgayBCTC. BCKQHĐKD and BCĐTK are both
    // required (CheckChonPlBctc / Validate_0 0485; release 213 refused the set without BCĐTK).
    case "BCTC133-B01a-basic-Y2025":return new HtkkDeclarationCasePlan(caseId,"A2","2.3.2","683","BctcB01aTt133Nckt232",new string[]{"101","101_6","A2"},"year","26","2025","","01/01/2025","31/12/2025",false,
