@@ -7,7 +7,7 @@ Set-StrictMode -Version Latest
 $report = [ordered]@{
   version = '5.8.1'; stage = 'started'; sourceHashesVerified = $false; sourceDownloads = @()
   runtimeHost = $RuntimeHost; customReferenceHost = $RuntimeHost -eq 'clr2-x86-reference'
-  referenceHostPreparation = $null; referenceHostResult = $null; originalSourcesUnmodified = $null
+  referenceHostPreparation = $null; referenceHostResult = $null; referenceHostExit = $null; originalSourcesUnmodified = $null
   childEnvironmentPolicy = 'not-launched'; hostOutboundBlocked = $false; originalOutboundBlocked = $false
   officialCabMatchesMirror = $false; mirrorUsed = $false; officialDistributionFilesVerified = $false; msiAuthenticodeValid = $false
   netFx35Present = $false; installExitCode = $null; installerProcess = $null
@@ -94,6 +94,22 @@ function Stop-HtkkSupplierJob($Job,[bool]$LaunchAttempted) {
   finally{
     try{$Job.Dispose()}catch{$result.cleanupVerified=$false;$result.supplierStopped=$false;$result.status='cleanup-not-verified'}
   }
+  return $result
+}
+# Bounded exit diagnostic of the job root (the x86 reference host running HTKK): the Win32 exit
+# code as hex and a fixed category only. Run 42218283778 (03/TNDN) lost the root during the original
+# import with the host result still 'original-starting': a fatal termination (stack overflow, CLR
+# unhandled exception on a non-UI thread, fail-fast) bypasses every managed handler, but its exit
+# code still names the class. No message, path, stack or data is read.
+function Get-HtkkRootExitDiagnostic($Job) {
+  $result=[ordered]@{status='not-exited';exitCode=$null;category='not-exited'}
+  try {
+    if($null -eq $Job -or -not $Job.WaitForRootExit(0)){return $result}
+    $code=[long]$Job.RootExitCode
+    if($code -lt 0 -or $code -gt 4294967295){$result.status='unavailable';$result.category='unavailable';return $result}
+    $result.status='exited';$result.exitCode=('0x{0:x8}' -f $code)
+    $result.category=if($code -eq 0){'zero'}elseif($code -in @(3762507597,3762504530)){'clr-unhandled-exception'}elseif($code -eq 3221225725){'stack-overflow'}elseif($code -eq 3221225477){'access-violation'}elseif($code -in @(3221226505,2148734499)){'fail-fast'}elseif($code -in @(3,4,5,9)){'reference-host-code'}else{'other'}
+  } catch { $result.status='unavailable';$result.exitCode=$null;$result.category='unavailable' }
   return $result
 }
 function Get-HtkkSafeReferenceResult([string]$ResultPath) {
@@ -862,6 +878,7 @@ try {
       if($process.HasExited){$automationRootExited=$true;break}
       Start-Sleep -Milliseconds 500
     }while($automationClock.Elapsed.TotalSeconds -lt $automationLimit)
+    if($automationRootExited){$report.referenceHostExit=Get-HtkkRootExitDiagnostic -Job $supplierJob}
     if($null -eq $lastGui){$report.guiReferenceAutomation=[ordered]@{status='no-valid-result';mode=$GuiAutomation;stage='result-unavailable-or-invalid';waitSeconds=[int]$automationClock.Elapsed.TotalSeconds;runtimeRoundTrip=$false};throw 'GUI_REFERENCE_AUTOMATION_NOT_VERIFIED'}
     $matched=$lastGui.sourcePinsVerified -and $lastGui.mstBoxesMatched -and $lastGui.initialRequiredTextBlank -and $lastGui.editingApiAvailable -and $lastGui.failureCategory -eq 'none' -and $lastGui.spreadCount -eq 1
     if($GuiAutomation -eq 'inspect'){$matched=$matched -and $lastGui.stage -eq 'profile-inspected' -and -not $lastGui.originalSaveInvoked -and $lastGui.performedInputCount -eq 0}

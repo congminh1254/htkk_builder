@@ -6,7 +6,7 @@ def load(name, file):
 w = load('workbook_native_cases_test', 'htkk_workbook_native_cases.py')
 registry = load('native_cases_registry_test', 'htkk_native_cases.py')
 # Pinned to htkk_web data/htkk-workbook-native-cases.json (work/forms-tndn).
-WEB_SHA256 = '2561554b63d6bc48ef15babb5bd89dd17e6480fa293e705a887ef758ce39ef73'
+WEB_SHA256 = '09efd65ce95eb23a0f2277c16acd59c9384e00e61f419a13b0e92ca383794382'
 
 class WorkbookNativeCases(unittest.TestCase):
     def plan(self): return json.loads(w.PLAN_FILE.read_text(encoding='utf-8'))
@@ -38,7 +38,9 @@ class WorkbookNativeCases(unittest.TestCase):
         self.rejects(lambda v: v['cases'][0].update(xmlVersion='2.9.2'))
         self.rejects(lambda v: v['cases'][0]['period'].update(year=2027), 'WORKBOOK_CASE_PERIOD')
         self.rejects(lambda v: v['cases'][0].update(selected=['03-6']))
-        self.rejects(lambda v: v['cases'][2].update(selected=['01-4']))
+        self.rejects(lambda v: v['cases'][2].update(selected=['01-4']), 'WORKBOOK_CASE_0485')
+        self.rejects(lambda v: v['cases'][2].update(selected=['01-1']), 'WORKBOOK_CASE_0485')
+        self.rejects(lambda v: v['cases'][0]['overrides']['03'].update(G14='C11'), 'WORKBOOK_CASE_PRIVACY')
         self.rejects(lambda v: v['cases'][0]['expected'].update({'HSoThueDTu/HSoKhaiThue/TTinChung/x': '1'}))
         self.rejects(lambda v: v.update(cases=[c for c in v['cases'] if c['caseId'] != '03TNDN-loss-c3b-Y2025']), 'WORKBOOK_CASE_COVERAGE')
         self.rejects(lambda v: v.update(extra=1))

@@ -127,6 +127,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
     for(int index=0;index<plan.Annexes.Length;index++)foreach(string option in plan.Annexes[index].Split('|'))if(option==label)present[index]=true;
    }
    bool all=true;foreach(bool item in present)if(!item)all=false;
+   // frmWinToKhai.cmdImportXML_Click calls AddFullPLImportXML for menus ~B8~37~33~B9~N7~W1: the
+   // original import itself adds every Menu.xml sheet before reading the XML, so for these menus the
+   // hidden list's defaults do not decide the annexes (run 42231692177: B9 stopped here). The imported
+   // sheets are still checked after the import (declarationImportSheetMatched).
+   if(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(plan))all=true;
    declarationAnnexMatched=all;Record();return;
   }
   if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}
@@ -220,7 +225,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(declarationClock==null)declarationClock=Stopwatch.StartNew();
   object sheet=Get(grid,"ActiveSheet");bool ready=Convert.ToBoolean(Get(sheet,"AutoCalculation"))&&forms[0].Enabled&&grid.Enabled&&!OriginalMessageVisible();
   declarationIdentityMatched=DeclarationIdentity();declarationSourcePinsMatched=DeclarationPinsMatched();
-  bool matched=ready&&declarationIdentityMatched&&declarationSourcePinsMatched&&declarationSheetCount>=1+declarationPlan.Annexes.Length&&declarationSheetCount<=64;
+  bool matched=ready&&declarationIdentityMatched&&declarationSourcePinsMatched&&declarationSheetCount>=1+(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(declarationPlan)?0:declarationPlan.Annexes.Length)&&declarationSheetCount<=64;
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&declarationClock.Elapsed.TotalSeconds<3){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   if(!matched){DeclarationTerminal(HtkkAutomationStage.DeclarationSheetContractNotMatched);return;}

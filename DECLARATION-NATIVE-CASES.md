@@ -10,9 +10,9 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | caseId | Menu (chuỗi Menu.xml) | KieuKy | Kỳ | Phụ lục | Lá so sánh |
 |---|---|---|---|---|---|
 | `03TNDN-profit20-Y2025` | `101 → 101_2 → N8` (03/TNDN 2.9.4) | 11 | năm 2025, 01/01–31/12 | 03-1A | 143 |
-| `BCTC133-B01a-basic-Y2025` | `101 → 101_6 → A2` (B01a-DNN 2.3.2) | 26 | năm 2025 | 01-1 (BCKQHĐKD) | 227 |
+| `BCTC133-B01a-basic-Y2025` | `101 → 101_6 → A2` (B01a-DNN 2.3.2) | 26 | năm 2025 | 01-1 (BCKQHĐKD), 01-4 (BCĐTK, `PL_CDTK`; HTKK 0485 cần cả hai) | 971 |
 | `BCTC200-LT-basic-Y2025` | `101 → 101_6 → 78` (TT200 2.2.6) | 26 | năm 2025, hoạt động liên tục | 01-1 (KQHĐSXKD), 01-3 (LCTTGT; HTKK 0478 cần đúng một LCTT) | 566 |
-| `05KK-withheld-Q3-2026` | `101 → 101_11 → L7` (05/KK 2.9.3) | 19 | quý 3/2026 (tháng bị HTKK từ chối từ 4/2026, 0682) | — | 53 |
+| `05KK-withheld-Q3-2026` | `101 → 101_11 → L7` (05/KK 2.9.3) | 19 | quý 3/2026 (tháng bị HTKK từ chối từ 4/2026, 0682) | — | 52 |
 | `05QTT-two-employees-Y2025` | `101 → 101_11 → B9` (05/QTT 2.9.3) | 12 | năm 2025 | 05-1, 05-3 | 145 |
 | `01CNKD-TT50-revenue-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD 2.9.8) | 21 | quý 3/2026 | — | 257 |
 
@@ -68,6 +68,27 @@ gh workflow run probe-htkk-windows.yml --ref main \
   -f runtime_host=clr2-x86-reference -f gui_automation=declaration-web-import-inspect \
   -f web_case_id=<caseId> -f web_source_sha=<commit htkk_web main> -f web_artifact_commit=<commit input bất biến>
 ```
+
+## Release 213 (web edcfea5, builder 4fc497d) → thay đổi
+
+- 03/TNDN (run 42231670259) và TT200 (run 42231681905): bản xuất lại bị `0016` (tab hồng do các dòng
+  bắt buộc của sheet `Header`). 03: `B25` (ngành nghề `ct04`, control 91 danh mục
+  `DM_NganhCoDoanhThuCao`) và `B26` (`ct05` ≠ 0 khi mã ≠ 000) → ca chọn `C10`, `ct05` 100. TT200: `B46`
+  (tổng nguồn vốn [440] ≠ 0, nhánh LT) và `B27/B28` (cân đối) → ca nhập tiền 500.000.000 / vốn góp
+  500.000.000. Web kiểm cùng các dòng trước khi xuất. 03 còn ghi `ma/ten_THQuyetToan` mặc định của hộp kỳ
+  (`01`/`QT định kỳ`, AutoBindData_0).
+- 05/KK (run 42231687321): toàn cây khác (mask 32) vì web thiếu `HSoKhaiThue id="ID_1"` của mẫu, thiếu các
+  lá hồ sơ (`maCQTNoiNop/tenCQTNoiNop`, `maTinhNNT/tenTinhNNT`, `maXaNNT/tenXaNNT`) và còn `PLuc` rỗng. Web
+  đã sửa; so cây offline với bản xuất gốc private: khớp 52 lá. Mọi ca web nay mang lá hồ sơ giả lập
+  (`PROFILE_TEXTS` được nhận trong input).
+- 05/QTT (run 42231692177): `declaration-period-inputs-not-matched` vì danh sách phụ lục ẩn (KieuKy 12).
+  `cmdImportXML_Click` gọi `AddFullPLImportXML` cho `~B8~37~33~B9~N7~W1`: chính lệnh nhập gốc thêm mọi
+  sheet, nên driver chỉ quan sát và kiểm sheet sau khi nhập.
+- BCTC133 (run 42231675585): 0485 như dự kiến → thêm 01-4. HTKK ghi phần tử `PL_CDTK` của mẫu `_xml_`; tên
+  XSD `"PL_CDTK "` là `xs:NCName` được .NET XmlSchema thu gọn khoảng trắng.
+- Root thoát khi nhập (run 42218283778): `referenceHostExit` = mã thoát Win32 (hex) + nhóm cố định
+  (`clr-unhandled-exception`, `stack-overflow`, `access-violation`, `fail-fast`, `zero`, `reference-host-code`,
+  `other`), không đọc thông điệp/đường dẫn.
 
 ## Chưa chắc chắn (chưa chạy Windows)
 

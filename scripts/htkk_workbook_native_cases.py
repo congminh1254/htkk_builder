@@ -14,10 +14,12 @@ UNITS = {
     'N8': {'xmlVersion': '2.9.4', 'maTKhai': '892', 'kieuKy': '11', 'menuChain': ['101', '101_2', 'N8'],
            'appendices': {'03-1A', '03-1B', '03-1C', '03-2', '03-5'}, 'xsd': 'Validate/03_TNDN_TT80_294.xsd'},
     'A2': {'xmlVersion': '2.3.2', 'maTKhai': '683', 'kieuKy': '26', 'menuChain': ['101', '101_6', 'A2'],
-           'appendices': {'01-1', '01-2', '01-3'}, 'xsd': 'Validate/133_B01A_DNN_BCTC_232.xsd'},
+           'appendices': {'01-1', '01-2', '01-3', '01-4'}, 'xsd': 'Validate/133_B01A_DNN_BCTC_232.xsd'},
     '78': {'xmlVersion': '2.2.6', 'maTKhai': '402', 'kieuKy': '26', 'menuChain': ['101', '101_6', '78'],
            'appendices': {'01-1', '01-2', '01-3'}, 'xsd': 'Validate/200_01_CDKT_226.xsd'},
 }
+# Reviewed catalogue codes the plan may choose for 03/TNDN ct04 (G14).
+INDUSTRY_CODES = frozenset({('N8', '03', 'G14', '000'), ('N8', '03', 'G14', 'C10')})
 SYNTHETIC = {'taxId': '9999999997', 'taxpayerName': 'DỮ LIỆU GIẢ LẬP — KHÔNG NỘP THUẾ', 'signer': 'Người thử nghiệm', 'signDate': '20/03/2026'}
 
 def check(value, reason='WORKBOOK_CASE_POLICY'):
@@ -44,13 +46,16 @@ def validate(raw: bytes):
         period = case['period']
         check(period == {'year': 2025, 'fromDate': '01/01/2025', 'toDate': '31/12/2025'}, 'WORKBOOK_CASE_PERIOD')
         check(type(case['selected']) is list and len(set(case['selected'])) == len(case['selected']) and set(case['selected']) <= unit['appendices'])
+        # Original CheckChonPlBctc / BctcB01aTt133Nckt232.Validate_0 (0485): TT133 needs BCKQHĐKD and BCĐTK.
+        if case['menuId'] == 'A2': check({'01-1', '01-4'} <= set(case['selected']), 'WORKBOOK_CASE_0485')
         check(type(case['overrides']) is dict)
         for sheet, cells in case['overrides'].items():
             check(re.fullmatch(r'[0-9A-Z-]{1,16}', sheet) and type(cells) is dict and 0 < len(cells) <= 64)
             for cell, value in cells.items():
                 check(re.fullmatch(r'[A-Z]{1,3}[1-9][0-9]{0,4}', cell) and type(value) is str and len(value) <= 64)
-                # Money inputs are exact integers; text inputs must be marked synthetic.
-                check(re.fullmatch(r'(0|[1-9][0-9]{0,15})', value) or 'giả lập' in value, 'WORKBOOK_CASE_PRIVACY')
+                # Money inputs are exact integers; text inputs must be marked synthetic; the N8 industry
+                # (Header ct04, control 91) is a reviewed DM_NganhCoDoanhThuCao code only.
+                check(re.fullmatch(r'(0|[1-9][0-9]{0,15})', value) or 'giả lập' in value or (case['menuId'], sheet, cell, value) in INDUSTRY_CODES, 'WORKBOOK_CASE_PRIVACY')
         check(type(case['expected']) is dict and 0 < len(case['expected']) <= 32)
         for path, value in case['expected'].items():
             check(re.fullmatch(r'HSoThueDTu/HSoKhaiThue/(CTieuTKhaiChinh|PLuc)(/[A-Za-z0-9_]{1,64}){1,4}', path) and type(value) is str and len(value) <= 64)

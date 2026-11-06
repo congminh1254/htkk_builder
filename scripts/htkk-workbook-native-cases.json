@@ -14,9 +14,11 @@
       "selected": ["03-1A"],
       "overrides": {
         "03-1A": {"E23": "5000000000", "E26": "100000000", "E29": "10000000", "E32": "3000000000", "E33": "400000000", "E34": "300000000", "E35": "50000000", "E38": "20000000", "E39": "5000000"},
-        "03": {"O38": "25000000", "O50": "1200000000", "O66": "1200000000", "O98": "200000000"}
+        "03": {"O38": "25000000", "O50": "1200000000", "O66": "1200000000", "O98": "200000000", "G14": "C10", "G16": "100"}
       },
       "expected": {
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct04_ma": "C10",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct05": "100",
         "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22": "1175000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctA1": "1175000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctB13": "1200000000",
@@ -30,7 +32,7 @@
       "caseId": "03TNDN-loss-c3b-Y2025",
       "menuId": "N8", "xmlVersion": "2.9.4", "period": {"year": 2025, "fromDate": "01/01/2025", "toDate": "31/12/2025"},
       "selected": ["03-2"],
-      "overrides": {"03": {"O50": "500000000", "O60": "200000000", "O61": "100000000", "O66": "200000000"}},
+      "overrides": {"03": {"O50": "500000000", "O60": "200000000", "O61": "100000000", "O66": "200000000", "G14": "000"}},
       "expected": {
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC3": "300000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC3b": "100000000",
@@ -42,25 +44,32 @@
     {
       "caseId": "BCTC133-B01a-basic-Y2025",
       "menuId": "A2", "xmlVersion": "2.3.2", "period": {"year": 2025, "fromDate": "01/01/2025", "toDate": "31/12/2025"},
-      "selected": ["01-1"],
+      "selected": ["01-1", "01-4"],
       "overrides": {
         "01": {"R40": "500000000", "R42": "100000000", "R47": "200000000", "R62": "1000000000", "R69": "300000000", "R80": "1500000000"},
-        "01-1": {"J22": "2000000000", "J23": "50000000", "J25": "1200000000"}
+        "01-1": {"J22": "2000000000", "J23": "50000000", "J25": "1200000000"},
+        "01-4": {"P41": "100000000", "X41": "50000000", "T139": "100000000", "AB139": "50000000"}
       },
       "expected": {
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/SoCuoiNam/ct200": "1800000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/SoCuoiNam/ct500": "1800000000",
         "HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct10": "1950000000",
-        "HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct20": "750000000"
+        "HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct20": "750000000",
+        "HSoThueDTu/HSoKhaiThue/PLuc/PL_CDTK/SoDuCuoiKy/No/ct111": "150000000",
+        "HSoThueDTu/HSoKhaiThue/PLuc/PL_CDTK/SoDuCuoiKy/Co/ct411": "150000000",
+        "HSoThueDTu/HSoKhaiThue/PLuc/PL_CDTK/SoDuCuoiKy/No/tongCong": "150000000",
+        "HSoThueDTu/HSoKhaiThue/PLuc/PL_CDTK/SoDuCuoiKy/Co/tongCong": "150000000"
       }
     },
     {
       "caseId": "BCTC200-LT-basic-Y2025",
       "menuId": "78", "xmlVersion": "2.2.6", "period": {"year": 2025, "fromDate": "01/01/2025", "toDate": "31/12/2025"},
       "selected": ["01-1", "01-3"],
-      "overrides": {"01-1": {"I22": "3000000000", "I25": "2000000000"}, "01": {"F251": "Người lập giả lập", "F253": "Kế toán giả lập"}},
+      "overrides": {"01-1": {"I22": "3000000000", "I25": "2000000000"}, "01": {"F251": "Người lập giả lập", "F253": "Kế toán giả lập", "R58": "500000000", "R152": "500000000"}},
       "expected": {
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/hoatDongLienTuc": "true",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/CDKT_HoatDongLienTuc/SoCuoiNam/ct270": "500000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/CDKT_HoatDongLienTuc/SoCuoiNam/ct440": "500000000",
         "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/CDKT_HoatDongLienTuc/nguoiLapBieu": "Người lập giả lập",
         "HSoThueDTu/HSoKhaiThue/PLuc/PL_KQHDSXKD/NamNay/ct20": "1000000000"
       }

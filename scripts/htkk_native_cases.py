@@ -17,7 +17,8 @@ TRUSTED_ADAPTERS={
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
  '03-tndn-2.9.4':_declaration('N8','2.9.4',{'year':('2025',)},['03-1A']),
- '133-b01a-dnn-2.3.2':_declaration('A2','2.3.2',{'year':('2025',)},['01-1']),
+ # A2 requires BCKQHĐKD and BCĐTK (HTKK CheckChonPlBctc/Validate_0 0485): 01-1 + 01-4.
+ '133-b01a-dnn-2.3.2':_declaration('A2','2.3.2',{'year':('2025',)},['01-1','01-4']),
  # 78 requires exactly one LCTT at export (HTKK cmdExport_Click 0478): KQHĐSXKD + LCTTGT.
  '200-bctc-2.2.6':_declaration('78','2.2.6',{'year':('2025',)},['01-1','01-3']),
  # L7 monthly first declarations are refused from 4/2026 (HTKK 0682): quarter only.

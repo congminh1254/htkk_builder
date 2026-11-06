@@ -310,10 +310,27 @@ class WorkflowAndProbe(unittest.TestCase):
         hidden = driver[driver.index('if(hidden){'):driver.index('if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}')]
         self.assertNotIn('SendKeys', hidden); self.assertNotIn('SetActiveCell', hidden); self.assertNotIn('set_Value', hidden)
         self.assertIn('if(grid.Visible){declarationAnnexMatched=false;return;}', hidden)
+        # B9: the original import adds every sheet (cmdImportXML_Click → AddFullPLImportXML, run 42231692177).
+        self.assertIn('if(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(plan))all=true;', hidden)
+        self.assertIn('"~B8~37~33~B9~N7~W1~".IndexOf("~"+plan.MenuId+"~",StringComparison.Ordinal)>=0', plans)
+        self.assertIn('1+(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(declarationPlan)?0:declarationPlan.Annexes.Length)', driver)
         # A modal original refusal of the period confirmation is reported by catalogue ID only.
         block = driver[driver.index('Form periodMessage;'):driver.index('if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting)')]
         self.assertIn('declarationPeriodRejectedMessageId=OriginalMessageCatalogueId(periodText)', block)
         self.assertNotIn('PerformClick', block)
+
+    def test_root_exit_diagnostic_is_bounded_exit_code_and_category(self):
+        # Run 42218283778: the root exited during the original import with no message.
+        probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
+        fn = probe[probe.index('function Get-HtkkRootExitDiagnostic($Job) {'):probe.index('function Get-HtkkSafeReferenceResult(')]
+        for code, category in ((3762507597, 'clr-unhandled-exception'), (3221225725, 'stack-overflow'), (3221225477, 'access-violation'), (3221226505, 'fail-fast')):
+            self.assertIn(str(code), fn); self.assertIn("'" + category + "'", fn)
+        self.assertIn("('0x{0:x8}' -f $code)", fn)
+        for forbidden in ('Message', 'StackTrace', 'Get-WinEvent', 'Get-EventLog', 'Path', 'Write-Host'):
+            self.assertNotIn(forbidden, fn)
+        loop = probe[probe.index('$automationClock=[Diagnostics.Stopwatch]::StartNew()'):probe.index("if($null -eq $lastGui){$report.guiReferenceAutomation=")]
+        self.assertIn('if($automationRootExited){$report.referenceHostExit=Get-HtkkRootExitDiagnostic -Job $supplierJob}', loop)
+        self.assertIn('referenceHostExit = $null', probe)
 
     def test_probe_success_staging_and_workflow_wiring(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')

@@ -1371,6 +1371,7 @@
     "annex12WebHeadAuthorityRestored",
     "annex12WebHeadAuthorityRepairCount",
     "annex12WebHeadAuthorityFailureMask",
+    "annex12WebHeadAuthorityComboMask",
     "annex12InputReadOnlyIdentityMatched",
     "annex12InputIdentityMatched",
     "annex12InputTypesMatched",
@@ -1881,6 +1882,15 @@
       "default": 0,
       "minimum": 0,
       "maximum": 4095,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebHeadAuthorityComboMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
       "activeModes": [
         "gtgt-web-import-inspect"
       ]

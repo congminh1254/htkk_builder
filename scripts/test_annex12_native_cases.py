@@ -393,4 +393,21 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
   self.assertEqual((registry['annex12WebHeadAuthorityFailureMask']['maximum'],registry['annex12WebHeadAuthorityFailureMask']['activeModes']),(4095,['gtgt-web-import-inspect']))
 
+ def test_unmet_head_code_reconfirms_the_same_original_r_entry_once(self):
+  """Release 213 (both annex cases, mask 2116): AJ stayed empty on the first child. Original
+  frmWinToKhai.cellChange writes AJ only from the ActiveCell row and winFpSpread_ComboCloseUp skips
+  it while R is still empty, so the driver re-opens R's list and confirms the same entry once (a
+  user action, no cell write), then S, and records the bounded combo shape."""
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12Combo(')]
+  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
+  order=[retry.index(x) for x in ('ImportedAnnex12ComboShape(annex,row,17,','SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,2.0)')]
+  self.assertEqual(order,sorted(order))
+  for forbidden in ('set_Value','"Text",','SendKeys','Cell.Value'):self.assertNotIn(forbidden,retry)
+  shape=annex[annex.index(' private int ImportedAnnex12ComboShape('):annex.index(' private int ImportedAnnex12HeadAuthorityUnmet(')]
+  for forbidden in ('SetPublic','set_','Invoke('):self.assertNotIn(forbidden,shape)
+  self.assertIn('annex12WebHeadAuthorityRepairCount>4*seen',loop)
+  registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
+  self.assertEqual(registry['annex12WebHeadAuthorityComboMask'],{'kind':'integer','default':0,'minimum':0,'maximum':255,'activeModes':['gtgt-web-import-inspect']})
+
 if __name__=='__main__':unittest.main()

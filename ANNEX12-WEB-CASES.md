@@ -105,3 +105,13 @@ chưa chạy mới mở/đóng editor tỷ lệ gốc không gõ phím, giá tr�
 so sánh toàn cây XML không đổi. Trường mới `annex12WebHeadAuthorityFailureMask` (0..4095): bit 0-5
 là kiểm R/S/AJ/AK/AH/AQ chưa đạt, bit 6-8 là thứ tự dòng con + 1, bit 9/10 combo R/S lỗi, bit 11 đã
 cần mở editor tỷ lệ. Thành công yêu cầu `(mask & 2047) == 0`.
+
+## Mã ẩn AJ vẫn trống ở dòng con đầu (release 213, mask 2116 cả hai ca)
+
+IL `frmWinToKhai.cellChange` (gọi từ `ComboCloseUp`/`EditChange`) ghi mã CQT cục vào cột `SelectedValue`
+(AJ) của dòng bảng **theo `ActiveCell.Row`** và chỉ khi ô R đã có chữ lúc danh sách đóng
+(`winFpSpread_ComboCloseUp` bỏ qua `cellChange` khi ô còn trống — đúng trạng thái R sau nhập XML). Khi AJ
+chưa đạt sau lượt đầu, driver mở lại đúng danh sách R gốc và xác nhận lại cùng mục (thao tác người dùng,
+không ghi ô), rồi S như trước. Trường mới `annex12WebHeadAuthorityComboMask` (0..255): bit 0 kiểu combo,
+1 có mục, 2 ItemData khớp số mục, 3 chữ R là một mục, 4 ItemData của mục là 10100, 5 ô hiện hành đúng
+dòng, 6 đã xác nhận lại, 7 AJ đạt sau khi xác nhận lại. Chưa chạy Windows: hiệu quả chưa được chứng minh.
