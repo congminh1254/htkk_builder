@@ -1,9 +1,19 @@
 # Native original GUI interaction with a fixed synthetic identifier only.
 # No arbitrary text, control IDs, handles, source sample data or screenshots are returned.
+# One bounded post-login poll observation: fixed caption categories and kind counts only.
+function New-HtkkSyntheticLoginSample {
+ param([Parameter(Mandatory=$true)][int]$Seconds,[Parameter(Mandatory=$true)][bool]$LoginHidden,[Parameter(Mandatory=$true)][bool]$ProfileRecognized)
+ $n=[HtkkSyntheticLoginNative]
+ [ordered]@{atSeconds=$Seconds;loginHidden=$LoginHidden;profileRecognized=$ProfileRecognized;mainCaptionForms=$n::SampleMain;profileCaptionForms=$n::SampleProfile;emptyCaptionForms=$n::SampleEmpty;unreadCaptionForms=$n::SampleUnread;otherCaptionForms=$n::SampleOther;nativeDialogs=$n::SampleNativeDialogs;managedWindows=$n::SampleManaged;statics=$n::SampleStatic;buttons=$n::SampleButton;truncated=$n::SampleTruncated}
+}
+function Get-HtkkSyntheticLoginSampleSignature {
+ param([Parameter(Mandatory=$true)]$Sample)
+ (@($Sample.Keys | Where-Object { $_ -ne 'atSeconds' } | ForEach-Object { '{0}={1}' -f $_,$Sample[$_] }) -join ';')
+}
 function Invoke-HtkkSyntheticLogin {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory)
- $safe=[ordered]@{status='not-started';fixtureDirectoryPreexisting=$null;fixtureDirectoryCreated=$false;syntheticIdentifierOnly=$true;realTaxpayerDataUsed=$false;newIdClicked=$false;inputVerified=$false;loginClicked=$false;loginHidden=$false;profileWindowObserved=$false;nextOwnedWindowObserved=$false;nativeControlKinds=@{};postLoginControlKinds=@{};allowedLabels=@();profileInChildWindow=$false;profileRecognition='not-verified';profileMainCaptionMatched=$false;profileSaveCloseMatched=$false;profileManagedContainerCount=0;runtimeRoundTrip=$false}
+ param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory,[ValidateRange(5,90)][int]$PostLoginDeadlineSeconds=60)
+ $safe=[ordered]@{status='not-started';fixtureDirectoryPreexisting=$null;fixtureDirectoryCreated=$false;syntheticIdentifierOnly=$true;realTaxpayerDataUsed=$false;newIdClicked=$false;inputVerified=$false;loginClicked=$false;loginHidden=$false;profileWindowObserved=$false;nextOwnedWindowObserved=$false;nativeControlKinds=@{};postLoginControlKinds=@{};allowedLabels=@();profileInChildWindow=$false;profileRecognition='not-verified';profileMainCaptionMatched=$false;profileSaveCloseMatched=$false;profileManagedContainerCount=0;postLoginDeadlineSeconds=0;postLoginWaitSeconds=0;postLoginPollCount=0;profileRecognitionSeconds=-1;postLoginTimeline=@();postLoginTimelineTruncated=$false;runtimeRoundTrip=$false}
  $retained=$null
  try {
   # Never reuse an installed/bundled or previous-run profile. Do not open its content.
@@ -34,7 +44,8 @@ public static class HtkkSyntheticLoginNative {
  private static IntPtr login=IntPtr.Zero,combo=IntPtr.Zero,newId=IntPtr.Zero,submit=IntPtr.Zero;
  private static bool Owned(IntPtr window,int root){uint owner;GetWindowThreadProcessId(window,out owner);return owner==(uint)root;}
  private static string Class(IntPtr window){var value=new StringBuilder(256);GetClassName(window,value,value.Capacity);return value.ToString();}
- private static string Text(IntPtr window){var value=new StringBuilder(256);UIntPtr result;return SendMessageTimeout(window,0x000D,new UIntPtr((uint)value.Capacity),value,2,200,out result)!=IntPtr.Zero?value.ToString().Replace("&","").Trim():String.Empty;}
+ private static bool TryText(IntPtr window,out string text){var value=new StringBuilder(256);UIntPtr result;if(SendMessageTimeout(window,0x000D,new UIntPtr((uint)value.Capacity),value,2,200,out result)==IntPtr.Zero){text=String.Empty;return false;}text=value.ToString().Replace("&","").Trim();return true;}
+ private static string Text(IntPtr window){string text;TryText(window,out text);return text;}
  private static bool IsForm(IntPtr window){return Class(window).StartsWith("WindowsForms10.Window.",StringComparison.OrdinalIgnoreCase);}
  private static string Kind(IntPtr window){string name=Class(window).ToUpperInvariant();if(name.Contains("COMBOBOX"))return "combo";if(name.Contains("BUTTON"))return "button";if(name.Contains("EDIT"))return "edit";if(name.Contains("STATIC"))return "static";if(name.Contains("SPREAD"))return "spread";if(name.StartsWith("WINDOWSFORMS10.WINDOW.",StringComparison.Ordinal))return "managed-window";return "other";}
  public static Dictionary<string,int> Counts=new Dictionary<string,int>();
@@ -103,6 +114,34 @@ public static class HtkkSyntheticLoginNative {
    };EnumChildWindows(window,child,IntPtr.Zero);GC.KeepAlive(child);return !found;
   };EnumWindows(callback,IntPtr.Zero);GC.KeepAlive(callback);return found;
  }
+ // Bounded post-login diagnostic: caption CATEGORIES (never caption text) of visible owned
+ // top-level windows plus child kind counts. "unread" means WM_GETTEXT timed out or the
+ // owner thread was reported hung, i.e. the original UI thread was still busy.
+ public static int SampleMain,SampleProfile,SampleEmpty,SampleUnread,SampleOther,SampleNativeDialogs,SampleManaged,SampleStatic,SampleButton;
+ public static bool SampleTruncated;
+ public static void Sample(int root){
+  SampleMain=SampleProfile=SampleEmpty=SampleUnread=SampleOther=SampleNativeDialogs=SampleManaged=SampleStatic=SampleButton=0;SampleTruncated=false;
+  int count=0;var clock=Stopwatch.StartNew();string main="Hỗ trợ kê khai thuế - Phiên bản 5.8.1".Replace(" ",String.Empty);
+  EnumProc top=(window,unused)=>{
+   if(++count>2048||clock.ElapsedMilliseconds>2000){SampleTruncated=true;return false;}
+   if(window==login||!Owned(window,root)||!IsWindowVisible(window))return true;
+   bool form=IsForm(window);
+   if(!form){if(Class(window)=="#32770")SampleNativeDialogs++;else return true;}
+   else{
+    string caption;
+    if(!TryText(window,out caption))SampleUnread++;
+    else if(caption.Length==0)SampleEmpty++;
+    else if(caption.Replace(" ",String.Empty)==main)SampleMain++;
+    else if(caption.Contains("Thông tin doanh nghiệp/Người nộp thuế"))SampleProfile++;
+    else SampleOther++;
+   }
+   EnumProc child=(nested,ignored)=>{
+    if(++count>2048||clock.ElapsedMilliseconds>2000){SampleTruncated=true;return false;}
+    if(Owned(nested,root)&&IsWindowVisible(nested)){string kind=Kind(nested);if(kind=="managed-window"||kind=="spread")SampleManaged++;else if(kind=="static")SampleStatic++;else if(kind=="button")SampleButton++;}
+    return true;
+   };EnumChildWindows(window,child,IntPtr.Zero);GC.KeepAlive(child);return true;
+  };EnumWindows(top,IntPtr.Zero);GC.KeepAlive(top);
+ }
  public static void CountAfter(int root){
   PostCounts.Clear();int count=0;var clock=Stopwatch.StartNew();
   EnumProc top=(window,unused)=>{
@@ -125,15 +164,29 @@ public static class HtkkSyntheticLoginNative {
   if(-not $safe.inputVerified){$safe.status='synthetic-input-not-verified';return $safe}
   $safe.loginClicked=[HtkkSyntheticLoginNative]::Login($RootProcessId)
   if(-not $safe.loginClicked){$safe.status='login-not-posted';return $safe}
+  # Slow runners (startup wait 27-43 s instead of 11-17 s) were still loading the new
+  # profile when the former fixed 20 s budget expired. Poll the same user-visible state for
+  # longer; a recognized profile still ends the wait at once.
+  $deadline=$PostLoginDeadlineSeconds;$safe.postLoginDeadlineSeconds=$deadline
+  $timeline=[Collections.Generic.List[object]]::new();$lastSignature=$null
   $clock=[Diagnostics.Stopwatch]::StartNew()
   do {
    if($retained.HasExited){$safe.status='root-exited';return $safe}
+   $safe.postLoginPollCount++
    $safe.loginHidden=[HtkkSyntheticLoginNative]::LoginHidden($RootProcessId)
    $safe.profileWindowObserved=[HtkkSyntheticLoginNative]::NextWindow($RootProcessId,$true)
    $safe.nextOwnedWindowObserved=[HtkkSyntheticLoginNative]::NextWindow($RootProcessId,$false)
+   if($safe.loginHidden -and $safe.profileWindowObserved){$safe.profileRecognitionSeconds=[int][Math]::Floor($clock.Elapsed.TotalSeconds)}
+   [HtkkSyntheticLoginNative]::Sample($RootProcessId)
+   $sample=New-HtkkSyntheticLoginSample -Seconds ([int][Math]::Floor($clock.Elapsed.TotalSeconds)) -LoginHidden $safe.loginHidden -ProfileRecognized $safe.profileWindowObserved
+   $signature=Get-HtkkSyntheticLoginSampleSignature -Sample $sample
+   # Only state changes are kept, so a long steady wait costs one entry.
+   if($signature -cne $lastSignature){if($timeline.Count -lt 24){$timeline.Add($sample)}else{$safe.postLoginTimelineTruncated=$true};$lastSignature=$signature}
    if($safe.loginHidden -and $safe.profileWindowObserved){break}
    Start-Sleep -Milliseconds 500
-  }while($clock.Elapsed.TotalSeconds -lt 20)
+  }while($clock.Elapsed.TotalSeconds -lt $deadline)
+  $safe.postLoginWaitSeconds=[int][Math]::Floor($clock.Elapsed.TotalSeconds)
+  $safe.postLoginTimeline=@($timeline.ToArray())
   $safe.fixtureDirectoryCreated=Test-Path -LiteralPath $fixture -PathType Container
   [HtkkSyntheticLoginNative]::CountAfter($RootProcessId)
   $safe.postLoginControlKinds=[HtkkSyntheticLoginNative]::PostCounts

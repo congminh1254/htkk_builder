@@ -856,7 +856,20 @@ try {
     if (-not $report.loginReady) { throw 'SYNTHETIC_LOGIN_NOT_READY' }
     . (Join-Path $PSScriptRoot 'Invoke-HtkkSyntheticLogin.ps1')
     $report.syntheticLogin = Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $rootStartTime -ProjectDirectory (Split-Path $exe)
-    if ($report.syntheticLogin.status -ne 'synthetic-profile-window-observed') { throw 'SYNTHETIC_LOGIN_NOT_VERIFIED' }
+    if ($report.syntheticLogin.status -ne 'synthetic-profile-window-observed') {
+      # Read-only: the in-process reference automation's own allowlisted stage tells whether the
+      # original profile form existed when native recognition gave up. No permit is written and
+      # guiReferenceAutomation stays null, so the failure contract is unchanged.
+      if($GuiAutomation -ne 'none' -and $null -ne $referencePreparation -and $report.syntheticLogin -is [Collections.IDictionary]) {
+        $report.syntheticLogin['referenceAutomationStageAtLoginFailure']='result-unavailable'
+        try {
+          . (Join-Path $PSScriptRoot 'Get-HtkkSafeGuiReferenceResult.ps1')
+          $loginGui=Get-HtkkSafeGuiReferenceResult -ResultPath $referencePreparation.guiAutomationResultPath -ExpectedMode $GuiAutomation
+          if($loginGui.status -eq 'valid' -and $loginGui.stage -is [string]){$report.syntheticLogin['referenceAutomationStageAtLoginFailure']=$loginGui.stage}
+        } catch {}
+      }
+      throw 'SYNTHETIC_LOGIN_NOT_VERIFIED'
+    }
   }
   if($GuiAutomation -ne 'none') {
     . (Join-Path $PSScriptRoot 'Get-HtkkSafeGuiReferenceResult.ps1')
