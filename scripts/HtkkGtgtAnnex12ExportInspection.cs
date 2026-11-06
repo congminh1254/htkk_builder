@@ -267,14 +267,26 @@ public sealed partial class HtkkGuiReferenceAutomation {
    annex12WebHeadAuthorityFailureMask&=2048;annex12WebHeadAuthorityRestored=true;Record();
   }finally{annex12NonzeroBusy=false;if(!finished)exportWatcher.Start();}
  }
- // Picks the entry next to ``value`` in the same original list (the one before it, or after it when
- // it is first), through the same vendor combo selection; the caller then picks ``value`` again.
+ // Picks the nearest other non-empty entry of the same original list (before ``value`` first, else
+ // after it), through the same vendor combo selection; the caller then picks ``value`` again.
+ // Releases 224/225 (both cases, failure mask 2624 = 2048|512|ordinal 1, combo mask 1835): the list
+ // is GeneralFunctions.loadCqtCapCucTheoDiaBanXa's dictionary, whose first entry is the blank ''
+ // (Add("","")), then the ward's head CQT, then the two nationwide CQTs 82500/82700. The entry before
+ // the head CQT is that blank, which a user cannot use (winFpSpread_ComboCloseUp skips cellChange for
+ // an empty cell), so the nearest non-empty entry after it is picked, as a user would.
  private void SelectImportedAnnex12NeighbourEntry(Control grid,object annex,int row,int column,string value){
   if(column!=17)throw new InvalidOperationException();
   object type=Get(Cell(annex,row,column),"CellType");string[] items=type==null?null:Get(type,"Items") as string[];
   if(items==null||items.Length<2||items.Length>4096)throw new InvalidOperationException();
   int at=Array.IndexOf(items,value);if(at<0||Array.LastIndexOf(items,value)!=at)throw new InvalidOperationException();
-  string neighbour=items[at>0?at-1:at+1];if(String.IsNullOrEmpty(neighbour)||neighbour==value||Array.IndexOf(items,neighbour)!=Array.LastIndexOf(items,neighbour))throw new InvalidOperationException();
+  string neighbour=null;
+  for(int step=1;step<items.Length&&neighbour==null;step++){
+   foreach(int candidate in new int[]{at-step,at+step}){
+    if(candidate<0||candidate>=items.Length)continue;string entry=items[candidate];
+    if(!String.IsNullOrEmpty(entry)&&entry!=value&&Array.IndexOf(items,entry)==Array.LastIndexOf(items,entry)){neighbour=entry;break;}
+   }
+  }
+  if(String.IsNullOrEmpty(neighbour)||neighbour==value)throw new InvalidOperationException();
   SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);
  }
  private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){

@@ -456,7 +456,27 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   self.assertEqual(order,sorted(order))
   helper=annex[annex.index(' private void SelectImportedAnnex12NeighbourEntry('):annex.index(' private void SelectImportedAnnex12Combo(')]
   self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);',helper)
-  for needed in ('items[at>0?at-1:at+1]','column!=17','Array.LastIndexOf(items,value)!=at','neighbour==value'):self.assertIn(needed,helper)
+  for needed in ('new int[]{at-step,at+step}','column!=17','Array.LastIndexOf(items,value)!=at','neighbour==value','!String.IsNullOrEmpty(entry)&&entry!=value'):self.assertIn(needed,helper)
   for forbidden in ('SetPublic','set_Value','"Value"','"Text",','"Formula"','SendKeys','Invoke('):self.assertNotIn(forbidden,helper)
+
+ def test_failure_mask_2624_skips_the_blank_first_entry_of_the_head_cqt_list(self):
+  """Releases 224/225 (both annex cases): failure mask 2624 = 2048|512|64 (row ordinal 1, the
+  neighbour/re-pick step threw), combo mask 1835 = 43|256|512|1024 (the keyed entry held code 10100).
+  The R list is GeneralFunctions.loadCqtCapCucTheoDiaBanXa: Add("","") first, then the ward's head
+  CQT, then 82500/82700, so the entry before the head CQT is blank. The helper now picks the nearest
+  non-empty entry (here the one after), still only through the original list."""
+  self.assertEqual(2624,2048|512|(0+1)<<6);self.assertEqual(1835,43|256|512|1024)
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  helper=annex[annex.index(' private void SelectImportedAnnex12NeighbourEntry('):annex.index(' private void SelectImportedAnnex12Combo(')]
+  self.assertNotIn('items[at>0?at-1:at+1]',helper)
+  # Simulate the helper's choice on the original list shape.
+  def pick(items,value):
+   at=items.index(value)
+   for step in range(1,len(items)):
+    for c in (at-step,at+step):
+     if 0<=c<len(items) and items[c] and items[c]!=value and items.count(items[c])==1:return items[c]
+  self.assertEqual(pick(['','HEAD','DNL','TMDT'],'HEAD'),'DNL')
+  self.assertEqual(pick(['A','HEAD',''],'HEAD'),'A')
+  self.assertIsNone(pick(['','HEAD'],'HEAD'))
 
 if __name__=='__main__':unittest.main()
