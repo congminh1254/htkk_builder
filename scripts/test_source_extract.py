@@ -537,7 +537,8 @@ class ExporterContractTests(unittest.TestCase):
     def test_requires_verified_trust_and_bounded_job_cleanup(self):
         self.assertIn("$trusted['status'] -cne 'baseline-verified'", self.code)
         self.assertIn('New-HtkkBoundedJobOwner', self.code)
-        self.assertIn('$owner.WaitForRootExit(420000)', self.code)
+        self.assertIn('$exited=$owner.WaitForRootExit($script:workerTimeoutMilliseconds)', self.code)
+        self.assertEqual(self.code.count('WaitForRootExit('), 1)
         self.assertLess(self.code.index("throw 'TRUST_NOT_VERIFIED'"), self.code.index('New-HtkkBoundedJobOwner'))
         self.assertIn("childEnvironmentPolicy='os-essentials-only'", self.code)
         self.assertNotIn('Write-Output', self.code)
@@ -604,6 +605,45 @@ class ExporterContractTests(unittest.TestCase):
         self.assertEqual(text.count("-cmatch '^[A-Z0-9_]{1,48}$'"), 3)
 
 
+class JobDeadlineTests(unittest.TestCase):
+    """Run 42146199473: WaitForRootExit(420000) threw deadline-invalid and was misreported as a timeout."""
+
+    def setUp(self):
+        self.cs = (ROOT / 'HtkkWindowsJobProcess.cs').read_text(encoding='utf-8')
+        text = (ROOT / 'Export-HtkkSourcePayload.ps1').read_text(encoding='utf-8')
+        self.code = '\n'.join(l for l in text.splitlines() if not l.lstrip().startswith('#'))
+
+    def test_worker_deadline_is_inside_the_job_api_range(self):
+        limit = int(re.search(r'CheckDeadline\(int value\) \{ if \(value < 0 \|\| value > ([0-9]+)\)', self.cs).group(1))
+        timeout = int(re.search(r'\$script:workerTimeoutMilliseconds=([0-9]+)', self.code).group(1))
+        self.assertTrue(0 < timeout <= limit, (timeout, limit))
+        for literal in re.findall(r'\.(?:WaitForRootExit|Stop)\(([0-9]+)\)', self.code):
+            self.assertLessEqual(int(literal), limit)
+        trust = (ROOT / 'Test-HtkkSourceCandidateTrust.ps1').read_text(encoding='utf-8')
+        trust_wait = int(re.search(r'\$owner\.WaitForRootExit\(([0-9]+)\)', trust).group(1))
+        self.assertLessEqual(trust_wait, limit)
+        self.assertIn('workerTimeoutMilliseconds=$script:workerTimeoutMilliseconds', self.code)
+
+    def test_wait_exceptions_are_not_timeouts(self):
+        wait = self.code[self.code.index("$step='WORKER_WAIT_FAILED'"):self.code.index("if($result.workerTimedOut)")]
+        self.assertIn("try{$exited=$owner.WaitForRootExit($script:workerTimeoutMilliseconds)}catch{", wait)
+        self.assertIn("throw 'WORKER_WAIT_FAILED'", wait)
+        self.assertIn("throw 'WORKER_EXIT_CODE_FAILED'", wait)
+        self.assertIn('}else{$result.workerTimedOut=$true}', wait)
+        # Timeout is only the false return of a successful wait.
+        self.assertNotIn("WORKER_TIMEOUT", wait)
+        self.assertIn("if($result.workerTimedOut){$step='WORKER_TIMEOUT';throw 'WORKER_TIMEOUT'}", self.code)
+        # Original API exception details survive the rethrow.
+        self.assertIn('if($null -eq $result.errorType){$info=Get-SafeErrorInfo $_.Exception', self.code)
+
+    def test_job_categories_match_the_csharp_failures(self):
+        categories = set(re.findall(r'Failure\("([a-z-]+)"\)', self.cs)) | {'boundary-tool-failure'}
+        listed = set(re.findall(r"'([a-z-]+)'", re.search(r'\$script:jobCategories=@\(([^)]*)\)', self.code).group(1)))
+        self.assertEqual(listed, categories)
+        self.assertIn("[string]$item.Message -cin $script:jobCategories", self.code)
+        self.assertIn("'; job='+$job+'", self.code)
+
+
 class SafeFailureTests(unittest.TestCase):
     def test_only_enum_shaped_values_are_reported(self):
         with tempfile.TemporaryDirectory() as d:
@@ -612,6 +652,10 @@ class SafeFailureTests(unittest.TestCase):
             path.write_text(json.dumps({'status': 'blocked', 'failureCode': 'TRUST_NOT_VERIFIED', 'stage': 'NOT_STARTED', 'controllerStage': 'TRUST_NOT_VERIFIED', 'errorHResult': '0x80131500', 'path': 'C:/secret/file.xls'}))
             out = x.safe_failure(path, 'export')
             self.assertEqual(out, {'exportStatus': 'blocked', 'exportCode': 'TRUST_NOT_VERIFIED', 'exportStage': 'NOT_STARTED', 'exportControllerStage': 'TRUST_NOT_VERIFIED', 'exportErrorHResult': '0x80131500'})
+            path.write_text(json.dumps({'status': 'blocked', 'failureCode': 'WORKER_WAIT_FAILED', 'jobErrorCategory': 'deadline-invalid'}))
+            self.assertEqual(x.safe_failure(path, 'export')['exportJobErrorCategory'], 'deadline-invalid')
+            path.write_text(json.dumps({'status': 'blocked', 'failureCode': 'WORKER_WAIT_FAILED', 'jobErrorCategory': 'C:/x y'}))
+            self.assertEqual(x.safe_failure(path, 'export')['exportJobErrorCategory'], 'none')
             path.write_text(json.dumps({'status': 'oops', 'failureCode': 'C:\\payload\\x.dll', 'stage': 'Program Files/HTKK', 'errorHResult': 'message text'}))
             out = x.safe_failure(path, 'export')
             self.assertEqual(out, {'exportStatus': 'INVALID', 'exportCode': 'INVALID', 'exportStage': 'INVALID', 'exportErrorHResult': 'none'})

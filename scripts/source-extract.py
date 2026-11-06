@@ -616,6 +616,9 @@ def safe_failure(path, prefix):
     for key in ('stage', 'controllerStage', 'verificationStage'):
         if key in data:
             out[prefix + key[0].upper() + key[1:]] = code(data[key])
+    if 'jobErrorCategory' in data:
+        value = data['jobErrorCategory']
+        out[prefix + 'JobErrorCategory'] = value if isinstance(value, str) and re.fullmatch(r'[a-z]+(-[a-z]+){0,4}', value) else 'none'
     if 'errorHResult' in data:
         value = data['errorHResult']
         out[prefix + 'ErrorHResult'] = value if isinstance(value, str) and SAFE_HRESULT.fullmatch(value) else 'none'

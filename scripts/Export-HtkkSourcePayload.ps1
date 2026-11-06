@@ -50,7 +50,18 @@ $script:pins=[ordered]@{
 }
 $script:known=@('WINDOWS_REQUIRED','INPUT_MISSING','PATH_POLICY','ARCHIVE_PIN_MISMATCH','RUNNER_TOOL_TRUST','TOOL_TIMEOUT','TOOL_REJECTED','DISTRIBUTION_HASH','MSI_MEDIA','MSI_FILE_COUNTS','MSI_FILE_IDENTITIES','MSI_HASH_IDENTITIES','PAYLOAD_SIZE','PAYLOAD_MSI_HASH','PAYLOAD_COVERAGE','SOURCE_CHANGED','CAB_DATA_EXTRACTION_FAILED','LAYOUT_TOO_LARGE')
 # Controller-only codes (pre-launch, launch and post-worker validation).
-$script:controllerKnown=@('CANDIDATE_PATH','OUTPUT_PATH','OUTPUT_PREEXISTS','TRUST_RESULT_MISSING','TRUST_RESULT_UNREADABLE','TRUST_NOT_VERIFIED','WORK_DIRECTORY','JOB_HELPER_LOAD','JOB_LAUNCH','WORKER_TIMEOUT','WORKER_CLEANUP','WORKER_EXIT','WORKER_RESULT_MISSING','WORKER_RESULT_UNREADABLE','WORKER_RESULT_INVALID','WORKER_RESULT_COUNTS','EXPORT_LAYOUT_INVALID','EXPORT_PAYLOAD_INVALID','EXPORT_MOVE','WINDOWS_REQUIRED','WORKER_POLICY')
+# HtkkWindowsJobProcess.CheckDeadline accepts 0..300000 ms; the trust verifier uses
+# one bounded WaitForRootExit call in that range. Never pass a larger deadline.
+$script:workerTimeoutMilliseconds=300000
+# Fixed InvalidOperationException categories of HtkkWindowsJobProcess (no free text).
+$script:jobCategories=@('deadline-invalid','job-not-live','process-wait-failed','process-not-exited','process-exit-code-failed','job-query-failed','job-cleanup-not-verified','launch-arguments-invalid','job-create-failed','job-limit-failed','environment-invalid','stdio-create-failed','output-path-invalid','output-create-failed','handle-list-failed','process-create-failed','job-assignment-failed','process-identity-failed','process-resume-failed','boundary-tool-failure')
+function Get-SafeJobCategory($Exception){
+ $item=$Exception;$depth=0
+ while($null -ne $item.InnerException -and $depth -lt 8){$item=$item.InnerException;$depth++}
+ if($item -is [InvalidOperationException] -and [string]$item.Message -cin $script:jobCategories){return [string]$item.Message}
+ return 'other'
+}
+$script:controllerKnown=@('WORKER_WAIT_FAILED','WORKER_EXIT_CODE_FAILED','CANDIDATE_PATH','OUTPUT_PATH','OUTPUT_PREEXISTS','TRUST_RESULT_MISSING','TRUST_RESULT_UNREADABLE','TRUST_NOT_VERIFIED','WORK_DIRECTORY','JOB_HELPER_LOAD','JOB_LAUNCH','WORKER_TIMEOUT','WORKER_CLEANUP','WORKER_EXIT','WORKER_RESULT_MISSING','WORKER_RESULT_UNREADABLE','WORKER_RESULT_INVALID','WORKER_RESULT_COUNTS','EXPORT_LAYOUT_INVALID','EXPORT_PAYLOAD_INVALID','EXPORT_MOVE','WINDOWS_REQUIRED','WORKER_POLICY')
 $script:errorTypes=@('COMException','IOException','UnauthorizedAccessException','PathTooLongException','DirectoryNotFoundException','FileNotFoundException','InvalidOperationException','ArgumentException','ArgumentNullException','NotSupportedException','OutOfMemoryException','Win32Exception','MethodInvocationException','RuntimeException','ParameterBindingException','CommandNotFoundException','PSInvalidCastException','InvalidCastException','NullReferenceException','IndexOutOfRangeException','KeyNotFoundException','SecurityException','CryptographicException','TypeInitializationException','PlatformNotSupportedException')
 # Innermost exception type name (allowlisted) and numeric HRESULT only; never messages.
 function Get-SafeErrorInfo($Exception){
@@ -66,7 +77,7 @@ function New-SafeExportResult {
   sourcePins=$script:pins;files=0;sizeMatches=0;msiHashMatches=0;versionedWithoutMsiHash=0
   layout=$null;workerScriptSha256=$null;cabinetHelperSha256=(Get-PrivateFileHash ([IO.Path]::Combine($PSScriptRoot,'HtkkSourceCabinet.cs')))
   workerStopped=$false;jobCleanupVerified=$false;workerTimedOut=$false;workerExitCode=$null
-  lifetimeBoundary='windows-job-before-resume';workerTimeoutMilliseconds=420000;childEnvironmentPolicy='os-essentials-only'
+  lifetimeBoundary='windows-job-before-resume';workerTimeoutMilliseconds=$script:workerTimeoutMilliseconds;jobErrorCategory=$null;childEnvironmentPolicy='os-essentials-only'
  }
 }
 function Invoke-ExportWorker {
@@ -165,7 +176,8 @@ function Write-SafeExportLine($Result){
  $hresult=if([string]$Result.errorHResult -cmatch '^0x[0-9A-F]{8}$'){[string]$Result.errorHResult}else{'none'}
  $exit=if($Result.workerExitCode -is [int] -or $Result.workerExitCode -is [long]){[string][long]$Result.workerExitCode}else{'none'}
  $status=if([string]$Result.status -cin @('exported','blocked')){[string]$Result.status}else{'blocked'}
- [Console]::WriteLine('Source payload export: '+$status+'; code='+$code+'; stage='+$stage+'; controller='+$controller+'; error='+$type+'; hresult='+$hresult+'; workerExit='+$exit+'; ready=false; worker stopped='+[bool]$Result.workerStopped)
+ $job=if([string]$Result.jobErrorCategory -cin $script:jobCategories){[string]$Result.jobErrorCategory}else{'none'}
+ [Console]::WriteLine('Source payload export: '+$status+'; code='+$code+'; stage='+$stage+'; controller='+$controller+'; error='+$type+'; hresult='+$hresult+'; workerExit='+$exit+'; job='+$job+'; ready=false; worker stopped='+[bool]$Result.workerStopped)
 }
 $result=New-SafeExportResult;$result.workerScriptSha256=Get-PrivateFileHash $PSCommandPath
 $owner=$null;$work=$null;$safeCleanup=$true;$launchAttempted=$false;$step='CANDIDATE_PATH'
@@ -195,13 +207,27 @@ try{
  $launchAttempted=$true;$safeCleanup=$false
  $owner=New-HtkkBoundedJobOwner -Executable ([Diagnostics.Process]::GetCurrentProcess().MainModule.FileName) -WorkingDirectory $work -Arguments @('-NoLogo','-NoProfile','-NonInteractive','-File',$PSCommandPath,'-Worker','-CandidateDirectory',$candidate,'-WorkerDirectory',$work,'-OutputDirectory',$output,'-ResultPath',$workerResult)
  $safeCleanup=$false
- $step='WORKER_TIMEOUT';$result.controllerStage=$step
- if($owner.WaitForRootExit(420000)){$result.workerExitCode=[BitConverter]::ToInt32([BitConverter]::GetBytes([uint32]$owner.RootExitCode),0)}else{$result.workerTimedOut=$true}
+ # Same launch/wait shape as Test-HtkkSourceCandidateTrust.ps1. An exception from the
+ # wait/exit-code API is its own failure, never reported as a timeout.
+ $step='WORKER_WAIT_FAILED';$result.controllerStage=$step
+ $exited=$false
+ try{$exited=$owner.WaitForRootExit($script:workerTimeoutMilliseconds)}catch{
+  $result.jobErrorCategory=Get-SafeJobCategory $_.Exception;$info=Get-SafeErrorInfo $_.Exception;$result.errorType=$info.errorType;$result.errorHResult=$info.errorHResult
+  throw 'WORKER_WAIT_FAILED'
+ }
+ if($exited -isnot [bool]){throw 'WORKER_WAIT_FAILED'}
+ if($exited){
+  $step='WORKER_EXIT_CODE_FAILED';$result.controllerStage=$step
+  try{$result.workerExitCode=[BitConverter]::ToInt32([BitConverter]::GetBytes([uint32]$owner.RootExitCode),0)}catch{
+   $result.jobErrorCategory=Get-SafeJobCategory $_.Exception;$info=Get-SafeErrorInfo $_.Exception;$result.errorType=$info.errorType;$result.errorHResult=$info.errorHResult
+   throw 'WORKER_EXIT_CODE_FAILED'
+  }
+ }else{$result.workerTimedOut=$true}
  $step='WORKER_CLEANUP';$result.controllerStage=$step
  $owner.Dispose();$safeCleanup=$owner.CleanupVerified -is [bool] -and $owner.CleanupVerified
  $result.workerStopped=$safeCleanup;$result.jobCleanupVerified=$safeCleanup
  if(-not $safeCleanup){$step='WORKER_CLEANUP';throw 'WORKER_CLEANUP'}
- if($result.workerTimedOut){throw 'WORKER_TIMEOUT'}
+ if($result.workerTimedOut){$step='WORKER_TIMEOUT';throw 'WORKER_TIMEOUT'}
  $step='WORKER_RESULT_MISSING';$result.controllerStage=$step
  # A worker that wrote a bounded blocked result is reported by ITS code, even on a nonzero exit.
  if(-not [IO.File]::Exists($workerResult)){if($result.workerExitCode -ne 0){$step='WORKER_EXIT';throw 'WORKER_EXIT'};throw 'WORKER_RESULT_MISSING'}
@@ -241,7 +267,8 @@ try{
  if(-not $launchAttempted){$safeCleanup=$true}
  $result.failureCode=if([string]$_.Exception.Message -cin $script:controllerKnown){[string]$_.Exception.Message}elseif($step -cin $script:controllerKnown){$step}else{'WORKER_POLICY'}
  $result.controllerStage=$step
- $info=Get-SafeErrorInfo $_.Exception;$result.errorType=$info.errorType;$result.errorHResult=$info.errorHResult
+ if($null -eq $result.errorType){$info=Get-SafeErrorInfo $_.Exception;$result.errorType=$info.errorType;$result.errorHResult=$info.errorHResult}
+ if($null -eq $result.jobErrorCategory -and $launchAttempted){$category=Get-SafeJobCategory $_.Exception;if($category -cne 'other'){$result.jobErrorCategory=$category}}
  $result.status='blocked'
 }finally{
  if($null -ne $owner -and -not $safeCleanup){try{$owner.Dispose();$safeCleanup=$owner.CleanupVerified -is [bool] -and $owner.CleanupVerified}catch{$safeCleanup=$false}}
