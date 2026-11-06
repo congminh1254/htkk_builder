@@ -77,3 +77,14 @@ thuộc tiền cha vừa nhập: `01_2!AJ7` (=T46, ct13) + tổng 01-6 không đ
 [40]=100000); ca zero giữ 27 số 0. Mặt nạ tiền chính phải là 10727808 (ct27/28/32/33/34/35/36/
 40a/40). Ca zero web bị từ chối ở bước xuất lại trong run 42156474982 vẫn chưa rõ nguyên nhân;
 cần `exportRejectedMessageId` và `annex12WebImportDisplayEmptyMask` của lần chạy kế tiếp.
+
+## Nhập XML gốc để trống R (runs 42182681228 / 42182684607)
+
+Cả hai ca đạt bước nhập và kiểm phụ lục, nhưng bản xuất lại bị 0016. Mặt nạ
+`annex12WebImportDisplayEmptyMask` 264 (zero) và 8659208 (hai nhà máy) chỉ ra cột R
+(`pathCucThue`, tên CQT cấp cục) của mọi dòng con trống sau khi nhập: R không phải lá XML.
+Dòng 83 của sheet `Header` bắt buộc R44. Driver chọn lại đúng CQT cục giả lập qua combo gốc
+(và CQT cơ sở nếu handler gốc xoá), đọc lại mã ẩn 10100/10129, rồi mới xuất lại. Giá trị XML
+không đổi. Mặt nạ giữ trạng thái ngay sau nhập. Probe nonzero 42180279456 đạt; XML gốc
+(cha 1 50/50: ct12 1/1, ct13/ct14 1; cha 7 33,33/66,67: ct12 2/5, ct13/ct14 7) khớp toàn bộ
+131 nút với engine web.

@@ -50,6 +50,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }
   if(roundtripPhase=="waiting-reexport-ready"){
    if(!OriginalRoundtripOwnerReady())return;
+   if(Annex12WebCase()&&!annex12WebHeadAuthorityRestored){RestoreImportedAnnex12HeadAuthorities();return;}
    if(!roundtripImportSucceeded||!InspectOriginalImportedSheet()||roundtripReexportCommandInvoked)throw new InvalidOperationException();
    string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd");string actualSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
    if(String.IsNullOrEmpty(actualSchema)||!String.Equals(Path.GetFullPath(actualSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)||Hash(schema)!="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003")throw new InvalidOperationException();
