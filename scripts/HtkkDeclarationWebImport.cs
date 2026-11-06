@@ -305,7 +305,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    declarationXmlCheckCount++;if(DeclarationLeaf(output,parts[0])!=parts[1])declarationXmlMismatchMask|=1<<index;
   }
   declarationServiceIdentityMatched=HtkkDeclarationTreeComparison.NativeIdentity(output);declarationCreationDateValid=HtkkDeclarationTreeComparison.CreationDateValid(output);
-  int leaves,mask;declarationTreeMatched=HtkkDeclarationTreeComparison.Compare(input,output,declarationPlan.LeafCount-4,out leaves,out mask);declarationTreeLeafCount=leaves;declarationTreeMismatchMask=mask;
+  int leaves,mask;declarationTreeMatched=HtkkDeclarationTreeComparison.Compare(input,output,declarationPlan.LeafCount-4,HtkkDeclarationCasePlans.ExportDatePaths(declarationPlan),out leaves,out mask);declarationTreeLeafCount=leaves;declarationTreeMismatchMask=mask;
   webServiceIdentityMatched=declarationServiceIdentityMatched;webTaxValuesMatched=declarationTreeMatched;
  }
 

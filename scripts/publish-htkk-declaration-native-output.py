@@ -22,15 +22,26 @@ NATIVE_ERRORS={'SERVICE':'NATIVE_IDENTITY','DATE':'NATIVE_DATE','SIZE':'XML_SIZE
 HARNESS={'harnessSchemaValid':bool,'harnessTreeMatched':bool,'harnessTreeMismatchMask':(0,63),'harnessTreeLeafCount':(0,4096),'harnessXmlMismatchMask':(0,16777215),'harnessCellMismatchMask':(0,16777215)}
 
 class OutputError(ValueError):
- def __init__(self,code):
+ def __init__(self,code,context=None):
   if code not in CODES:raise ValueError('Invalid safe output error')
-  self.code=code;super().__init__(code)
-def fail(code):raise OutputError(code)
+  self.code=code;self.context=context or {};super().__init__(code)
+def fail(code,context=None):raise OutputError(code,context)
+def safe_context(context):
+ """Only the bounded native-rule diagnostic: a fixed rule name, a leaf ordinal, a section bit
+ and a coarse value shape. Never a value, path or text."""
+ result={}
+ if not isinstance(context,dict):return result
+ if context.get('nativeRule')in declaration.CODES:result['nativeRule']=context['nativeRule']
+ if type(context.get('leafOrdinal'))is int and 0<=context['leafOrdinal']<=4096:result['leafOrdinal']=context['leafOrdinal']
+ if type(context.get('section'))is int and context['section']in (1,2,4,8,16,32):result['section']=context['section']
+ if context.get('valueShape')in declaration.VALUE_SHAPES:result['valueShape']=context['valueShape']
+ return result
 def safe_failure(error):
- if isinstance(error,OutputError):code=error.code if error.code in CODES else 'INTERNAL'
+ context={}
+ if isinstance(error,OutputError):code=error.code if error.code in CODES else 'INTERNAL';context=safe_context(error.context) if code=='XML_PRIVACY' else {}
  elif isinstance(error,declaration.DeclarationWebCaseError):code='XML_PRIVACY'
  else:code=transport.safe_failure(error)['code']
- return {'format':'htkk-declaration-native-output-publication-status-v1','status':'rejected','code':code}
+ return {'format':'htkk-declaration-native-output-publication-status-v1','status':'rejected','code':code,**context}
 def exact_sha(value,count=40):
  if not isinstance(value,str) or not re.fullmatch('[0-9a-f]{'+str(count)+'}',value):fail('PROVENANCE')
  return value
@@ -38,7 +49,9 @@ def exact_sha(value,count=40):
 def validate_native(body,case_id,today=None):
  if case_id not in BRANCHES:fail('PROVENANCE')
  try:return declaration.validate_native_output(body,case_id,today)
- except declaration.DeclarationWebCaseError as error:fail(NATIVE_ERRORS.get(error.code,'XML_PRIVACY'))
+ except declaration.DeclarationWebCaseError as error:
+  code=NATIVE_ERRORS.get(error.code,'XML_PRIVACY')
+  fail(code,dict(error.context,nativeRule=error.code) if code=='XML_PRIVACY' else None)
 
 def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt):
  if case_id not in BRANCHES:fail('PROVENANCE')
@@ -79,7 +92,7 @@ def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False):
  inputs=reader.download(token,fetch=lambda path,read_token:fetch(path,read_token),expected_source=metadata['sourceCommit'],expected_case=metadata['caseId'],artifact_commit=metadata['artifactCommit'])
  name=reader.xml_name(metadata['caseId']);input_manifest=reader.validate_manifest(inputs['manifest.json'])
  if hashlib.sha256(inputs[name]).hexdigest()!=metadata['webImportInputSha256']:fail('HASH')
- try:comparison=declaration.compare_tree(inputs[name],native)
+ try:comparison=declaration.compare_tree(inputs[name],native,declaration.case(metadata['caseId'])['exportDates'])
  except declaration.DeclarationWebCaseError:fail('COMPARE')
  comparison['expectedTaxLeafCount']=declaration.tax_leaf_count(metadata['caseId'])
  comparison['allTaxValuesMatched']=comparison['allTaxValuesMatched'] and comparison['checkedTaxLeafCount']==comparison['expectedTaxLeafCount']

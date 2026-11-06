@@ -84,7 +84,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebHeadAuthorityRepairCount'] -cne 0){throw 'invalid'}
   if(($value['annex12WebHeadAuthorityFailureMask'] -isnot [int] -and $value['annex12WebHeadAuthorityFailureMask'] -isnot [long]) -or $value['annex12WebHeadAuthorityFailureMask'] -lt 0 -or $value['annex12WebHeadAuthorityFailureMask'] -gt 4095){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebHeadAuthorityFailureMask'] -cne 0){throw 'invalid'}
-  if(($value['annex12WebHeadAuthorityComboMask'] -isnot [int] -and $value['annex12WebHeadAuthorityComboMask'] -isnot [long]) -or $value['annex12WebHeadAuthorityComboMask'] -lt 0 -or $value['annex12WebHeadAuthorityComboMask'] -gt 255){throw 'invalid'}
+  if(($value['annex12WebHeadAuthorityComboMask'] -isnot [int] -and $value['annex12WebHeadAuthorityComboMask'] -isnot [long]) -or $value['annex12WebHeadAuthorityComboMask'] -lt 0 -or $value['annex12WebHeadAuthorityComboMask'] -gt 2047){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex12WebHeadAuthorityComboMask'] -cne 0){throw 'invalid'}
   if($value['annex12InputReadOnlyIdentityMatched'] -isnot [bool]){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-web-import-inspect')) -and $value['annex12InputReadOnlyIdentityMatched'] -cne $false){throw 'invalid'}

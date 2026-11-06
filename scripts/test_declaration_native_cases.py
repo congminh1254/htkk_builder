@@ -42,6 +42,14 @@ def native_of(body, case_id, created='2026-11-06'):
     return text.encode('utf-8')
 
 
+def export_day_of(native, case_id):
+    """Native-shaped copy where every export-date leaf of the case carries the export day."""
+    text = native.decode('utf-8'); created = re.search('<ngayLapTKhai>([^<]*)<', text)[1]
+    for path in d.case(case_id)['exportDates']:
+        name = path.rsplit('/', 1)[1]; text = re.sub('<' + name + '>[^<]*<', '<' + name + '>' + created + '<', text, count=1)
+    return text.encode('utf-8')
+
+
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
         self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5'])
@@ -140,16 +148,20 @@ class CompiledPlans(unittest.TestCase):
     def test_compiled_tree_comparison_matches_python_oracle(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = pathlib.Path(directory)
-            (folder / 'T.cs').write_text('using System;using System.Xml;class T{static XmlDocument L(string p){XmlReaderSettings s=new XmlReaderSettings();s.ProhibitDtd=true;s.XmlResolver=null;XmlDocument d=new XmlDocument();d.XmlResolver=null;using(XmlReader r=XmlReader.Create(p,s))d.Load(r);return d;}static void Main(string[] a){int l,m;bool ok=HtkkDeclarationTreeComparison.Compare(L(a[0]),L(a[1]),int.Parse(a[2]),out l,out m);Console.Write(ok+" "+l+" "+m);}}')
+            (folder / 'T.cs').write_text('using System;using System.Xml;class T{static XmlDocument L(string p){XmlReaderSettings s=new XmlReaderSettings();s.ProhibitDtd=true;s.XmlResolver=null;XmlDocument d=new XmlDocument();d.XmlResolver=null;using(XmlReader r=XmlReader.Create(p,s))d.Load(r);return d;}static void Main(string[] a){int l,m;string[] dates=a.Length>3?a[3].Split(new char[]{\'|\'},StringSplitOptions.RemoveEmptyEntries):new string[0];bool ok=HtkkDeclarationTreeComparison.Compare(L(a[0]),L(a[1]),int.Parse(a[2]),dates,out l,out m);Console.Write(ok+" "+l+" "+m);}}')
             subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-r:System.Xml.dll', '-out:' + str(folder / 't.exe'), str(folder / 'T.cs'), str(ROOT / 'HtkkDeclarationTreeComparison.cs')], check=True, capture_output=True)
             for case in CASES:
-                web = dfx.declaration_fixture(case); native = native_of(web, case)
-                for name, body in (('web.xml', web), ('native.xml', native), ('bad.xml', native.replace(b'<tenNNT>NNT', b'<tenNNT>XNT', 1))):
+                web = dfx.declaration_fixture(case); native = native_of(web, case); dates = d.case(case)['exportDates']
+                exported = export_day_of(native, case)
+                for name, body in (('web.xml', web), ('native.xml', native), ('bad.xml', native.replace(b'<tenNNT>NNT', b'<tenNNT>XNT', 1)), ('exported.xml', exported)):
                     (folder / name).write_bytes(body)
-                for target in ('native.xml', 'bad.xml'):
-                    expected = d.compare_tree(web, (folder / target).read_bytes())
-                    got = subprocess.run(['mono', str(folder / 't.exe'), str(folder / 'web.xml'), str(folder / target), str(d.tax_leaf_count(case))], check=True, capture_output=True, text=True).stdout.split()
-                    self.assertEqual(got, [str(expected['allTaxValuesMatched']), str(expected['checkedTaxLeafCount']), str(expected['mismatchSectionMask'])], case)
+                for target in ('native.xml', 'bad.xml', 'exported.xml'):
+                    for rule in ((), dates):
+                        expected = d.compare_tree(web, (folder / target).read_bytes(), rule)
+                        got = subprocess.run(['mono', str(folder / 't.exe'), str(folder / 'web.xml'), str(folder / target), str(d.tax_leaf_count(case)), '|'.join(rule)], check=True, capture_output=True, text=True).stdout.split()
+                        self.assertEqual(got, [str(expected['allTaxValuesMatched']), str(expected['checkedTaxLeafCount']), str(expected['mismatchSectionMask'])], (case, target, rule))
+                # The case's own rule accepts exactly the export-day shape of the original.
+                self.assertTrue(d.compare_tree(web, exported, dates)['allTaxValuesMatched'], case)
 
 
 class InputPrivacy(unittest.TestCase):
@@ -240,6 +252,52 @@ class NativeOutput(unittest.TestCase):
                     out.validate_native(body, case, TODAY)
                 self.assertEqual(error.exception.code, code)
 
+    def test_rejected_native_export_names_rule_leaf_ordinal_and_shape_never_value(self):
+        """Release 216: both BCTC native exports were rejected as XML_PRIVACY and never retained,
+        so the cause could not be read. The status now carries a bounded rule/ordinal/shape."""
+        case = 'BCTC133-B01a-basic-Y2025'; web = dfx.declaration_fixture(case); native = native_of(web, case)
+        items = d.leaves(d._parse(native, False))
+        ordinal = lambda name: next(i + 1 for i, (p, _) in enumerate(items) if p.endswith('/' + name))
+        for old, new, rule, leaf, section, shape in (
+                (b'<soLan>0<', b'<soLan>1<', 'IDENTITY', 'soLan', 2, 'numeric-other'),
+                (b'<kyKKhai>2025<', b'<kyKKhai>2024<', 'PERIOD', 'kyKKhai', 2, 'numeric-other'),
+                (b'<nguoiKy>NGUOI KY GIA LAP<', b'<nguoiKy>Nguoi Ky Gia Lap<', 'PRIVACY', 'nguoiKy', 2, 'case-variant'),
+                (b'<nguoiKy>NGUOI KY GIA LAP<', b'<nguoiKy><', 'PRIVACY', 'nguoiKy', 2, 'empty'),
+                (b'<pad1>0<', b'<pad1>False<', 'PRIVACY', 'pad1', 8, 'bool-titlecase'),
+                (b'<ct200>1800000000<', b'<ct200>1,800,000,000<', 'PRIVACY', 'ct200', 8, 'grouped-number'),
+                (b'<ct200>1800000000<', b'<ct200>PRIVATE CUSTOMER<', 'PRIVACY', 'ct200', 8, 'text-other')):
+            body = native.replace(old, new, 1); self.assertNotEqual(body, native)
+            with self.subTest(rule=rule, shape=shape), self.assertRaises(out.OutputError) as error:
+                out.validate_native(body, case, TODAY)
+            status = out.safe_failure(error.exception)
+            self.assertEqual(status, {'format': 'htkk-declaration-native-output-publication-status-v1', 'status': 'rejected', 'code': 'XML_PRIVACY',
+                                      'nativeRule': rule, 'leafOrdinal': ordinal(leaf), 'section': section, 'valueShape': shape})
+            for secret in ('PRIVATE', 'Nguoi Ky', '1,800', 'False', '2024'):self.assertNotIn(secret, json.dumps(status, ensure_ascii=False))
+        # Unbounded or unknown context never leaves the process.
+        self.assertEqual(out.safe_context({'nativeRule': 'X', 'leafOrdinal': 99999, 'section': 3, 'valueShape': 'PRIVATE', 'raw': 'PRIVATE'}), {})
+        self.assertEqual(out.safe_failure(out.OutputError('HASH', {'nativeRule': 'PRIVACY'}))['code'], 'HASH')
+        self.assertNotIn('nativeRule', out.safe_failure(out.OutputError('HASH', {'nativeRule': 'PRIVACY'})))
+
+    def test_bctc133_signing_date_is_the_export_day_on_both_sides_never_ignored(self):
+        """A2 binds no control to TKhaiThue/ngayKy; the original export writes the day the form was
+        opened (BindToKhaiInfoToTTinChung: DateTime.Now). Release 216 r1373: tree mask 2."""
+        case = 'BCTC133-B01a-basic-Y2025'; dates = d.case(case)['exportDates']
+        self.assertEqual(dates, ('HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy',))
+        self.assertEqual([c for c in CASES if d.case(c)['exportDates']], [case])
+        web = dfx.declaration_fixture(case); native = native_of(web, case); exported = export_day_of(native, case)
+        self.assertEqual(d.compare_tree(web, exported)['mismatchSectionMask'], 2)  # exact comparison: the r1373 mask
+        self.assertTrue(d.compare_tree(web, exported, dates)['allTaxValuesMatched'])
+        self.assertEqual(d.compare_tree(web, exported, dates)['checkedTaxLeafCount'], d.tax_leaf_count(case))
+        for other in (b'2026-11-05', b'', b'06/11/2026'):
+            bad = exported.replace(b'<ngayKy>2026-11-06<', b'<ngayKy>' + other + b'<', 1); self.assertNotEqual(bad, exported)
+            self.assertEqual(d.compare_tree(web, bad, dates)['mismatchSectionMask'], 2, other)
+        # The web draft side must carry its own creation date too.
+        self.assertEqual(d.compare_tree(web.replace(b'<ngayKy>2026-03-20<', b'<ngayKy>2026-03-21<', 1), exported, dates)['mismatchSectionMask'], 2)
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        self.assertIn('plan.MenuId=="A2"?new string[]{"HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy"}:new string[0]', plans)
+        self.assertIn('HtkkDeclarationCasePlans.ExportDatePaths(declarationPlan),out leaves,out mask', (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8'))
+        self.assertIn("declaration.case(metadata['caseId'])['exportDates']", (ROOT / 'publish-htkk-declaration-native-output.py').read_text(encoding='utf-8'))
+
     def test_whole_tree_mask_reports_sections_without_values(self):
         case = '05QTT-two-employees-Y2025'; web = dfx.declaration_fixture(case); native = native_of(web, case)
         self.assertEqual(d.compare_tree(web, native.replace(b'<tenNNT>NNT', b'<tenNNT>XNT', 1))['mismatchSectionMask'], 4)
@@ -252,7 +310,8 @@ class NativeOutput(unittest.TestCase):
     def test_byte_exact_retention_with_comparison_even_when_mismatched(self):
         for case in CASES:
             web = dfx.declaration_fixture(case); manifest = dfx.declaration_manifest(web, case, source=SOURCE)
-            for native, matched, mask in ((native_of(web, case), True, 0), (native_of(web, case).replace(b'<tenNNT>NNT', b'<tenNNT>XNT', 1), False, 4)):
+            # The original's export-day leaves carry the export day (A2 ngayKy), as on Windows.
+            for native, matched, mask in ((export_day_of(native_of(web, case), case), True, 0), (native_of(web, case).replace(b'<tenNNT>NNT', b'<tenNNT>XNT', 1), False, 4)):
                 if not matched:
                     with self.assertRaises(out.OutputError):  # privacy still blocks a non-synthetic name
                         out.publish(native, self.provenance(web, native, case, matched, mask), 'synthetic-token', self.fake_api(web, manifest)[0], TODAY)
@@ -264,7 +323,7 @@ class NativeOutput(unittest.TestCase):
                 self.assertTrue(stored['comparison']['allTaxValuesMatched']); self.assertTrue(stored['comparison']['harnessAgreement']); self.assertFalse(stored['qualificationGranted'])
                 self.assertEqual(result['artifactCommit'], 'e' * 40); self.assertEqual(stored['comparison']['checkedTaxLeafCount'], d.tax_leaf_count(case))
             # A value mismatch keeps synthetic privacy, is retained, and is recorded as such.
-            native = native_of(web, case)
+            native = export_day_of(native_of(web, case), case)
             first = next(p for p, v in d.leaves(d._parse(native, False)) if v == '0' and '/pad' in p).rsplit('/', 1)[1]
             native = native.replace(('<' + first + '>0<').encode(), ('<' + first + '>7<').encode(), 1)
             fetch, calls = self.fake_api(web, manifest)

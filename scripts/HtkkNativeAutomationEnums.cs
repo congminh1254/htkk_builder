@@ -869,7 +869,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.Annex12WebHeadAuthorityFailureMask:
     return 4095;
    case HtkkNativeResultCounter.Annex12WebHeadAuthorityComboMask:
-    return 255;
+    return 2047;
    case HtkkNativeResultCounter.Annex12InputActionCount:
     return 14;
    case HtkkNativeResultCounter.AmendmentPriorFileBytes:

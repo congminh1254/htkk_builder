@@ -356,6 +356,10 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
  def test_restoration_uses_original_combo_editor_only_and_precedes_the_reexport(self):
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8');roundtrip=(ROOT/'HtkkGtgtRoundtripInspection.cs').read_text(encoding='utf-8')
   block=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):]
+  # The only key is the single navigation Left of EnterImportedAnnex12HeadByKey (release 216).
+  keyed=block[block.index(' private void EnterImportedAnnex12HeadByKey('):block.index(' // Opens and closes the original percentage editor')]
+  self.assertEqual(keyed.count('SendKeys'),1);self.assertIn('SendKeys.SendWait("{LEFT}")',keyed)
+  block=block.replace(keyed,'')
   self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội")',block)
   self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội")',block)
   self.assertIn('SetPublic(vendor,"SelectedIndex",selected)',block);self.assertIn('FindVendorCombo(editor,0)',block)
@@ -408,6 +412,29 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   for forbidden in ('SetPublic','set_','Invoke('):self.assertNotIn(forbidden,shape)
   self.assertIn('annex12WebHeadAuthorityRepairCount>4*seen',loop)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
-  self.assertEqual(registry['annex12WebHeadAuthorityComboMask'],{'kind':'integer','default':0,'minimum':0,'maximum':255,'activeModes':['gtgt-web-import-inspect']})
+  self.assertEqual(registry['annex12WebHeadAuthorityComboMask'],{'kind':'integer','default':0,'minimum':0,'maximum':2047,'activeModes':['gtgt-web-import-inspect']})
+
+ def test_combo_shape_107_enters_r_by_a_real_key_before_the_single_reconfirm(self):
+  """Release 216 r1371 (two plants): failure mask 2116 unchanged, combo mask 107 =
+  1|2|8|32|64: ComboBoxCellType with items, R's text is an item, R's row active, re-confirm done;
+  NOT 4 (ItemData aligned), NOT 16 (code 10100 at the text), NOT 128 (AJ after retry). Original
+  cellChange (Controltype 8) reads the code through GeneralFunctions.GetDMFromCombobox, which keys
+  the list by ItemData; only winFpSpread_EnterCell (Controltype 8) installs a dictionary list with
+  ItemData (InsertCombobox(dictionary): Items=Values, ItemData=Keys). A programmatic
+  SetActiveCell does not raise EnterCell, so R is entered with one real Left key from S."""
+  bits=[i for i in range(11) if 107>>i&1];self.assertEqual(bits,[0,1,3,5,6])
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12Combo(')]
+  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
+  order=[retry.index(x) for x in ('ImportedAnnex12ComboShape(annex,row,17,','EnterImportedAnnex12HeadByKey(grid,annex,row);','annex12WebHeadAuthorityComboMask|=256','SelectImportedAnnex12Combo(grid,annex,row,17,','annex12WebHeadAuthorityComboMask|=64','annex12WebHeadAuthorityComboMask|=128')]
+  self.assertEqual(order,sorted(order))
+  for bit in ('|=512;','|=1024;'):self.assertIn('annex12WebHeadAuthorityComboMask'+bit,retry)
+  keyed=annex[annex.index(' private void EnterImportedAnnex12HeadByKey('):annex.index(' // Opens and closes the original percentage editor')]
+  # Navigation only: from S (not editing, owner foreground), one Left, R text unchanged, no writes.
+  self.assertLess(keyed.index('MoveImportedAnnex12Cell(grid,annex,row,18);'),keyed.index('SendKeys.SendWait("{LEFT}")'))
+  for needed in ('Get(grid,"EditingControl")!=null','Annex12CellLocked(annex,row,17)','!=17','CellText(annex,row,17)!=before','OriginalMessageVisible()'):self.assertIn(needed,keyed)
+  for forbidden in ('SetPublic','set_Value','"Value"','"Text",','"Formula"','StartCellEditing','SetActiveCell'):self.assertNotIn(forbidden,keyed)
+  ps=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  self.assertIn("$value['annex12WebHeadAuthorityComboMask'] -gt 2047",ps)
 
 if __name__=='__main__':unittest.main()

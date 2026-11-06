@@ -31,17 +31,22 @@ public static class HtkkDeclarationTreeComparison {
   return StructureBit;
  }
  // Returns true only when every leaf matches; mask/leaves are always reported.
- public static bool Compare(XmlDocument input,XmlDocument output,int expectedLeaves,out int leaves,out int mask){
+ public static bool Compare(XmlDocument input,XmlDocument output,int expectedLeaves,out int leaves,out int mask){return Compare(input,output,expectedLeaves,new string[0],out leaves,out mask);}
+ // exportDatePaths: leaves the ORIGINAL export fills with the export day (form-specific, proven from
+ // source). Each must equal its own document's creation date (web: draft date; native: export day);
+ // a value that is not exactly that date is a mismatch, never ignored.
+ public static bool Compare(XmlDocument input,XmlDocument output,int expectedLeaves,string[] exportDatePaths,out int leaves,out int mask){
   leaves=0;mask=0;
-  if(input==null||output==null||input.DocumentElement==null||output.DocumentElement==null){mask=StructureBit;return false;}
-  Walk(input.DocumentElement,output.DocumentElement,"HSoThueDTu",ref leaves,ref mask);
+  if(input==null||output==null||input.DocumentElement==null||output.DocumentElement==null||exportDatePaths==null||exportDatePaths.Length>4){mask=StructureBit;return false;}
+  string inputDate=LeafText(input,DatePath),outputDate=LeafText(output,DatePath);
+  Walk(input.DocumentElement,output.DocumentElement,"HSoThueDTu",exportDatePaths,inputDate,outputDate,ref leaves,ref mask);
   if(!NativeIdentity(output))mask|=1;
   if(!CreationDateValid(output))mask|=2;
   return mask==0&&leaves==expectedLeaves;
  }
  private static List<XmlElement> Children(XmlElement element,ref bool mixed){List<XmlElement> values=new List<XmlElement>();foreach(XmlNode child in element.ChildNodes){if(child is XmlElement)values.Add((XmlElement)child);else if(child.NodeType==XmlNodeType.Text){if(child.Value.Trim().Length>0)mixed=true;}else if(child.NodeType!=XmlNodeType.Whitespace&&child.NodeType!=XmlNodeType.SignificantWhitespace)mixed=true;}return values;}
  private static Dictionary<string,string> Attributes(XmlElement element){Dictionary<string,string> values=new Dictionary<string,string>();foreach(XmlAttribute attribute in element.Attributes){if(attribute.NamespaceURI=="http://www.w3.org/2000/xmlns/")continue;values[attribute.NamespaceURI+"|"+attribute.LocalName]=attribute.Value;}return values;}
- private static void Walk(XmlElement a,XmlElement b,string path,ref int leaves,ref int mask){
+ private static void Walk(XmlElement a,XmlElement b,string path,string[] exportDatePaths,string inputDate,string outputDate,ref int leaves,ref int mask){
   if(a.NamespaceURI!=Ns||b.NamespaceURI!=Ns||a.LocalName!=b.LocalName){mask|=StructureBit|Section(path);return;}
   Dictionary<string,string> left=Attributes(a),right=Attributes(b);bool attributesEqual=left.Count==right.Count;
   if(attributesEqual)foreach(KeyValuePair<string,string> pair in left){string value;if(!right.TryGetValue(pair.Key,out value)||value!=pair.Value){attributesEqual=false;break;}}
@@ -50,9 +55,11 @@ public static class HtkkDeclarationTreeComparison {
   if(x.Count!=y.Count){mask|=StructureBit|Section(path);return;}
   if(x.Count==0){
    if(path.StartsWith(ServicePath,StringComparison.Ordinal)){string name=path.Substring(ServicePath.Length);if(name!="maDVu"&&name!="tenDVu"&&name!="pbanDVu"&&name!="ttinNhaCCapDVu")mask|=StructureBit;return;}
-   leaves++;if(path!=DatePath&&a.InnerText!=b.InnerText)mask|=Section(path);return;
+   leaves++;
+   if(Array.IndexOf(exportDatePaths,path)>=0){if(inputDate==null||outputDate==null||a.InnerText!=inputDate||b.InnerText!=outputDate)mask|=Section(path);return;}
+   if(path!=DatePath&&a.InnerText!=b.InnerText)mask|=Section(path);return;
   }
   if(mixedA||mixedB){mask|=StructureBit|Section(path);return;}
-  for(int index=0;index<x.Count;index++)Walk(x[index],y[index],path+"/"+x[index].LocalName,ref leaves,ref mask);
+  for(int index=0;index<x.Count;index++)Walk(x[index],y[index],path+"/"+x[index].LocalName,exportDatePaths,inputDate,outputDate,ref leaves,ref mask);
  }
 }

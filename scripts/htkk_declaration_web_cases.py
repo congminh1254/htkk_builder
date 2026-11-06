@@ -38,16 +38,52 @@ descriptor_design = _load('declaration_descriptor_design', 'htkk_descriptor_nati
 hkd_design = _load('declaration_hkd_design', 'htkk_hkd_web_cases.py')
 
 
+# Bounded, value-free description of a rejected leaf (never its text). A rejected native export is
+# never retained, so these let the next run name the cause: the rule, the leaf's 1-based ordinal in
+# document order (the same tree as the private web input), its section bit and a coarse shape.
+VALUE_SHAPES = frozenset(('empty', 'whitespace-variant', 'case-variant', 'bool-titlecase', 'grouped-number', 'date-like', 'numeric-other', 'text-other'))
+
+
 class DeclarationWebCaseError(ValueError):
-    def __init__(self, code):
+    def __init__(self, code, context=None):
         if code not in CODES:
             raise ValueError('Invalid bounded declaration diagnostic')
         self.code = code
+        self.context = context or {}
         super().__init__(code)
 
 
-def reject(code):
-    raise DeclarationWebCaseError(code)
+def reject(code, context=None):
+    raise DeclarationWebCaseError(code, context)
+
+
+def value_shape(value, allowed=()):
+    if value == '':
+        return 'empty'
+    folded = ' '.join(value.split())
+    if any(' '.join(a.split()) == folded for a in allowed):
+        return 'whitespace-variant'
+    if any(' '.join(a.split()).casefold() == folded.casefold() for a in allowed):
+        return 'case-variant'
+    if value in ('True', 'False', 'TRUE', 'FALSE'):
+        return 'bool-titlecase'
+    if re.fullmatch(r'-?[0-9]{1,3}([.,][0-9]{3})+([.,][0-9]+)?', value):
+        return 'grouped-number'
+    if re.fullmatch(r'[0-9]{1,4}[-./][0-9]{1,2}([-./][0-9]{1,4})?( .*)?', value):
+        return 'date-like'
+    if re.fullmatch(r'[-+(]?[0-9.,E+\- )]+', value):
+        return 'numeric-other'
+    return 'text-other'
+
+
+def _where(items, path, value=None, allowed=()):
+    """Context for the first leaf at ``path`` (ordinal is 1-based; 0 if absent)."""
+    ordinal = next((i + 1 for i, (p, _) in enumerate(items) if p == path), 0)
+    section = next((bit for name, bit in SECTIONS.items() if '/' + name + '/' in path + '/'), 32)
+    context = {'leafOrdinal': ordinal, 'section': section}
+    if value is not None:
+        context['valueShape'] = value_shape(value, allowed)
+    return context
 
 
 # The exact synthetic profile the Windows harness saves (HtkkGuiReferenceAutomation.cs).
@@ -102,7 +138,11 @@ CASES = {
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
+# Leaves the ORIGINAL export fills with the export day (HtkkDeclarationCasePlans.ExportDatePaths):
+# A2 has no control bound to TKhaiThue/ngayKy, so TTinChung.ngayKy keeps DateTime.Now.
+EXPORT_DATES = {'BCTC133-B01a-basic-Y2025': (TK + 'ngayKy',)}
 for _id, _c in CASES.items():
+    _c['exportDates'] = EXPORT_DATES.get(_id, ())
     _c['family'] = 'cnkd' if _id in hkd_design.CASES else 'descriptor' if _id in _descriptor_expected else 'workbook'
     if _c['family'] == 'workbook' and _id not in _workbook_expected:
         raise ValueError('DECLARATION_CASE_POLICY')
@@ -195,21 +235,23 @@ def _texts(items, allowed):
         if value == '' or NUMBER.match(value) or CODE.match(value) or DATE.match(value) or value in ('true', 'false'):
             continue
         if value not in allowed:
-            reject('PRIVACY')
+            reject('PRIVACY', _where(items, path, value, allowed))
 
 
 def _common(items, spec, created):
-    if (_one(items, TK + 'maTKhai'), _one(items, TK + 'pbanTKhaiXML'), _one(items, TK + 'loaiTKhai'), _one(items, TK + 'soLan')) != (spec['maTKhai'], spec['xmlVersion'], 'C', '0'):
-        reject('IDENTITY')
-    period = (_one(items, TK + 'KyKKhaiThue/kieuKy'), _one(items, TK + 'KyKKhaiThue/kyKKhai'), _one(items, TK + 'KyKKhaiThue/kyKKhaiTuNgay'), _one(items, TK + 'KyKKhaiThue/kyKKhaiDenNgay'))
-    if period != (spec['kieuKy'], spec['kyKKhai'], spec['tuNgay'], spec['denNgay']):
-        reject('PERIOD')
-    if _one(items, NNT + 'mst') != MST or _one(items, NNT + 'tenNNT') != NAME or _one(items, TK + 'nguoiKy') != SIGNER:
-        reject('PRIVACY')
+    for name, expected in (('maTKhai', spec['maTKhai']), ('pbanTKhaiXML', spec['xmlVersion']), ('loaiTKhai', 'C'), ('soLan', '0')):
+        if _one(items, TK + name) != expected:
+            reject('IDENTITY', _where(items, TK + name, _one(items, TK + name)))
+    for name, key in (('kieuKy', 'kieuKy'), ('kyKKhai', 'kyKKhai'), ('kyKKhaiTuNgay', 'tuNgay'), ('kyKKhaiDenNgay', 'denNgay')):
+        if _one(items, TK + 'KyKKhaiThue/' + name) != spec[key]:
+            reject('PERIOD', _where(items, TK + 'KyKKhaiThue/' + name, _one(items, TK + 'KyKKhaiThue/' + name)))
+    for path, expected in ((NNT + 'mst', MST), (NNT + 'tenNNT', NAME), (TK + 'nguoiKy', SIGNER)):
+        if _one(items, path) != expected:
+            reject('PRIVACY', _where(items, path, _one(items, path), (expected,)))
     # Every TIN-like leaf carries only the synthetic MST or is empty.
     for path, value in items:
         if re.search(r'(^|/)(mst|mst_cu|mstDLyThue)$', path) and value not in ('', MST):
-            reject('PRIVACY')
+            reject('PRIVACY', _where(items, path))
     if not created:
         return
     if _one(items, TK + 'ngayKy') != spec['ngayKy']:
@@ -290,13 +332,17 @@ def validate_native_output(body, case_id, today=None):
     return {'privacyValuesVerified': True, 'leafCount': len(items), 'nativeServiceIdentityVerified': True, 'creationDateRule': 'native-export-current-date'}
 
 
-def compare_tree(input_body, native_body):
+def compare_tree(input_body, native_body, export_dates=()):
     """Whole-tree comparison. Normalized in memory only: creation date and 4 service leaves.
+    Each ``export_dates`` leaf must equal its own document's creation date (never ignored).
 
     Returns a bounded diagnostic: matched flag, compared leaf count and a section mask
     (1 TTinDVu, 2 TKhaiThue, 4 NNT, 8 CTieuTKhaiChinh, 16 PLuc, 32 structure)."""
     left, right = _parse(input_body, True), _parse(native_body, False)
     state = {'leaves': 0, 'mask': 0}
+    if len(export_dates) > 4:
+        reject('CASE')
+    created = [dict(leaves(root)).get(CREATION_PATH) for root in (left, right)]
 
     def section(path):
         for name, bit in SECTIONS.items():
@@ -314,6 +360,10 @@ def compare_tree(input_body, native_body):
                     state['mask'] |= 32
                 return
             state['leaves'] += 1
+            if path in export_dates:
+                if None in created or (a.text or '') != created[0] or (b.text or '') != created[1]:
+                    state['mask'] |= section(path)
+                return
             if path != CREATION_PATH and (a.text or '') != (b.text or ''):
                 state['mask'] |= section(path)
             return

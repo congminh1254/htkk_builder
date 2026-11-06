@@ -33,8 +33,15 @@ def discover(publication,builder,statuses,get=collector.api,retry=None):
  source=publication['sourceCommit'];latest={s['context']:s for s in reversed(statuses)};result=[];seen=set();ready=[];pending=False
  for item in publication['cases']:
   case=item['caseId'];check(case in registry.CASES)
-  # Candidate cases report their own status but never gate this cohort.
-  if not registry.CASES[case]['releaseGate']:continue
+  # Candidate cases report their own status but never gate this cohort. A failed candidate
+  # gets the same classified, at-most-one, pre-tax-only retry; its outcome (or any error
+  # while classifying it) never makes the cohort pending, failed or ready.
+  if not registry.CASES[case]['releaseGate']:
+   status=latest.get(registry.CASES[case]['statusContext'],{})
+   if retry is not None and status.get('state')in ('failure','error')and 'input:'+item['artifactCommit']in status.get('description',''):
+    try:retry(status,registry.CASES[case]['statusContext'],source,builder,item['artifactCommit'])
+    except Exception:pass
+   continue
   status=latest.get(registry.CASES[case]['statusContext'],{})
   if status.get('state')in ('failure','error'):
    if 'input:'+item['artifactCommit']in status.get('description',''):
@@ -65,8 +72,15 @@ def verify_pinned(batch,source,builder,get=collector.api):
 
 def main():
  temp=pathlib.Path(os.environ['RUNNER_TEMP']);publication=collector.cases.publication((temp/'htkk-web-input-publication.json').read_bytes(),os.environ['COMMIT_SHA']);deadline=time.monotonic()+1200
- retried=set()
- retry=lambda status,context,source,builder,artifact:preflight.recover(status,context,source,builder,artifact,collector.api,collector.records,collector.cases.post,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'),retried)
+ retried=set();declined=set()
+ def retry(status,context,source,builder,artifact):
+  # A run already classified as not retryable is not re-read every poll (candidate cases keep
+  # their failure status while the gating cohort is awaited).
+  key=status.get('target_url','')
+  if key in declined:return False
+  result=preflight.recover(status,context,source,builder,artifact,collector.api,collector.records,collector.cases.post,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'),retried)
+  if result is False:declined.add(key)
+  return result
  while True:
   check(collector.api(SOURCE,'commits/main')['sha']==publication['sourceCommit'])
   statuses=collector.api(SOURCE,'commits/'+publication['sourceCommit']+'/status?per_page=100')['statuses'];batch=discover(publication,os.environ['GITHUB_SHA'],statuses,retry=retry)

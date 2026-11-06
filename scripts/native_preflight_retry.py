@@ -4,6 +4,12 @@ BUILDER='congminh1254/htkk_builder';SOURCE='htkk-net/htkk_web'
 FRAMEWORK='Check clean Framework UIA assembly readiness'
 PROBE='Kiểm tra nguồn và điều kiện Windows'
 RETAIN='Retain verified raw native web reexport privately'
+# Declaration families retain through their own step; with nothing staged it succeeds and
+# reports exactly 'not-staged' (no original export existed), so only the probe step fails.
+DECLARATION_MODE='declaration-web-import-inspect'
+DECLARATION_RETAIN='Retain raw native declaration export privately'
+DECLARATION_NOT_STAGED={'format':'htkk-declaration-native-output-publication-status-v1','status':'not-staged'}
+STARTUP_MODES=('gtgt-web-import-inspect',DECLARATION_MODE)
 PROFILE_CLOSE_LIMIT=60
 # Valid child phases short of 'complete'; 'invalid'/'unavailable' never qualify.
 FRAMEWORK_RUNNING_PHASES=('not-started','client-loading','types-loading','modules-loading','cmdlets','result-writing')
@@ -51,9 +57,9 @@ def _export_selector_not_observed(gui):
    return False
   if type(v)not in (bool,int,str)or not any(type(v)is type(u)and v==u for u in UNPROGRESSED):return False
  return True
-def _supplier_boundary(r):
+def _supplier_boundary(r,modes=('gtgt-web-import-inspect',)):
  boundary=r.get('supplierProcessBoundary',{})
- if r.get('guiReferenceAutomationMode')!='gtgt-web-import-inspect'or r.get('stage')!='blocked':return False
+ if r.get('guiReferenceAutomationMode')not in modes or r.get('stage')!='blocked':return False
  if r.get('referenceHostResult',{}).get('status')!='original-starting':return False
  if any(r.get(k)is not True for k in ('sourceHashesVerified','originalSourcesUnmodified','officialDistributionFilesVerified','msiAuthenticodeValid','nativeHelperJobsStopped','hostOutboundBlocked','originalOutboundBlocked')):return False
  if any(boundary.get(k)is not True for k in ('cleanupVerified','supplierStopped','rootStopped','jobEmpty')):return False
@@ -71,10 +77,21 @@ def classify(jobs,records):
    # The Framework readiness child runs before HTKK, web input or any tax data exists.
    if _exact(bounds[0],{'phase':'complete'}):return 'framework-uia-exit-timeout'
    if bounds[0].get('phase')in FRAMEWORK_RUNNING_PHASES and type(bounds[0].get('phase'))is str:return 'framework-uia-process-timeout'
- if failed!={PROBE,RETAIN}:return None
  suppliers=[r for r in records if r.get('version')=='5.8.1'and 'supplierProcessBoundary'in r]
  if len(suppliers)!=1:return None
  r=suppliers[0];login=r.get('syntheticLogin',{});permit=r.get('guiAutomationPermitBoundary',{})
+ if failed=={PROBE} and r.get('guiReferenceAutomationMode')==DECLARATION_MODE:
+  # Declaration startup flake: HTKK never reached its main window (original-starting), the
+  # synthetic login saw no profile window, no permit was issued, nothing was staged.
+  if type(login)is not dict or type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r,(DECLARATION_MODE,)):return None
+  if not any(s.get('name')==DECLARATION_RETAIN and s.get('conclusion')=='success'for s in steps):return None
+  declared=[x for x in records if x.get('format')==DECLARATION_NOT_STAGED['format']]
+  if len(declared)!=1 or not _exact(declared[0],DECLARATION_NOT_STAGED) or set(declared[0])!=set(DECLARATION_NOT_STAGED):return None
+  if r.get('blockedReason')!='SYNTHETIC_LOGIN_NOT_VERIFIED' or r.get('guiReferenceAutomation')is not None:return None
+  if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None
+  if not _exact(login,dict(LOGIN,status='next-window-not-yet-identified',profileWindowObserved=False)):return None
+  return 'synthetic-profile-startup-not-observed'
+ if failed!={PROBE,RETAIN}:return None
  if type(login)is not dict or type(permit)is not dict or set(permit)!=PERMIT_KEYS or not _supplier_boundary(r):return None
  if r.get('blockedReason')=='SYNTHETIC_LOGIN_NOT_VERIFIED':
   if not _exact(permit,{'uniquePathVerified':True,'initiallyAbsent':True,'authorizationAttempted':False,'absentAfterCleanup':True}):return None

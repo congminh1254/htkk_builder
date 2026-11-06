@@ -230,8 +230,18 @@ public sealed partial class HtkkGuiReferenceAutomation {
      // user whose first pick did not take re-opens the same list and confirms the same entry: do
      // exactly that once (R text unchanged), then S as before. Bounded shape of R's original combo
      // is recorded (annex12WebHeadAuthorityComboMask) so a remaining gap names its cause.
+     // Release 216 (r1371) shape 107: combo type, items, text is an item and active row all held,
+     // but ItemData was not aligned with Items, so GeneralFunctions.GetDMFromCombobox (the code
+     // lookup cellChange uses for Controltype 8) found no code and AJ stayed empty. The ItemData
+     // list (Keys = CQT codes) is installed only by frmWinToKhai.winFpSpread_EnterCell (Controltype
+     // 8: loadCqtCapCucTheoDiaBanXa → GeneralFunctions.InsertCombobox(dictionary)), which the
+     // vendor raises for a user's move into the cell, not for a programmatic SetActiveCell. Enter R
+     // as a user does, with one real Left key from S, then re-confirm the same entry once.
      if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){
       annex12WebHeadAuthorityComboMask=ImportedAnnex12ComboShape(annex,row,17,"Thuế Thành phố Hà Nội","10100");Record();
+      EnterImportedAnnex12HeadByKey(grid,annex,row);annex12WebHeadAuthorityComboMask|=256;
+      int keyed=ImportedAnnex12ComboShape(annex,row,17,"Thuế Thành phố Hà Nội","10100");if((keyed&4)!=0)annex12WebHeadAuthorityComboMask|=512;if((keyed&16)!=0)annex12WebHeadAuthorityComboMask|=1024;Record();
+      if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội")throw new InvalidOperationException();
       try{SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;annex12WebHeadAuthorityComboMask|=64;Record();
       MoveImportedAnnex12Cell(grid,annex,row,18);
@@ -271,6 +281,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Read-only shape of the original combo cell: bit0 combobox cell type, bit1 items present, bit2
  // ItemData aligned with Items, bit3 the shown text is an item, bit4 its ItemData is the expected code,
  // bit5 the original active cell is this row. Counts and flags only; no item text leaves the process.
+ // The caller adds bit6 re-confirm done, bit7 AJ written after it, bit8 R entered by a real key,
+ // bit9/bit10 ItemData aligned / expected code present after that keyed entry.
  private int ImportedAnnex12ComboShape(object annex,int row,int column,string text,string code){
   int mask=0;object type=Get(Cell(annex,row,column),"CellType");
   if(type==null||type.GetType().FullName!="FarPoint.Win.Spread.CellType.ComboBoxCellType")return mask;mask|=1;
@@ -304,6 +316,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
   grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
   annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});Application.DoEvents();grid.Focus();
   if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=column||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
+ }
+ // One real Left key from S (not editing) moves the original active cell to R, so the vendor raises
+ // EnterCell and the original handler rebuilds R's list; nothing is typed or written.
+ private void EnterImportedAnnex12HeadByKey(Control grid,object annex,int row){
+  MoveImportedAnnex12Cell(grid,annex,row,18);
+  Form owner=grid.FindForm();uint pid;
+  if(owner==null||owner!=roundtripOwner||Get(grid,"EditingControl")!=null||Annex12CellLocked(annex,row,17))throw new InvalidOperationException();
+  grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();
+  string before=CellText(annex,row,17);SendKeys.SendWait("{LEFT}");Application.DoEvents();grid.Focus();
+  if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=17||CellText(annex,row,17)!=before||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
  }
  // Opens and closes the original percentage editor without any key, as tabbing through it does.
  private void PassImportedAnnex12Percentage(Control grid,object annex,int row){

@@ -44,6 +44,53 @@ class NativePreflightRetry(unittest.TestCase):
    self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
    f['run'].update(run_attempt=2,status='in_progress',conclusion=None);self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
    f['run'].update(status='completed',conclusion='failure');self.assertFalse(f['recover']());self.assertEqual(len(f['calls']),2)
+ def declaration_startup(self):
+  # Shape of release 216 r1372/r1376/r1377 (03TNDN, 05QTT, 01CNKD): HTKK stayed at
+  # original-starting, no profile window, no permit; the declaration retain step succeeded
+  # with exactly 'not-staged', so only the probe step failed.
+  f=self.fixture('startup');r=f['records'][0];r['guiReferenceAutomationMode']=retry.DECLARATION_MODE
+  f['steps'][:]=[{'name':retry.PROBE,'conclusion':'failure'},{'name':retry.DECLARATION_RETAIN,'conclusion':'success'}]
+  f['records'].append(dict(retry.DECLARATION_NOT_STAGED))
+  return f
+ def test_declaration_startup_flake_retries_once_before_any_tax_step(self):
+  f=self.declaration_startup();self.assertEqual(retry.classify(f['jobs'],f['records']),'synthetic-profile-startup-not-observed')
+  self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2);self.assertIn('/rerun-failed-jobs',f['calls'][0][0])
+  self.assertTrue(f['recover']());self.assertEqual(len(f['calls']),2)
+  f['run'].update(run_attempt=2,status='completed',conclusion='failure');self.assertFalse(f['recover']());self.assertEqual(len(f['calls']),2)
+  for kind in ['staged','published','retain-failed','retain-missing','gui','permit','profile','host','mode','reason','extra-step','money','cleanup']:
+   f=self.declaration_startup();r=f['records'][0]
+   if kind=='staged':f['records'][-1]={'format':retry.DECLARATION_NOT_STAGED['format'],'status':'rejected','code':'XML_PRIVACY'}
+   if kind=='published':f['records'].append({'format':retry.DECLARATION_NOT_STAGED['format'],'status':'published'})
+   if kind=='retain-failed':f['steps'][1]['conclusion']='failure'
+   if kind=='retain-missing':del f['steps'][1]
+   if kind=='gui':r['guiReferenceAutomation']={'stage':'declaration-export-not-matched'}
+   if kind=='permit':r['guiAutomationPermitBoundary']['authorizationAttempted']=True
+   if kind=='profile':r['syntheticLogin']['profileWindowObserved']=True
+   if kind=='host':r['referenceHostResult']['status']='complete'
+   if kind=='mode':r['guiReferenceAutomationMode']='gtgt-annex12-export-nonzero'
+   if kind=='reason':r['blockedReason']='GUI_REFERENCE_AUTOMATION_NOT_VERIFIED'
+   if kind=='extra-step':f['steps'].append({'name':'Tax comparison failed','conclusion':'failure'})
+   if kind=='money':r['taxDataUsed']=True
+   if kind=='cleanup':r['supplierProcessBoundary']['jobEmpty']=False
+   self.assertIsNone(retry.classify(f['jobs'],f['records']),kind);self.assertFalse(f['recover'](),kind);self.assertEqual(f['calls'],[],kind)
+ def test_candidate_failures_get_the_retry_but_never_gate_or_block_the_cohort(self):
+  import test_caseflow_batch as original
+  f=original.fixture();registry=original.batch.registry
+  candidates=[c for c in f['publication']['cases'] if not registry.CASES[c['caseId']]['releaseGate']];self.assertTrue(candidates)
+  for c in candidates:f['statuses'].append({'context':registry.CASES[c['caseId']]['statusContext'],'state':'failure','description':'failed input:'+c['artifactCommit'],'target_url':'https://github.com/'+original.batch.BUILDER+'/actions/runs/9'})
+  for outcome in (True,False,'raise'):
+   called=[]
+   def candidate_retry(*args):
+    called.append(args[1])
+    if outcome=='raise':raise RuntimeError('fixed-test-failure')
+    return outcome
+   proof=original.batch.discover(f['publication'],original.BUILDER,f['statuses'],f['get'],retry=candidate_retry)
+   self.assertEqual([c['caseId'] for c in proof['cases']],list(registry.GATE_CASES),outcome)
+   self.assertEqual(sorted(called),sorted(registry.CASES[c['caseId']]['statusContext'] for c in candidates),outcome)
+  # A stale candidate failure for another input is not retried; no retry callback, no retry.
+  for st in f['statuses'][-len(candidates):]:st['description']='failed input:'+'d'*40
+  called=[];original.batch.discover(f['publication'],original.BUILDER,f['statuses'],f['get'],retry=lambda *a:called.append(a));self.assertEqual(called,[])
+  self.assertEqual(len(original.batch.discover(f['publication'],original.BUILDER,f['statuses'],f['get'])['cases']),len(registry.GATE_CASES))
  def test_rejects_unknown_boundary_failed_cleanup_completed_tax_or_retry2(self):
   for kind in ['other-step','phase','stopped','type','callback','branch','builder','attempt','input','url']:
    f=self.fixture()
