@@ -139,7 +139,7 @@ try {
     Start-Sleep -Milliseconds 500
   }
   if (-not $ready) { throw 'SERVER_NOT_READY' }
-  $report.rootHttpOk = $response.StatusCode -eq 200 -and $response.Content -match 'Hỗ trợ kê khai|hỗ trợ kê khai'
+  $report.rootHttpOk = $response.StatusCode -eq 200 -and $response.Content -match 'Công cụ Kê khai'
   $dashboard = Invoke-WebRequest -Uri 'http://127.0.0.1:4173/dashboard/' -TimeoutSec 10
   $report.dashboardHttpOk = $dashboard.StatusCode -eq 200 -and $dashboard.Content -match 'HTKK'
   $listeners = @(Get-NetTCPConnection -LocalPort 4173 -State Listen)

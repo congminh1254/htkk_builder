@@ -24,7 +24,7 @@ MAX_MANIFEST=16384
 MAX_API=600000
 COMMENT='<!-- BẢN NHÁP; KHÔNG NỘP THUẾ; CHƯA KIỂM CHỨNG ĐẦY ĐỦ VỚI HTKK WINDOWS. -->'
 PREAMBLE='<?xml version="1.0" encoding="UTF-8"?>\n'+COMMENT+'\n'
-SERVICE={'maDVu':'HTKK-WEB-DRAFT','tenDVu':'Hỗ trợ kê khai — bản nháp','pbanDVu':'0.9.2','ttinNhaCCapDVu':'hotrokekhai.net — công cụ hỗ trợ độc lập'}
+SERVICE={'maDVu':'CCKK-DRAFT','tenDVu':'Công cụ Kê khai — bản nháp','pbanDVu':'0.9.2','ttinNhaCCapDVu':'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'}
 CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
 _spec=importlib.util.spec_from_file_location('htkk_export_privacy',pathlib.Path(__file__).with_name('publish-gtgt-export-evidence.py'))
 privacy=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(privacy)
