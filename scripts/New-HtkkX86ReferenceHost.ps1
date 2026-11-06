@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')][string]$GuiAutomation='none'
   )
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
@@ -55,7 +55,7 @@ function New-HtkkX86ReferenceHost {
     $automationResultFile=$program+'.gui-automation.json'
     $automationPermitFile=$program+'.gui-automation.allow'
     $candidates=@($program,$hostConfig,$resultFile,$automationResultFile,$automationPermitFile)
-    if($GuiAutomation -eq 'gtgt-web-import-inspect'){
+    if($GuiAutomation -in @('gtgt-web-import-inspect','declaration-web-import-inspect')){
       $safe.webImportCasePath=$program+'.web-case.id';$safe.webImportInputPath=$program+'.web-input.xml';$safe.webImportInputHashPath=$program+'.web-input.sha256';$safe.webImportSourceShaPath=$program+'.web-source.sha'
       $candidates+=@($safe.webImportInputPath,$safe.webImportInputHashPath,$safe.webImportSourceShaPath,$safe.webImportCasePath)
     }

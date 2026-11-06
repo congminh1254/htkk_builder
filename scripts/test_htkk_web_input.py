@@ -5,6 +5,7 @@ import xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).parent
 spec=importlib.util.spec_from_file_location('web_input',ROOT/'fetch-htkk-web-input.py');w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 spec=importlib.util.spec_from_file_location('native_parser_fixtures',ROOT/'test_gtgt_export_evidence.py');n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
+spec=importlib.util.spec_from_file_location('declaration_input_fixtures',ROOT/'declaration_test_support.py');dfx=importlib.util.module_from_spec(spec);spec.loader.exec_module(dfx)
 TODAY=datetime.date(2026,10,25)
 def web_fixture():
  root=ET.fromstring(n.parser_fixture());ns='{'+w.privacy.NS+'}';service=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinDVu')
@@ -35,12 +36,14 @@ def annex_fixture(case):
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def case_manifest(body,case,producer_sha='c'*64):
  """Exact manifest shape of the registered producer for one fixed case."""
+ if w.declaration.is_case(case):return dfx.declaration_manifest(body,case,producer_sha)
  value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
  if w.annex12.is_case(case):
   compared,nodes=w.ANNEX_NATIVE_NODES[case]
   value.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=w.ANNEX_PRODUCER,nativeAnnexReferenceSha256=w.ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False,expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode().replace(w.COMMENT,''))))
  return value
 def sale_fixture(case="01GTGT-sale10-M10-2026"):
+ if w.declaration.is_case(case):return dfx.declaration_fixture(case)
  if w.annex12.is_case(case):return annex_fixture(case)
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value

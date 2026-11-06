@@ -1,7 +1,7 @@
 # BEGIN GENERATED RESULT DEFAULTS - fixture initialization only; reader never fills missing keys
 function New-HtkkNativeResultDefaults {
  param([Parameter(Mandatory=$true)][string]$Mode)
- if($Mode -cnotin @('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')){throw 'Unknown mode'}
+ if($Mode -cnotin @('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')){throw 'Unknown mode'}
  $result=[ordered]@{
   annex12NumericTextSnapshots=''
   annex12NumericTypeSnapshots=''
@@ -198,6 +198,27 @@ function New-HtkkNativeResultDefaults {
   gtgtCaseMoneyCount=0
   gtgtCaseMismatchMask=0
   gtgtCaseNonzeroMask=0
+  declarationMenuClicked=$false
+  declarationPeriodObserved=$false
+  declarationPeriodMatched=$false
+  declarationAnnexMatched=$false
+  declarationSheetObserved=$false
+  declarationIdentityMatched=$false
+  declarationSourcePinsMatched=$false
+  declarationImportSheetMatched=$false
+  declarationSchemaValid=$false
+  declarationServiceIdentityMatched=$false
+  declarationCreationDateValid=$false
+  declarationTreeMatched=$false
+  declarationAnnexSelectedCount=0
+  declarationSheetCount=0
+  declarationCellCheckCount=0
+  declarationCellMismatchMask=0
+  declarationCellLockedMask=0
+  declarationXmlCheckCount=0
+  declarationXmlMismatchMask=0
+  declarationTreeMismatchMask=0
+  declarationTreeLeafCount=0
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false

@@ -14,4 +14,11 @@ $HtkkNativeCaseFormats=@{
  '01GTGT-native-import-sale10-M10-2026'='htkk-web-native-import-sale10-input-v1'
  '01GTGT-annex12-zero-two-locations-M10-2026'='htkk-web-annex12-zero-input-v1'
  '01GTGT-annex12-two-plants-nonzero-M10-2026'='htkk-web-annex12-two-plants-input-v1'
+ '03TNDN-profit20-Y2025'='htkk-web-tndn03-profit20-y2025-input-v1'
+ 'BCTC133-B01a-basic-Y2025'='htkk-web-bctc133-basic-y2025-input-v1'
+ 'BCTC200-LT-basic-Y2025'='htkk-web-bctc200-lt-basic-y2025-input-v1'
+ '05KK-withheld-M10-2026'='htkk-web-tncn05kk-withheld-m10-2026-input-v1'
+ '05QTT-two-employees-Y2025'='htkk-web-tncn05qtt-two-employees-y2025-input-v1'
+ '01CNKD-TT50-revenue-two-groups-Q3-2026'='htkk-web-cnkd01-revenue-two-groups-q3-2026-input-v1'
 }
+$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-M10-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026')

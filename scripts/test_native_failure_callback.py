@@ -7,7 +7,7 @@ class FailureCallbackTests(unittest.TestCase):
  def test_all_fixed_cases_only_publish_failure(self):
   for case in f.callback.dispatch.CASES:
    with self.subTest(case=case):
-    e=self.env();e.update(WEB_CASE_ID=case,PROBE_RESULT='success',SAMPLE_STATE='success');url,p=f.request(e);self.assertEqual(url,'https://api.github.com/repos/htkk-net/htkk_web/statuses/'+'a'*40);self.assertEqual(p['state'],'failure');self.assertEqual(p['context'],f.callback.dispatch.CONTEXTS[case]);self.assertTrue(p['target_url'].endswith('/actions/runs/123'))
+    e=self.env();e.update(WEB_CASE_ID=case,GUI_AUTOMATION=f.callback.dispatch.case_registry.driver(case),PROBE_RESULT='success',SAMPLE_STATE='success');url,p=f.request(e);self.assertEqual(url,'https://api.github.com/repos/htkk-net/htkk_web/statuses/'+'a'*40);self.assertEqual(p['state'],'failure');self.assertEqual(p['context'],f.callback.dispatch.CONTEXTS[case]);self.assertTrue(p['target_url'].endswith('/actions/runs/123'))
  def test_no_success_downgrade_on_successful_or_pending_job(self):
   for result in ['success','pending','skipped','',None]:
    with self.subTest(result=result):

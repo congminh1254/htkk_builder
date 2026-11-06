@@ -5,7 +5,7 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0'))]}
+def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f'))]}
 class NativeCases(unittest.TestCase):
  def test_every_registered_case_and_separate_tokens_pending_before_dispatch(self):
   value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[]
@@ -55,20 +55,21 @@ class NativeWorkflowCredentials(unittest.TestCase):
   text=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   conditions=dict(re.findall(r"      - name: ([^\n]+)\n        if: ([^\n]+)",text))
   def enabled(name,mode,install=True,safe='true',stopped='true',artifact='a'*40):
-   expression=conditions[name].replace('always()','True').replace('&&',' and ')
+   expression=conditions[name].replace('always()','True').replace('&&',' and ').replace('||',' or ')
    values={'inputs.install_and_probe':install,'inputs.gui_automation':mode,'steps.native_probe.outputs.credentials_safe':safe,'steps.native_probe.outputs.supplier_stopped':stopped,'inputs.web_artifact_commit':artifact}
    for key,value in values.items():expression=expression.replace(key,repr(value))
    parsed=ast.parse(expression,mode='eval')
    for node in ast.walk(parsed):
-    self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.And,ast.Compare,ast.Eq,ast.NotEq,ast.Constant))
+    self.assertIsInstance(node,(ast.Expression,ast.BoolOp,ast.And,ast.Or,ast.Compare,ast.Eq,ast.NotEq,ast.Constant))
    return eval(compile(parsed,'<fixed workflow condition>','eval'),{'__builtins__':{}},{})
   shared=('Publish supplier startup window privately','Retain synthetic common-header reference privately')
   raw='Retain verified raw native web reexport privately';status='Report fixed native-case status privately'
-  for mode in ('none','profile-save','gtgt-export-inspect','gtgt-web-import-inspect'):
-   web=mode=='gtgt-web-import-inspect'
-   for name in shared:self.assertEqual(enabled(name,mode),not web)
-   self.assertEqual(enabled(raw,mode),web);self.assertEqual(enabled(status,mode),web)
-   for name in (*shared,raw,status):
+  declaration_raw='Retain raw native declaration export privately'
+  for mode in ('none','profile-save','gtgt-export-inspect','gtgt-web-import-inspect','declaration-web-import-inspect'):
+   web=mode=='gtgt-web-import-inspect';declaration=mode=='declaration-web-import-inspect'
+   for name in shared:self.assertEqual(enabled(name,mode),not web and not declaration)
+   self.assertEqual(enabled(raw,mode),web);self.assertEqual(enabled(status,mode),web or declaration);self.assertEqual(enabled(declaration_raw,mode),declaration)
+   for name in (*shared,raw,status,declaration_raw):
     self.assertFalse(enabled(name,mode,install=False));self.assertFalse(enabled(name,mode,safe='false'))
   self.assertFalse(enabled(raw,'gtgt-web-import-inspect',stopped='false'))
   self.assertFalse(enabled(raw,'gtgt-web-import-inspect',artifact=''))
@@ -105,4 +106,4 @@ class NativeImportDispatchIdentity(unittest.TestCase):
   cases={entry[0]:entry[1:] for entry in publisher.CASES}
   self.assertEqual(cases[case],('htkk-web-reference-native-import-sale10-input','gtgt-web-reference-native-import-sale10-input'))
   self.assertNotEqual(cases[case],cases[sale]);self.assertNotEqual(output.BRANCHES[case],output.BRANCHES[sale])
-  self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));self.assertEqual(set(output.BRANCHES),set(d.CASES))
+  self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));self.assertEqual(set(output.BRANCHES),set(d.CASES)-set(reader.case_registry.DECLARATION_CASES))

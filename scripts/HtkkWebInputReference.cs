@@ -23,8 +23,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private int WebTaxLeafTarget(){return !Annex12WebCaseId()?70:webCaseId==Annex12WebTwoPlantsCaseId?159:108;}
  // The annex producer pins both declaration dates to 2026-10-27.
  private DateTime WebFixedSigningDate(){return Annex12WebCaseId()?new DateTime(2026,10,27):new DateTime(2026,10,25);}
- private string RoundtripInputPath(){return mode=="gtgt-web-import-inspect"?webInputPath:firstExportPath;}
- private string RoundtripInputHash(){return mode=="gtgt-web-import-inspect"?webImportInputSha256:firstExportSha256;}
+ private string RoundtripInputPath(){return mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webInputPath:firstExportPath;}
+ private string RoundtripInputHash(){return mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webImportInputSha256:firstExportSha256;}
  private static string ReadOwnHexSidecar(string path,int count){
   FileInfo file=new FileInfo(path);if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length!=count)throw new InvalidOperationException();byte[] bytes=File.ReadAllBytes(path);foreach(byte value in bytes)if(!((value>=48&&value<=57)||(value>=97&&value<=102)))throw new InvalidOperationException();return Encoding.ASCII.GetString(bytes);
  }

@@ -17,7 +17,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  internal string NavigationJson(){
   string q=((char)34).ToString();StringBuilder descriptions=new StringBuilder();
   foreach(string name in PeriodNames){if(!periodDescriptions.ContainsKey(name))continue;if(descriptions.Length>0)descriptions.Append(',');descriptions.Append(q+name+q+":"+periodDescriptions[name]);}
-  return ","+q+"profileClosed"+q+":"+Bool(profileClosed)+","+q+"mainMenuObserved"+q+":"+Bool(mainMenuObserved)+","+q+"d1MenuClicked"+q+":"+Bool(d1MenuClicked)+","+q+"gtgtPeriodObserved"+q+":"+Bool(periodObserved)+","+q+"menuRowCount"+q+":"+menuRowCount.ToString(CultureInfo.InvariantCulture)+","+q+"menuClickCount"+q+":"+menuClicks.ToString(CultureInfo.InvariantCulture)+","+q+"periodControlCount"+q+":"+periodControlCount.ToString(CultureInfo.InvariantCulture)+","+q+"periodControls"+q+":{ "+descriptions.ToString()+"}"+SheetJson()+ExportJson();
+  return ","+q+"profileClosed"+q+":"+Bool(profileClosed)+","+q+"mainMenuObserved"+q+":"+Bool(mainMenuObserved)+","+q+"d1MenuClicked"+q+":"+Bool(d1MenuClicked)+","+q+"gtgtPeriodObserved"+q+":"+Bool(periodObserved)+","+q+"menuRowCount"+q+":"+menuRowCount.ToString(CultureInfo.InvariantCulture)+","+q+"menuClickCount"+q+":"+menuClicks.ToString(CultureInfo.InvariantCulture)+","+q+"periodControlCount"+q+":"+periodControlCount.ToString(CultureInfo.InvariantCulture)+","+q+"periodControls"+q+":{ "+descriptions.ToString()+"}"+SheetJson()+ExportJson()+DeclarationJson();
  }
  private static void GatherSpreads(Control root,List<Control> found,ref int visited){
   if(++visited>512)return;if(root.Visible&&IsSpread(root))found.Add(root);
