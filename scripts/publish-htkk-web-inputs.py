@@ -1,4 +1,4 @@
-"""Publish thirteen fixed synthetic inputs privately after trusted release checks.
+"""Publish every registered fixed synthetic input privately after trusted release checks.
 
 Never executes private code. XML and manifests remain byte-for-byte unchanged;
 the public output contains only bounded commit identifiers and fixed case names.
@@ -13,6 +13,8 @@ _ref_spec=importlib.util.spec_from_file_location('input_immutable_refs',pathlib.
 CASES=tuple((id,c['stagingDirectory'],c['inputBranch'])for id,c in reader.case_registry.CASES.items())
 OUTPUT='htkk-web-input-publication.json'
 PRODUCER='scripts/generate-htkk-web-reference.mjs'
+# Each case is bound to the reviewed producer of its trusted adapter.
+CASE_PRODUCERS={id:reader.case_registry.ADAPTERS[c['adapterId']]['producer'] for id,c in reader.case_registry.CASES.items()}
 MAX_PRODUCER=262144
 CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','STALE_SOURCE','SOURCE_PRODUCER','SOURCE_VERSION','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
 
@@ -83,9 +85,10 @@ def read_inputs(runner_temp,source_commit):
   if manifest['sourceCommit']!=source_commit:fail('SOURCE_COMMIT')
   body=files['01GTGT-web.xml']
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
-  reader.validate_web_xml(body,case_id=case)
+  reader.validate_web_xml(body,case_id=case,manifest=manifest)
   result.append((case,branch,files,manifest))
- if len({item[3]['producerSha256'] for item in result})!=1:fail('SOURCE_PRODUCER')
+ for producer in set(CASE_PRODUCERS.values()):
+  if len({item[3]['producerSha256'] for item in result if CASE_PRODUCERS[item[0]]==producer})!=1:fail('SOURCE_PRODUCER')
  return result
 
 def assert_current(fetch,token,source_commit):
@@ -104,7 +107,7 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
   if manifest!=item[3] or manifest['sourceCommit']!=source_commit or manifest['caseId']!=case:fail('MANIFEST')
   body=item[2]['01GTGT-web.xml']
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
-  reader.validate_web_xml(body,case_id=case)
+  reader.validate_web_xml(body,case_id=case,manifest=manifest)
  if request_id is not None and (not isinstance(request_id,str)or not re.fullmatch('[1-9][0-9]*',request_id)):fail('MANIFEST')
  if plan is not None:reader.case_registry.validate_plan(plan)
  fetch=fetch or api
@@ -115,14 +118,15 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
  assert_current(fetch,token,source_commit)
  query='?ref='+source_commit
  # ContentsAPI path is nested; reader deliberately accepts only root paths.
- envelope=fetch('/contents/'+PRODUCER+query,token)
- if not isinstance(envelope,dict) or envelope.get('path')!=PRODUCER:fail('SOURCE_PRODUCER')
- normalized=dict(envelope);normalized['path']='generate-htkk-web-reference.mjs'
- producer=reader.content_file(normalized,'generate-htkk-web-reference.mjs',MAX_PRODUCER)
- producer_hash=hashlib.sha256(producer).hexdigest()
+ producer_hashes={}
+ for path in sorted(set(CASE_PRODUCERS.values())):
+  envelope=fetch('/contents/'+path+query,token)
+  if not isinstance(envelope,dict) or envelope.get('path')!=path:fail('SOURCE_PRODUCER')
+  name=path.rsplit('/',1)[-1];normalized=dict(envelope);normalized['path']=name
+  producer_hashes[path]=hashlib.sha256(reader.content_file(normalized,name,MAX_PRODUCER)).hexdigest()
  package=reader.content_file(fetch('/contents/package.json'+query,token),'package.json',reader.MAX_MANIFEST)
  metadata=reader.json_object(package,'API_JSON')
- if any(item[3]['producerSha256']!=producer_hash for item in inputs):fail('SOURCE_PRODUCER')
+ if any(item[3]['producerSha256']!=producer_hashes[CASE_PRODUCERS[item[0]]] for item in inputs):fail('SOURCE_PRODUCER')
  if any(metadata.get('version')!=item[3]['sourceVersion'] for item in inputs):fail('SOURCE_VERSION')
  plan_sha=None
  if plan is not None:
@@ -137,7 +141,7 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
   entries=[];published=dict(files)
   if request_id is not None:
    c=reader.case_registry.policy(case);a=reader.case_registry.ADAPTERS[c['adapterId']]
-   context={'format':'htkk-case-context-v1','sourceCommit':source_commit,'requestId':request_id,'caseId':case,'adapterId':c['adapterId'],'unit':c['unit'],'profilePolicy':a['profilePolicy'],'producerSha256':producer_hash,'xmlSha256':manifest['xmlSha256'],'planSha256':plan_sha}
+   context={'format':'htkk-case-context-v1','sourceCommit':source_commit,'requestId':request_id,'caseId':case,'adapterId':c['adapterId'],'unit':c['unit'],'profilePolicy':a['profilePolicy'],'producerSha256':producer_hashes[CASE_PRODUCERS[case]],'xmlSha256':manifest['xmlSha256'],'planSha256':plan_sha}
    published['case-context.json']=(json.dumps(context,sort_keys=True,separators=(',',':'))+'\n').encode()
   for name,body in published.items():
    blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})

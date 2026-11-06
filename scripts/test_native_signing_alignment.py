@@ -5,13 +5,15 @@ spec=importlib.util.spec_from_file_location('aligned_retention_fixture',ROOT/'te
 class AlignedSigningTests(unittest.TestCase):
  def make(self,case='01GTGT-zero-M10-2026'):
   web,native,im,m=f.fixture(case);initial=native.replace(b'?>',b'?>\n',1)
+  # The two-plant case's UI baseline is the proven one-plant zero annex export.
+  if case==n.annex12.TWO_PLANTS_CASE:initial=f.fixture(n.annex12.ZERO_CASE)[1].replace(b'?>',b'?>\n',1)
   m.update(format='htkk-web-native-output-staging-v3',runAttempt=1,initialOutputSha256=hashlib.sha256(initial).hexdigest(),initialOutputBytes=len(initial),initialSigningDateRule='fixed-web-synthetic-date')
   return web,native,im,m,initial
- def test_all_thirteen_aligned_pairs_publish_without_normalization(self):
+ def test_all_registered_aligned_pairs_publish_without_normalization(self):
   for case in n.BRANCHES:
    with self.subTest(case=case):
     web,native,im,m,initial=self.make(case);fetch,calls=f.fake_api(web,im);n.publish(native,m,'synthetic-token',fetch,f.TODAY,initial=initial)
-    blobs=[base64.b64decode(payload['content'])for path,_,payload,_ in calls if path=='/git/blobs'];manifest=json.loads(blobs[1]);self.assertEqual(manifest['format'],'htkk-web-native-output-reference-v3');self.assertEqual(blobs[0],native);self.assertEqual(blobs[2],initial);self.assertTrue(manifest['initialReexportComparison']['allLeafValuesMatched']);self.assertFalse(manifest['initialReexportComparison']['normalizationApplied']);self.assertFalse(manifest['fullRoundTrip'])
+    blobs=[base64.b64decode(payload['content'])for path,_,payload,_ in calls if path=='/git/blobs'];manifest=json.loads(blobs[1]);self.assertEqual(manifest['format'],'htkk-web-native-output-reference-v3');self.assertEqual(blobs[0],native);self.assertEqual(blobs[2],initial);self.assertEqual(manifest['initialReexportComparison']['allLeafValuesMatched'],case!=n.annex12.TWO_PLANTS_CASE);self.assertFalse(manifest['initialReexportComparison']['normalizationApplied']);self.assertFalse(manifest['fullRoundTrip'])
  def test_provider_date_money_and_attribute_changes_reject_before_api(self):
   for field,value in [('ttinNhaCCapDVu','B'*32),('ngayKy','2026-10-26'),('ngayLapTKhai','2026-10-25'),('ct40','1')]:
    with self.subTest(field=field):
@@ -34,7 +36,10 @@ class OriginalSigningControlTests(unittest.TestCase):
   block=source.split('private void EditOriginalSigningDate')[1].split('private bool periodDateMatched')[0]
   self.assertIn('FarPoint.Win.Spread.CellType.GeneralCellType',block)
   self.assertIn('Get(type,"FormatString")',block);self.assertIn('=="@"',block)
-  self.assertIn('FarPoint.Win.Spread.CellType.MaskCellType',block);self.assertIn('Get(type,"Mask")',block);self.assertIn('=="00/00/0000"',block);self.assertIn('webSigningDateCellKind!=4',block);self.assertIn('"25102026"',block)
+  self.assertIn('FarPoint.Win.Spread.CellType.MaskCellType',block);self.assertIn('Get(type,"Mask")',block);self.assertIn('=="00/00/0000"',block);self.assertIn('webSigningDateCellKind!=4',block);self.assertIn('WebFixedSigningDate().ToString("ddMMyyyy",CultureInfo.InvariantCulture)',block)
+  # Fixed typed dates: 25/10/2026 for the main cases, 27/10/2026 only for the two annex cases.
+  web=(ROOT/'HtkkWebInputReference.cs').read_text(encoding='utf-8')
+  self.assertIn('private DateTime WebFixedSigningDate(){return Annex12WebCaseId()?new DateTime(2026,10,27):new DateTime(2026,10,25);}',web)
   for forbidden in ('SetValue','set_Value','set_CellType','set_Locked'):
    self.assertNotIn(forbidden,block)
   self.assertIn('BeginCellEdit(grid,sheet,65,10,true)',block)

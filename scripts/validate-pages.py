@@ -3,7 +3,7 @@ import json,os,pathlib,re,urllib.request,importlib.util
 SOURCE='htkk-net/htkk_web'
 BUILDER='congminh1254/htkk_builder'
 _spec=importlib.util.spec_from_file_location('pages_case_registry',pathlib.Path(__file__).with_name('htkk_native_cases.py'));case_registry=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(case_registry)
-CONTEXTS=tuple(c['statusContext']for c in case_registry.CASES.values())
+CONTEXTS=tuple(case_registry.CASES[id]['statusContext']for id in case_registry.GATE_CASES)
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 def api(repo,path):

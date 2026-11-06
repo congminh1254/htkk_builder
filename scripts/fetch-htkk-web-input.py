@@ -16,7 +16,7 @@ SALE10_HALF={key:('5' if key in ('ct32','ct27','ct34') else '1') for key in SALE
 SALE10_MANUAL={key:('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}
 SALE5_HALF={('ct30' if key=='ct32' else 'ct31' if key=='ct33' else key):('10' if key in ('ct32','ct27','ct34') else '1') for key in SALE10}
 SALE5_MANUAL={('ct30' if key=='ct32' else 'ct31' if key=='ct33' else key):('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}
-CASE_MONEY={'01GTGT-zero-M10-2026':{},'01GTGT-sale10-M10-2026':SALE10,'01GTGT-sale10-half-M10-2026':SALE10_HALF,'01GTGT-sale10-manual-M10-2026':SALE10_MANUAL,'01GTGT-sale5-half-M10-2026':SALE5_HALF,'01GTGT-sale5-manual-M10-2026':SALE5_MANUAL,'01GTGT-noactivity-zero-M10-2026':{},'01GTGT-noactivity-reset-sale10-M10-2026':{},'01GTGT-noactivity-cancel-sale10-M10-2026':SALE10,'01GTGT-noactivity-uncheck-sale10-M10-2026':{},'01GTGT-noactivity-keep-credit-M10-2026':{'ct22':'7','ct41':'7','ct43':'7'},'01GTGT-zero-Q4-2026':{},'01GTGT-native-import-sale10-M10-2026':SALE10}
+CASE_MONEY={'01GTGT-zero-M10-2026':{},'01GTGT-sale10-M10-2026':SALE10,'01GTGT-sale10-half-M10-2026':SALE10_HALF,'01GTGT-sale10-manual-M10-2026':SALE10_MANUAL,'01GTGT-sale5-half-M10-2026':SALE5_HALF,'01GTGT-sale5-manual-M10-2026':SALE5_MANUAL,'01GTGT-noactivity-zero-M10-2026':{},'01GTGT-noactivity-reset-sale10-M10-2026':{},'01GTGT-noactivity-cancel-sale10-M10-2026':SALE10,'01GTGT-noactivity-uncheck-sale10-M10-2026':{},'01GTGT-noactivity-keep-credit-M10-2026':{'ct22':'7','ct41':'7','ct43':'7'},'01GTGT-zero-Q4-2026':{},'01GTGT-native-import-sale10-M10-2026':SALE10,'01GTGT-annex12-zero-two-locations-M10-2026':{},'01GTGT-annex12-two-plants-nonzero-M10-2026':{}}
 PERIOD_FIELDS={'kieuKy':('M','Q'),'kyKKhai':('10/2026','4/2026'),'kyKKhaiTuNgay':('01/10/2026','01/10/2026'),'kyKKhaiDenNgay':('31/10/2026','31/12/2026')}
 CASE_CHECKBOX={case:('1' if case in ('01GTGT-noactivity-zero-M10-2026', '01GTGT-noactivity-reset-sale10-M10-2026', '01GTGT-noactivity-keep-credit-M10-2026') else '0') for case in CASES}
 MAX_XML=262144
@@ -28,6 +28,13 @@ SERVICE={'maDVu':'HTKK-WEB-DRAFT','tenDVu':'Hỗ trợ kê khai — bản nháp'
 CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
 _spec=importlib.util.spec_from_file_location('htkk_export_privacy',pathlib.Path(__file__).with_name('publish-gtgt-export-evidence.py'))
 privacy=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(privacy)
+_annex_spec=importlib.util.spec_from_file_location('htkk_annex12_web_input_contract',pathlib.Path(__file__).with_name('htkk_annex12_web_cases.py'))
+annex12=importlib.util.module_from_spec(_annex_spec);_annex_spec.loader.exec_module(annex12)
+if set(annex12.CASES)!=set(case_registry.ANNEX12_CASES):raise ValueError('CASE_POLICY')
+# Annex manifests come from a separate application producer with its own fixed keys.
+ANNEX_PRODUCER='scripts/generate-htkk-web-annex12-reference.mjs'
+ANNEX_NATIVE_REFERENCE='6956eea0fa865e98da71ad3ce23ed6a527e7a17761c6fb11032a11fc0a97b8cb'
+ANNEX_NATIVE_NODES={annex12.ZERO_CASE:(True,131),annex12.TWO_PLANTS_CASE:(False,0)}
 class InputError(ValueError):
  def __init__(self,code,**context):
   if code not in CODES:raise ValueError('Invalid safe input error')
@@ -88,15 +95,36 @@ def validate_manifest(body):
  case=manifest.get('caseId')
  if not isinstance(case,str) or case not in CASES:raise InputError('MANIFEST')
  fixed={'format':CASES[case],'sourceRepository':REPO,'sourceVersion':'0.9.2','caseId':case,'inputsSynthetic':True,'exporter':'lib/htkk-xml.ts'}
- if set(manifest)!=set(fixed)|{'sourceCommit','producerSha256','xmlSha256','bytes'}:raise InputError('MANIFEST')
+ variable={'sourceCommit','producerSha256','xmlSha256','bytes'}
+ if annex12.is_case(case):
+  compared,nodes=ANNEX_NATIVE_NODES[case]
+  fixed.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=ANNEX_PRODUCER,nativeAnnexReferenceSha256=ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False)
+  variable=variable|{'expectedAnnexLeaves'}
+ if set(manifest)!=set(fixed)|variable:raise InputError('MANIFEST')
  if any(type(manifest[key]) is not type(value) or manifest[key]!=value for key,value in fixed.items()):raise InputError('MANIFEST')
  git_sha(manifest['sourceCommit'],'MANIFEST')
  for key in ('producerSha256','xmlSha256'):
   if not isinstance(manifest[key],str) or not re.fullmatch('[0-9a-f]{64}',manifest[key]):raise InputError('MANIFEST')
  if type(manifest['bytes']) is not int or not 0<manifest['bytes']<=MAX_XML:raise InputError('MANIFEST')
+ if annex12.is_case(case):
+  rows=manifest['expectedAnnexLeaves']
+  if type(rows) is not list or not 0<len(rows)<=256 or any(type(row) is not list or len(row)!=3 or any(type(item) is not str or len(item)>160 for item in row) for row in rows):raise InputError('MANIFEST')
  return manifest
-def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
+def annex_manifest_leaves(root):
+ # Recompute the producer's canonical annex rows from the validated XML itself:
+ # every leaf and every attributed element below PLuc, in document order.
+ rows=[];prefix='{'+privacy.NS+'}'
+ def visit(node,path):
+  name=node.tag[len(prefix):];current=path+'/'+name if path else name
+  attrs=';'.join(key+'='+value for key,value in node.attrib.items())
+  if len(node)==0 or node.attrib:rows.append([current,(node.text or '') if len(node)==0 else '',attrs])
+  for child in node:visit(child,current)
+ pluc=root.find('./'+prefix+'HSoKhaiThue/'+prefix+'PLuc')
+ for child in pluc:visit(child,'')
+ return rows
+def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=None):
  if case_id not in CASES:raise InputError('MANIFEST')
+ annex=annex12.is_case(case_id);fixed_day=datetime.date.fromisoformat(annex12.FIXED_DATE if annex else '2026-10-25')
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
  except UnicodeError:raise InputError('XML_ENCODING') from None
@@ -115,7 +143,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
  # Validate both business dates exactly before reusing the zero-case allowlist.
  for name in ('ngayLapTKhai','ngayKy'):
   nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name)
-  if len(nodes)!=1 or nodes[0].text!='2026-10-25':raise InputError('XML_PRIVACY')
+  if len(nodes)!=1 or nodes[0].text!=fixed_day.isoformat():raise InputError('XML_PRIVACY')
  services=root.findall('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinDVu')
  if len(services)!=1:raise InputError('XML_SERVICE')
  service=services[0]
@@ -127,6 +155,14 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
    nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+'KyKKhaiThue/'+ns+name)
    if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=expected:raise InputError('XML_PRIVACY')
    nodes[0].text=baseline
+ if annex:
+  # Exact fixed annex subtree first; then an IN-MEMORY projection without it
+  # reuses the unchanged no-annex allowlist. Staged bytes are never changed.
+  try:
+   annex12.validate_annex(root,case_id)
+   if manifest is not None and manifest.get('expectedAnnexLeaves')!=annex_manifest_leaves(root):raise InputError('MANIFEST')
+   annex12.strip_annex(root)
+  except annex12.AnnexWebContractError:raise InputError('XML_PRIVACY') from None
  # Verify the fixed checkbox before adapting only the in-memory privacy copy.
  nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'CTieuTKhaiChinh/'+ns+'ct21')
  if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=CASE_CHECKBOX[case_id]:raise InputError('XML_PRIVACY')
@@ -145,9 +181,11 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026'):
   local=child.tag[len(ns):]
   child.text='0'*32 if local=='ttinNhaCCapDVu' else privacy.BASE_HEADER['TTinDVu/'+local]
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
- try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),datetime.date(2026,10,25))
+ try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),fixed_day)
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
- return {'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False}
+ result={'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False}
+ if annex:result['annexTaxLeafCount']=annex12.tax_leaves(case_id)
+ return result
 def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None):
  if artifact_commit is not None:git_sha(artifact_commit,'SOURCE_COMMIT')
  if expected_case is not None and expected_case not in CASES:raise InputError('MANIFEST')
@@ -172,13 +210,13 @@ def download(token,fetch=None,today=None,expected_source=None,expected_case=None
  if not isinstance(source,dict) or source.get('sha')!=manifest['sourceCommit']:raise InputError('SOURCE_COMMIT')
  body=content_file(fetch('/contents/01GTGT-web.xml'+query,token),'01GTGT-web.xml',MAX_XML)
  if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
- validate_web_xml(body,today,manifest['caseId'])
+ validate_web_xml(body,today,manifest['caseId'],manifest)
  return {'01GTGT-web.xml':body,'manifest.json':manifest_body}
 def stage(files,runner_temp,today=None):
  if set(files)!=set(NAMES) or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
  manifest=validate_manifest(files['manifest.json'])
  if manifest['bytes']!=len(files['01GTGT-web.xml']) or manifest['xmlSha256']!=hashlib.sha256(files['01GTGT-web.xml']).hexdigest():raise InputError('HASH')
- validate_web_xml(files['01GTGT-web.xml'],today,manifest['caseId'])
+ validate_web_xml(files['01GTGT-web.xml'],today,manifest['caseId'],manifest)
  parent=pathlib.Path(runner_temp);destination=parent/'htkk-web-reference-input'
  if parent.is_symlink() or not parent.is_dir() or destination.exists() or destination.is_symlink():raise InputError('STAGING')
  temporary=pathlib.Path(tempfile.mkdtemp(prefix='.htkk-web-reference-input-',dir=parent))

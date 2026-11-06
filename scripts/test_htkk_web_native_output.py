@@ -19,8 +19,8 @@ def fixture(case='01GTGT-zero-M10-2026'):
  root.find('.//'+ns+'ttinNhaCCapDVu').text='A'*32
  root.find('.//'+ns+'ngayLapTKhai').text='2026-10-26'
  native=ET.tostring(root,encoding='utf-8',xml_declaration=True)
- input_manifest=f.manifest(web);input_manifest.update(caseId=case,format=n.reader.CASES[case])
- provenance={'format':'htkk-web-native-output-staging-v1','builderRepository':n.BUILDER,'builderCommit':BUILDER_SHA,'runId':'123','sourceRepository':n.REPO,'sourceCommit':SOURCE,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','caseId':case,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalImportSucceeded':True,'originalReexportSucceeded':True,'originalExporterValidatedSchema':True,'webTaxComparisonPassed':True,'webTaxCheckedLeafCount':70,'webImportInputSha256':hashlib.sha256(web).hexdigest(),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'artifactCommit':ARTIFACT,'creationDateRule':'native-export-current-date','fullRoundTrip':False}
+ input_manifest=f.case_manifest(web,case)
+ provenance={'format':'htkk-web-native-output-staging-v1','builderRepository':n.BUILDER,'builderCommit':BUILDER_SHA,'runId':'123','sourceRepository':n.REPO,'sourceCommit':SOURCE,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','caseId':case,'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'originalExportSucceeded':True,'originalImportSucceeded':True,'originalReexportSucceeded':True,'originalExporterValidatedSchema':True,'webTaxComparisonPassed':True,'webTaxCheckedLeafCount':n.tax_leaf_count(case),'webImportInputSha256':hashlib.sha256(web).hexdigest(),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'artifactCommit':ARTIFACT,'creationDateRule':'native-export-current-date','fullRoundTrip':False}
  return web,native,input_manifest,provenance
 
 def changed(body,name,value):
@@ -88,7 +88,7 @@ class NativePrivacyTests(unittest.TestCase):
   for case in n.BRANCHES:
    web,native,_,_=fixture(case);raw=bytes(native)
    checked=n.validate_native(native,case,TODAY);self.assertEqual(checked['leafCount'],74);self.assertTrue(checked['nativeServiceIdentityVerified']);self.assertEqual(native,raw)
-   self.assertTrue(n.compare_tax(web,native)['allTaxValuesMatched'])
+   self.assertTrue(n.compare_tax(web,native,case)['allTaxValuesMatched'])
  def test_unknown_comments_pi_dtd_and_entity_rejected_before_parser(self):
   native=fixture()[1]
   for extra in (b'<!-- secret -->',b'<?private x?>',b'<!DOCTYPE root>',b'<!ENTITY x "secret">'):
@@ -168,7 +168,7 @@ class PublishTests(unittest.TestCase):
    web,native,metadata,provenance=fixture(case);fetch,calls=fake_api(web,metadata);result=n.publish(native,provenance,'synthetic-token',fetch,TODAY)
    self.assertEqual(result['artifactCommit'],'e'*40);self.assertEqual(result['nativeOutputSha256'],hashlib.sha256(native).hexdigest())
    blobs=[base64.b64decode(body['content']) for path,_,body,_ in calls if path=='/git/blobs'];self.assertEqual(blobs[0],native)
-   manifest=json.loads(blobs[1]);self.assertEqual(manifest['provenance'],provenance);self.assertEqual(manifest['sourcePins'],n.PINS);self.assertFalse(manifest['independentSchemaVerification']);self.assertFalse(manifest['fullRoundTrip']);self.assertEqual(manifest['comparison']['checkedTaxLeafCount'],70)
+   manifest=json.loads(blobs[1]);self.assertEqual(manifest['provenance'],provenance);self.assertEqual(manifest['sourcePins'],n.PINS);self.assertFalse(manifest['independentSchemaVerification']);self.assertFalse(manifest['fullRoundTrip']);self.assertEqual(manifest['comparison']['checkedTaxLeafCount'],n.tax_leaf_count(case))
    self.assertIn(('/git/commits/'+ARTIFACT,'synthetic-token',None,None),calls)
    self.assertTrue(all('?ref='+ARTIFACT in path for path,_,_,_ in calls if path.startswith('/contents/')))
    commit=next(body for path,_,body,_ in calls if path=='/git/commits');self.assertEqual(commit['parents'],[])

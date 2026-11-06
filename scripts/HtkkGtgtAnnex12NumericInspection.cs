@@ -10,7 +10,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void EditAnnex12Numeric(Control grid,object annex,int index){
   int[,] cells=new int[,]{{42,19},{42,19},{43,20},{44,20},{42,19}};
   string[] values=new string[]{"1","7","33.33","66.67","99999999999999"};
-  if(mode!="gtgt-annex12-numeric-inspect"||index!=annex12NumericActionCount||index<0||index>=values.Length)throw new InvalidOperationException();
+  // The separate nonzero export probe reuses only edits 0-3 (parent 1, then parent 7 at 33.33/66.67).
+  if((mode!="gtgt-annex12-numeric-inspect"&&!(mode=="gtgt-annex12-export-nonzero"&&index<=3))||index!=annex12NumericActionCount||index<0||index>=values.Length)throw new InvalidOperationException();
   grid.Focus();Annex12InputOwner(grid,annex);int row=cells[index,0],column=cells[index,1];
   // Source FormatCelltypeFromSinfo06002702 configures the original number
   // editor with DecimalSeparator="," and thousands Separator=".". Keep the

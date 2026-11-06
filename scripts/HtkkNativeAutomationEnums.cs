@@ -25,6 +25,7 @@ public enum HtkkAutomationMode {
   GtgtAnnex12InputInspect,
   GtgtAnnex12NumericInspect,
   GtgtAnnex12ExportInspect,
+  GtgtAnnex12ExportNonzero,
   GtgtExportInspect,
   GtgtRoundtripInspect,
   GtgtWebImportInspect
@@ -64,6 +65,11 @@ public enum HtkkAutomationStage {
   GtgtAnnex12ExportMainChecked,
   GtgtAnnex12ExportValidating,
   GtgtAnnex12ExportInspected,
+  GtgtAnnex12NonzeroEditing,
+  GtgtAnnex12NonzeroReexportInvoking,
+  GtgtAnnex12ExportNonzeroInspected,
+  GtgtAnnex12WebImportChecking,
+  GtgtAnnex12WebSchemaValidating,
   GtgtAmendmentSaveModalObserved,
   GtgtAmendmentSaveModalContentChecking,
   GtgtAmendmentSaveModalButtonChecking,
@@ -188,6 +194,7 @@ public static class HtkkNativeAutomationWireMap {
    case HtkkAutomationMode.GtgtAnnex12InputInspect: return "gtgt-annex12-input-inspect";
    case HtkkAutomationMode.GtgtAnnex12NumericInspect: return "gtgt-annex12-numeric-inspect";
    case HtkkAutomationMode.GtgtAnnex12ExportInspect: return "gtgt-annex12-export-inspect";
+   case HtkkAutomationMode.GtgtAnnex12ExportNonzero: return "gtgt-annex12-export-nonzero";
    case HtkkAutomationMode.GtgtExportInspect: return "gtgt-export-inspect";
    case HtkkAutomationMode.GtgtRoundtripInspect: return "gtgt-roundtrip-inspect";
    case HtkkAutomationMode.GtgtWebImportInspect: return "gtgt-web-import-inspect";
@@ -207,6 +214,7 @@ public static class HtkkNativeAutomationWireMap {
    if (wire == "gtgt-annex12-input-inspect") return HtkkAutomationMode.GtgtAnnex12InputInspect;
    if (wire == "gtgt-annex12-numeric-inspect") return HtkkAutomationMode.GtgtAnnex12NumericInspect;
    if (wire == "gtgt-annex12-export-inspect") return HtkkAutomationMode.GtgtAnnex12ExportInspect;
+   if (wire == "gtgt-annex12-export-nonzero") return HtkkAutomationMode.GtgtAnnex12ExportNonzero;
    if (wire == "gtgt-export-inspect") return HtkkAutomationMode.GtgtExportInspect;
    if (wire == "gtgt-roundtrip-inspect") return HtkkAutomationMode.GtgtRoundtripInspect;
    if (wire == "gtgt-web-import-inspect") return HtkkAutomationMode.GtgtWebImportInspect;
@@ -247,6 +255,11 @@ public static class HtkkNativeAutomationWireMap {
    case HtkkAutomationStage.GtgtAnnex12ExportMainChecked: return "gtgt-annex12-export-main-checked";
    case HtkkAutomationStage.GtgtAnnex12ExportValidating: return "gtgt-annex12-export-validating";
    case HtkkAutomationStage.GtgtAnnex12ExportInspected: return "gtgt-annex12-export-inspected";
+   case HtkkAutomationStage.GtgtAnnex12NonzeroEditing: return "gtgt-annex12-nonzero-editing";
+   case HtkkAutomationStage.GtgtAnnex12NonzeroReexportInvoking: return "gtgt-annex12-nonzero-reexport-invoking";
+   case HtkkAutomationStage.GtgtAnnex12ExportNonzeroInspected: return "gtgt-annex12-export-nonzero-inspected";
+   case HtkkAutomationStage.GtgtAnnex12WebImportChecking: return "gtgt-annex12-web-import-checking";
+   case HtkkAutomationStage.GtgtAnnex12WebSchemaValidating: return "gtgt-annex12-web-schema-validating";
    case HtkkAutomationStage.GtgtAmendmentSaveModalObserved: return "gtgt-amendment-save-modal-observed";
    case HtkkAutomationStage.GtgtAmendmentSaveModalContentChecking: return "gtgt-amendment-save-modal-content-checking";
    case HtkkAutomationStage.GtgtAmendmentSaveModalButtonChecking: return "gtgt-amendment-save-modal-button-checking";
@@ -382,6 +395,11 @@ public static class HtkkNativeAutomationWireMap {
    if (wire == "gtgt-annex12-export-main-checked") return HtkkAutomationStage.GtgtAnnex12ExportMainChecked;
    if (wire == "gtgt-annex12-export-validating") return HtkkAutomationStage.GtgtAnnex12ExportValidating;
    if (wire == "gtgt-annex12-export-inspected") return HtkkAutomationStage.GtgtAnnex12ExportInspected;
+   if (wire == "gtgt-annex12-nonzero-editing") return HtkkAutomationStage.GtgtAnnex12NonzeroEditing;
+   if (wire == "gtgt-annex12-nonzero-reexport-invoking") return HtkkAutomationStage.GtgtAnnex12NonzeroReexportInvoking;
+   if (wire == "gtgt-annex12-export-nonzero-inspected") return HtkkAutomationStage.GtgtAnnex12ExportNonzeroInspected;
+   if (wire == "gtgt-annex12-web-import-checking") return HtkkAutomationStage.GtgtAnnex12WebImportChecking;
+   if (wire == "gtgt-annex12-web-schema-validating") return HtkkAutomationStage.GtgtAnnex12WebSchemaValidating;
    if (wire == "gtgt-amendment-save-modal-observed") return HtkkAutomationStage.GtgtAmendmentSaveModalObserved;
    if (wire == "gtgt-amendment-save-modal-content-checking") return HtkkAutomationStage.GtgtAmendmentSaveModalContentChecking;
    if (wire == "gtgt-amendment-save-modal-button-checking") return HtkkAutomationStage.GtgtAmendmentSaveModalButtonChecking;
@@ -514,8 +532,8 @@ public static class HtkkNativeAutomationWireMap {
 }
 
 // Typed result metadata; values remain produced exclusively by original UI observations.
-public enum HtkkNativeResultFlag { AmendmentOpenCloseInvoked, AmendmentOpenPriorClosed, AmendmentOpenDefaultsMatched, AmendmentOpenConfirmInvoked, AmendmentOpenPeriodMatched, AmendmentOpenSourcesMatched, AmendmentOpenKhbsSheetsObserved, AmendmentOpenPriorUnchanged, Annex12ExportMainZeroMatched, Annex12ExportShapeMatched, Annex12ExportSchemaVerified, Annex12InputReadOnlyIdentityMatched, Annex12InputIdentityMatched, Annex12InputTypesMatched, Annex12InputGeographyMatched, Annex12InputTaxAuthoritiesMatched, Annex12InputPercentagesMatched, Annex12InputZeroTaxMatched, AmendmentPriorSaveInvoked, AmendmentPriorSaveSuccessAcknowledged, AmendmentPriorDirtyCleared, AmendmentPriorFileFresh, AmendmentPriorFileScopeMatched, AmendmentPriorXmlParsed, AmendmentPriorMoneyZero, AmendmentPriorSavedMoneyZero, AmendmentLifecycleVerified, SourcePinsVerified, MstBoxesMatched, InitialRequiredTextBlank, EditingApiAvailable, OriginalSaveInvoked, SavedHeaderExists, SavedHeaderChecksMatched, ProfileClosed, MainMenuObserved, D1MenuClicked, GtgtPeriodObserved, PeriodYearMonthMatched, PeriodFirstDeclarationMatched, PeriodActivityMatched, PeriodGeographyMatched, PeriodNoAnnexMatched, PeriodConfirmInvoked, GtgtWorkbookPinsVerified, GtgtMenuVersionMatched, GtgtPeriodModelMatched, GtgtSheetObserved, GtgtSheetNameMatched, GtgtDimensionsMatched, GtgtIdentityMatched, GtgtCt21Ready, GtgtCt21CaseMatched, GtgtCt21ConfirmationMatched, GtgtCt21LocksMatched, GtgtCt21BeforeExportMatched, GtgtCt21AfterImportMatched, GtgtCt21UncheckMatched, GtgtSignatureReady, GtgtMonetaryZero, PeriodAnnex12Matched, Annex12SourcePinsMatched, Annex12SheetObserved, Annex12StructureMatched, Annex12GroupMetadataMatched, Annex12SttMatched, Annex12LocksMatched, Annex12RowTabClickInvoked, Annex12F5Visible, Annex12F5Invoked, Annex12RowBeforeMatched, Annex12RowAfterMatched, Annex12RowSttMatched, Annex12RowLocksMatched, ExportCommandInvoked, ExportSelectorMatched, ExportButtonInvoked, ExportDialogMatched, ExportDestinationFresh, ExportDialogSubmitted, ExportFileExists, ExportXmlRootMatched, ExportSyntheticIdentityMatched, ExportSuccessAcknowledged, ExportSchemaPinnedVerified, ExportFilenameKeyboardCommitted, ExportOriginalPathMatched, RoundtripImportCommandInvoked, RoundtripImportDialogMatched, RoundtripImportKeyboardCommitted, RoundtripImportDialogSubmitted, RoundtripImportPathMatched, RoundtripImportSheetMatched, RoundtripImportSucceeded, RoundtripReexportCommandInvoked, RoundtripReexportSucceeded, RoundtripXmlExactMatched, GtgtCt42BeforeExportObserved, GtgtCt42LockedBeforeExport, GtgtCt42AfterImportObserved, GtgtCt42LockedAfterImport, GtgtAutoCalculationReady, GtgtBusinessInstanceMatched, GtgtCaseMoneyMatched, GtgtCt42Locked, WebTaxValuesMatched, WebCreationDateMatchedNativeBaseline, WebServiceIdentityMatched, WebInputVerified, RealTaxpayerDataUsed, RuntimeRoundTrip, WebSigningDateEdited, WebSigningDateReady, WebSigningDateLocked, Annex12LifecycleMatched }
-public enum HtkkNativeResultCounter { Annex12NumericActionCount, Annex12NumericCaseCount, AmendmentOpenLoadedSheets, AmendmentOpenKhbsRows, AmendmentOpenKhbsColumns, AmendmentOpenExplanationRows, AmendmentOpenExplanationColumns, Annex12InputActionCount, AmendmentPriorFileBytes, AmendmentPriorSavedMoneyCount, VisibleForms, SpreadCount, SheetRows, SheetColumns, PerformedInputCount, SavedHeaderCheckedFieldCount, SavedHeaderMismatchMask, MenuRowCount, MenuClickCount, PeriodControlCount, Annex12SelectionActionCount, Annex12SheetRows, Annex12SheetColumns, Annex12NumericCount, Annex12NumericEmptyMask, Annex12NumericNonzeroMask, Annex12GroupCount, Annex12FirstGroupId, Annex12FirstGroupRows, Annex12RowBeforeRows, Annex12RowAfterRows, Annex12RowBeforeGroupRows, Annex12RowAfterGroupRows, Annex12RowAfterGroupId, Annex12RowInsertActionCount, AnnexSelectedCount, GtgtSheetRows, GtgtSheetColumns, GtgtSheetCount, GtgtEmptyMonetaryCount, ExportScopedFileCount, ExportScopedXmlCount, ExportBytes, RoundtripImportCheckedMoneyCount, RoundtripReexportBytes, WebTaxLeafCount, WebCaseEditCount, GtgtCaseMoneyCount, GtgtCaseMismatchMask, GtgtCaseNonzeroMask, WebSigningDateCellKind, Annex12LifecycleActionCount, Annex12LifecycleEditCount, Annex12LifecycleObservedMask }
+public enum HtkkNativeResultFlag { AmendmentOpenCloseInvoked, AmendmentOpenPriorClosed, AmendmentOpenDefaultsMatched, AmendmentOpenConfirmInvoked, AmendmentOpenPeriodMatched, AmendmentOpenSourcesMatched, AmendmentOpenKhbsSheetsObserved, AmendmentOpenPriorUnchanged, Annex12ExportMainZeroMatched, Annex12ExportShapeMatched, Annex12ExportSchemaVerified, Annex12NonzeroEditsMatched, Annex12NonzeroSecondShapeMatched, Annex12NonzeroSecondSchemaVerified, Annex12WebImportSheetMatched, Annex12WebBaselineSchemaVerified, Annex12WebReexportSchemaVerified, Annex12InputReadOnlyIdentityMatched, Annex12InputIdentityMatched, Annex12InputTypesMatched, Annex12InputGeographyMatched, Annex12InputTaxAuthoritiesMatched, Annex12InputPercentagesMatched, Annex12InputZeroTaxMatched, AmendmentPriorSaveInvoked, AmendmentPriorSaveSuccessAcknowledged, AmendmentPriorDirtyCleared, AmendmentPriorFileFresh, AmendmentPriorFileScopeMatched, AmendmentPriorXmlParsed, AmendmentPriorMoneyZero, AmendmentPriorSavedMoneyZero, AmendmentLifecycleVerified, SourcePinsVerified, MstBoxesMatched, InitialRequiredTextBlank, EditingApiAvailable, OriginalSaveInvoked, SavedHeaderExists, SavedHeaderChecksMatched, ProfileClosed, MainMenuObserved, D1MenuClicked, GtgtPeriodObserved, PeriodYearMonthMatched, PeriodFirstDeclarationMatched, PeriodActivityMatched, PeriodGeographyMatched, PeriodNoAnnexMatched, PeriodConfirmInvoked, GtgtWorkbookPinsVerified, GtgtMenuVersionMatched, GtgtPeriodModelMatched, GtgtSheetObserved, GtgtSheetNameMatched, GtgtDimensionsMatched, GtgtIdentityMatched, GtgtCt21Ready, GtgtCt21CaseMatched, GtgtCt21ConfirmationMatched, GtgtCt21LocksMatched, GtgtCt21BeforeExportMatched, GtgtCt21AfterImportMatched, GtgtCt21UncheckMatched, GtgtSignatureReady, GtgtMonetaryZero, PeriodAnnex12Matched, Annex12SourcePinsMatched, Annex12SheetObserved, Annex12StructureMatched, Annex12GroupMetadataMatched, Annex12SttMatched, Annex12LocksMatched, Annex12RowTabClickInvoked, Annex12F5Visible, Annex12F5Invoked, Annex12RowBeforeMatched, Annex12RowAfterMatched, Annex12RowSttMatched, Annex12RowLocksMatched, ExportCommandInvoked, ExportSelectorMatched, ExportButtonInvoked, ExportDialogMatched, ExportDestinationFresh, ExportDialogSubmitted, ExportFileExists, ExportXmlRootMatched, ExportSyntheticIdentityMatched, ExportSuccessAcknowledged, ExportSchemaPinnedVerified, ExportFilenameKeyboardCommitted, ExportOriginalPathMatched, RoundtripImportCommandInvoked, RoundtripImportDialogMatched, RoundtripImportKeyboardCommitted, RoundtripImportDialogSubmitted, RoundtripImportPathMatched, RoundtripImportSheetMatched, RoundtripImportSucceeded, RoundtripReexportCommandInvoked, RoundtripReexportSucceeded, RoundtripXmlExactMatched, GtgtCt42BeforeExportObserved, GtgtCt42LockedBeforeExport, GtgtCt42AfterImportObserved, GtgtCt42LockedAfterImport, GtgtAutoCalculationReady, GtgtBusinessInstanceMatched, GtgtCaseMoneyMatched, GtgtCt42Locked, WebTaxValuesMatched, WebCreationDateMatchedNativeBaseline, WebServiceIdentityMatched, WebInputVerified, RealTaxpayerDataUsed, RuntimeRoundTrip, WebSigningDateEdited, WebSigningDateReady, WebSigningDateLocked, Annex12LifecycleMatched }
+public enum HtkkNativeResultCounter { Annex12NumericActionCount, Annex12NumericCaseCount, AmendmentOpenLoadedSheets, AmendmentOpenKhbsRows, AmendmentOpenKhbsColumns, AmendmentOpenExplanationRows, AmendmentOpenExplanationColumns, Annex12NonzeroExportCount, Annex12NonzeroSecondExportBytes, Annex12WebImportGroupCount, Annex12WebImportRowCount, Annex12InputActionCount, AmendmentPriorFileBytes, AmendmentPriorSavedMoneyCount, VisibleForms, SpreadCount, SheetRows, SheetColumns, PerformedInputCount, SavedHeaderCheckedFieldCount, SavedHeaderMismatchMask, MenuRowCount, MenuClickCount, PeriodControlCount, Annex12SelectionActionCount, Annex12SheetRows, Annex12SheetColumns, Annex12NumericCount, Annex12NumericEmptyMask, Annex12NumericNonzeroMask, Annex12GroupCount, Annex12FirstGroupId, Annex12FirstGroupRows, Annex12RowBeforeRows, Annex12RowAfterRows, Annex12RowBeforeGroupRows, Annex12RowAfterGroupRows, Annex12RowAfterGroupId, Annex12RowInsertActionCount, AnnexSelectedCount, GtgtSheetRows, GtgtSheetColumns, GtgtSheetCount, GtgtEmptyMonetaryCount, ExportScopedFileCount, ExportScopedXmlCount, ExportBytes, RoundtripImportCheckedMoneyCount, RoundtripReexportBytes, WebTaxLeafCount, WebCaseEditCount, GtgtCaseMoneyCount, GtgtCaseMismatchMask, GtgtCaseNonzeroMask, WebSigningDateCellKind, Annex12LifecycleActionCount, Annex12LifecycleEditCount, Annex12LifecycleObservedMask }
 public static class HtkkNativeResultContract {
  public static string ToWireString(HtkkNativeResultFlag field) {
   switch(field) {
@@ -530,6 +548,12 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultFlag.Annex12ExportMainZeroMatched: return "annex12ExportMainZeroMatched";
    case HtkkNativeResultFlag.Annex12ExportShapeMatched: return "annex12ExportShapeMatched";
    case HtkkNativeResultFlag.Annex12ExportSchemaVerified: return "annex12ExportSchemaVerified";
+   case HtkkNativeResultFlag.Annex12NonzeroEditsMatched: return "annex12NonzeroEditsMatched";
+   case HtkkNativeResultFlag.Annex12NonzeroSecondShapeMatched: return "annex12NonzeroSecondShapeMatched";
+   case HtkkNativeResultFlag.Annex12NonzeroSecondSchemaVerified: return "annex12NonzeroSecondSchemaVerified";
+   case HtkkNativeResultFlag.Annex12WebImportSheetMatched: return "annex12WebImportSheetMatched";
+   case HtkkNativeResultFlag.Annex12WebBaselineSchemaVerified: return "annex12WebBaselineSchemaVerified";
+   case HtkkNativeResultFlag.Annex12WebReexportSchemaVerified: return "annex12WebReexportSchemaVerified";
    case HtkkNativeResultFlag.Annex12InputReadOnlyIdentityMatched: return "annex12InputReadOnlyIdentityMatched";
    case HtkkNativeResultFlag.Annex12InputIdentityMatched: return "annex12InputIdentityMatched";
    case HtkkNativeResultFlag.Annex12InputTypesMatched: return "annex12InputTypesMatched";
@@ -646,6 +670,10 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.AmendmentOpenKhbsColumns: return "amendmentOpenKhbsColumns";
    case HtkkNativeResultCounter.AmendmentOpenExplanationRows: return "amendmentOpenExplanationRows";
    case HtkkNativeResultCounter.AmendmentOpenExplanationColumns: return "amendmentOpenExplanationColumns";
+   case HtkkNativeResultCounter.Annex12NonzeroExportCount: return "annex12NonzeroExportCount";
+   case HtkkNativeResultCounter.Annex12NonzeroSecondExportBytes: return "annex12NonzeroSecondExportBytes";
+   case HtkkNativeResultCounter.Annex12WebImportGroupCount: return "annex12WebImportGroupCount";
+   case HtkkNativeResultCounter.Annex12WebImportRowCount: return "annex12WebImportRowCount";
    case HtkkNativeResultCounter.Annex12InputActionCount: return "annex12InputActionCount";
    case HtkkNativeResultCounter.AmendmentPriorFileBytes: return "amendmentPriorFileBytes";
    case HtkkNativeResultCounter.AmendmentPriorSavedMoneyCount: return "amendmentPriorSavedMoneyCount";
@@ -716,6 +744,14 @@ public static class HtkkNativeResultContract {
     return 10000;
    case HtkkNativeResultCounter.AmendmentOpenExplanationColumns:
     return 512;
+   case HtkkNativeResultCounter.Annex12NonzeroExportCount:
+    return 2;
+   case HtkkNativeResultCounter.Annex12NonzeroSecondExportBytes:
+    return 262144;
+   case HtkkNativeResultCounter.Annex12WebImportGroupCount:
+    return 3;
+   case HtkkNativeResultCounter.Annex12WebImportRowCount:
+    return 10;
    case HtkkNativeResultCounter.Annex12InputActionCount:
     return 14;
    case HtkkNativeResultCounter.AmendmentPriorFileBytes:
@@ -794,7 +830,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.RoundtripReexportBytes:
     return 262144;
    case HtkkNativeResultCounter.WebTaxLeafCount:
-    return 70;
+    return 159;
    case HtkkNativeResultCounter.WebCaseEditCount:
     return 3;
    case HtkkNativeResultCounter.GtgtCaseMoneyCount:

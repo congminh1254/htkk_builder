@@ -5,6 +5,8 @@ BUILDER='congminh1254/htkk_builder'
 import importlib.util
 _spec=importlib.util.spec_from_file_location('trusted_case_metadata',pathlib.Path(__file__).with_name('htkk_native_cases.py'));case_registry=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(case_registry)
 CASES=tuple(case_registry.CASES)
+# Release/Pages/evidence cohort. Candidate cases still get their own dispatch and status.
+GATE_CASES=tuple(case_registry.GATE_CASES)
 CONTEXTS={id:c['statusContext']for id,c in case_registry.CASES.items()}
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None

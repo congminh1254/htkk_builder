@@ -1,7 +1,7 @@
 # BEGIN GENERATED RESULT DEFAULTS - fixture initialization only; reader never fills missing keys
 function New-HtkkNativeResultDefaults {
  param([Parameter(Mandatory=$true)][string]$Mode)
- if($Mode -cnotin @('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')){throw 'Unknown mode'}
+ if($Mode -cnotin @('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect')){throw 'Unknown mode'}
  $result=[ordered]@{
   annex12NumericTextSnapshots=''
   annex12NumericTypeSnapshots=''
@@ -25,6 +25,17 @@ function New-HtkkNativeResultDefaults {
   annex12ExportMainZeroMatched=$false
   annex12ExportShapeMatched=$false
   annex12ExportSchemaVerified=$false
+  annex12NonzeroEditsMatched=$false
+  annex12NonzeroSecondShapeMatched=$false
+  annex12NonzeroSecondSchemaVerified=$false
+  annex12NonzeroExportCount=0
+  annex12NonzeroSecondExportBytes=0
+  annex12NonzeroSecondExportSha256=''
+  annex12WebImportSheetMatched=$false
+  annex12WebBaselineSchemaVerified=$false
+  annex12WebReexportSchemaVerified=$false
+  annex12WebImportGroupCount=0
+  annex12WebImportRowCount=0
   annex12InputReadOnlyIdentityMatched=$false
   annex12InputIdentityMatched=$false
   annex12InputTypesMatched=$false

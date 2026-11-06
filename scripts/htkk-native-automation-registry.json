@@ -314,6 +314,32 @@
       "privateArtifactPolicy": "raw-annex12-export",
       "contextPolicy": "none"
     },
+    "gtgt-annex12-export-nonzero": {
+      "adapterId": "d1-gtgt",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "gtgt-annex12-export-nonzero-inspected",
+      "timeoutSeconds": 180,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkNativeUiHarness.cs"
+      ],
+      "successPolicyId": "gtgt-annex12-export-nonzero-inspected",
+      "privateArtifactPolicy": "raw-annex12-nonzero-export",
+      "contextPolicy": "none"
+    },
     "gtgt-export-inspect": {
       "adapterId": "d1-gtgt",
       "runtime": "clr2-x86-custom-reference",
@@ -557,6 +583,31 @@
     {
       "id": "gtgt-annex12-export-inspected",
       "enumName": "GtgtAnnex12ExportInspected",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-nonzero-editing",
+      "enumName": "GtgtAnnex12NonzeroEditing",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-nonzero-reexport-invoking",
+      "enumName": "GtgtAnnex12NonzeroReexportInvoking",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-export-nonzero-inspected",
+      "enumName": "GtgtAnnex12ExportNonzeroInspected",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-web-import-checking",
+      "enumName": "GtgtAnnex12WebImportChecking",
+      "category": "annex12"
+    },
+    {
+      "id": "gtgt-annex12-web-schema-validating",
+      "enumName": "GtgtAnnex12WebSchemaValidating",
       "category": "annex12"
     },
     {
@@ -1098,6 +1149,17 @@
     "annex12ExportMainZeroMatched",
     "annex12ExportShapeMatched",
     "annex12ExportSchemaVerified",
+    "annex12NonzeroEditsMatched",
+    "annex12NonzeroSecondShapeMatched",
+    "annex12NonzeroSecondSchemaVerified",
+    "annex12NonzeroExportCount",
+    "annex12NonzeroSecondExportBytes",
+    "annex12NonzeroSecondExportSha256",
+    "annex12WebImportSheetMatched",
+    "annex12WebBaselineSchemaVerified",
+    "annex12WebReexportSchemaVerified",
+    "annex12WebImportGroupCount",
+    "annex12WebImportRowCount",
     "annex12InputReadOnlyIdentityMatched",
     "annex12InputIdentityMatched",
     "annex12InputTypesMatched",
@@ -1319,7 +1381,8 @@
       "minimum": 0,
       "maximum": 5,
       "activeModes": [
-        "gtgt-annex12-numeric-inspect"
+        "gtgt-annex12-numeric-inspect",
+        "gtgt-annex12-export-nonzero"
       ]
     },
     "annex12NumericCaseCount": {
@@ -1445,21 +1508,112 @@
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12ExportShapeMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero"
       ]
     },
     "annex12ExportSchemaVerified": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12NonzeroEditsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12NonzeroSecondShapeMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12NonzeroSecondSchemaVerified": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12NonzeroExportCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2,
+      "activeModes": [
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12NonzeroSecondExportBytes": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 262144,
+      "activeModes": [
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12NonzeroSecondExportSha256": {
+      "kind": "hex",
+      "default": "",
+      "length": 64,
+      "allowEmpty": true,
+      "activeModes": [
+        "gtgt-annex12-export-nonzero"
+      ]
+    },
+    "annex12WebImportSheetMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebBaselineSchemaVerified": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebReexportSchemaVerified": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebImportGroupCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 3,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex12WebImportRowCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10,
+      "activeModes": [
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputReadOnlyIdentityMatched": {
@@ -1468,7 +1622,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputIdentityMatched": {
@@ -1477,7 +1633,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputTypesMatched": {
@@ -1486,7 +1644,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputGeographyMatched": {
@@ -1495,7 +1655,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputTaxAuthoritiesMatched": {
@@ -1504,7 +1666,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputPercentagesMatched": {
@@ -1513,7 +1677,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputZeroTaxMatched": {
@@ -1522,7 +1688,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "annex12InputActionCount": {
@@ -1533,7 +1701,9 @@
       "activeModes": [
         "gtgt-annex12-input-inspect",
         "gtgt-annex12-numeric-inspect",
-        "gtgt-annex12-export-inspect"
+        "gtgt-annex12-export-inspect",
+        "gtgt-annex12-export-nonzero",
+        "gtgt-web-import-inspect"
       ]
     },
     "amendmentPriorSaveInvoked": {
@@ -2288,7 +2458,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 70
+      "maximum": 159
     },
     "webCaseId": {
       "kind": "enum",
@@ -2306,7 +2476,9 @@
         "01GTGT-noactivity-uncheck-sale10-M10-2026",
         "01GTGT-noactivity-keep-credit-M10-2026",
         "01GTGT-zero-Q4-2026",
-        "01GTGT-native-import-sale10-M10-2026"
+        "01GTGT-native-import-sale10-M10-2026",
+        "01GTGT-annex12-zero-two-locations-M10-2026",
+        "01GTGT-annex12-two-plants-nonzero-M10-2026"
       ]
     },
     "webCaseEditCount": {

@@ -65,7 +65,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object sheets=Get(grids[0],"Sheets");PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object sheet=item.GetValue(sheets,new object[]{0});
   if(Convert.ToInt32(Get(sheet,"RowCount"))!=72||Convert.ToInt32(Get(sheet,"ColumnCount"))!=24||CellText(sheet,9,3)!=FakeName||CellText(sheet,10,3).Replace("-",String.Empty)!=Mst||CellText(sheet,63,10)!=FakeSigner)return false;
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!="D1"||Convert.ToString(Get(Global("ToKhaiInfo"),"VersionXML"),CultureInfo.InvariantCulture)!="2.8.3")return false;
-  InspectMoneyZero(sheet);InspectCaseMoney(sheet);gtgtCt42AfterImportObserved=true;gtgtCt42LockedAfterImport=gtgtCt42Locked;roundtripImportCheckedMoneyCount=27-gtgtEmptyMoney;bool ct21Matched=InspectCt21Case(sheet);if(NoActivityCase())gtgtCt21AfterImportMatched=ct21Matched;return gtgtCaseMoneyMatched&&roundtripImportCheckedMoneyCount==27&&ct21Matched;
+  InspectMoneyZero(sheet);InspectCaseMoney(sheet);gtgtCt42AfterImportObserved=true;gtgtCt42LockedAfterImport=gtgtCt42Locked;roundtripImportCheckedMoneyCount=27-gtgtEmptyMoney;bool ct21Matched=InspectCt21Case(sheet);if(NoActivityCase())gtgtCt21AfterImportMatched=ct21Matched;
+  // Fixed web annex cases also require the imported original annex groups, rows, values and locks.
+  bool annexMatched=!Annex12WebCase()||InspectOriginalImportedAnnex12(grids[0]);
+  return gtgtCaseMoneyMatched&&roundtripImportCheckedMoneyCount==27&&ct21Matched&&annexMatched;
  }
  private static XmlDocument ReadBoundedOriginalXml(string path){
   FileInfo file=new FileInfo(path);if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length<1||file.Length>262144)throw new InvalidOperationException();

@@ -54,7 +54,7 @@ def validate_registry(registry):
         enum_names.add(stage["enumName"])
     mode_fields = {"adapterId", "runtime", "login", "permit", "terminalStage", "timeoutSeconds", "orderedCompileInputs", "successPolicyId", "privateArtifactPolicy", "contextPolicy"}
     seen_mode_enums = set()
-    artifact_policies = {"none", "raw-annex12-export", "raw-gtgt-export", "raw-web-reexport", "synthetic-common-header", "synthetic-window-diagnostic"}
+    artifact_policies = {"none", "raw-annex12-export", "raw-annex12-nonzero-export", "raw-gtgt-export", "raw-web-reexport", "synthetic-common-header", "synthetic-window-diagnostic"}
     success_policies = stage_ids | {"none", "gtgt-amendment-saved"}
     for mode, meta in modes.items():
         require(safe_wire(mode) and type(meta) is dict and set(meta) == mode_fields, "Invalid mode properties")
