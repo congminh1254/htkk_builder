@@ -12,7 +12,7 @@ Separate processes per workflow step:
 Public output contains fixed codes and counts only: never file names, contents,
 headers, URLs with tokens or raw exceptions. Vendor code is never executed.
 """
-import argparse, base64, hashlib, importlib.util, json, os, pathlib, re, shutil, subprocess, tempfile, urllib.error
+import argparse, base64, hashlib, importlib.util, json, os, pathlib, re, shutil, subprocess, time, urllib.error
 
 ROOT = pathlib.Path(__file__).resolve().parent
 REPO = 'htkk-net/htkk_web'
@@ -552,7 +552,11 @@ def publish(bundle, workdir, token, run_id, attempt, builder_sha, fetch=None, gi
     run_git(git, ['--git-dir', str(gitdir), 'push', '--quiet', '--no-verify'] + lease + [PUSH_URL,
                   commit + ':refs/heads/' + BRANCH, commit + ':refs/tags/' + TAG_PREFIX + run_id + '-' + str(attempt)],
             push_env, workdir, 'GIT_PUSH', timeout=1800)
-    new_commit, new_tree = remote_state(token, fetch)
+    for delay in (0, 2, 5, 10):
+        time.sleep(delay)  # the REST ref view can trail a successful push briefly
+        new_commit, new_tree = remote_state(token, fetch)
+        if (new_commit, new_tree) == (commit, tree):
+            break
     check(new_commit == commit and new_tree == tree, 'PUSH_NOT_OBSERVED')
     summary.update(result='published')
     return summary
