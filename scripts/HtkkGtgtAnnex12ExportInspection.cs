@@ -16,15 +16,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private int annex12NonzeroExportCount=0,annex12NonzeroSecondExportBytes=0;private string annex12NonzeroSecondExportSha256="";
  // Fixed web annex cases: original import observations and pinned XSD checks of native files.
  private bool annex12WebImportSheetMatched=false,annex12WebBaselineSchemaVerified=false,annex12WebReexportSchemaVerified=false;
- private int annex12WebImportGroupCount=0,annex12WebImportRowCount=0;
+ private int annex12WebImportGroupCount=0,annex12WebImportRowCount=0,annex12WebImportDisplayEmptyMask=0;
  private bool annex12NonzeroBusy=false;private Control annex12ExportGrid=null;private object annex12ExportSheet=null;
  private string Annex12ExportJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"annex12ExportMainZeroMatched","annex12ExportShapeMatched","annex12ExportSchemaVerified","annex12NonzeroEditsMatched","annex12NonzeroSecondShapeMatched","annex12NonzeroSecondSchemaVerified","annex12WebImportSheetMatched","annex12WebBaselineSchemaVerified","annex12WebReexportSchemaVerified"};
   bool[] flags=new bool[]{annex12ExportMainZeroMatched,annex12ExportShapeMatched,annex12ExportSchemaVerified,annex12NonzeroEditsMatched,annex12NonzeroSecondShapeMatched,annex12NonzeroSecondSchemaVerified,annex12WebImportSheetMatched,annex12WebBaselineSchemaVerified,annex12WebReexportSchemaVerified};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(flags[index]));
-  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount"};
-  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount};
+  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask"};
+  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   json.Append(","+q+"annex12NonzeroSecondExportSha256"+q+":"+q+annex12NonzeroSecondExportSha256+q);return json.ToString();
  }
@@ -132,7 +132,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Values/locks are read from original cells and table metadata; nothing is written.
  private bool InspectOriginalImportedAnnex12(Control grid){
   if(!Annex12WebCase())throw new InvalidOperationException();
-  SetStage(HtkkAutomationStage.GtgtAnnex12WebImportChecking);annex12WebImportSheetMatched=false;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;
+  SetStage(HtkkAutomationStage.GtgtAnnex12WebImportChecking);annex12WebImportSheetMatched=false;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;annex12WebImportDisplayEmptyMask=0;
   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count!=11)return false;
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object annex=null;
   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(annex!=null)return false;annex=candidate;}}
@@ -158,6 +158,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(Annex12CellLocked(annex,parent,4)||Annex12CellLocked(annex,parent,9)||Annex12CellLocked(annex,parent,19)||!Annex12CellLocked(annex,parent,20)||!Annex12CellLocked(annex,parent,23))return false;
    for(int j=0;j<rows.Count;j++){
     int row=start+j;
+    // Observation only: which original display cells (type, province, ward, tax head,
+    // local CQT) the import left blank. Five bits per child in document order.
+    int[] display=new int[]{2,12,16,17,18};int ordinal=seen+j;
+    for(int k=0;k<display.Length;k++)if(ordinal<5&&CellText(annex,row,display[k])==String.Empty)annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k);
     if(CellText(annex,row,1)!=id+"."+(j+1).ToString(CultureInfo.InvariantCulture)||CellText(annex,row,32)!=types[i][j]||CellText(annex,row,33)!="101"||CellText(annex,row,42)!="10129087"||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!="10129"||CellText(annex,row,4)!=String.Empty||CellText(annex,row,9)!=String.Empty||!Annex12NumberMatched(annex,row,20,percentages[i][j]))return false;
     // Child: source-locked name/MST/amount and allocated tax; only the percentage is editable.
     if(!Annex12CellLocked(annex,row,4)||!Annex12CellLocked(annex,row,9)||!Annex12CellLocked(annex,row,19)||Annex12CellLocked(annex,row,20)||!Annex12CellLocked(annex,row,23))return false;

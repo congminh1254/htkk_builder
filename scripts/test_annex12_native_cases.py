@@ -271,4 +271,35 @@ class NonzeroExportProbeContract(unittest.TestCase):
   failure=nonzero.safe_failure(nonzero.cases.AnnexWebContractError('VALUE','row/value'));self.assertEqual(failure['code'],'XML_CONTRACT')
   self.assertEqual(nonzero.contract_diagnostic(nonzero.cases.AnnexWebContractError('VALUE','row/value')),{'contractCode':'VALUE','contractFieldId':5})
 
+
+class OriginalMessageDiagnosticContract(unittest.TestCase):
+ """Run 42155339676 stopped at gtgt-export-original-message-rejected right after the
+ original Kết xuất click (selector never shown) with parent 1 at 50/50. The text was
+ deliberately not published; these fields report only its pinned catalogue ID."""
+ def test_rejected_original_messages_report_only_a_bounded_catalogue_id(self):
+  registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
+  for key in ('exportRejectedMessageId','importRejectedMessageId'):
+   self.assertEqual({k:registry[key][k] for k in ('kind','default','minimum','maximum')},{'kind':'integer','default':0,'minimum':0,'maximum':9999});self.assertNotIn('activeModes',registry[key])
+  export=(ROOT/'HtkkGtgtExportInspection.cs').read_text(encoding='utf-8');roundtrip=(ROOT/'HtkkGtgtRoundtripInspection.cs').read_text(encoding='utf-8');start=(ROOT/'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
+  self.assertIn('{exportRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(HtkkAutomationStage.GtgtExportOriginalMessageRejected);',export)
+  self.assertIn('{importRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(',roundtrip)
+  block=export[export.index(' private int OriginalMessageCatalogueId('):export.index(' private static string EscapeSendKeys(')]
+  pin='586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606'
+  self.assertIn(pin,block);self.assertIn('Path.Combine(project,"Message.xml")',start+block);self.assertIn(pin,start)
+  for term in ('settings.ProhibitDtd=true','settings.XmlResolver=null','/Message/Infor[@ID and @Msg]','node.Attributes["Msg"].Value.Trim()==wanted','return 9999;','value>9998'):self.assertIn(term,block)
+  for forbidden in ('Record()','Contains(','StartsWith(','IndexOf('):self.assertNotIn(forbidden,block)
+  # The message text never enters the public JSON; only the numeric ID does.
+  json_block=export[export.index(' private string ExportJson('):export.index(' private static void FindExportSelectors(')]
+  self.assertIn('"exportRejectedMessageId"+q+":"+exportRejectedMessageId',json_block);self.assertNotIn('labels',json_block)
+
+ def test_import_display_mask_is_observation_only_and_bounded(self):
+  """Runs 42156474982/42156478348: import and annex checks passed, then the
+  original reexport was rejected. Blank display cells are recorded, never typed."""
+  registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']['annex12WebImportDisplayEmptyMask']
+  self.assertEqual((registry['maximum'],registry['activeModes']),(33554431,['gtgt-web-import-inspect']))
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  block=annex[annex.index(' private bool InspectOriginalImportedAnnex12('):]
+  self.assertIn('int[] display=new int[]{2,12,16,17,18};',block);self.assertIn('annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k)',block);self.assertIn('ordinal<5',block)
+  self.assertIn('annex12WebImportDisplayEmptyMask=0;',block)
+
 if __name__=='__main__':unittest.main()

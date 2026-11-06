@@ -36,6 +36,7 @@ function New-HtkkNativeResultDefaults {
   annex12WebReexportSchemaVerified=$false
   annex12WebImportGroupCount=0
   annex12WebImportRowCount=0
+  annex12WebImportDisplayEmptyMask=0
   annex12InputReadOnlyIdentityMatched=$false
   annex12InputIdentityMatched=$false
   annex12InputTypesMatched=$false
@@ -160,6 +161,8 @@ function New-HtkkNativeResultDefaults {
   exportScopedXmlCount=0
   exportBytes=0
   exportSha256=''
+  exportRejectedMessageId=0
+  importRejectedMessageId=0
   roundtripImportCommandInvoked=$false
   roundtripImportDialogMatched=$false
   roundtripImportKeyboardCommitted=$false
