@@ -24,14 +24,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private Stopwatch declarationClock=null;
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
  private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
+ private int declarationInvalidSheetMask=0,declarationInvalidCellCount=0,declarationInvalidCell1=0,declarationInvalidCell2=0,declarationInvalidCell3=0,declarationInvalidCell4=0;
  private bool DeclarationMode(){return modeEnum==HtkkAutomationMode.DeclarationWebImportInspect;}
  private string DeclarationJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"declarationMenuClicked","declarationPeriodObserved","declarationPeriodMatched","declarationAnnexMatched","declarationSheetObserved","declarationIdentityMatched","declarationSourcePinsMatched","declarationImportSheetMatched","declarationSchemaValid","declarationServiceIdentityMatched","declarationCreationDateValid","declarationTreeMatched"};
   bool[] values=new bool[]{declarationMenuClicked,declarationPeriodObserved,declarationPeriodMatched,declarationAnnexMatched,declarationSheetObserved,declarationIdentityMatched,declarationSourcePinsMatched,declarationImportSheetMatched,declarationSchemaValid,declarationServiceIdentityMatched,declarationCreationDateValid,declarationTreeMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount"};
-  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount};
+  names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
+  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -263,6 +264,30 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return declarationCellMismatchMask==0&&declarationCellCheckCount==checks.Length;
  }
 
+ // ---- Bounded diagnostic of an original 0016 refusal ----
+ // frmWinToKhai.cmdExport_Click shows 0016 after WinDoWorkKiemTra when a sheet is not valid;
+ // the validators mark each refused cell with HTKKFile.SetNodeBackGroundPink (Cell.BackColor =
+ // Color.Pink, ARGB FFFFC0CB) and RemoveValidate restores the others. Read only: sheet index
+ // mask, a count, and the first four cells encoded (sheet+1)*1000000+(row+1)*1000+(column+1).
+ // No value, text or note is read. Rows/columns beyond 999 and sheets beyond 16 are not scanned.
+ private void InspectDeclarationRefusedCells(){
+  List<Control> grids=new List<Control>();int visited=0;GatherSpreads(roundtripOwner,grids,ref visited);if(grids.Count!=1)return;
+  object sheets=Get(grids[0],"Sheets");int sheetCount=Convert.ToInt32(Get(sheets,"Count"));PropertyInfo sheetItem=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});
+  if(sheetItem==null||sheetCount<1||sheetCount>64)throw new InvalidOperationException();
+  for(int index=0;index<sheetCount&&index<16;index++){
+   object sheet=sheetItem.GetValue(sheets,new object[]{index});object cells=Get(sheet,"Cells");PropertyInfo cellItem=cells.GetType().GetProperty("Item",new Type[]{typeof(int),typeof(int)});if(cellItem==null)throw new InvalidOperationException();
+   int rows=Math.Min(Convert.ToInt32(Get(sheet,"RowCount")),999),columns=Math.Min(Convert.ToInt32(Get(sheet,"ColumnCount")),999);
+   for(int row=0;row<rows;row++)for(int column=0;column<columns;column++){
+    object cell=cellItem.GetValue(cells,new object[]{row,column});object color=Get(cell,"BackColor");MethodInfo argb=color.GetType().GetMethod("ToArgb",Type.EmptyTypes);
+    if(argb==null||Convert.ToInt32(argb.Invoke(color,null))!=unchecked((int)0xFFFFC0CB))continue;
+    declarationInvalidSheetMask|=1<<index;int code=(index+1)*1000000+(row+1)*1000+(column+1);
+    if(declarationInvalidCellCount==0)declarationInvalidCell1=code;else if(declarationInvalidCellCount==1)declarationInvalidCell2=code;else if(declarationInvalidCellCount==2)declarationInvalidCell3=code;else if(declarationInvalidCellCount==3)declarationInvalidCell4=code;
+    if(declarationInvalidCellCount<4096)declarationInvalidCellCount++;
+   }
+  }
+  Record();
+ }
+
  // ---- Pinned schema and exported XML checks ----
  private sealed class DeclarationPinnedSchemaResolver : XmlResolver {
   private readonly Dictionary<string,string> files=new Dictionary<string,string>(StringComparer.OrdinalIgnoreCase);
@@ -364,7 +389,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }
   if(declarationPhase=="export-selector"||declarationPhase=="export-dialog"){
    if(DeclarationMessage(out message,out text)){
-    if(text!="Kết xuất tờ khai xml thành công."){exportRejectedMessageId=OriginalMessageCatalogueId(text);DeclarationTerminal(HtkkAutomationStage.DeclarationExportOriginalMessageRejected);return;}
+    if(text!="Kết xuất tờ khai xml thành công."){exportRejectedMessageId=OriginalMessageCatalogueId(text);if(exportRejectedMessageId==16)InspectDeclarationRefusedCells();DeclarationTerminal(HtkkAutomationStage.DeclarationExportOriginalMessageRejected);return;}
     if(declarationPhase!="export-dialog"||!exportDialogSubmitted)throw new InvalidOperationException();
     InspectOriginalExportDestination();Record();if(!exportOriginalPathMatched)throw new InvalidOperationException();
     ReadOriginalExport();if(!exportXmlRootMatched||!exportSyntheticIdentityMatched)throw new InvalidOperationException();

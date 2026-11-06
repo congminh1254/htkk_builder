@@ -222,6 +222,12 @@ function New-HtkkNativeResultDefaults {
   declarationXmlMismatchMask=0
   declarationTreeMismatchMask=0
   declarationTreeLeafCount=0
+  declarationInvalidSheetMask=0
+  declarationInvalidCellCount=0
+  declarationInvalidCell1=0
+  declarationInvalidCell2=0
+  declarationInvalidCell3=0
+  declarationInvalidCell4=0
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false

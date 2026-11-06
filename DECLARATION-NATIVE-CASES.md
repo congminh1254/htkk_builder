@@ -52,6 +52,9 @@ gốc (`TrySubmitOriginalFileDialog`), đọc thông báo từ chối bằng ID 
    cờ + số lá + mask vùng (1 TTinDVu, 2 TKhaiThue, 4 NNT, 8 CTieuTKhaiChinh, 16 PLuc, 32 cấu trúc), không giá trị.
 7. Mã lỗi giới hạn: stage terminal `declaration-*-not-matched`, `declaration-import/export-original-message-rejected`
    kèm `importRejectedMessageId`/`exportRejectedMessageId` (ID 4 chữ số trong Message.xml đã pin, 9999 = không có).
+   Khi bản xuất bị `0016`, driver chỉ đọc màu nền ô (HTKKFile.SetNodeBackGroundPink tô `Color.Pink`): mask sheet
+   `declarationInvalidSheetMask`, số ô `declarationInvalidCellCount` và tối đa 4 ô `declarationInvalidCell1..4`
+   mã hóa `(sheet+1)*1000000+(dòng+1)*1000+(cột+1)` (0-based); không đọc giá trị, chữ hay ghi chú.
 
 Raw: probe staging `htkk-declaration-native-output/` (bản xuất gốc nguyên byte + provenance) khi bản xuất đã được
 HTKK xác nhận, **kể cả khi so cây lệch** (status vẫn failure). `publish-htkk-declaration-native-output.py` (sau cổng

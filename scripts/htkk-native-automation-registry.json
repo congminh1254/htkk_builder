@@ -1553,6 +1553,12 @@
     "declarationXmlMismatchMask",
     "declarationTreeMismatchMask",
     "declarationTreeLeafCount",
+    "declarationInvalidSheetMask",
+    "declarationInvalidCellCount",
+    "declarationInvalidCell1",
+    "declarationInvalidCell2",
+    "declarationInvalidCell3",
+    "declarationInvalidCell4",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -2973,6 +2979,60 @@
       "default": 0,
       "minimum": 0,
       "maximum": 4096,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationInvalidSheetMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationInvalidCellCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4096,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationInvalidCell1": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16999999,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationInvalidCell2": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16999999,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationInvalidCell3": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16999999,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationInvalidCell4": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16999999,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

@@ -156,6 +156,22 @@ class CompiledPlans(unittest.TestCase):
         self.assertIn('+SheetJson()+ExportJson()+DeclarationJson();', (ROOT / 'HtkkGtgtReferenceNavigation.cs').read_text(encoding='utf-8'))
         self.assertIn('mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webImportInputSha256', (ROOT / 'HtkkWebInputReference.cs').read_text(encoding='utf-8'))
 
+    def test_0016_refusal_names_pink_cells_by_coordinate_only(self):
+        # Release 228 run 42310319856 (05QTT): import and all 11 sheet checks matched, the original
+        # export refused with 0016 and the result could not say which sheet/cell was refused.
+        start = DRIVER.index(' private void InspectDeclarationRefusedCells(){')
+        body = DRIVER[start:DRIVER.index('\n }\n', start)]
+        self.assertIn('if(exportRejectedMessageId==16)InspectDeclarationRefusedCells();DeclarationTerminal(', DRIVER)
+        self.assertIn('Get(cell,"BackColor")', body); self.assertIn('unchecked((int)0xFFFFC0CB)', body)
+        for forbidden in ('"Value"', '"Text"', 'Note', 'set_', 'SetValue', 'PerformClick', 'Invoke(grid', 'SetNodeBackGround'):
+            self.assertNotIn(forbidden, body)
+        self.assertIn('(index+1)*1000000+(row+1)*1000+(column+1)', body)
+        fields = automation['resultFields']
+        self.assertEqual(fields['declarationInvalidSheetMask']['maximum'], 65535)
+        self.assertEqual(fields['declarationInvalidCellCount']['maximum'], 4096)
+        for k in range(1, 5):
+            self.assertEqual(fields['declarationInvalidCell%d' % k], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': 16999999, 'activeModes': [MODE]})
+
     @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR comparison smoke test needs mono')
     def test_compiled_tree_comparison_matches_python_oracle(self):
         with tempfile.TemporaryDirectory() as directory:
