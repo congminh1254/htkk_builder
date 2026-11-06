@@ -106,7 +106,7 @@ class NativePrivacyTests(unittest.TestCase):
    with self.assertRaises((n.OutputError,n.privacy.EvidenceError)):n.validate_native(body,next(iter(n.BRANCHES)),TODAY)
  def test_service_identity_and_md5_shape_strict(self):
   native=fixture()[1]
-  for name,value in (('maDVu','HTKK-WEB-DRAFT'),('tenDVu','PRIVATE'),('pbanDVu','5.8.2'),('ttinNhaCCapDVu','a'*32),('ttinNhaCCapDVu','A'*31)):
+  for name,value in (('maDVu','CCKK-DRAFT'),('tenDVu','PRIVATE'),('pbanDVu','5.8.2'),('ttinNhaCCapDVu','a'*32),('ttinNhaCCapDVu','A'*31)):
    with self.subTest(name=name),self.assertRaises(n.OutputError):n.validate_native(changed(native,name,value),next(iter(n.BRANCHES)),TODAY)
  def test_dates_fixed_signature_and_valid_fresh_iso_creation(self):
   native=fixture()[1]

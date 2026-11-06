@@ -157,7 +157,7 @@ class ReadAndStageTests(unittest.TestCase):
   self.assertEqual(files['01GTGT-web.xml'],self.body);self.assertTrue(all(token=='synthetic-token' for _,token in calls));self.assertEqual(calls[0][0],'')
   self.assertTrue(all('?ref='+'b'*40 in path for path,_ in calls if '/contents/' in path));self.assertIn(('/git/commits/'+'a'*40,'synthetic-token'),calls)
   with tempfile.TemporaryDirectory() as temporary:
-   destination=w.stage(files,temporary,TODAY);self.assertEqual(set(path.name for path in destination.iterdir()),set(w.NAMES));self.assertEqual((destination/'01GTGT-web.xml').read_bytes(),self.body);self.assertIn(b'HTKK-WEB-DRAFT',(destination/'01GTGT-web.xml').read_bytes());self.assertEqual((destination/'manifest.json').read_bytes(),files['manifest.json'])
+   destination=w.stage(files,temporary,TODAY);self.assertEqual(set(path.name for path in destination.iterdir()),set(w.NAMES));self.assertEqual((destination/'01GTGT-web.xml').read_bytes(),self.body);self.assertIn(b'CCKK-DRAFT',(destination/'01GTGT-web.xml').read_bytes());self.assertEqual((destination/'manifest.json').read_bytes(),files['manifest.json'])
  def test_immutable_artifact_commit_does_not_follow_mutable_branch(self):
   fetch,calls=fake_fetch(self.body)
   def pinned(path,token):

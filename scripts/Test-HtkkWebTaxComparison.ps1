@@ -2,7 +2,7 @@
 $ErrorActionPreference='Stop'
 Add-Type -Path (Join-Path $PSScriptRoot 'HtkkWebTaxComparison.cs')
 function New-Fixture([bool]$Web) {
- $service=if($Web){'<maDVu>HTKK-WEB-DRAFT</maDVu><tenDVu>Hỗ trợ kê khai — bản nháp</tenDVu><pbanDVu>0.9.2</pbanDVu><ttinNhaCCapDVu>hotrokekhai.net — công cụ hỗ trợ độc lập</ttinNhaCCapDVu>'}else{'<maDVu>HTKK</maDVu><tenDVu>HỖ TRỢ KÊ KHAI THUẾ</tenDVu><pbanDVu>5.8.1</pbanDVu><ttinNhaCCapDVu>0123456789ABCDEF0123456789ABCDEF</ttinNhaCCapDVu>'}
+ $service=if($Web){'<maDVu>CCKK-DRAFT</maDVu><tenDVu>Công cụ Kê khai — bản nháp</tenDVu><pbanDVu>0.9.2</pbanDVu><ttinNhaCCapDVu>hotrokekhai.net — Công cụ Kê khai, công cụ độc lập</ttinNhaCCapDVu>'}else{'<maDVu>HTKK</maDVu><tenDVu>HỖ TRỢ KÊ KHAI THUẾ</tenDVu><pbanDVu>5.8.1</pbanDVu><ttinNhaCCapDVu>0123456789ABCDEF0123456789ABCDEF</ttinNhaCCapDVu>'}
  $date=if($Web){'2026-10-25'}else{'2026-10-26'}
  $fields='';for($i=0;$i -lt 68;$i++){$fields+='<f'+$i+'>0</f'+$i+'>'}
  return [xml]('<HSoThueDTu xmlns="http://kekhaithue.gdt.gov.vn/TKhaiThue"><HSoKhaiThue id="ID_1"><TTinChung><TTinDVu>'+$service+'</TTinDVu><TTinTKhaiThue><TKhaiThue><ngayLapTKhai>'+$date+'</ngayLapTKhai><ngayKy>2026-10-25</ngayKy></TKhaiThue></TTinTKhaiThue></TTinChung><CTieuTKhaiChinh>'+$fields+'</CTieuTKhaiChinh></HSoKhaiThue></HSoThueDTu>')
