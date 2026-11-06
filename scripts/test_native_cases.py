@@ -48,6 +48,100 @@ class NativeCases(unittest.TestCase):
   with self.assertRaises(ValueError):d.post('https://api.github.com/','',{})
 
 
+BUILDER_SHA='9'*40
+import datetime,http.client
+START=datetime.datetime(2026,11,6,10,0,0,tzinfo=datetime.timezone.utc)
+def http_error(code):return urllib.error.HTTPError('https://api.github.com/x',code,'unpublished',{},None)
+def probe_run(case,created='2026-11-06T10:00:01Z',**extra):
+ run={'id':4242,'path':d.PROBE,'event':'workflow_dispatch','head_branch':'main','head_sha':BUILDER_SHA,'repository':{'full_name':d.BUILDER},'created_at':created,'display_title':d.run_title(case)}
+ run.update(extra);return run
+class NativeDispatchRetry(unittest.TestCase):
+ """Bounded, duplicate-safe retry of the non-idempotent workflow_dispatch POST."""
+ def harness(self,failures,runs=lambda case:[],cases=1):
+  value=document();value['cases']=value['cases'][:cases];calls=[];queries=[];sleeps=[];failures=list(failures)
+  def send(url,token,payload):
+   calls.append((url,payload))
+   if '/dispatches' in url and failures:
+    error=failures.pop(0)
+    if error is not None:raise error
+  def get(url,token):
+   self.assertEqual(token,'builder');queries.append(url)
+   listed=runs(value['cases'][0]['caseId'])
+   if isinstance(listed,Exception):raise listed
+   return {'total_count':len(listed),'workflow_runs':listed}
+  return value,send,get,calls,queries,sleeps
+ def run_dispatch(self,value,send,get,sleeps):
+  with patch('builtins.print'):d.dispatch(value,'builder','source',send,builder=BUILDER_SHA,get=get,sleep=sleeps.append,now=lambda:START)
+ def dispatches(self,calls):return sum('/dispatches' in url for url,_ in calls)
+ def test_transient_failure_then_success_redispatches_only_after_absence_check(self):
+  for error in (urllib.error.URLError('reset'),TimeoutError(),http.client.RemoteDisconnected('closed'),ConnectionResetError(),http_error(502),http_error(503)):
+   value,send,get,calls,queries,sleeps=self.harness([error,None])
+   self.run_dispatch(value,send,get,sleeps)
+   self.assertEqual(self.dispatches(calls),2);self.assertEqual(len(queries),1);self.assertEqual(sleeps,[2])
+   self.assertEqual([p['state'] for u,p in calls if '/statuses/' in u],['pending'])
+   query=d.urllib.parse.parse_qs(d.urllib.parse.urlsplit(queries[0]).query)
+   self.assertEqual(query,{'event':['workflow_dispatch'],'branch':['main'],'head_sha':[BUILDER_SHA],'created':['>=2026-11-06T09:59:30Z'],'per_page':['100']})
+   self.assertTrue(queries[0].startswith('https://api.github.com/repos/'+d.BUILDER+'/actions/workflows/probe-htkk-windows.yml/runs?'))
+ def test_two_retries_with_backoff_then_success(self):
+  value,send,get,calls,queries,sleeps=self.harness([http_error(500),http_error(504),None])
+  self.run_dispatch(value,send,get,sleeps)
+  self.assertEqual(self.dispatches(calls),3);self.assertEqual(sleeps,[2,5]);self.assertEqual(len(queries),2)
+ def test_existing_run_for_same_case_prevents_redispatch(self):
+  value,send,get,calls,queries,sleeps=self.harness([http_error(502)],runs=lambda case:[probe_run(d.CASES[2]),probe_run(case)],cases=2)
+  self.run_dispatch(value,send,get,sleeps)
+  # First case is not re-sent; the second case still dispatches exactly once.
+  self.assertEqual(self.dispatches(calls),2);self.assertEqual(len(queries),1)
+  self.assertEqual([p['inputs']['web_case_id'] for u,p in calls if '/dispatches' in u],[d.CASES[0],d.CASES[1]])
+  self.assertEqual([p['state'] for u,p in calls if '/statuses/' in u],['pending','pending'])
+ def test_runs_of_other_cases_old_runs_or_foreign_identity_do_not_count(self):
+  case=d.CASES[0]
+  for run in (probe_run(d.CASES[1]),probe_run(case,created='2026-11-06T09:59:00Z'),probe_run(case,head_sha='8'*40),probe_run(case,path='.github/workflows/build.yml'),probe_run(case,event='push'),probe_run(case,head_branch='feature')):
+   self.assertIs(d.created(case,BUILDER_SHA,START,'t',lambda url,token:{'total_count':1,'workflow_runs':[run]}),False)
+  self.assertIs(d.created(case,BUILDER_SHA,START,'t',lambda url,token:{'total_count':1,'workflow_runs':[probe_run(case)]}),True)
+ def test_ambiguous_or_unverifiable_listing_fails_closed_without_redispatch(self):
+  case=d.CASES[0]
+  for listing in ([probe_run(case,display_title='Kiểm tra điều kiện chạy HTKK Windows')],[probe_run(case,display_title=None)],[probe_run(case,created='bad')]):
+   self.assertIsNone(d.created(case,BUILDER_SHA,START,'t',lambda url,token:{'total_count':1,'workflow_runs':listing}))
+  self.assertIsNone(d.created(case,BUILDER_SHA,START,'t',lambda url,token:{'total_count':101,'workflow_runs':[]}))
+  for runs in (lambda case:[probe_run(case,display_title='untitled')],lambda case:urllib.error.URLError('down')):
+   value,send,get,calls,queries,sleeps=self.harness([http_error(503),None],runs=runs)
+   with self.assertRaises(urllib.error.HTTPError):self.run_dispatch(value,send,get,sleeps)
+   self.assertEqual(self.dispatches(calls),1);self.assertEqual(calls[-1][1]['state'],'failure')
+ def test_client_errors_are_never_retried(self):
+  for code in (400,401,403,404,409,422):
+   value,send,get,calls,queries,sleeps=self.harness([http_error(code),None])
+   with self.assertRaises(urllib.error.HTTPError):self.run_dispatch(value,send,get,sleeps)
+   self.assertEqual(self.dispatches(calls),1);self.assertEqual(queries,[]);self.assertEqual(sleeps,[]);self.assertEqual(calls[-1][1]['state'],'failure')
+  for error in (ValueError('HTTP'),RuntimeError('x'),http_error(501)):self.assertFalse(d.transient(error))
+ def test_persistent_failure_is_bounded_and_keeps_safe_exit(self):
+  value,send,get,calls,queries,sleeps=self.harness([http_error(502)]*10)
+  with self.assertRaises(urllib.error.HTTPError):self.run_dispatch(value,send,get,sleeps)
+  self.assertEqual(self.dispatches(calls),3);self.assertEqual(sleeps,[2,5]);self.assertEqual(len(queries),2);self.assertEqual(calls[-1][1]['state'],'failure')
+  path=ROOT/'_absent_runner_temp'
+  env={'GITHUB_REPOSITORY':d.BUILDER,'RUNNER_TEMP':str(path),'COMMIT_SHA':'a'*40,'GITHUB_SHA':BUILDER_SHA,'BUILDER_ACTIONS_TOKEN':'secret-actions','SOURCE_STATUS_TOKEN':'secret-status'}
+  import io,contextlib,os,tempfile
+  def fail_dispatch(url,token,payload):
+   if '/dispatches' in url:raise http_error(503)
+  with tempfile.TemporaryDirectory() as temp:
+   (pathlib.Path(temp)/'htkk-web-input-publication.json').write_text(json.dumps(document()));env['RUNNER_TEMP']=temp;out=io.StringIO()
+   with patch.dict(os.environ,env),patch.object(d,'post',side_effect=fail_dispatch) as posted,patch.object(d,'get_json',return_value={'total_count':0,'workflow_runs':[]}) as listed,patch.object(d.time,'sleep'),contextlib.redirect_stdout(out):
+    with self.assertRaises(SystemExit) as raised:d.main()
+   self.assertEqual(str(raised.exception),'Native-case dispatch failed; no raw response, input, path or credential published.')
+   self.assertEqual(sum('/dispatches' in c.args[0] for c in posted.call_args_list),3);self.assertEqual(posted.call_args_list[-1].args[2]['state'],'failure');self.assertEqual(listed.call_count,2)
+   self.assertNotIn('secret',out.getvalue());self.assertNotIn('a'*40,out.getvalue())
+ def test_status_posts_retry_blindly_but_bounded(self):
+  value=document();value['cases']=value['cases'][:1];calls=[];errors=[urllib.error.URLError('x'),http_error(500)];sleeps=[]
+  def send(url,token,payload):
+   calls.append(url)
+   if '/statuses/' in url and errors:raise errors.pop(0)
+  with patch('builtins.print'):d.dispatch(value,'builder','source',send,builder=BUILDER_SHA,get=lambda *a:self.fail('no run lookup'),sleep=sleeps.append,now=lambda:START)
+  self.assertEqual(sleeps,[2,5]);self.assertEqual(sum('/statuses/' in u for u in calls),3);self.assertEqual(sum('/dispatches' in u for u in calls),1)
+ def test_probe_run_name_matches_dispatcher_identity(self):
+  text=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
+  self.assertIn('\nrun-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})\n',text)
+  self.assertEqual(d.run_title(d.CASES[0]),'HTKK native case '+d.CASES[0]+' ('+d.case_registry.ADAPTERS[d.case_registry.CASES[d.CASES[0]]['adapterId']]['driver']+')')
+
+
 class NativeWorkflowCredentials(unittest.TestCase):
  def test_parallel_web_cases_skip_shared_references_but_keep_scoped_raw_and_status(self):
   # Exercise the workflow conditions, including their process/credential gates.
