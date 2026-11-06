@@ -88,3 +88,20 @@ Dòng 83 của sheet `Header` bắt buộc R44. Driver chọn lại đúng CQT c
 không đổi. Mặt nạ giữ trạng thái ngay sau nhập. Probe nonzero 42180279456 đạt; XML gốc
 (cha 1 50/50: ct12 1/1, ct13/ct14 1; cha 7 33,33/66,67: ct12 2/5, ct13/ct14 7) khớp toàn bộ
 131 nút với engine web.
+
+## Khôi phục R dừng sau thao tác combo thứ hai (runs 42206910531 / 42206915586)
+
+Cohort phát hành (builder dd60e2c, web e02721e): cả hai ca nhập XML gốc đạt, mặt nạ nhập vẫn
+264 / 8659208, nhưng `annex12WebHeadAuthorityRestored=false` với `RepairCount=2` ở cả hai ca:
+driver dừng ngay sau thao tác combo gốc thứ hai (khả năng cao: dòng con đầu, chọn R, handler gốc
+xoá S, chọn lại S) ở bước đọc lại R/S/AJ/AK/AH/AQ khi chưa rời ô. Run đó không cho biết điều kiện
+nào sai (giả thuyết: handler gốc chỉ cập nhật mã ẩn khi rời ô, như luồng 14 thao tác vẫn làm). Vì không có bước xuất lại nên
+`roundtripReexportCommandInvoked=false`, `webTaxLeafCount=0` và publish trả `FILES`; đây là hệ
+quả, không phải lỗi riêng. Danh tính dịch vụ không liên quan (input web đã `webInputVerified`).
+
+Driver nay rời ô như người dùng: sang S trước khi đọc S, sang ô tỷ lệ của dòng con (trường kế
+tiếp trong thứ tự 14 thao tác đã chứng minh) rồi chờ có giới hạn cho handler gốc; chỉ khi handler
+chưa chạy mới mở/đóng editor tỷ lệ gốc không gõ phím, giá trị phải giữ nguyên. Không ghi ô/mã;
+so sánh toàn cây XML không đổi. Trường mới `annex12WebHeadAuthorityFailureMask` (0..4095): bit 0-5
+là kiểm R/S/AJ/AK/AH/AQ chưa đạt, bit 6-8 là thứ tự dòng con + 1, bit 9/10 combo R/S lỗi, bit 11 đã
+cần mở editor tỷ lệ. Thành công yêu cầu `(mask & 2047) == 0`.
