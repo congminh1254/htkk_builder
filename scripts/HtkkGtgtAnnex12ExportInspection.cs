@@ -21,14 +21,17 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Original import leaves R (head CQT display, pathCucThue: not an XML leaf) blank; Header row 83
  // makes R44 mandatory (0016). Restored only through the original combo editor.
  private bool annex12WebHeadAuthorityRestored=false;private int annex12WebHeadAuthorityRepairCount=0;
+ // Bounded diagnostic: bits 0-5 unmet R/S/AJ/AK/AH/AQ checks, bits 6-8 child ordinal+1, bit 9 R combo
+ // failed, bit 10 S combo failed, bit 11 the percentage editor was opened to leave the row.
+ private int annex12WebHeadAuthorityFailureMask=0;
  private bool annex12NonzeroBusy=false;private Control annex12ExportGrid=null;private object annex12ExportSheet=null;
  private string Annex12ExportJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"annex12ExportMainZeroMatched","annex12ExportShapeMatched","annex12ExportSchemaVerified","annex12NonzeroEditsMatched","annex12NonzeroSecondShapeMatched","annex12NonzeroSecondSchemaVerified","annex12WebImportSheetMatched","annex12WebBaselineSchemaVerified","annex12WebReexportSchemaVerified","annex12WebHeadAuthorityRestored"};
   bool[] flags=new bool[]{annex12ExportMainZeroMatched,annex12ExportShapeMatched,annex12ExportSchemaVerified,annex12NonzeroEditsMatched,annex12NonzeroSecondShapeMatched,annex12NonzeroSecondSchemaVerified,annex12WebImportSheetMatched,annex12WebBaselineSchemaVerified,annex12WebReexportSchemaVerified,annex12WebHeadAuthorityRestored};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(flags[index]));
-  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask","annex12WebHeadAuthorityRepairCount"};
-  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask,annex12WebHeadAuthorityRepairCount};
+  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask","annex12WebHeadAuthorityRepairCount","annex12WebHeadAuthorityFailureMask"};
+  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask,annex12WebHeadAuthorityRepairCount,annex12WebHeadAuthorityFailureMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   json.Append(","+q+"annex12NonzeroSecondExportSha256"+q+":"+q+annex12NonzeroSecondExportSha256+q);return json.ToString();
  }
@@ -202,15 +205,30 @@ public sealed partial class HtkkGuiReferenceAutomation {
     System.Collections.IList rows=Get(tables[i],"RowsValues") as System.Collections.IList;if(rows==null||rows.Count<1||rows.Count>5)throw new InvalidOperationException();
     int start=Convert.ToInt32(Get(Get(tables[i],"Location"),"DataLocationTemplateRowStart"))-1;
     for(int j=0;j<rows.Count;j++){
-     int row=start+j;
-     if(CellText(annex,row,17)==String.Empty){SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");annex12WebHeadAuthorityRepairCount++;Record();}
-     if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"){SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội");annex12WebHeadAuthorityRepairCount++;Record();}
-     if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội"||CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!="10129"||CellText(annex,row,33)!="101"||CellText(annex,row,42)!="10129087")throw new InvalidOperationException();
+     int row=start+j,ordinal=seen+j;if(ordinal>4)throw new InvalidOperationException();
+     annex12WebHeadAuthorityFailureMask=(annex12WebHeadAuthorityFailureMask&2048)|((ordinal+1)<<6);Record();
+     if(CellText(annex,row,17)==String.Empty){
+      try{SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
+      annex12WebHeadAuthorityRepairCount++;Record();
+     }
+     // Runs 42206910531/42206915586 stopped right after the second combo action: the original
+     // handlers may act when the user leaves a cell, so move to S as a user does before reading it.
+     MoveImportedAnnex12Cell(grid,annex,row,18);
+     if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"){
+      try{SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=1024;Record();throw;}
+      annex12WebHeadAuthorityRepairCount++;Record();
+     }
+     // Leave S for the child's percentage (the next field of the proven 14-input order), then wait
+     // (bounded) for the original handlers. Only if they have not run, open and close the original
+     // percentage editor without typing, exactly as a user tabbing through; its value must not change.
+     MoveImportedAnnex12Cell(grid,annex,row,20);int unmet=WaitImportedAnnex12HeadAuthority(annex,row,1.0);
+     if(unmet!=0){annex12WebHeadAuthorityFailureMask|=2048;Record();PassImportedAnnex12Percentage(grid,annex,row);unmet=WaitImportedAnnex12HeadAuthority(annex,row,2.0);}
+     if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;Record();throw new InvalidOperationException();}
     }
     seen+=rows.Count;
    }
    if(seen!=annex12WebImportRowCount||annex12WebHeadAuthorityRepairCount<1||annex12WebHeadAuthorityRepairCount>2*seen)throw new InvalidOperationException();
-   annex12WebHeadAuthorityRestored=true;Record();
+   annex12WebHeadAuthorityFailureMask&=2048;annex12WebHeadAuthorityRestored=true;Record();
   }finally{annex12NonzeroBusy=false;if(!finished)exportWatcher.Start();}
  }
  private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){
@@ -229,5 +247,38 @@ public sealed partial class HtkkGuiReferenceAutomation {
   SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
   grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();
   if(CellText(annex,row,column)!=value||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
+ }
+
+ private int ImportedAnnex12HeadAuthorityUnmet(object annex,int row){
+  int unmet=0;
+  if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội")unmet|=1;
+  if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội")unmet|=2;
+  if(CellText(annex,row,35)!="10100")unmet|=4;
+  if(CellText(annex,row,36)!="10129")unmet|=8;
+  if(CellText(annex,row,33)!="101")unmet|=16;
+  if(CellText(annex,row,42)!="10129087")unmet|=32;
+  return unmet;
+ }
+ private int WaitImportedAnnex12HeadAuthority(object annex,int row,double seconds){
+  Stopwatch clock=Stopwatch.StartNew();int unmet;
+  do{unmet=ImportedAnnex12HeadAuthorityUnmet(annex,row);if(unmet==0||OriginalMessageVisible())return unmet;Application.DoEvents();System.Threading.Thread.Sleep(10);}while(clock.Elapsed.TotalSeconds<seconds);
+  return ImportedAnnex12HeadAuthorityUnmet(annex,row);
+ }
+ // Navigation only: the original active cell moves as with the keyboard; nothing is written.
+ private void MoveImportedAnnex12Cell(Control grid,object annex,int row,int column){
+  Form owner=grid.FindForm();uint pid;
+  if((column!=18&&column!=20)||owner==null||owner!=roundtripOwner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible()||Annex12CellLocked(annex,row,column))throw new InvalidOperationException();
+  grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
+  annex.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(annex,new object[]{row,column});Application.DoEvents();grid.Focus();
+  if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=column||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
+ }
+ // Opens and closes the original percentage editor without any key, as tabbing through it does.
+ private void PassImportedAnnex12Percentage(Control grid,object annex,int row){
+  string before=Convert.ToString(Get(Cell(annex,row,20),"Value"),CultureInfo.InvariantCulture);
+  MoveImportedAnnex12Cell(grid,annex,row,20);
+  grid.GetType().GetMethod("StartCellEditing",new Type[]{typeof(EventArgs),typeof(bool)}).Invoke(grid,new object[]{EventArgs.Empty,false});
+  Control editor=Get(grid,"EditingControl") as Control;if(editor==null||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
+  grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();
+  if(Convert.ToString(Get(Cell(annex,row,20),"Value"),CultureInfo.InvariantCulture)!=before||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
  }
 }

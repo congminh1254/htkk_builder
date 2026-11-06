@@ -372,5 +372,25 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
   self.assertIn('-and $lastGui.annex12WebHeadAuthorityRestored -and $lastGui.annex12WebHeadAuthorityRepairCount -ge $lastGui.annex12WebImportRowCount -and $lastGui.annex12WebHeadAuthorityRepairCount -le (2*$lastGui.annex12WebImportRowCount)',probe)
   self.assertIn("'annex12WebImportSheetMatched','annex12WebHeadAuthorityRestored')",probe)
+  self.assertIn("-and ($lastGui.annex12WebHeadAuthorityFailureMask -band 2047) -eq 0",probe)
+ def test_restoration_leaves_each_cell_before_reading_original_codes(self):
+  """Runs 42206910531 (zero) and 42206915586 (two plants): RepairCount 2, Restored false in both,
+  i.e. the run stopped right after the second original combo action of the first child. The
+  restoration now moves to S before reading it and to the child's percentage before reading the
+  hidden codes, waits (bounded), and reports which check was unmet."""
+  annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+  block=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):]
+  loop=block[:block.index(' private void SelectImportedAnnex12Combo(')]
+  order=[loop.index(x) for x in ('SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','SelectImportedAnnex12Combo(grid,annex,row,18,','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,1.0)','PassImportedAnnex12Percentage(grid,annex,row)')]
+  self.assertEqual(order,sorted(order))
+  self.assertIn('annex12WebHeadAuthorityFailureMask&=2048;annex12WebHeadAuthorityRestored=true;',loop)
+  move=block[block.index(' private void MoveImportedAnnex12Cell('):block.index(' private void PassImportedAnnex12Percentage(')]
+  self.assertIn('if((column!=18&&column!=20)',move);self.assertIn('Annex12CellLocked(annex,row,column)',move)
+  passing=block[block.index(' private void PassImportedAnnex12Percentage('):]
+  # The percentage editor is opened and closed with no key; its original value must be unchanged.
+  for forbidden in ('SendKeys','SetPublic','set_Value','"Text",'):self.assertNotIn(forbidden,passing)
+  self.assertIn('!=before',passing)
+  registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
+  self.assertEqual((registry['annex12WebHeadAuthorityFailureMask']['maximum'],registry['annex12WebHeadAuthorityFailureMask']['activeModes']),(4095,['gtgt-web-import-inspect']))
 
 if __name__=='__main__':unittest.main()
