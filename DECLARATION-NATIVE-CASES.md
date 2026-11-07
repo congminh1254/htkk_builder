@@ -53,7 +53,10 @@ J1 (03/NTNN 3.0.8, non-gating) dùng `03NTNN-no-rate-M10-2026`: `Ntnn03TT80Nckt3
 dùng tỷ lệ 0 và miễn giảm 0 ở cả hai dòng để phép ghi lại là no-op: oracle Decimal `NTNN_ROWS` (công thức `03`: ct11 =
 IF(ct8·ct9/100 − ct10 < 0, 0, ROUND(ct8·ct9/100 − ct10))) cho ct11 = 0, `tongct6`/`tongct8` = 1.100.000.000, `tongct10`/
 `tongct11` = 0. Ngày thanh toán (7) để trống (IL đưa nguyên văn ô BE cho `ValidateFullDate(…, "ddMMyyyy")`).
-Câu hỏi mở: HTKK kết xuất lại ô BU rỗng (sau `set_Text("")`) là `0.00` như web, `0` hay rỗng.
+Release 240 (web fbd22dad, builder 9d14366d, run 42353849411): nhập XML, 6 ô kiểm và 4 lá XML khớp; so cây khác đúng 2 lá
+(thứ tự 46, 59): `ct9` HTKK ghi `0`, web khi đó ghi `0.00`. Nguồn: `GeneralFunctions.GetValueExportXML` (0x6002617) thay mọi
+giá trị Controltype 16 có `Convert.ToDouble` = 0 bằng `"0"` trước khi định dạng (áp dụng cho cả số 0 nhập tay). Web
+`work/j1-fix` ghi `0`; oracle (`_EMPTY_ROW` của Y8 và dòng J1) theo đó. Cần chạy lại ca ở release sau.
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →

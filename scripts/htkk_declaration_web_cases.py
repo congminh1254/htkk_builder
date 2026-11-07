@@ -310,7 +310,9 @@ def _pluc(root):
 # One entry per table: (row path, totals parent, totals prefix, reviewed rows[, formula '03' for 03/NTNN]). Y8 keeps part I locked
 # and empty (one default template row); CNKCT holds TNCN in ThueTNCN/ct10..13.
 _MAIN = 'HSoKhaiThue/CTieuTKhaiChinh'
-_EMPTY_ROW = {'ct1b_ma': '', 'ct5': '0', 'ct7': '0', 'ct8': '0.00', 'ct10': '0', 'ct11': '0.00', 'ct12': '0'}
+# A zero rate is "0", not "0.00": GeneralFunctions.GetValueExportXML (0x6002617) replaces every Controltype-16
+# value equal to 0 by "0" before formatting (release 240 run 42353849411: J1 ct9 "0" in the native re-export).
+_EMPTY_ROW = {'ct1b_ma': '', 'ct5': '0', 'ct7': '0', 'ct8': '0', 'ct10': '0', 'ct11': '0', 'ct12': '0'}
 NTNN_ROWS = {
     '01NTNN-two-contractors-M10-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong_', (
         {'ct1b_ma': '01', 'ct5': '1000000000', 'ct7': '1000000000', 'ct8': '5.00', 'ct10': '1000000000', 'ct11': '5.00', 'ct12': '0'},
@@ -326,8 +328,8 @@ NTNN_ROWS = {
     # J1 03/NTNN (formula '03'): ct11 = IF(ct8*ct9/100 - ct10 < 0, 0, ROUND(ct8*ct9/100 - ct10, 0)); totals
     # tongct6/8/10/11. Rate ct9 = 0 (FinishImportXML clears every imported rate), so ct11 = 0.
     '03NTNN-no-rate-M10-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong', (
-        {'ct1b_ma': '01', 'ct6': '800000000', 'ct8': '800000000', 'ct9': '0.00', 'ct10': '0'},
-        {'ct1b_ma': '02', 'ct6': '300000000', 'ct8': '300000000', 'ct9': '0.00', 'ct10': '0'},
+        {'ct1b_ma': '01', 'ct6': '800000000', 'ct8': '800000000', 'ct9': '0', 'ct10': '0'},
+        {'ct1b_ma': '02', 'ct6': '300000000', 'ct8': '300000000', 'ct9': '0', 'ct10': '0'},
     ), '03'),),
 }
 
