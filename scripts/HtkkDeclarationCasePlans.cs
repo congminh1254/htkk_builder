@@ -19,6 +19,18 @@ internal sealed class HtkkDeclarationCasePlan {
  }
 }
 
+internal sealed class HtkkDeclarationEntryPlan {
+ internal readonly string ChoiceCell,ExclusiveCell,SignerCell,CatalogueFile,CatalogueSha256;
+ internal readonly string[] Tables,LockColumns,Entries,MethodPins;
+ internal HtkkDeclarationEntryPlan(string choiceCell,string exclusiveCell,string signerCell,string catalogueFile,string catalogueSha256,string[] tables,string[] lockColumns,string[] entries,string[] methodPins){
+  ChoiceCell=choiceCell;ExclusiveCell=exclusiveCell;SignerCell=signerCell;CatalogueFile=catalogueFile;CatalogueSha256=catalogueSha256;Tables=tables;LockColumns=lockColumns;Entries=entries;MethodPins=methodPins;
+  if(tables.Length<1||tables.Length>4||lockColumns.Length<1||lockColumns.Length>16||entries.Length<1||entries.Length>30||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
+  foreach(string table in tables)if(table.Split('|').Length!=4)throw new InvalidOperationException();
+  foreach(string entry in entries){string[] parts=entry.Split('|');if(!((parts.Length==3&&(parts[0]=="text"||parts[0]=="date"||parts[0]=="number"||parts[0]=="date-optional"))||(parts.Length==7&&parts[0]=="combo")))throw new InvalidOperationException();}
+  foreach(string pin in methodPins){string[] parts=pin.Split('|');if(parts.Length!=6||(parts[0]!="B"&&parts[0]!="H")||parts[5].Length!=64)throw new InvalidOperationException();}
+ }
+}
+
 internal static class HtkkDeclarationCasePlans {
  internal const string XmldsigSha256="c3b5160be1852606d10f6928e0b214d418f8dd418667cb2fb88fec31e4e6f56d";
  private const string TKhaiThue="TKhaiThue.xsd",TKhaiThueSha256="8f451719355b5a6247f65a34a37584b4a0c7f7cc81a568e1033d08b8fe9b8c1d";
@@ -26,7 +38,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","01NTNN-NCCNN-two-parts-M10-2026","03NTNN-no-rate-M10-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","01NTNN-NCCNN-two-parts-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -152,7 +164,70 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/03_NTNN_TT80_308.xsd","97eaf67183cba1723fa00db46565598568288763185a503daf255b091eedb0b7",TKhaiThue,TKhaiThueSha256,WorkbookService,65,
     new string[]{"01|CG34|0","01|CG35|0","01|AU37|1100000000","01|BK37|1100000000","01|BX37|0","01|CG37|0"},
     new string[]{Main+"tongct6|1100000000",Main+"tongct8|1100000000",Main+"tongct10|0",Main+"tongct11|0"});
+   // Y8 original entry (non-gating, mode original-entry-export): the same menu, period, pins, XML checks and
+   // whole-tree comparison as 01NTNN-NCCNN-two-parts-M10-2026, but the rows are TYPED into HTKK's own grid
+   // (HtkkDeclarationCasePlans.Entry) instead of imported, because the import resets the three tables
+   // (Ntnn01TT89Nckt309.AutoBindData_0 -> LockUnlock -> LockUnLockColsInTable deleteData=true; release 238).
+   // Sheet checks after entry: the XLS row formulas (AV/BN/BR 78 and 86) and the table totals of rows
+   // 80/88 (Y/AV/BN/BR = SUM over the table), recomputed independently by NTNN_ROWS; BR62 = 0 (part I locked).
+   case "01NTNN-NCCNN-entry-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",
+    "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
+    new string[]{"01|AV78|10000000","01|BN78|10000000","01|BR78|20000000","01|Y80|200000000","01|AV80|10000000","01|BN80|10000000","01|BR80|20000000","01|AV86|5000000","01|BN86|2000000","01|BR86|7000000","01|Y88|100000000","01|AV88|5000000","01|BN88|2000000","01|BR88|7000000","01|BR62|0"},
+    new string[]{Main+"nopThayNTNN|0",Main+"nopThayNCCNN|1",Main+"ThueNCCNN_CNKCT/mucII_tong_ct5|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct7|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct9|5000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct10|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct12|0",Main+"ThueNCCNN_CNKCT/mucII_tong_ct13|2000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct14|7000000"});
    default:return null;
   }
+ }
+
+ // ---- Fixed original-entry plans (native-case mode original-entry-export) ----
+ // The ONLY values the entry driver may type, in this order, into HTKK's own editors. A value is
+ // never assigned to a cell, row, DTO or total: the original CellChange/formulas compute the rest.
+ // Source (HTKK 5.8.1, pinned below by metadata token and IL-code SHA-256; the raw-body SHA-256 in
+ // brackets is the one htkk_web records in data/htkk-descriptor-declarations.json):
+ //  * 01_NTNN_NCCNN_TT89_309.xml: M_6/M_8 checkboxes (Controltype 2, nopThayNTNN/nopThayNCCNN);
+ //    ThueNTNN data row 60, ThueNCCNN 78, ThueCNKCT 86 (DataLocationTemplateRowStart); row cells C ct1a,
+ //    L ct1b (Controltype 87, SelectedValue BX = ct1b_ma), S ct3, W ct4 / AE ct6 (Controltype 14), Y ct5,
+ //    AJ ct7, AN ct8, AZ ct10, BD ct11, BH ct12 (Controltype 16); AY_96 nguoiKy, AY_98 ngayKy (14).
+ //  * frmWinToKhai.winFpSpread_ButtonClicked -> WinDoWorkEvent.ButtonClick -> ButtonClick_<sheet>
+ //    (reflection, idxRow/idxCol); Ntnn01TT89Nckt309.ButtonClick_0 at (7,12) = M8 sets M6 := !M8 and
+ //    calls LockUnlock(!M8, M8); LockUnlock locks C..BH (getCols) of ThueNTNN unless M6 and of
+ //    ThueNCCNN/ThueCNKCT unless M8 via GeneralFunctions.LockUnLockColsInTable(deleteData=true), so the
+ //    choice is made BEFORE any row value. (9,2) opens Bang_Ke_01NTNN_TT89.xls and is never clicked.
+ //  * Control 87: WinSpreadProcess.WinInsertCombox builds a ComboBoxCellType whose Items are the
+ //    DM_NNKD_NTNN.xml names in file order (DMNnkdNtnn); frmWinToKhai.winFpSpread_CellChange writes the
+ //    key of the chosen name into the SelectedValue column BX. Items 01 (index 0) and 05 (index 4).
+ //  * Ntnn01TT89Nckt309.CellChange_0 is empty: AV/BN/BR and the row-80/88 totals are XLS formulas.
+ internal static HtkkDeclarationEntryPlan Entry(string caseId){
+  if(caseId!="01NTNN-NCCNN-entry-M10-2026")return null;
+  return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
+   // Table name | 1-based first data row | rows required | locked after the choice (1) or open (0).
+   new string[]{"ThueNTNN|60|1|1","ThueNCCNN|78|1|0","ThueCNKCT|86|1|0"},
+   new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},
+   // kind|cell|value; combo: kind|cell|list index|search key|item name|code cell|item code. The values are
+   // the web input rows of 01NTNN-NCCNN-two-parts-M10-2026 (NTNN_ROWS and the reviewed text allowlist).
+   // date-optional: typed only when the original cell is open (the observed lock is reported).
+   new string[]{
+    "text|C78|NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP","combo|L78|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX78|01","text|S78|HD-GL-003","date|W78|01/09/2026","number|Y78|200000000",
+    "date|AE78|15/10/2026","number|AJ78|200000000","number|AN78|5","number|AZ78|200000000","number|BD78|5",
+    "text|C86|CA NHAN KHONG CU TRU D - GIẢ LẬP","combo|L86|4|H|Hoạt động kinh doanh khác|BX86|05","text|S86|HD-GL-004","date|W86|02/09/2026","number|Y86|100000000",
+    "date|AE86|16/10/2026","number|AJ86|100000000","number|AN86|5","number|AZ86|100000000","number|BD86|2",
+    "date-optional|AY98|27/10/2026"},
+   // assembly (B = TAX.HTKK.Business, H = HTKK.exe) | type | method | token | IL bytes | IL-code SHA-256
+   new string[]{
+    "B|Ntnn01TT89Nckt309|AutoBindData_0|0x060018f9|352|86baaca777e636dd3d76918c3b779dbcdd557467f8704bba44d89838d52068c9", // [363197ad…]
+    "B|Ntnn01TT89Nckt309|getCols|0x060018fb|70|4e1e803244481d03026f9ae6853bf8aab84e408231ad846733979dda6052969b", // [6ec04bdb…]
+    "B|Ntnn01TT89Nckt309|ButtonClick_0|0x060018fc|334|ffaa6fc9bbc450ef7f0477d89c0ddcff40d891c26e086249f32ae38f4b6dbf66", // [1ea954f3…]
+    "B|Ntnn01TT89Nckt309|LockUnlock|0x060018fd|90|8d2a68d81882fda119adc9255b8f1b761d5f76764ec5283ea8db3391fa895dec", // [aa17c417…]
+    "B|Ntnn01TT89Nckt309|CellChange_0|0x060018ff|28|9f9a3e4f1b799483a1cc7ebba4429ca156e0d68538cf893b1a60b822934df6ac", // [cd2fd820…]
+    "B|GeneralFunctions|LockUnLockColsInTable|0x06002676|451|782360e75e1659cd4fe4ae171daa6f431362c7623f5b03fa68afd206761aaab7", // [52ebc630…]
+    "H|frmWinToKhai|winFpSpread_ButtonClicked|0x060003b8|178|72d1aea7781d9d8352c8cee92819beda5ae5153d8672cb1963c32571db6289cb", // [8b1f6212…]
+    "H|WinDoWorkEvent|ButtonClick|0x06000062|783|043ef431c6449bf1bcd8d0b469b7daf171fb523ce1437d33c47637064d72eca6", // [10bc7699…]
+    "H|frmWinToKhai|winFpSpread_CellChange|0x060003b2|24666|003007c0bb5ee2b26bd57e21d1604690b9662594ea2c1cbc067415c4bfa5d85b", // [d46d5971…]
+    "H|WinSpreadProcess|DMNnkdNtnn|0x060001f1|218|c21744b0248f384108da6140fcfe6218a084845ae9731c829249c69d5b7f16d1", // [4b1e82f3…]
+    "H|WinSpreadProcess|WinInsertCombox|0x060001be|827|e7bd7c1f2b90ad619b6017a99e9e200ada457b31a91a6f9acef877937d9c5604", // [3c4f6dae…]
+    "H|WinSpreadProcess|InsertDateCell|0x060001af|203|d58a8897e64e6dcb1a2e2384cecff2acf6d7430e653d92a95dab8661a1b343d0", // [92fe05f4…]
+    "H|frmWinToKhai|ProcessCmdKey|0x0600039f|9783|32a0b79138f778aa1f4e9a4ea5f29b7faac4df0e046c001aed5f31d88ce31845", // [0ef81f1a…]
+    "H|frmWinToKhai|cmdExport_Click|0x060003a2|1941|37de581c58099f8c3243310c0b95eebd2d7dd9750fc48f3cdd842a4303312031"}); // [0dd56a23…]
  }
 }

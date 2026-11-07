@@ -25,6 +25,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "none",
@@ -54,6 +55,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "profile-inspected",
@@ -83,6 +85,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "original-profile-saved-verified",
@@ -112,6 +115,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-period-inspected",
@@ -141,6 +145,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-sheet-inspected",
@@ -170,6 +175,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-saved",
@@ -199,6 +205,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-open-inspected",
@@ -228,6 +235,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-inspected",
@@ -257,6 +265,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-row-inspected",
@@ -286,6 +295,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-input-inspected",
@@ -315,6 +325,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-numeric-inspected",
@@ -344,6 +355,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-export-inspected",
@@ -373,6 +385,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-annex12-export-nonzero-inspected",
@@ -402,6 +415,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-export-inspected",
@@ -431,6 +445,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-roundtrip-inspected",
@@ -460,6 +475,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-web-import-inspected",
@@ -489,6 +505,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "declaration-web-import-inspected",
@@ -1306,6 +1323,46 @@
       "id": "declaration-web-import-inspected",
       "enumName": "DeclarationWebImportInspected",
       "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-ready-waiting",
+      "enumName": "DeclarationEntryReadyWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-pins-checking",
+      "enumName": "DeclarationEntryPinsChecking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-choice-invoking",
+      "enumName": "DeclarationEntryChoiceInvoking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-rows-inserting",
+      "enumName": "DeclarationEntryRowsInserting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-editing",
+      "enumName": "DeclarationEntryEditing",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-sheet-checking",
+      "enumName": "DeclarationEntrySheetChecking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-entry-not-matched",
+      "enumName": "DeclarationEntryNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-original-entry-exported",
+      "enumName": "DeclarationOriginalEntryExported",
+      "category": "declaration"
     }
   ],
   "dynamicStageMappings": {
@@ -1559,6 +1616,31 @@
     "declarationInvalidCell2",
     "declarationInvalidCell3",
     "declarationInvalidCell4",
+    "declarationEntryMethodPinsMatched",
+    "declarationEntryCatalogueMatched",
+    "declarationEntryChoiceMatched",
+    "declarationEntryLocksMatched",
+    "declarationEntryRowsMatched",
+    "declarationEntryValuesMatched",
+    "declarationEntrySignerMatched",
+    "declarationEntrySigningDateLocked",
+    "declarationEntrySheetMatched",
+    "declarationEntryPlannedCount",
+    "declarationEntryActionCount",
+    "declarationEntryFailureCode",
+    "declarationEntryMethodPinMask",
+    "declarationEntryLockBeforeMask",
+    "declarationEntryLockAfterMask",
+    "declarationEntryLockFinalMask",
+    "declarationEntryRowsBefore",
+    "declarationEntryRowsAfter",
+    "declarationEntryRowInsertCount",
+    "declarationEntryMismatchMask",
+    "declarationEntryLockedMask",
+    "declarationEntryCellTypeMismatchMask",
+    "declarationEntryCombo1Mask",
+    "declarationEntryCombo2Mask",
+    "declarationEntryDateTextMask",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -2785,7 +2867,8 @@
         "02QTT-dependants-Y2025",
         "01NTNN-two-contractors-M10-2026",
         "01NTNN-NCCNN-two-parts-M10-2026",
-        "03NTNN-no-rate-M10-2026"
+        "03NTNN-no-rate-M10-2026",
+        "01NTNN-NCCNN-entry-M10-2026"
       ]
     },
     "webCaseEditCount": {
@@ -3036,6 +3119,213 @@
       "default": 0,
       "minimum": 0,
       "maximum": 16999999,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryMethodPinsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryCatalogueMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryChoiceMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryLocksMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryRowsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryValuesMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntrySignerMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntrySigningDateLocked": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntrySheetMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryPlannedCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 30,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 30,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryFailureCode": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 31,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryMethodPinMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1073741823,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryLockBeforeMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryLockAfterMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryLockFinalMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryRowsBefore": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryRowsAfter": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryRowInsertCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1073741823,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryLockedMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1073741823,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryCellTypeMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1073741823,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryCombo1Mask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2047,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryCombo2Mask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2047,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationEntryDateTextMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1073741823,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

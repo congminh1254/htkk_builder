@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'Y8', 'J1'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'Y8', 'J1', 'Y8'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -233,7 +233,9 @@ class InputPrivacy(unittest.TestCase):
     def test_cases_cannot_be_relabelled_or_routed_through_the_d1_validator(self):
         for case in CASES:
             body = dfx.declaration_fixture(case)
-            for other in (c for c in CASES if c != case):
+            # A case of another native-case mode may reuse a reviewed input byte for byte (SAME_INPUT); only
+            # its manifest (caseId, format, producer case) differs, which test_same_input_cases_differ_by_manifest pins.
+            for other in (c for c in CASES if c != case and d.SAME_INPUT.get(c) != case and d.SAME_INPUT.get(case) != c):
                 with self.subTest(case=case, other=other), self.assertRaises(reader.InputError):
                     reader.validate_web_xml(body, case_id=other)
             with self.assertRaises(reader.InputError):
@@ -252,7 +254,7 @@ class InputPrivacy(unittest.TestCase):
 class NativeOutput(unittest.TestCase):
     def provenance(self, web, native, case, matched=True, mask=0):
         return {'format': 'htkk-declaration-native-output-staging-v1', 'builderRepository': out.BUILDER, 'builderCommit': BUILDER_SHA, 'runId': '123', 'runAttempt': 1, 'sourceRepository': out.REPO, 'sourceCommit': SOURCE, 'sourceVersion': '5.8.1',
-                'runtimeHost': 'clr2-x86-reference', 'caseId': case, 'artifactCommit': ARTIFACT, 'inputsSynthetic': True, 'originalProcessStopped': True, 'originalSourcesUnmodified': True, 'originalImportSucceeded': True, 'originalExportSucceeded': True,
+                'runtimeHost': 'clr2-x86-reference', 'caseId': case, 'artifactCommit': ARTIFACT, 'inputsSynthetic': True, 'originalProcessStopped': True, 'originalSourcesUnmodified': True, 'inputMode': registry.input_mode(case), 'originalImportSucceeded': registry.input_mode(case) == registry.IMPORT_MODE, 'originalExportSucceeded': True,
                 'originalExporterValidatedSchema': True, 'webImportInputSha256': hashlib.sha256(web).hexdigest(), 'originalOutputSha256': hashlib.sha256(native).hexdigest(), 'originalOutputBytes': len(native),
                 'harnessSchemaValid': True, 'harnessTreeMatched': matched, 'harnessTreeMismatchMask': mask, 'harnessTreeLeafCount': d.tax_leaf_count(case), 'harnessXmlMismatchMask': 0, 'harnessCellMismatchMask': 0,
                 'creationDateRule': 'native-export-current-date', 'fullRoundTrip': False}

@@ -1,6 +1,6 @@
 # Ca native thiết kế cho họ descriptor: TNCN (05/KK, 05/QTT, 02/QTT) và NTNN (01/NTNN TT80)
 
-> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `01NTNN-NCCNN-two-parts-M10-2026` và `03NTNN-no-rate-M10-2026` đã được đăng ký (releaseGate false) với driver
+> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `01NTNN-NCCNN-two-parts-M10-2026`, `03NTNN-no-rate-M10-2026` và `01NTNN-NCCNN-entry-M10-2026` (nhập tay) đã được đăng ký (releaseGate false) với driver
 > chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
@@ -18,6 +18,8 @@ Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`)
 | `01NTNN-two-contractors-M10-2026` | I9 | tháng 10/2026 | — (2 nhà thầu trong bảng chính) | như trên, có số (GTGT/TNDN theo tỷ lệ) |
 | `01NTNN-NCCNN-zero-M10-2026` | Y8 (01/NTNN, NCCNN TT89, XML 3.0.9) | tháng 10/2026 | — (phần I, 1 nhà thầu có tên, số 0) | web XML → Nhập từ XML → Kết xuất |
 | `01NTNN-NCCNN-two-parts-M10-2026` | Y8 | tháng 10/2026 | — (phần II: NCCNN + cá nhân không cư trú) | như trên, có số (GTGT, TNDN, TNCN) |
+| `01NTNN-NCCNN-entry-zero-M10-2026` | Y8, adapter `-entry` | tháng 10/2026 | — (chỉ tích M8) | chỉ thiết kế: `original-entry-export` |
+| `01NTNN-NCCNN-entry-M10-2026` | Y8, adapter `-entry` | tháng 10/2026 | — (như two-parts) | `original-entry-export`: gõ vào lưới gốc → Kết xuất (DECLARATION-NATIVE-CASES.md) |
 | `03NTNN-zero-M10-2026` | J1 (03/NTNN, XML 3.0.8) | tháng 10/2026 | — (1 dòng có (1a)/(1b), số 0; checkTKChinh E_13/E_30) | web XML → Nhập từ XML → Kết xuất |
 | `03NTNN-no-rate-M10-2026` | J1 | tháng 10/2026 | — (2 dòng, tỷ lệ [9] = 0: FinishImportXML xóa tỷ lệ khi nhập) | như trên, có số tiền (6)/(8) |
 

@@ -1,4 +1,6 @@
 // Generic declaration-family driver (mode declaration-web-import-inspect), C# 2.0 / CLR2.
+// Cases whose compiled plan has an entry plan (native-case mode original-entry-export) replace the
+// original import by typing into the original grid (HtkkDeclarationOriginalEntry.cs); the rest is shared.
 // After the shared original profile save: original menu chain from Menu.xml (compiled plan),
 // original period dialog (KieuKy month/quarter/year), original annex checkboxes, ORIGINAL
 // "Nhập từ XML" of the synthetic web XML, original grid observation, ORIGINAL "Kết xuất",
@@ -34,7 +36,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
   int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
-  return json.ToString();
+  return json.ToString()+DeclarationEntryJson();
  }
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
@@ -231,7 +233,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(!matched&&declarationClock.Elapsed.TotalSeconds<3){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   if(!matched){DeclarationTerminal(HtkkAutomationStage.DeclarationSheetContractNotMatched);return;}
   SetStage(HtkkAutomationStage.DeclarationWebInputChecking);Record();VerifyDeclarationWebInput();
-  declarationFlowStarted=true;exportStarted=true;roundtripOwner=forms[0];declarationPhase="import-ready";SetStage(HtkkAutomationStage.DeclarationImportReadyWaiting);Record();
+  // Native-case mode original-entry-export: no original import, the fixed entry plan is typed instead.
+  declarationEntryPlan=HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);
+  declarationFlowStarted=true;exportStarted=true;roundtripOwner=forms[0];declarationPhase=declarationEntryPlan!=null?"entry-ready":"import-ready";SetStage(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationEntryReadyWaiting:HtkkAutomationStage.DeclarationImportReadyWaiting);Record();
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ContinueDeclarationFlow();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();
  }
 
@@ -345,9 +349,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Button close=controls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();return close;
  }
  private void ContinueDeclarationFlow(){
-  if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing)return;
+  if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing||declarationEntryBusy)return;
   if(!DeclarationMode()||declarationPlan==null||!webInputVerified||Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
   Form message;string text;
+  if(declarationPhase.StartsWith("entry-",StringComparison.Ordinal)){ContinueDeclarationEntry();return;}
   if(declarationPhase=="import-ready"){
    if(!OriginalRoundtripOwnerReady())return;
    Button import=Named(roundtripOwner,"cmdImportXML") as Button;if(import==null||import.FindForm()!=roundtripOwner||import.Text.Replace("&",String.Empty).Trim()!="Nhập từ XML"||roundtripImportCommandInvoked)throw new InvalidOperationException();
@@ -396,7 +401,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
     Button close=DeclarationMessageClose(message);exportSuccessAcknowledged=true;
     ValidateDeclarationExport();
     bool matched=declarationSchemaValid&&declarationXmlMismatchMask==0&&declarationXmlCheckCount==declarationPlan.XmlChecks.Length&&declarationTreeMatched&&declarationServiceIdentityMatched&&declarationCreationDateValid;
-    DeclarationTerminal(matched?HtkkAutomationStage.DeclarationWebImportInspected:HtkkAutomationStage.DeclarationExportNotMatched);close.PerformClick();return;
+    // An entry case additionally needs every entry step; its success stage names the mode.
+    if(declarationEntryPlan!=null)matched=matched&&declarationEntryMethodPinsMatched&&declarationEntryCatalogueMatched&&declarationEntryChoiceMatched&&declarationEntryLocksMatched&&declarationEntryRowsMatched&&declarationEntryValuesMatched&&declarationEntrySheetMatched&&declarationEntryActionCount==declarationEntryPlannedCount;
+    DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched);close.PerformClick();return;
    }
    if(declarationPhase=="export-selector"){
     List<Form> selectors=new List<Form>();int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors(top,selectors,ref count);if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];

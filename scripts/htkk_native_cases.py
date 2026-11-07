@@ -10,7 +10,12 @@ D1_DRIVER='gtgt-web-import-inspect'
 DECLARATION_DRIVER='declaration-web-import-inspect'
 DECLARATION_PRODUCER='scripts/generate-htkk-declaration-reference.mjs'
 _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('10/2026',),'quarter':('4/2026',)}}
-def _declaration(menu,version,periods,annexes):return {'producer':DECLARATION_PRODUCER,'privacyValidator':'declaration-v1','annexes':annexes,'driver':DECLARATION_DRIVER,'menuId':menu,'xmlVersion':version,'periods':periods}
+# Native-case input modes of the declaration driver: the original "Nhập từ XML" of the web XML, or
+# typing a compiled fixed plan into the original grid (HtkkDeclarationCasePlans.Entry) when the
+# original import cannot keep the form's data. The web XML is the comparison reference in both.
+IMPORT_MODE='web-xml-import-reexport'
+ENTRY_MODE='original-entry-export'
+def _declaration(menu,version,periods,annexes,mode=IMPORT_MODE):return {'producer':DECLARATION_PRODUCER,'privacyValidator':'declaration-v1','annexes':annexes,'driver':DECLARATION_DRIVER,'menuId':menu,'xmlVersion':version,'periods':periods,'mode':mode}
 TRUSTED_ADAPTERS={
  '01-gtgt-2.8.3':{'producer':'scripts/generate-htkk-web-reference.mjs','privacyValidator':'gtgt-v1','annexes':[],**_d1},
  '01-gtgt-2.8.3-annex12':{'producer':'scripts/generate-htkk-web-annex12-reference.mjs','privacyValidator':'gtgt-annex12-v1','annexes':['01-2/GTGT'],**_d1},
@@ -31,6 +36,10 @@ TRUSTED_ADAPTERS={
  '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('10/2026',)},[]),
  # Y8 01/NTNN, NCCNN TT89 (non-gating): KieuKy 18 like I9; Menu.xml validity from 01/10/2026.
  '01-ntnn-nccnn-tt89-3.0.9':_declaration('Y8','3.0.9',{'month':('10/2026',)},[]),
+ # Y8 original entry (non-gating): HTKK 5.8.1 resets the Y8 tables on "Nhập từ XML" (AutoBindData_0 ->
+ # LockUnlock -> LockUnLockColsInTable deleteData=true, release 238), so the same synthetic rows are
+ # typed into the original grid and exported with the original export instead.
+ '01-ntnn-nccnn-tt89-3.0.9-entry':_declaration('Y8','3.0.9',{'month':('10/2026',)},[],ENTRY_MODE),
  # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 like I9; FinishImportXML clears rate [9], so the case uses rate 0.
  '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',)},[]),
 }
@@ -62,6 +71,9 @@ ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8
 # Declaration-family cases use their own input/output file names, privacy allowlist and driver.
 DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==DECLARATION_DRIVER)
 check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))
+# Declaration cases typed into the original grid; never a release gate.
+DECLARATION_ENTRY_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==ENTRY_MODE)
+def input_mode(case):check(case in DECLARATION_CASES);return TRUSTED_ADAPTERS[CASES[case]['adapterId']]['mode']
 DRIVERS=tuple(sorted({a['driver'] for a in ADAPTERS.values()}))
 def driver(case):check(case in CASES);return ADAPTERS[CASES[case]['adapterId']]['driver']
 def is_declaration(case):return case in DECLARATION_CASES

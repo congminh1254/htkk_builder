@@ -19,6 +19,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `01NTNN-two-contractors-M10-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 10/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
 | `01NTNN-NCCNN-two-parts-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9) | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa) | 103 |
 | `03NTNN-no-rate-M10-2026` | `101 → 101_8 → J1` (03/NTNN 3.0.8) | 18 | tháng 10/2026 | — (bảng `BKThueNTNN/ThueNTNN`, 2 dòng, tỷ lệ [9] = 0) | 65 |
+| `01NTNN-NCCNN-entry-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9), **nhập tay** | 18 | tháng 10/2026 | — (như two-parts, gõ vào lưới gốc) | 103 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -45,7 +46,57 @@ Release 238 (web cdf10bbb, builder 66e98b8): I9 `01NTNN-two-contractors-M10-2026
 `AutoBindData` → `Ntnn01TT89Nckt309.AutoBindData_0` → `LockUnlock`, và `LockUnlock` truyền `deleteData = true` cho
 `GeneralFunctions.LockUnLockColsInTable` (0x6002676) ở cả ba bảng: mọi dòng, cột C…BH, bị đặt lại `DefaultValue`, bảng khóa
 hay mở. Đường nhập XML vì vậy không giữ được bảng kê Y8; ô kiểm và so cây giữ nguyên (không nới). Muốn có bằng chứng
-native cho Y8 cần chế độ nhập tay trên lưới gốc sau khi tích M6/M8 (`original-entry-export`), chưa có driver.
+native cho Y8 cần chế độ nhập tay trên lưới gốc sau khi tích M6/M8 (`original-entry-export`): xem mục dưới.
+
+### Chế độ ca native `original-entry-export` (Y8, `01NTNN-NCCNN-entry-M10-2026`, non-gating)
+
+Cùng driver/GUI mode `declaration-web-import-inspect`, cùng menu/kỳ/pin/kiểm XML/so cây, cùng input web (byte-identical với
+`01NTNN-NCCNN-two-parts-M10-2026`, `SAME_INPUT`; chỉ manifest/caseId/format/nhánh khác) nhưng **không** bấm "Nhập từ XML":
+adapter `01-ntnn-nccnn-tt89-3.0.9-entry` (mode `original-entry-export` trong `TRUSTED_ADAPTERS` và
+`htkk-descriptor-native-cases.json`) làm `HtkkDeclarationCasePlans.Entry(caseId)` khác null, và
+`HtkkDeclarationOriginalEntry.cs` gõ kế hoạch cố định vào lưới gốc. Web XML vẫn là bản tham chiếu của so toàn cây.
+
+1. `entry-ready`: pin 14 thân phương thức HTKK đã nạp (token metadata qua `Module.ResolveMethod`, số byte và SHA-256 của
+   `GetILAsByteArray()`; hash raw-body tương ứng ghi trong comment để đối chiếu `htkk_web/data/htkk-descriptor-declarations.json`)
+   và `InterfaceIni/DM_NNKD_NTNN.xml` (SHA-256). Lệch → `declaration-entry-not-matched`, mã 1/2, `declarationEntryMethodPinMask`.
+2. `entry-choice`, **trước mọi giá trị**: ô M8 phải là `CheckBoxCellType` mở, chưa tích; `SetActiveCell(7,12)` + phím SPACE →
+   `FpSpread.ButtonClicked` → `frmWinToKhai.winFpSpread_ButtonClicked` → `WinDoWorkEvent.ButtonClick` → `ButtonClick_0` (M6 := !M8,
+   `LockUnlock`). Kiểm M8 = true, M6 = false và mask khóa theo bảng (bit t = mọi ô `getCols` của bảng t khóa, bit 4+t = lẫn):
+   kỳ vọng 1 (chỉ `ThueNTNN` khóa). Ô (9,2) mở `Bang_Ke_01NTNN_TT89.xls` không bao giờ được chạm.
+3. `entry-rows`: mỗi bảng đã có sẵn một dòng (`RowsValues`), kế hoạch cần đúng một dòng/bảng nên **không cần F5**; đường F5
+   thật (`ProcessCmdKey`, `pnF5` hiện, tối đa 4 lần, mỗi lượt UI một lần) vẫn có cho kế hoạch cần thêm dòng. Kiểm dòng đầu
+   60/78/86 sau bước này.
+4. `entry-values`: 21 giá trị, mỗi lượt timer một giá trị, theo thứ tự kế hoạch (C, L, S, W, Y, AE, AJ, AN, AZ, BD của dòng 78
+   rồi 86, rồi ngày ký AY98 nếu ô mở): `BeginCellEdit(..., showActiveCell)` → `^a` → giá trị → `{TAB}` qua `SendKeys` như
+   `01GTGT-sale10-manual`; số và ngày (mask `00/00/0000`, gõ `ddMMyyyy`) như D1; văn bản ASCII qua `SendKeys`, văn bản có dấu
+   ("GIẢ LẬP") qua `SendInput` `KEYEVENTF_UNICODE` (bàn phím thật tới editor đang focus, không `WM_SETTEXT`). Mỗi bước kiểm
+   foreground/focus/ô active/không có `frmMessage`, đọc lại ô (văn bản, Decimal, ngày). Không bao giờ gán `Value`/`Text`.
+5. Ngành nghề (control 87, `WinInsertCombox` từ `DMNnkdNtnn`, Items theo thứ tự tệp): đọc (chỉ đọc) danh sách của `FpCombo`,
+   yêu cầu mục ở chỉ số kế hoạch (01 → 0, 05 → 4) đúng tên và không mục nào trước đó cùng chữ đầu; gõ chữ đầu ("D"/"H") để
+   AutoSearch gốc chọn; nếu chọn không đổi thì dự phòng bàn phím ENTER (FpCombo.OnKeyDown mở danh sách) + DOWN từng mục,
+   dừng ngay khi một phím không tiến/rời ô; `{TAB}` xác nhận; rồi đọc tên L và mã BX (do `winFpSpread_CellChange` ghi).
+   Không gán `SelectedIndex`. Nếu cả hai đường bàn phím không chọn được, ca thất bại (mã 15, mask combo), không giả lập.
+6. `entry-inspect`: đọc ô HTKK tính (AV/BN/BR 78 và 86, Y/AV/BN/BR 80 và 88, BR62 = 0) so oracle Decimal `NTNN_ROWS`,
+   mask khóa cuối = 1, người ký AY96 = hồ sơ; rồi `Kết xuất` gốc chung → XSD pin → so cây → stage thành công
+   `declaration-original-entry-exported` (ca import giữ `declaration-web-import-inspected`). Bản xuất gốc được lưu private như
+   các ca khác (`inputMode` = `original-entry-export`, `originalImportSucceeded` = false trong provenance) để thành fixture.
+
+Trường chẩn đoán (không giá trị ô): cờ `declarationEntryMethodPinsMatched`, `…CatalogueMatched`, `…ChoiceMatched`,
+`…LocksMatched`, `…RowsMatched`, `…ValuesMatched`, `…SignerMatched`, `…SigningDateLocked`, `…SheetMatched`; số
+`declarationEntryPlannedCount`/`ActionCount` (bước hỏng = ActionCount), `FailureCode` (1 pin phương thức, 2 pin danh mục, 3 ô
+chọn, 4 chọn không ăn, 5 mẫu khóa, 6 metadata bảng, 7 dòng/F5, 8 ô khóa, 9 kiểu ô, 10 foreground/focus, 11 editor, 12 chữ
+không tới editor, 13 đọc lại, 14 danh sách combo, 15 chọn combo, 16 mã combo, 17 thông báo gốc, 18 mất ô/editor khi chọn combo,
+20 ô tính/khóa cuối), `MethodPinMask`, `LockBefore/After/FinalMask`, `RowsBefore/After` (4 bit/bảng), `RowInsertCount`,
+`MismatchMask`/`LockedMask`/`CellTypeMismatchMask`/`DateTextMask` (bit = chỉ số bước), `Combo1Mask`/`Combo2Mask` (1 FpCombo, 2
+tên ở chỉ số, 4 chữ đầu duy nhất, 8 rỗng ban đầu, 16 AutoSearch đổi, 32 đúng sau AutoSearch, 64 dùng ENTER, 128 danh sách mở,
+256 đúng sau DOWN, 512 tên đã ghi, 1024 mã CellChange). Cùng `declarationCellMismatchMask`, mask cây và chẩn đoán 0016 sẵn có.
+
+Câu hỏi lần chạy Windows đầu sẽ trả lời: ButtonClicked đọc M8 sau khi đổi (mask khóa sau); AutoSearch mặc định của
+`ComboBoxCellType` (bit 16/32) hay phải dùng ENTER/DOWN; `SendInput` Unicode vào editor chung của FarPoint (mã 12); ô ngày của
+dòng bảng là mask (`DateTextMask`); AY98 (công thức `TRIM(Header!V42)`) mở cho gõ hay khóa (`SigningDateLocked`, khi đó ngày ký
+xuất ra có thể lệch → mask cây 2); HTKK kết xuất dòng mẫu của bảng khóa và `ct2` rỗng thế nào (mask cây 8). Ca import
+`01NTNN-NCCNN-two-parts-M10-2026` giữ nguyên, non-gating; **khi ca nhập tay khớp, nó thay thế ca import cho Y8** (quyết định
+bỏ ca import để sau).
 
 J1 (03/NTNN 3.0.8, non-gating) dùng `03NTNN-no-rate-M10-2026`: `Ntnn03TT80Nckt308.FinishImportXML` (0x6001937) ghi
 `BU := GeneralFunctions.getThuSuatByMa(CR, "DC_97")` cho mọi dòng nhập; cột ẩn CR (`pathTLTNDN`) không có trong mẫu

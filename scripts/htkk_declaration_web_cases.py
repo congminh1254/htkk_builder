@@ -154,6 +154,12 @@ CASES = {
                                              ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
                                               TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-003', 'HD-GL-004',
                                               'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Hoạt động kinh doanh khác']),
+    # Y8 original entry (non-gating, mode original-entry-export): the SAME synthetic web input as the two-parts
+    # case (own producer case, own branches); the driver types the rows into HTKK instead of importing them.
+    '01NTNN-NCCNN-entry-M10-2026': _case('ntnn01-nccnn-entry-m10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
+                                         ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
+                                          TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-003', 'HD-GL-004',
+                                          'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Hoạt động kinh doanh khác']),
     # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 month 10/2026, two synthetic rows with rate [9] = 0 so that
     # Ntnn03TT80Nckt308.FinishImportXML (BU := getThuSuatByMa(CR, "DC_97") = "") changes nothing.
     '03NTNN-no-rate-M10-2026': _case('ntnn03-no-rate-m10-2026', 'J1', '840', '3.0.8', 'Validate/03_NTNN_TT80_308.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 65, [], WORKBOOK_SERVICE,
@@ -165,6 +171,9 @@ CASES = {
                                                      '10129 - Thuế cơ sở 16 Thành phố Hà Nội', '1140759 - Phường Sơn Tây - Thuế cơ sở 16 Thành phố Hà Nội',
                                                      'Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)', 'Thuế thu nhập từ hoạt động sản xuất, kinh doanh của cá nhân']),
 }
+# Cases that reuse another case's reviewed synthetic input byte for byte (a different native-case mode
+# of the same declaration). Only the manifest (caseId, format, producer case) tells them apart.
+SAME_INPUT = {'01NTNN-NCCNN-entry-M10-2026': '01NTNN-NCCNN-two-parts-M10-2026'}
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
 # Leaves the ORIGINAL export fills with the export day (HtkkDeclarationCasePlans.ExportDatePaths):
@@ -323,6 +332,14 @@ NTNN_ROWS = {
         (_MAIN + '/ThueNCCNN_CNKCT/BKThueCNKCT/ThueCNKCT', _MAIN + '/ThueNCCNN_CNKCT', 'mucII_tong_', (
             {'ct1b_ma': '05', 'ct5': '100000000', 'ct7': '100000000', 'ct8': '5.00', 'ct10': '100000000', 'ct11': '2.00', 'ct12': '0'},)),
     ),
+    # Y8 original entry: the same reviewed rows (the driver's fixed entry plan is checked against them).
+    '01NTNN-NCCNN-entry-M10-2026': (
+        (_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'mucI_tong_', (_EMPTY_ROW,)),
+        (_MAIN + '/ThueNCCNN_CNKCT/BKThueNCCNN/ThueNCCNN', _MAIN + '/ThueNCCNN_CNKCT', 'mucI_tong_', (
+            {'ct1b_ma': '01', 'ct5': '200000000', 'ct7': '200000000', 'ct8': '5.00', 'ct10': '200000000', 'ct11': '5.00', 'ct12': '0'},)),
+        (_MAIN + '/ThueNCCNN_CNKCT/BKThueCNKCT/ThueCNKCT', _MAIN + '/ThueNCCNN_CNKCT', 'mucII_tong_', (
+            {'ct1b_ma': '05', 'ct5': '100000000', 'ct7': '100000000', 'ct8': '5.00', 'ct10': '100000000', 'ct11': '2.00', 'ct12': '0'},)),
+    ),
     # J1 03/NTNN (formula '03'): ct11 = IF(ct8*ct9/100 - ct10 < 0, 0, ROUND(ct8*ct9/100 - ct10, 0)); totals
     # tongct6/8/10/11. Rate ct9 = 0 (FinishImportXML clears every imported rate), so ct11 = 0.
     '03NTNN-no-rate-M10-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong', (
@@ -330,6 +347,10 @@ NTNN_ROWS = {
         {'ct1b_ma': '02', 'ct6': '300000000', 'ct8': '300000000', 'ct9': '0.00', 'ct10': '0'},
     ), '03'),),
 }
+
+for _id, _other in SAME_INPUT.items():
+    if {k: v for k, v in CASES[_id].items() if k != 'producerCase'} != {k: v for k, v in CASES[_other].items() if k != 'producerCase'} or NTNN_ROWS[_id] != NTNN_ROWS[_other]:
+        raise ValueError('DECLARATION_CASE_POLICY')
 
 
 def _round(value):
