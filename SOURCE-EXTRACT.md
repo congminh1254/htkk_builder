@@ -9,7 +9,7 @@ Nothing from the payload is uploaded as an Actions artifact, cached or printed.
 
 | Input | Values | Meaning |
 |---|---|---|
-| `scope` | `priority` (default), `full` | `priority`: every pinned resource of the priority forms in `scripts/htkk-source-extract-policy.json`, `InterfaceIni` except `GIA_TINH`, the whole `Project/` directory and every `.dll/.exe/.config` under the install root. `full`: all 4526 MSI files. |
+| `scope` | `priority` (default), `full` | `priority`: every pinned resource of the priority forms in `scripts/htkk-source-extract-policy.json`, the policy's `sharedDirectories` (`InterfaceIni` except `GIA_TINH`; `InterfaceTemplates/excel`, `InterfaceTemplates/xml` and `InterfaceTemplates/Validate` of every form, the source of the web's read-only XML viewer layouts), the whole `Project/` directory and every `.dll/.exe/.config` under the install root. `full`: all 4526 MSI files. |
 | `transport` | `auto` (default), `direct`, `relay` | Same pinned Fshare archive as `source-candidate-check.py`. `auto` uses the relay only after a retryable direct failure and only when `AGENT_AUTH_TOKEN` exists. |
 | `publish` | `true` (default), `false` | `false` runs every verification and builds the commit, but never pushes. |
 
