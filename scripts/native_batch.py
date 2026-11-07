@@ -82,12 +82,12 @@ def main():
   if result is False:declined.add(key)
   return result
  while True:
-  check(collector.api(SOURCE,'commits/main')['sha']==publication['sourceCommit'])
+  check(collector.api(SOURCE,'git/ref/heads/main')['object']['sha']==publication['sourceCommit'])
   statuses=collector.api(SOURCE,'commits/'+publication['sourceCommit']+'/status?per_page=100')['statuses'];batch=discover(publication,os.environ['GITHUB_SHA'],statuses,retry=retry)
   if batch is not None:break
   if time.monotonic()>=deadline:raise ValueError('NATIVE_TIMEOUT')
   print('Waiting for the exact immutable native input cohort.',flush=True);time.sleep(15)
- check(collector.api(SOURCE,'commits/main')['sha']==publication['sourceCommit'])
+ check(collector.api(SOURCE,'git/ref/heads/main')['object']['sha']==publication['sourceCommit'])
  with (temp/'htkk-native-batch-verification.json').open('x')as stream:stream.write(json.dumps(batch,separators=(',',':'))+'\n')
  print('Whole native cohort authenticated; qualification remains disabled.')
 if __name__=='__main__':

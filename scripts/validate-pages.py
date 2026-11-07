@@ -51,14 +51,14 @@ def main():
  run_id=metadata.get('builderRunId','')
  if not isinstance(run_id,str) or not re.fullmatch('[1-9][0-9]*',run_id):raise ValueError('RUN_ID')
  run=api(BUILDER,'actions/runs/'+run_id)
- source=validate(metadata,public,api(SOURCE,'commits/main')['sha'],api(SOURCE,'commits/pages-output')['sha'],expected,run)
+ source=validate(metadata,public,api(SOURCE,'git/ref/heads/main')['object']['sha'],api(SOURCE,'git/ref/heads/pages-output')['object']['sha'],expected,run)
  event_run=os.environ.get('EXPECTED_BUILD_RUN','')
  if event_run and event_run!=run_id:raise ValueError('EVENT_ARTIFACT_MISMATCH')
  static_tree(root/'site')
  batch_spec=importlib.util.spec_from_file_location('pages_pinned_native_batch',pathlib.Path(__file__).with_name('native_batch.py'));batch_module=importlib.util.module_from_spec(batch_spec);batch_spec.loader.exec_module(batch_module)
  batch_module.verify_pinned(metadata.get('nativeBatch'),source,run['head_sha'])
  # Recheck immediately before artifact upload.
- if api(SOURCE,'commits/main')['sha']!=source or api(SOURCE,'commits/pages-output')['sha']!=expected:raise ValueError('SUPERSEDED')
+ if api(SOURCE,'git/ref/heads/main')['object']['sha']!=source or api(SOURCE,'git/ref/heads/pages-output')['object']['sha']!=expected:raise ValueError('SUPERSEDED')
  print('Verified current-main static artifact and all 13 native regression workflows.')
 if __name__=='__main__':
  try:main()

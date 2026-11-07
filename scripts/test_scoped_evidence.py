@@ -36,11 +36,11 @@ class CollectorTests(unittest.TestCase):
    changed=copy.deepcopy(report);changed['supplierProcessBoundary'][key]=False
    with self.subTest(key=key),self.assertRaises(ValueError):c.validate_report(changed,SOURCE,c.cases.CASES[0])
  def test_manual_request_keeps_assessment_code_main_separate_from_historical_producer(self):
-  values=prepare.prepare({}, {'source':SOURCE,'builder':BUILDER},get=lambda *args:{'sha':'c'*40})
+  values=prepare.prepare({}, {'source':SOURCE,'builder':BUILDER},get=lambda *args:{'object':{'sha':'c'*40}})
   self.assertEqual(values,{'CODE_SOURCE_SHA':'c'*40,'EVIDENCE_SOURCE_SHA':SOURCE,'NATIVE_BUILDER_SHA':BUILDER})
  def test_auto_request_rejects_failed_or_foreign_pages_workflow(self):
   for run in ({'conclusion':'failure'},{'repository':{'full_name':'fork/repo'}}):
-   def get(repo,path):return {'sha':SOURCE} if path=='commits/main' else run
+   def get(repo,path):return {'object':{'sha':SOURCE}} if path=='git/ref/heads/main' else run
    with self.assertRaises(ValueError):prepare.prepare({'workflow_run':{'id':12}}, {},get)
 class PublicationTests(unittest.TestCase):
  def test_private_repo_required_before_any_blob_write(self):

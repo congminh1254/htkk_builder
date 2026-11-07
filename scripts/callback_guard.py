@@ -12,7 +12,7 @@ def read(repo,path,token):
   return json.loads(body)
 def allowed(source,context,run_id,attempt,source_token,actions_token,get=read,input_commit=None):
  if not re.fullmatch('[a-f0-9]{40}',source)or not re.fullmatch('[1-9][0-9]*',str(run_id))or not re.fullmatch('[1-9][0-9]*',str(attempt)):raise ValueError('CALLBACK_ID')
- if get(SOURCE,'commits/main',source_token).get('sha')!=source:return False
+ if get(SOURCE,'git/ref/heads/main',source_token).get('object',{}).get('sha')!=source:return False
  run=get(BUILDER,'actions/runs/'+str(run_id),actions_token)
  if run.get('run_attempt')!=int(attempt):return False
  for page in range(1,11):

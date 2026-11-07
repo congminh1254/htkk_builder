@@ -87,7 +87,7 @@ class ProducerAndCallbackTests(unittest.TestCase):
    self.assertEqual(sum(cmd[1]=='scripts/generate-htkk-web-annex12-reference.mjs' for cmd,_ in calls),2)
  def test_superseded_source_attempt_newer_run_or_queued_input_are_ignored(self):
   def get(repo,path,token):
-   if path=='commits/main':return {'sha':SOURCE}
+   if path=='git/ref/heads/main':return {'object':{'sha':SOURCE}}
    if path=='actions/runs/100':return {'run_attempt':2}
    return [{'context':'htkk-native/zero','state':'success','target_url':'https://github.com/'+batch.BUILDER+'/actions/runs/101'}]
   self.assertFalse(guard.allowed('0'*40,'htkk-native/zero','100','2','fake','fake',get))
@@ -117,7 +117,7 @@ class InputContextTests(unittest.TestCase):
   self.assertEqual(calls,[])
  def test_queued_new_input_prevents_old_callback_from_overwriting_status_hint(self):
   def get(repo,path,token):
-   if path=='commits/main':return {'sha':SOURCE}
+   if path=='git/ref/heads/main':return {'object':{'sha':SOURCE}}
    if path=='actions/runs/100':return {'run_attempt':1}
    return [{'context':'htkk-native/zero','state':'pending','description':'queued input:'+'c'*40}]
   self.assertFalse(guard.allowed(SOURCE,'htkk-native/zero','100','1','fake','fake',get,input_commit='d'*40))

@@ -3,7 +3,7 @@ import importlib.util,json,os,pathlib
 _spec=importlib.util.spec_from_file_location('collect_scoped',pathlib.Path(__file__).with_name('collect-scoped-evidence.py'))
 c=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(c)
 def prepare(event,inputs,get=c.api):
- code=c.sha(get(c.SOURCE,'commits/main')['sha'])
+ code=c.sha(get(c.SOURCE,'git/ref/heads/main')['object']['sha'])
  if event.get('workflow_run'):
   run=event['workflow_run'];actual=get(c.BUILDER,'actions/runs/'+str(run['id']))
   c.check(actual.get('repository',{}).get('full_name')==c.BUILDER and actual.get('head_branch')=='main' and actual.get('path')=='.github/workflows/pages.yml' and actual.get('status')=='completed' and actual.get('conclusion')=='success')
