@@ -1,6 +1,6 @@
 # Ca native thiết kế cho họ descriptor: TNCN (05/KK, 05/QTT, 02/QTT) và NTNN (01/NTNN TT80)
 
-> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025` và `01NTNN-two-contractors-M10-2026` đã được đăng ký (releaseGate false) với driver
+> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026` và `01NTNN-NCCNN-two-parts-M10-2026` đã được đăng ký (releaseGate false) với driver
 > chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
@@ -16,6 +16,8 @@ Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`)
 | `02QTT-dependants-Y2025` | B8 | 2025 | 02-1 (2 dòng) | như trên |
 | `01NTNN-zero-M10-2026` | I9 (01/NTNN TT80, XML 2.5.1) | tháng 10/2026 | — (1 nhà thầu có tên, số 0; checkTKChinh E_13/E_37) | web XML → Nhập từ XML → Kết xuất |
 | `01NTNN-two-contractors-M10-2026` | I9 | tháng 10/2026 | — (2 nhà thầu trong bảng chính) | như trên, có số (GTGT/TNDN theo tỷ lệ) |
+| `01NTNN-NCCNN-zero-M10-2026` | Y8 (01/NTNN, NCCNN TT89, XML 3.0.9) | tháng 10/2026 | — (phần I, 1 nhà thầu có tên, số 0) | web XML → Nhập từ XML → Kết xuất |
+| `01NTNN-NCCNN-two-parts-M10-2026` | Y8 | tháng 10/2026 | — (phần II: NCCNN + cá nhân không cư trú) | như trên, có số (GTGT, TNDN, TNCN) |
 
 - `scripts/htkk-descriptor-native-cases.json` + `scripts/htkk_descriptor_native_cases.py`:
   registry riêng, `status=design-only`, `dispatchable=false`, `releaseGate=false`. Validator

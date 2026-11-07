@@ -26,7 +26,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","01NTNN-NCCNN-two-parts-M10-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -123,6 +123,17 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/01_NTNN_TT80_251.xsd","aa17404343424b1d3bf429d7279d7ea1c4a858f8509c087be9c4dc9db6b192da",TKhaiThue,TKhaiThueSha256,WorkbookService,74,
     new string[]{"01|AV55|50000000","01|BN55|50000000","01|BR55|100000000","01|AV56|15000000","01|BN56|8000000","01|BR56|23000000","01|AV58|65000000","01|BN58|58000000","01|BR58|123000000"},
     new string[]{Main+"tong_ct5|1500000000",Main+"tong_ct7|1500000000",Main+"tong_ct9|65000000",Main+"tong_ct10|1500000000",Main+"tong_ct12|2000000",Main+"tong_ct13|58000000",Main+"tong_ct14|123000000"});
+   // Y8 01/NTNN, NCCNN TT89 (non-gating): KieuKy 18 like I9 (month 10/2026; Menu.xml validity from
+   // 01/10/2026). Part II chosen (nopThayNCCNN M8; Ntnn01TT89Nckt309.ButtonClick_0 keeps M6 false), so
+   // ThueNTNN (row 60) stays locked with its template row; ThueNCCNN row 78 (total 80) and ThueCNKCT row
+   // 86 (total 88, TNCN). Sheet checks are the XLS row formulas; XML checks = the design oracle leaves
+   // (mapping 01_NTNN_NCCNN_TT89_309.xml: M_6/M_8, Y_88..BR_88 mucII_tong_*).
+   case "01NTNN-NCCNN-two-parts-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",
+    "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
+    new string[]{"01|AV78|10000000","01|BN78|10000000","01|BR78|20000000","01|BR80|20000000","01|AV86|5000000","01|BN86|2000000","01|BR86|7000000","01|BR88|7000000","01|BR62|0"},
+    new string[]{Main+"nopThayNTNN|0",Main+"nopThayNCCNN|1",Main+"ThueNCCNN_CNKCT/mucII_tong_ct5|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct7|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct9|5000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct10|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct12|0",Main+"ThueNCCNN_CNKCT/mucII_tong_ct13|2000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct14|7000000"});
    default:return null;
   }
  }

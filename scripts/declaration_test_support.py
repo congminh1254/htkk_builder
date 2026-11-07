@@ -61,14 +61,22 @@ def _tree(case_id, native=False, created=None):
             _path(root, path).text = value
     elif family == 'descriptor':
         values, rows = d._descriptor_expected[case_id]
+        # 01/NTNN table totals are written under their own parent below (mục II under ThueNCCNN_CNKCT).
+        owned = {leaf for _, _, _, totals in (d.ntnn_tables(case_id) if case_id in d.NTNN_ROWS else ()) for leaf in totals}
         for name, value in values.items():
-            _add(main, name, value)
-        if case_id in d.NTNN_ROWS:  # 01/NTNN contractor rows of the reviewed design (ID attribute as in the template)
-            table = _add(main, 'BKThueNTNN')
-            for index, row in enumerate(d.ntnn_expected(case_id)[0]):
-                node = _add(table, 'ThueNTNN', attrib={'ID': 'ID_%d' % (index + 1)})
-                for name, value in row.items():
-                    _add(node, name, value)
+            if name not in owned:
+                _add(main, name, value)
+        if case_id in d.NTNN_ROWS:  # 01/NTNN tables of the reviewed design (row id attribute as in the template)
+            for row_path, parent_path, rows, totals in d.ntnn_tables(case_id):
+                parent = _path(root, 'HSoThueDTu/' + parent_path)
+                table = _path(root, 'HSoThueDTu/' + row_path.rsplit('/', 1)[0])
+                name = row_path.rsplit('/', 1)[1]
+                for index, row in enumerate(rows):
+                    node = _add(table, name, attrib={('ID' if name == 'ThueNTNN' else 'id'): 'ID_%d' % (index + 1)})
+                    for leaf, value in row.items():
+                        _add(node, leaf, value)
+                for leaf, value in totals.items():
+                    _add(parent, leaf, value)
         pluc = _add(hs, 'PLuc')
         for annex in spec['annexElements']:
             node = _add(pluc, annex)

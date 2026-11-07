@@ -105,6 +105,7 @@ NUMBER = re.compile(r'-?(0|[1-9][0-9]{0,17})(\.[0-9]{1,6})?\Z')
 DATE = re.compile(r'([0-9]{2}/[0-9]{2}/[0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{4}|[0-9]{2}/[0-9]{2})\Z')
 CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
+TEMPLATE_TT89 = '(Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
 MISMATCH_ORDINALS = 8
 SECTIONS = {'TTinDVu': 1, 'TKhaiThue': 2, 'NNT': 4, 'CTieuTKhaiChinh': 8, 'PLuc': 16}
@@ -148,6 +149,11 @@ CASES = {
                                              ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 01/NTNN', TEMPLATE_TT80, ADDRESS, 'NHA THAU NUOC NGOAI A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'HD-GL-001', 'HD-GL-002',
                                               # DM_NNKD_NTNN.xml items 01/02 (ct1b name, ct1b_ma code).
                                               'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    # Y8 01/NTNN, NCCNN TT89 (non-gating): part II chosen (nopThayNCCNN), one supplier and one non-resident individual.
+    '01NTNN-NCCNN-two-parts-M10-2026': _case('ntnn01-nccnn-two-parts-m10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
+                                             ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
+                                              TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-003', 'HD-GL-004',
+                                              'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Hoạt động kinh doanh khác']),
     '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
@@ -233,7 +239,8 @@ def leaves(root):
         name = _local(node)
         for key, value in node.attrib.items():
             # Row ids: "id" in most templates, "ID" in 01/NTNN ThueNTNN (01_NTNN_TT80_xml_251.xml / XSD).
-            if not ((key in ('id', 'ID') and re.fullmatch(r'ID_[1-9][0-9]{0,3}', value)) or (key == '{' + XSI + '}nil' and value == 'true' and len(node) == 0 and not (node.text or ''))):
+            # 01_NTNN_NCCNN_TT89_xml_309.xml carries HSoKhaiThue id="ID1" (no underscore), kept as in the template.
+            if not ((key in ('id', 'ID') and re.fullmatch(r'ID_?[1-9][0-9]{0,3}', value)) or (key == '{' + XSI + '}nil' and value == 'true' and len(node) == 0 and not (node.text or ''))):
                 reject('ATTRIBUTES')
         current = path + '/' + name if path else name
         children = list(node)
@@ -295,44 +302,69 @@ def _pluc(root):
 # Decimal recomputation of the source XLS row-55 formulas (never the TypeScript engine):
 # ct9 = ROUND(ct7*ct8/100, 0), ct13 = MAX(0, ROUND(ct10*ct11/100, 0) - ct12), ct14 = ct9 + ct13;
 # tong_ctN = SUM of the column. ROUND is half away from zero (FarPoint/Excel).
+# One entry per table: (row path, totals parent, totals prefix, reviewed rows). Y8 keeps part I locked
+# and empty (one default template row); CNKCT holds TNCN in ThueTNCN/ct10..13.
+_MAIN = 'HSoKhaiThue/CTieuTKhaiChinh'
+_EMPTY_ROW = {'ct1b_ma': '', 'ct5': '0', 'ct7': '0', 'ct8': '0.00', 'ct10': '0', 'ct11': '0.00', 'ct12': '0'}
 NTNN_ROWS = {
-    '01NTNN-two-contractors-M10-2026': (
+    '01NTNN-two-contractors-M10-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong_', (
         {'ct1b_ma': '01', 'ct5': '1000000000', 'ct7': '1000000000', 'ct8': '5.00', 'ct10': '1000000000', 'ct11': '5.00', 'ct12': '0'},
         {'ct1b_ma': '02', 'ct5': '500000000', 'ct7': '500000000', 'ct8': '3.00', 'ct10': '500000000', 'ct11': '2.00', 'ct12': '2000000'},
+    )),),
+    '01NTNN-NCCNN-two-parts-M10-2026': (
+        (_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'mucI_tong_', (_EMPTY_ROW,)),
+        (_MAIN + '/ThueNCCNN_CNKCT/BKThueNCCNN/ThueNCCNN', _MAIN + '/ThueNCCNN_CNKCT', 'mucI_tong_', (
+            {'ct1b_ma': '01', 'ct5': '200000000', 'ct7': '200000000', 'ct8': '5.00', 'ct10': '200000000', 'ct11': '5.00', 'ct12': '0'},)),
+        (_MAIN + '/ThueNCCNN_CNKCT/BKThueCNKCT/ThueCNKCT', _MAIN + '/ThueNCCNN_CNKCT', 'mucII_tong_', (
+            {'ct1b_ma': '05', 'ct5': '100000000', 'ct7': '100000000', 'ct8': '5.00', 'ct10': '100000000', 'ct11': '2.00', 'ct12': '0'},)),
     ),
 }
-NTNN_ROW = 'HSoKhaiThue/CTieuTKhaiChinh/BKThueNTNN/ThueNTNN'
 
 
 def _round(value):
     return value.quantize(decimal.Decimal(1), rounding=decimal.ROUND_HALF_UP)
 
 
+def _computed(row):
+    n = {k: decimal.Decimal(v) for k, v in row.items() if k != 'ct1b_ma'}
+    ct9 = _round(n['ct7'] * n['ct8'] / 100)
+    ct13 = max(decimal.Decimal(0), _round(n['ct10'] * n['ct11'] / 100) - n['ct12'])
+    return {**row, 'ct9': str(ct9), 'ct13': str(ct13), 'ct14': str(ct9 + ct13)}
+
+
+def ntnn_tables(case_id):
+    """Per table: row path, totals parent, computed rows and column totals of a 01/NTNN design case."""
+    out = []
+    for row_path, parent, prefix, rows in NTNN_ROWS[case_id]:
+        computed = [_computed(row) for row in rows]
+        totals = {prefix + k: str(sum(decimal.Decimal(r[k]) for r in computed)) for k in ('ct5', 'ct7', 'ct9', 'ct10', 'ct12', 'ct13', 'ct14')}
+        out.append((row_path, parent, computed, totals))
+    return out
+
+
 def ntnn_expected(case_id):
-    """Per-row computed leaves and column totals of a 01/NTNN design case."""
-    rows = []
-    for row in NTNN_ROWS[case_id]:
-        n = {k: decimal.Decimal(v) for k, v in row.items() if k != 'ct1b_ma'}
-        ct9 = _round(n['ct7'] * n['ct8'] / 100)
-        ct13 = max(decimal.Decimal(0), _round(n['ct10'] * n['ct11'] / 100) - n['ct12'])
-        rows.append({**row, 'ct9': str(ct9), 'ct13': str(ct13), 'ct14': str(ct9 + ct13)})
-    totals = {'tong_' + k: str(sum(decimal.Decimal(r[k]) for r in rows)) for k in ('ct5', 'ct7', 'ct9', 'ct10', 'ct12', 'ct13', 'ct14')}
+    """Rows and totals of the first table (01/NTNN TT80 has one)."""
+    _, _, rows, totals = ntnn_tables(case_id)[0]
     return rows, totals
 
 
+def _xpath(path):
+    return './' + '/'.join('{%s}%s' % (NS, n) for n in path.split('/'))
+
+
 def _ntnn(case_id, root):
-    rows, totals = ntnn_expected(case_id)
-    found = root.findall('./' + '/'.join('{%s}%s' % (NS, n) for n in NTNN_ROW.split('/')))
-    if len(found) != len(rows):
-        reject('VALUE')
-    for node, row in zip(found, rows):
-        values = {_local(leaf): (leaf.text or '') for leaf in node.iter() if len(leaf) == 0}
-        if any(values.get(k) != v for k, v in row.items()):
+    for row_path, parent_path, rows, totals in ntnn_tables(case_id):
+        found = root.findall(_xpath(row_path))
+        if len(found) != len(rows):
             reject('VALUE')
-    main = root.find('./{%s}HSoKhaiThue/{%s}CTieuTKhaiChinh' % (NS, NS))
-    for name, value in totals.items():
-        if [(n.text or '') for n in main.findall('{%s}%s' % (NS, name))] != [value]:
-            reject('VALUE')
+        for node, row in zip(found, rows):
+            values = {_local(leaf): (leaf.text or '') for leaf in node.iter() if len(leaf) == 0}
+            if any(values.get(k) != v for k, v in row.items()):
+                reject('VALUE')
+        parent = root.find(_xpath(parent_path))
+        for name, value in totals.items():
+            if parent is None or [(n.text or '') for n in parent.findall('{%s}%s' % (NS, name))] != [value]:
+                reject('VALUE')
 
 
 def _expected(case_id, spec, root, items, raw):

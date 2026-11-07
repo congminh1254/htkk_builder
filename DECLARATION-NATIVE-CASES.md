@@ -17,6 +17,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `01CNKD-TT50-revenue-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD 2.9.8) | 21 | quý 3/2026 | — | 257 |
 | `02QTT-dependants-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3) | 12 | năm 2025 (NopTheoTinhCQT 3) | 02-1 (danh sách ẩn; nhập XML thêm mọi phụ lục) | 126 |
 | `01NTNN-two-contractors-M10-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 10/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
+| `01NTNN-NCCNN-two-parts-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9) | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa) | 103 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -28,6 +29,13 @@ dòng 55 (ct9 = ROUND(ct7·ct8/100), ct13 = MAX(0, ROUND(ct10·ct11/100) − ct1
 tổng `tong_ct5…ct14`: A 50tr/50tr/100tr, B 15tr/8tr/23tr, tổng [14] 123.000.000. Dòng `ThueNTNN` mang thuộc tính `ID` (chữ hoa,
 theo `01_NTNN_TT80_xml_251.xml`/XSD), nên `leaves()` nhận cả `id` và `ID` với giá trị `ID_n`; so cây vẫn so thuộc tính chính xác.
 Câu hỏi mở: tỷ lệ ct8/ct11 (control 16, DefaultValue `0,00`) web ghi `5.00` như 03/TNDN `ct05` của release 214.
+
+Y8 (01/NTNN, NCCNN TT89, non-gating) dùng `01NTNN-NCCNN-two-parts-M10-2026`: tích M8 `nopThayNCCNN`
+(`Ntnn01TT89Nckt309.ButtonClick_0` giữ M6 = false), bảng `ThueNTNN` khóa (`LockUnlock`) và chỉ có dòng mẫu mặc định;
+một nhà cung cấp nước ngoài (200tr: GTGT 10tr, TNDN 10tr, [14] 20tr) và một cá nhân không cư trú (100tr: GTGT 5tr,
+TNCN 2tr, [14] 7tr). Oracle `NTNN_ROWS` theo từng bảng (đường dẫn dòng, cha của dòng tổng, tiền tố `tong_`/`mucI_tong_`/
+`mucII_tong_`). Mẫu `_xml_` của Y8 có `HSoKhaiThue id="ID1"` (không gạch dưới) nên `leaves()` nhận `ID_?n`.
+Câu hỏi mở: HTKK kết xuất lại dòng mẫu của bảng bị khóa thế nào (web giữ một dòng mặc định).
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →
