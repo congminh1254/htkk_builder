@@ -128,6 +128,12 @@ internal static class HtkkDeclarationCasePlans {
    // ThueNTNN (row 60) stays locked with its template row; ThueNCCNN row 78 (total 80) and ThueCNKCT row
    // 86 (total 88, TNCN). Sheet checks are the XLS row formulas; XML checks = the design oracle leaves
    // (mapping 01_NTNN_NCCNN_TT89_309.xml: M_6/M_8, Y_88..BR_88 mucII_tong_*).
+   // Release 238 (run 42348089716): import succeeded, declarationCellMismatchMask 255 (every checked cell
+   // except BR62 = 0). Source: cmdImportXML_Click -> frmToKhai_ReLoad -> LoadToKhai -> fpSpDisplayTemplate ->
+   // ProcessSheet binds the data, then AutoBindData -> Ntnn01TT89Nckt309.AutoBindData_0 -> LockUnlock, which
+   // calls GeneralFunctions.LockUnLockColsInTable(..., deleteData=true) for all three tables and resets
+   // C..BH of every row to DefaultValue. The import path cannot keep Y8 table data; the checks stay as
+   // they are (the expected values are the source formulas of the web input).
    case "01NTNN-NCCNN-two-parts-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false,
     new string[0],new string[]{"01|Tờ khai"},
     "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",

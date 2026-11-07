@@ -38,6 +38,15 @@ TNCN 2tr, [14] 7tr). Oracle `NTNN_ROWS` theo từng bảng (đường dẫn dòn
 `mucII_tong_`). Mẫu `_xml_` của Y8 có `HSoKhaiThue id="ID1"` (không gạch dưới) nên `leaves()` nhận `ID_?n`.
 Câu hỏi mở: HTKK kết xuất lại dòng mẫu của bảng bị khóa thế nào (web giữ một dòng mặc định).
 
+Release 238 (web cdf10bbb, builder 66e98b8): I9 `01NTNN-two-contractors-M10-2026` **khớp toàn bộ** (run 42348087003,
+70 lá). Y8 `01NTNN-NCCNN-two-parts-M10-2026` thất bại (run 42348089716): nhập XML thành công, `declarationCellMismatchMask`
+255 (8/9 ô kiểm bằng 0, chỉ BR62 = 0 khớp), không kết xuất lại. Nguyên nhân trong nguồn HTKK 5.8.1: `cmdImportXML_Click`
+(0x60003a9) → `frmToKhai_ReLoad` → `LoadToKhai` → `fpSpDisplayTemplate` → `ProcessSheet` (0x60001a2) nạp dữ liệu rồi gọi
+`AutoBindData` → `Ntnn01TT89Nckt309.AutoBindData_0` → `LockUnlock`, và `LockUnlock` truyền `deleteData = true` cho
+`GeneralFunctions.LockUnLockColsInTable` (0x6002676) ở cả ba bảng: mọi dòng, cột C…BH, bị đặt lại `DefaultValue`, bảng khóa
+hay mở. Đường nhập XML vì vậy không giữ được bảng kê Y8; ô kiểm và so cây giữ nguyên (không nới). Muốn có bằng chứng
+native cho Y8 cần chế độ nhập tay trên lưới gốc sau khi tích M6/M8 (`original-entry-export`), chưa có driver.
+
 J1 (03/NTNN 3.0.8, non-gating) dùng `03NTNN-no-rate-M10-2026`: `Ntnn03TT80Nckt308.FinishImportXML` (0x6001937) ghi
 `BU := GeneralFunctions.getThuSuatByMa(CR, "DC_97")` cho mọi dòng nhập; cột ẩn CR (`pathTLTNDN`) không có trong mẫu
 `_xml_`/XSD và không có lệnh ghi (htkk_web quét IL `ntnn03-cr-no-writer`), nên tỷ lệ [9] luôn bị xóa khi nhập XML. Ca
