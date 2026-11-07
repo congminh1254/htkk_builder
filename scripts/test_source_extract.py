@@ -111,6 +111,11 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(policy['installRoot'], {'markerMsiFileId': 'htkk.exe', 'markerPath': 'Project/HTKK.exe'})
         self.assertEqual(policy['assemblyDirectories'], ['Project'])
         self.assertIn('InterfaceIni/GIA_TINH', policy['sharedExcludes'])
+        # Every form's interactive workbook, sheet controls and schema: source of the web's
+        # read-only XML viewer layouts, kept in the priority scope (not only the priority forms).
+        for directory in ('InterfaceTemplates/excel', 'InterfaceTemplates/xml', 'InterfaceTemplates/Validate'):
+            self.assertIn(directory, policy['sharedDirectories'])
+        self.assertNotIn('InterfaceTemplates', policy['sharedDirectories'])
 
     def test_policy_rejects_unpinned_form_paths_duplicates_and_unsafe_paths(self):
         with tempfile.TemporaryDirectory() as d:
@@ -228,6 +233,15 @@ class LayoutTests(unittest.TestCase):
         self.assertEqual(full, set('abcdefgh'))
         with self.assertRaisesRegex(x.ExtractError, 'SCOPE_POLICY'):
             x.select(entries, f.policy, 'all')
+
+    def test_priority_scope_keeps_every_form_template_with_the_committed_directories(self):
+        f = Fixture('.')
+        f.policy['sharedDirectories'] = x.load_policy()['sharedDirectories']
+        entries = [{'fileId': 'a', 'path': 'InterfaceTemplates/excel/99_BCTC_305.xls'}, {'fileId': 'b', 'path': 'InterfaceTemplates/xml/01A_DNHT_283.xml'},
+                   {'fileId': 'c', 'path': 'InterfaceTemplates/Validate/01A_DNHT_283.xsd'}, {'fileId': 'd', 'path': 'ReportTemplates/Excel/01A_DNHT_283.xls'},
+                   {'fileId': 'e', 'path': 'InterfaceTemplates/Template.xls'}, {'fileId': 'f', 'path': 'InterfaceIni/GIA_TINH/HN.xml'}]
+        chosen = {e['fileId']: e['categories'] for e in x.select([dict(e) for e in entries], f.policy, 'priority')}
+        self.assertEqual(chosen, {'a': ['shared'], 'b': ['shared'], 'c': ['shared']})
 
 
 class BundleTests(unittest.TestCase):

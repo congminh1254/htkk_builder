@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       scope:
-        description: 'priority = bộ biểu mẫu ưu tiên + InterfaceIni + toàn bộ DLL; full = cả 4526 tệp MSI'
+        description: 'priority = bộ biểu mẫu ưu tiên + InterfaceIni + workbook/control/XSD của mọi biểu mẫu + toàn bộ DLL; full = cả 4526 tệp MSI'
         type: choice
         options: [priority, full]
         default: priority

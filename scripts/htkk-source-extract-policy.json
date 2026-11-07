@@ -11,7 +11,10 @@
   "full"
  ],
  "sharedDirectories": [
-  "InterfaceIni"
+  "InterfaceIni",
+  "InterfaceTemplates/Validate",
+  "InterfaceTemplates/excel",
+  "InterfaceTemplates/xml"
  ],
  "sharedExcludes": [
   "InterfaceIni/GIA_TINH"
@@ -6182,7 +6185,7 @@
  ],
  "inputs": {
   "htkk-inventory.json": "0b88d7f966beae60ef73984c39f54f297ea08a94fe5f07c4b3b3b7561a611922",
-  "htkk-scope-matrix.json": "6ce943cfa32bc797d2e2c7f98c1617877a6c57c5431b1e42d214dd6f2a8ec551",
+  "htkk-scope-matrix.json": "00768bd28c6e537bdd870a60e18adaa2a035d47a7a795d4d5e7f5369854977b0",
   "htkk-active-menu.json": "4e540f5204d0a9976d8b84ebc138cb54a4c6543501bdd64fd4dbb413ab56d40d"
  },
  "notes": [
