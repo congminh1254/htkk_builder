@@ -1,4 +1,4 @@
-"""Design-only registry of TNCN descriptor native cases (05/KK, 05/QTT, 02/QTT).
+"""Design-only registry of descriptor native cases (TNCN 05/KK, 05/QTT, 02/QTT; NTNN 01/NTNN TT80).
 
 Kept separate from htkk-native-cases.json on purpose: no Windows driver exists for these
 menus yet, so nothing here may be produced, dispatched or counted as a release gate.
@@ -12,6 +12,8 @@ TRUSTED={
  '05-kk-tncn-2.9.3':{'menuId':'L7','businessClass':'TncnKk05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_KK_TNCN_TT80_293.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'}},
  '05-qtt-tncn-2.9.3':{'menuId':'B9','businessClass':'TncnQtt05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_QTT_TNCN_TT80_293.xsd','annexes':['05-1','05-2','05-3'],'mode':'web-xml-import-reexport','periodTypes':{'year'}},
  '02-qtt-tncn-2.7.3':{'menuId':'B8','businessClass':'TncnQtt02TT80','xmlVersion':'2.7.3','schemaId':'Validate/02_QTT_TNCN_TT80_273.xsd','annexes':['02-1'],'mode':'original-entry-export','periodTypes':{'year'}},
+ # 01/NTNN TT80 (I9): main-sheet contractor table only, KieuKy 18 monthly.
+ '01-ntnn-tt80-2.5.1':{'menuId':'I9','businessClass':'Ntnn01TT80','xmlVersion':'2.5.1','schemaId':'Validate/01_NTNN_TT80_251.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
 }
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})

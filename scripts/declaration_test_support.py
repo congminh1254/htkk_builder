@@ -63,6 +63,12 @@ def _tree(case_id, native=False, created=None):
         values, rows = d._descriptor_expected[case_id]
         for name, value in values.items():
             _add(main, name, value)
+        if case_id in d.NTNN_ROWS:  # 01/NTNN contractor rows of the reviewed design (ID attribute as in the template)
+            table = _add(main, 'BKThueNTNN')
+            for index, row in enumerate(d.ntnn_expected(case_id)[0]):
+                node = _add(table, 'ThueNTNN', attrib={'ID': 'ID_%d' % (index + 1)})
+                for name, value in row.items():
+                    _add(node, name, value)
         pluc = _add(hs, 'PLuc')
         for annex in spec['annexElements']:
             node = _add(pluc, annex)

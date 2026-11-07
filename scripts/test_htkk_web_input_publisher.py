@@ -7,7 +7,7 @@ spec=importlib.util.spec_from_file_location('web_publisher',ROOT/'publish-htkk-w
 spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 SHA='a'*40
 # One distinct fake orphan commit per registered case (21 = 15 GTGT + 6 declaration).
-COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7')
+COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8')
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
 DECLARATION_PRODUCER=f.dfx.PRODUCER

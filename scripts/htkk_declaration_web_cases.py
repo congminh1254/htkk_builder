@@ -17,7 +17,7 @@ This module never executes application code and never writes XML. It:
   identity, bounded texts) and compares it with the web input over the whole tree. Only the
   creation date and the four service-identity leaves follow the proven native rules.
 """
-import datetime, importlib.util, io, pathlib, re
+import datetime, decimal, importlib.util, io, pathlib, re
 import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).parent
@@ -143,6 +143,11 @@ CASES = {
                                      # [08]/[07] NNT tỉnh/huyện (02!F23/N23, Catalogue_Dia_Ban_Tinh/Huyen 101/10101):
                                      # Header!B53/B54 refused the empty pair with 0016 (release 227, run 42302323087).
                                      'Hà Nội', 'Quận Ba Đình']),
+    # I9 01/NTNN TT80 (non-gating): KieuKy 18 month 10/2026, two synthetic foreign contractors without MST.
+    '01NTNN-two-contractors-M10-2026': _case('ntnn01-two-contractors-m10-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+                                             ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 01/NTNN', TEMPLATE_TT80, ADDRESS, 'NHA THAU NUOC NGOAI A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'HD-GL-001', 'HD-GL-002',
+                                              # DM_NNKD_NTNN.xml items 01/02 (ct1b name, ct1b_ma code).
+                                              'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
     '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
@@ -227,7 +232,8 @@ def leaves(root):
     def visit(node, path):
         name = _local(node)
         for key, value in node.attrib.items():
-            if not ((key == 'id' and re.fullmatch(r'ID_[1-9][0-9]{0,3}', value)) or (key == '{' + XSI + '}nil' and value == 'true' and len(node) == 0 and not (node.text or ''))):
+            # Row ids: "id" in most templates, "ID" in 01/NTNN ThueNTNN (01_NTNN_TT80_xml_251.xml / XSD).
+            if not ((key in ('id', 'ID') and re.fullmatch(r'ID_[1-9][0-9]{0,3}', value)) or (key == '{' + XSI + '}nil' and value == 'true' and len(node) == 0 and not (node.text or ''))):
                 reject('ATTRIBUTES')
         current = path + '/' + name if path else name
         children = list(node)
@@ -285,6 +291,50 @@ def _pluc(root):
     return [_local(child) for p in root.findall('./{%s}HSoKhaiThue/{%s}PLuc' % (NS, NS)) for child in p]
 
 
+# Independent 01/NTNN oracle (I9): the reviewed synthetic contractor rows of the design case and a
+# Decimal recomputation of the source XLS row-55 formulas (never the TypeScript engine):
+# ct9 = ROUND(ct7*ct8/100, 0), ct13 = MAX(0, ROUND(ct10*ct11/100, 0) - ct12), ct14 = ct9 + ct13;
+# tong_ctN = SUM of the column. ROUND is half away from zero (FarPoint/Excel).
+NTNN_ROWS = {
+    '01NTNN-two-contractors-M10-2026': (
+        {'ct1b_ma': '01', 'ct5': '1000000000', 'ct7': '1000000000', 'ct8': '5.00', 'ct10': '1000000000', 'ct11': '5.00', 'ct12': '0'},
+        {'ct1b_ma': '02', 'ct5': '500000000', 'ct7': '500000000', 'ct8': '3.00', 'ct10': '500000000', 'ct11': '2.00', 'ct12': '2000000'},
+    ),
+}
+NTNN_ROW = 'HSoKhaiThue/CTieuTKhaiChinh/BKThueNTNN/ThueNTNN'
+
+
+def _round(value):
+    return value.quantize(decimal.Decimal(1), rounding=decimal.ROUND_HALF_UP)
+
+
+def ntnn_expected(case_id):
+    """Per-row computed leaves and column totals of a 01/NTNN design case."""
+    rows = []
+    for row in NTNN_ROWS[case_id]:
+        n = {k: decimal.Decimal(v) for k, v in row.items() if k != 'ct1b_ma'}
+        ct9 = _round(n['ct7'] * n['ct8'] / 100)
+        ct13 = max(decimal.Decimal(0), _round(n['ct10'] * n['ct11'] / 100) - n['ct12'])
+        rows.append({**row, 'ct9': str(ct9), 'ct13': str(ct13), 'ct14': str(ct9 + ct13)})
+    totals = {'tong_' + k: str(sum(decimal.Decimal(r[k]) for r in rows)) for k in ('ct5', 'ct7', 'ct9', 'ct10', 'ct12', 'ct13', 'ct14')}
+    return rows, totals
+
+
+def _ntnn(case_id, root):
+    rows, totals = ntnn_expected(case_id)
+    found = root.findall('./' + '/'.join('{%s}%s' % (NS, n) for n in NTNN_ROW.split('/')))
+    if len(found) != len(rows):
+        reject('VALUE')
+    for node, row in zip(found, rows):
+        values = {_local(leaf): (leaf.text or '') for leaf in node.iter() if len(leaf) == 0}
+        if any(values.get(k) != v for k, v in row.items()):
+            reject('VALUE')
+    main = root.find('./{%s}HSoKhaiThue/{%s}CTieuTKhaiChinh' % (NS, NS))
+    for name, value in totals.items():
+        if [(n.text or '') for n in main.findall('{%s}%s' % (NS, name))] != [value]:
+            reject('VALUE')
+
+
 def _expected(case_id, spec, root, items, raw):
     family = spec['family']
     if family == 'workbook':
@@ -304,6 +354,8 @@ def _expected(case_id, spec, root, items, raw):
             annex, row = key.split('/')
             if len(root.findall('./{%s}HSoKhaiThue/{%s}PLuc/{%s}%s/{%s}%s' % (NS, NS, NS, annex, NS, row))) != count:
                 reject('VALUE')
+        if case_id in NTNN_ROWS:
+            _ntnn(case_id, root)
     else:
         try:
             hkd_design.validate_case_xml(case_id, raw)
