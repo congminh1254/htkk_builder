@@ -161,6 +161,16 @@ CASES = {
     '03NTNN-no-rate-M10-2026': _case('ntnn03-no-rate-m10-2026', 'J1', '840', '3.0.8', 'Validate/03_NTNN_TT80_308.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 65, [], WORKBOOK_SERVICE,
                                      ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 03/NTNN', TEMPLATE_TT89, ADDRESS, 'TU VAN KY THUAT A - GIẢ LẬP', 'LAP DAT THIET BI B - GIẢ LẬP', 'NHA THAU PHU A - GIẢ LẬP', 'HD-GL-031', 'HD-GL-032',
                                       'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    # D6/Y1 04/NTNN quyết toán (non-gating): KieuKy 22, GetPeriodInfo KieuKy D_D; xmlExportTTinChung writes
+    # kieuKy "Y", kyKKhai = year of the to-date and the two dates. One subcontractor row in annex 02-2/NTNN.
+    '04NTNN-TT80-one-subcontractor-2026': _case('ntnn04-tt80-one-subcontractor-2026', 'D6', '922', '3.0.8', 'Validate/04_NTNN_TT80_308.xsd', ('Y', '2026', '01/01/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 79, ['PL02_2_NTNN'], WORKBOOK_SERVICE,
+                                                ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI - MẪU SỐ 04/NTNN', TEMPLATE_TT80, ADDRESS, 'HD-GL-050', 'Kết thúc hợp đồng nhà thầu',
+                                                 'NHA THAU PHU VIET NAM C - GIẢ LẬP', 'NHA THAU NUOC NGOAI D - GIẢ LẬP',
+                                                 # DM_NNKD_NTNN item 02 (ct6_ten) and Catalogue_Dia_Ban_Tinh 101 (ct7_ten, control 5).
+                                                 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị', 'Hà Nội']),
+    '04NTNN-TT89-one-subcontractor-2026': _case('ntnn04-tt89-one-subcontractor-2026', 'Y1', '2015', '3.0.9', 'Validate/04_NTNN_TT89_309.xsd', ('Y', '2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 79, ['PL02_2_NTNN'], WORKBOOK_SERVICE,
+                                                ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI - MẪU SỐ 04/NTNN', TEMPLATE_TT89, ADDRESS, 'HD-GL-040', 'HD-GL-041', 'Kết thúc hợp đồng nhà thầu',
+                                                 'NHA THAU PHU VIET NAM A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm']),
     '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
@@ -391,6 +401,58 @@ def _ntnn(case_id, root):
                 reject('VALUE')
 
 
+# Independent 04/NTNN oracle (D6/Y1): the reviewed synthetic inputs of the design cases and a Decimal
+# recomputation of the source XLS (sheet 01 rows 32-39; never the TypeScript engine). With annex 02-2/NTNN
+# attached, CellChange_1/Refresh_1 make [4] quyết toán of rows 1-2 the annex totals (AB32 = BD32 = SUM ct9,
+# AB33 = BD33 = SUM ct10); [5] chênh lệch = [4] - [3]; row 4 = IF(row2 - row3 > 0, row2 - row3, 0) per column;
+# row 7 = IF(r5 - r6 < 0, 0, r5 - r6), row 8 = IF(r6 - r5 > 0, r6 - r5, 0) on the quyết toán column.
+# Row element names per menu (D6 rows 2/4: DThuChuaGomGTGT/DThuTinhThue, Y1: DThuTinhThue/DThuTinhThueNTNN).
+_NTNN04_ROWS = {'D6': ('GiaTriHDong', 'DThuChuaGomGTGT', 'DThuNTPhu', 'DThuTinhThue', 'SoThueTNDNPNop'),
+                'Y1': ('GiaTriHDong', 'DThuTinhThue', 'DThuNTPhu', 'DThuTinhThueNTNN', 'SoThueTNDNPNop')}
+NTNN04 = {
+    # (menu, kê khai [3] of rows 1, 2, 3, 5; quyết toán [4] of rows 3, 5, 6; annex rows (ct9, ct10))
+    '04NTNN-TT80-one-subcontractor-2026': ('D6', ('2500000000', '2400000000', '0', '96000000'), ('400000000', '100000000', '96000000'), (('2500000000', '2400000000'),)),
+    '04NTNN-TT89-one-subcontractor-2026': ('Y1', ('2000000000', '1800000000', '0', '72000000'), ('300000000', '75000000', '72000000'), (('2000000000', '1800000000'),)),
+}
+
+
+def ntnn04_expected(case_id):
+    """Leaves under CTieuTKhaiChinh (Group/leaf -> text) and the annex totals of a 04/NTNN design case."""
+    menu, declared, settled, annex = NTNN04[case_id]
+    D = decimal.Decimal
+    t1, t2, t3, t5 = (D(v) for v in declared)
+    a3, a5, a6 = (D(v) for v in settled)
+    ct9, ct10 = sum(D(r[0]) for r in annex), sum(D(r[1]) for r in annex)
+    a1, a2 = ct9, ct10
+    pos = lambda v: v if v > 0 else D(0)
+    t4, a4 = pos(t2 - t3), pos(a2 - a3)
+    names = _NTNN04_ROWS[menu]
+    out = {}
+    for name, kk, qt in zip(names, (t1, t2, t3, t4, t5), (a1, a2, a3, a4, a5)):
+        out[name + '/keKhai'], out[name + '/quyetToan'], out[name + '/chenhLech'] = str(kk), str(qt), str(qt - kk)
+    out['SoThueDaNop/quyetToan'] = str(a6)
+    out['SoThueConPNop/quyetToan'] = str(D(0) if a5 - a6 < 0 else a5 - a6)
+    out['SoThueNopThua/quyetToan'] = str(pos(a6 - a5))
+    return out, {'tong_ct9': str(ct9), 'tong_ct10': str(ct10)}
+
+
+def _ntnn04(case_id, root):
+    main, totals = ntnn04_expected(case_id)
+    for path, value in main.items():
+        if [(n.text or '') for n in root.findall(_xpath(_MAIN + '/' + path))] != [value]:
+            reject('VALUE')
+    annex = root.find(_xpath('HSoKhaiThue/PLuc/PL02_2_NTNN'))
+    rows = root.findall(_xpath('HSoKhaiThue/PLuc/PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu'))
+    if annex is None or len(rows) != len(NTNN04[case_id][3]):
+        reject('VALUE')
+    for node, (ct9, ct10) in zip(rows, NTNN04[case_id][3]):
+        if [(n.text or '') for n in node.findall('{%s}ct9' % NS)] != [ct9] or [(n.text or '') for n in node.findall('{%s}ct10' % NS)] != [ct10]:
+            reject('VALUE')
+    for name, value in totals.items():
+        if [(n.text or '') for n in annex.findall('{%s}%s' % (NS, name))] != [value]:
+            reject('VALUE')
+
+
 def _expected(case_id, spec, root, items, raw):
     family = spec['family']
     if family == 'workbook':
@@ -403,15 +465,18 @@ def _expected(case_id, spec, root, items, raw):
         if main is None:
             reject('STRUCTURE')
         for name, value in values.items():
-            found = [(n.text or '') for n in main.iter('{%s}%s' % (NS, name))]
+            # 'Group/leaf' (04/NTNN rows keKhai/quyetToan/chenhLech) is a direct path under CTieuTKhaiChinh.
+            nodes = main.findall(_xpath(name)) if '/' in name else main.iter('{%s}%s' % (NS, name))
+            found = [(n.text or '') for n in nodes]
             if found != [value]:
                 reject('VALUE')
         for key, count in rows.items():
-            annex, row = key.split('/')
-            if len(root.findall('./{%s}HSoKhaiThue/{%s}PLuc/{%s}%s/{%s}%s' % (NS, NS, NS, annex, NS, row))) != count:
+            if len(root.findall(_xpath('HSoKhaiThue/PLuc/' + key))) != count:
                 reject('VALUE')
         if case_id in NTNN_ROWS:
             _ntnn(case_id, root)
+        if case_id in NTNN04:
+            _ntnn04(case_id, root)
     else:
         try:
             hkd_design.validate_case_xml(case_id, raw)

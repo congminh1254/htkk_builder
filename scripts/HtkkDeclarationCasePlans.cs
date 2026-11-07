@@ -15,7 +15,9 @@ internal sealed class HtkkDeclarationCasePlan {
   Annexes=annexes;SheetNames=sheetNames;WorkbookFile=workbookFile;WorkbookSha256=workbookSha256;LayoutFile=layoutFile;LayoutSha256=layoutSha256;SchemaFile=schemaFile;SchemaSha256=schemaSha256;BaseSchemaFile=baseSchemaFile;BaseSchemaSha256=baseSchemaSha256;
   WebServiceName=webServiceName;LeafCount=leafCount;CellChecks=cellChecks;XmlChecks=xmlChecks;
   if(menuChain.Length<2||menuChain.Length>3||menuChain[menuChain.Length-1]!=menuId||cellChecks.Length>24||xmlChecks.Length>24||annexes.Length>8||leafCount<1||leafCount>4096)throw new InvalidOperationException();
-  if(periodKind!="month"&&periodKind!="quarter"&&periodKind!="year")throw new InvalidOperationException();
+  if(periodKind!="month"&&periodKind!="quarter"&&periodKind!="year"&&periodKind!="range")throw new InvalidOperationException();
+  // KieuKy 22 (frmHTKKPeriod.SetLayoutToKhaiTuNgayDenNgay 0x60004ae): only the from/to date boxes, no year box.
+  if((periodKind=="range")!=(kieuKy=="22")||(periodKind=="range"&&(fromDate.Length!=10||toDate.Length!=10||toDate.Substring(6)!=year||periodNumber!="")))throw new InvalidOperationException();
  }
 }
 
@@ -38,7 +40,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -163,6 +165,27 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
     new string[]{"01|AV78|10000000","01|BN78|10000000","01|BR78|20000000","01|Y80|200000000","01|AV80|10000000","01|BN80|10000000","01|BR80|20000000","01|AV86|5000000","01|BN86|2000000","01|BR86|7000000","01|Y88|100000000","01|AV88|5000000","01|BN88|2000000","01|BR88|7000000","01|BR62|0"},
     new string[]{Main+"nopThayNTNN|0",Main+"nopThayNCCNN|1",Main+"ThueNCCNN_CNKCT/mucII_tong_ct5|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct7|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct9|5000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct10|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct12|0",Main+"ThueNCCNN_CNKCT/mucII_tong_ct13|2000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct14|7000000"});
+   // D6/Y1 04/NTNN quyết toán (non-gating, mode web-xml-import-reexport): Menu.xml KieuKy 22 -> frmHTKKPeriod
+   // SetLayoutToKhaiTuNgayDenNgay (0x60004ae): no month/quarter/year box, only mskTuNgay/mskDenNgay and the visible
+   // annex list. GetPeriodInfo (0x60004e2, branch 80/82/C9/D6/X9/Y1) sets KieuKy "D_D", Nam = year of mskDenNgay,
+   // TuNgay/DenNgay = the two texts; xmlExportTTinChung (0x6000049) writes kieuKy "Y" for KieuKy 22. Menu.xml sheet
+   // "01-1" (SheetName "02-2/NTNN") is the workbook's second sheet "01-2" (GetHTKKSheetInfo 0x60000f0, by position);
+   // the menus are not in the AddFullPLImportXML list, so the period dialog ticks "02-2/NTNN". Neither class has
+   // FinishImportXML; AutoBindData_0 writes only the settlement case (07) and Refresh_1 sets AB32/AB33 = the annex
+   // totals BD32/BD33, which the case already carries. Sheet checks: XLS rows 32-39 and annex totals (one row, no
+   // insertion: D6 01-2 BD26/BS26, Y1 01-2 BI51/BX51); XML checks = the Decimal oracle NTNN04 (htkk_declaration_web_cases).
+   case "04NTNN-TT80-one-subcontractor-2026":return new HtkkDeclarationCasePlan(caseId,"D6","3.0.8","922","Ntnn04TT80Nckt308",new string[]{"101","101_8","D6"},"range","22","2026","","01/01/2026","30/09/2026",false,
+    new string[]{"02-2/NTNN"},new string[]{"01|Tờ khai","01-2|02-2/NTNN"},
+    "InterfaceTemplates/excel/04_NTNN_TT80_308.xls","38ce07db1cd2573d283ca9102edb7684e08c39aa718563016e42817cb6254415","InterfaceTemplates/xml/04_NTNN_TT80_308.xml","24a42a0529777cfdbf6946a220dee1c57ce18f817297c4ee1b77536fe3352d6b",
+    "Validate/04_NTNN_TT80_308.xsd","f9a3d4b5355d16490adf8c014b62fb49260fc75a438d9bf1131ee5a4166cf25e",TKhaiThue,TKhaiThueSha256,WorkbookService,79,
+    new string[]{"01|AB32|2500000000","01|AB33|2400000000","01|AJ32|0","01|T35|2400000000","01|AB35|2000000000","01|AJ35|-400000000","01|AJ36|4000000","01|AB38|4000000","01|AB39|0","01-2|BD26|2500000000","01-2|BS26|2400000000"},
+    new string[]{Main+"GiaTriHDong/keKhai|2500000000",Main+"GiaTriHDong/quyetToan|2500000000",Main+"GiaTriHDong/chenhLech|0",Main+"DThuChuaGomGTGT/quyetToan|2400000000",Main+"DThuNTPhu/quyetToan|400000000",Main+"DThuTinhThue/keKhai|2400000000",Main+"DThuTinhThue/quyetToan|2000000000",Main+"SoThueTNDNPNop/chenhLech|4000000",Main+"SoThueDaNop/quyetToan|96000000",Main+"SoThueConPNop/quyetToan|4000000",Main+"SoThueNopThua/quyetToan|0","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct9|2500000000","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct10|2400000000"});
+   case "04NTNN-TT89-one-subcontractor-2026":return new HtkkDeclarationCasePlan(caseId,"Y1","3.0.9","2015","Ntnn04TT89Nckt309",new string[]{"101","101_8","Y1"},"range","22","2026","","01/07/2026","30/09/2026",false,
+    new string[]{"02-2/NTNN"},new string[]{"01|Tờ khai","01-2|02-2/NTNN"},
+    "InterfaceTemplates/excel/04_NTNN_TT89_309.xls","3326d1ab92a20a1b5d52aa00cb32610584ef2fee4e2a86b73efa5bf4e093ca61","InterfaceTemplates/xml/04_NTNN_TT89_309.xml","c8555e3dbc3a2bbf0b5ac98a3d8f225c8fc2fc5dc0970475e8df06506802bee8",
+    "Validate/04_NTNN_TT89_309.xsd","eaa0ab3ed35eed6ff0a2dd33cf2bd5dba8c179cd65169cc869ca46f1c03ea591",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,79,
+    new string[]{"01|AB32|2000000000","01|AB33|1800000000","01|AJ32|0","01|T35|1800000000","01|AB35|1500000000","01|AJ35|-300000000","01|AJ36|3000000","01|AB38|3000000","01|AB39|0","01-2|BI51|2000000000","01-2|BX51|1800000000"},
+    new string[]{Main+"GiaTriHDong/keKhai|2000000000",Main+"GiaTriHDong/quyetToan|2000000000",Main+"GiaTriHDong/chenhLech|0",Main+"DThuTinhThue/quyetToan|1800000000",Main+"DThuNTPhu/quyetToan|300000000",Main+"DThuTinhThueNTNN/keKhai|1800000000",Main+"DThuTinhThueNTNN/quyetToan|1500000000",Main+"SoThueTNDNPNop/chenhLech|3000000",Main+"SoThueDaNop/quyetToan|72000000",Main+"SoThueConPNop/quyetToan|3000000",Main+"SoThueNopThua/quyetToan|0","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct9|2000000000","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct10|1800000000"});
    default:return null;
   }
  }

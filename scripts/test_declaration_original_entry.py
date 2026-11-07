@@ -82,7 +82,7 @@ class EntryPlan(unittest.TestCase):
         leaves = {k: v for k, v in d._descriptor_expected[CASE][0].items()}
         self.assertEqual({c.split('|')[0].rsplit('/', 1)[-1]: c.split('|')[1] for c in string_array(entry, 3)}, leaves)
         self.assertNotIn('"' + BASE + '"', PLANS.split('internal static readonly string[] CaseIds=')[1].split('\n')[0])
-        self.assertIn('"' + CASE + '"};', PLANS.split('internal static readonly string[] CaseIds=')[1].split('\n')[0])
+        self.assertIn('"' + CASE + '"', PLANS.split('internal static readonly string[] CaseIds=')[1].split('\n')[0])
 
     def test_typed_values_are_the_reviewed_rows_of_the_decimal_oracle(self):
         rows = {row: computed for (_, _, computed_rows, _), row in zip(d.ntnn_tables(CASE)[1:], (78, 86)) for computed in computed_rows}

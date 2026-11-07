@@ -1,6 +1,6 @@
 # Ca native thiết kế cho họ descriptor: TNCN (05/KK, 05/QTT, 02/QTT) và NTNN (01/NTNN TT80)
 
-> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `03NTNN-no-rate-M10-2026` và `01NTNN-NCCNN-entry-M10-2026` (nhập tay; thay ca import `01NTNN-NCCNN-two-parts-M10-2026`, nay chỉ còn là ca thiết kế, release 242) đã được đăng ký (releaseGate false) với driver
+> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `03NTNN-no-rate-M10-2026`, `01NTNN-NCCNN-entry-M10-2026`, `04NTNN-TT80-one-subcontractor-2026` và `04NTNN-TT89-one-subcontractor-2026` (nhập tay; thay ca import `01NTNN-NCCNN-two-parts-M10-2026`, nay chỉ còn là ca thiết kế, release 242) đã được đăng ký (releaseGate false) với driver
 > chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
@@ -22,6 +22,9 @@ Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`)
 | `01NTNN-NCCNN-entry-M10-2026` | Y8, adapter `-entry` | tháng 10/2026 | — (như two-parts) | `original-entry-export`: gõ vào lưới gốc → Kết xuất (DECLARATION-NATIVE-CASES.md) |
 | `03NTNN-zero-M10-2026` | J1 (03/NTNN, XML 3.0.8) | tháng 10/2026 | — (1 dòng có (1a)/(1b), số 0; checkTKChinh E_13/E_30) | web XML → Nhập từ XML → Kết xuất |
 | `03NTNN-no-rate-M10-2026` | J1 | tháng 10/2026 | — (2 dòng, tỷ lệ [9] = 0: FinishImportXML xóa tỷ lệ khi nhập) | như trên, có số tiền (6)/(8) |
+| `04NTNN-TT80-zero-2026` | D6 (04/NTNN TT80, XML 3.0.8, KieuKy 22) | 01/01/2026–30/09/2026 (`range`) | — (số/ngày hợp đồng, số 0) | chỉ thiết kế |
+| `04NTNN-TT80-one-subcontractor-2026` | D6 | 01/01/2026–30/09/2026 | 02-2/NTNN (1 nhà thầu phụ, Hà Nội) | web XML → Nhập từ XML → Kết xuất |
+| `04NTNN-TT89-one-subcontractor-2026` | Y1 (04/NTNN TT89, XML 3.0.9, KieuKy 22) | 01/07/2026–30/09/2026 | 02-2/NTNN (1 nhà thầu phụ) | như trên (không có ca 0: Header B42) |
 
 - `scripts/htkk-descriptor-native-cases.json` + `scripts/htkk_descriptor_native_cases.py`:
   registry riêng, `status=design-only`, `dispatchable=false`, `releaseGate=false`. Validator

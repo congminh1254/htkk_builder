@@ -19,6 +19,8 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `01NTNN-two-contractors-M10-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 10/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
 | `03NTNN-no-rate-M10-2026` | `101 → 101_8 → J1` (03/NTNN 3.0.8) | 18 | tháng 10/2026 | — (bảng `BKThueNTNN/ThueNTNN`, 2 dòng, tỷ lệ [9] = 0) | 65 |
 | `01NTNN-NCCNN-entry-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9), **nhập tay** | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa; gõ vào lưới gốc) | 103 |
+| `04NTNN-TT80-one-subcontractor-2026` | `101 → 101_8 → D6` (04/NTNN TT80 3.0.8) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (sheet Menu `01-1` = sheet XLS `01-2`, 1 nhà thầu phụ) | 75 |
+| `04NTNN-TT89-one-subcontractor-2026` | `101 → 101_8 → Y1` (04/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (1 nhà thầu phụ) | 75 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -117,6 +119,32 @@ giá trị Controltype 16 có `Convert.ToDouble` = 0 bằng `"0"` trước khi �
 `work/j1-fix` ghi `0`; oracle (`_EMPTY_ROW` của Y8 và dòng J1) theo đó. Cần chạy lại ca ở release sau.
 Release 241 (web 349cd65b, builder 8a1b4820, run 42356589757): **khớp toàn bộ** (61 lá, mismatch mask 0; bản
 native trùng byte với release 240, chỉ input web đổi `ct9` thành `0`). htkk_web bật J1 (fixture `ntnn03-no-rate-m10-2026-release241`).
+
+D6/Y1 (04/NTNN quyết toán, non-gating, nhập XML) dùng `04NTNN-TT80-one-subcontractor-2026` / `04NTNN-TT89-one-subcontractor-2026`.
+Kỳ **KieuKy 22**: `frmHTKKPeriod.SetLayoutToKhaiTuNgayDenNgay` (0x60004ae) chỉ hiện `mskTuNgay`/`mskDenNgay` (không ô năm,
+không ô tích tháng/quý) và danh sách phụ lục. Plan `periodKind` = `range`: driver gõ hai ngày qua `SetDeclarationText`
+(Leave gốc chuẩn hóa), **không** đụng `mskYear` (ẩn), kiểm hai ô đang hiện bằng đúng ngày của plan, rồi tích "02-2/NTNN"
+(menu không thuộc `AddFullPLImportXML`). Định danh sau Đồng ý: `GetPeriodInfo` (0x60004e2, nhánh 80/82/C9/D6/X9/Y1) cho
+`KieuKy` `D_D`, `Nam` = năm của đến ngày, `TuNgay`/`DenNgay` = nguyên văn hai ô — `DeclarationIdentity` kiểm cả bốn.
+`xmlExportTTinChung` (0x6000049) ghi `kieuKy` `Y`, `kyKKhai` 2026 và hai ngày (manifest kỳ `('Y', '2026', từ, đến)`).
+Hai class không có `FinishImportXML`; `AutoBindData_0` chỉ ghi trường hợp quyết toán 07; `Refresh_1` đặt AB32/AB33 =
+BD32/BD33 (tổng phụ lục, bằng giá trị web). Oracle Decimal độc lập `NTNN04`/`ntnn04_expected` (`htkk_declaration_web_cases.py`)
+tính lại từ đầu vào (kê khai [3] dòng 1/2/3/5, quyết toán [4] dòng 3/5/6, dòng phụ lục ct9/ct10) theo công thức XLS sheet 01
+dòng 32–39: [4] dòng 1/2 = tổng phụ lục, dòng 4 = IF(dòng 2 − dòng 3 > 0, …, 0), [5] = [4] − [3] (có thể âm), dòng 7 =
+IF(r5 − r6 < 0, 0, r5 − r6), dòng 8 = IF(r6 − r5 > 0, r6 − r5, 0); kiểm mọi lá `Nhóm/lá` dưới `CTieuTKhaiChinh`, dòng phụ lục
+và `tong_ct9`/`tong_ct10`.
+
+| Ca | [1] GT HĐ QT | [2] DT QT | [3] DT NTP | [4] DT tính thuế QT / chênh lệch | [5] chênh lệch thuế | [7] còn phải nộp |
+|---|---|---|---|---|---|---|
+| D6 | 2.500.000.000 | 2.400.000.000 | 400.000.000 | 2.000.000.000 / −400.000.000 | 4.000.000 | 4.000.000 |
+| Y1 | 2.000.000.000 | 1.800.000.000 | 300.000.000 | 1.500.000.000 / −300.000.000 | 3.000.000 | 3.000.000 |
+
+Kiểm sheet sau nhập: AB32/AB33/AJ32/T35/AB35/AJ35/AJ36/AB38/AB39 và tổng phụ lục (một dòng, không chèn: D6 `01-2!BD26/BS26`,
+Y1 `01-2!BI51/BX51`). Y1 không có ca 0: Header B42 (`IF(01!AJ36=0,0,1)`, cờ Y) chặn kết xuất khi [5] = 0
+(`NO_ZERO_CASE`). Câu hỏi mở cho lần chạy Windows đầu: (1) nhập XML có nhận `kieuKy` `Y` + hai ngày cho kỳ `D_D` (0437)?
+(2) sheet phụ lục trong lưới gốc tên `01-2` hay "02-2/NTNN" (driver nhận cả hai)? (3) D6 `checkPL4_1` từ chối gì khi kết xuất
+(ngày trước hôm nay, mã tỉnh 101)? (4) Y1: mã CR của 02-2 có là SelectedValue của AG khi nhập XML (CR49 trong XLS là công
+thức khóa trùng)?
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →

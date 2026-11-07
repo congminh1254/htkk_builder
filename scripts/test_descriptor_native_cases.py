@@ -7,13 +7,13 @@ native=load('native_cases_for_descriptor_test','htkk_native_cases.py')
 RAW=json.loads((ROOT/'htkk-descriptor-native-cases.json').read_text())
 class DescriptorNativeCaseDesign(unittest.TestCase):
  def test_registry_has_zero_and_amount_cases_per_menu(self):
-  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025','01NTNN-zero-M10-2026','01NTNN-two-contractors-M10-2026','01NTNN-NCCNN-zero-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-zero-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-zero-M10-2026','01NTNN-NCCNN-entry-M10-2026'))
-  self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8','I9','Y8','J1'})
+  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025','01NTNN-zero-M10-2026','01NTNN-two-contractors-M10-2026','01NTNN-NCCNN-zero-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-zero-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-zero-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-zero-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026'))
+  self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8','I9','Y8','J1','D6','Y1'})
  def test_design_cannot_be_dispatched_or_gate_a_release(self):
   self.assertFalse(design.DESIGN['dispatchable'])
   # Only reviewed cases are promoted, through the declaration driver and never as a gate.
   promoted=set(design.CASE_IDS)&set(native.CASES)
-  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026'})
+  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026'})
   for case in promoted:self.assertEqual(native.driver(case),'declaration-web-import-inspect');self.assertIs(native.CASES[case]['releaseGate'],False)
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   for case in set(design.CASE_IDS)-promoted:self.assertNotIn(case,workflow)
@@ -49,4 +49,19 @@ class DescriptorNativeCaseDesign(unittest.TestCase):
   qtt=cases['05QTT-two-employees-Y2025']
   self.assertEqual(int(qtt['ct41']),max(0,int(qtt['ct36'])+0-int(qtt['ct38'])))
   self.assertEqual(int(cases['02QTT-dependants-Y2025']['ct27']),(6+12)*4400000)
+  # 04/NTNN (XLS sheet 01 rows 32-39): [4] = [2] - [3] if positive; [5] = quyết toán - kê khai; [7] = [5] - [6].
+  for case in ('04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026'):
+   c=cases[case];row2,row4=('DThuChuaGomGTGT','DThuTinhThue') if case.startswith('04NTNN-TT80') else ('DThuTinhThue','DThuTinhThueNTNN')
+   self.assertEqual(int(c[row4+'/quyetToan']),max(0,int(c[row2+'/quyetToan'])-int(c['DThuNTPhu/quyetToan'])))
+   self.assertEqual(int(c['SoThueConPNop/quyetToan']),int(c['SoThueTNDNPNop/chenhLech'])+0)
+ def test_04ntnn_range_period_and_no_zero_case_only_for_y1(self):
+  bad=[lambda v:v['cases'][-1]['unit'].__setitem__('periodValue','07/2026'),
+       lambda v:v['cases'][-1]['unit'].__setitem__('periodValue','01/07/2026-31/13/2026'),
+       lambda v:v['cases'][-1]['unit'].__setitem__('periodType','month'),
+       # D6 keeps its zero case; only Y1 (Header B42 blocks [5] = 0) is exempt.
+       lambda v:v.__setitem__('cases',[c for c in v['cases'] if c['caseId']!='04NTNN-TT80-zero-2026'])]
+  for mutate in bad:
+   value=copy.deepcopy(RAW);mutate(value)
+   with self.assertRaises(ValueError):design.validate(value)
+  self.assertEqual(design.NO_ZERO_CASE,{'04-ntnn-tt89-3.0.9'})
 if __name__=='__main__':unittest.main()

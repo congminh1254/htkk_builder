@@ -13,7 +13,9 @@
     {"adapterId": "01-ntnn-tt80-2.5.1", "menuId": "I9", "businessClass": "Ntnn01TT80", "xmlVersion": "2.5.1", "schemaId": "Validate/01_NTNN_TT80_251.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
     {"adapterId": "01-ntnn-nccnn-tt89-3.0.9", "menuId": "Y8", "businessClass": "Ntnn01TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/01_NTNN_NCCNN_TT89_309.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
     {"adapterId": "01-ntnn-nccnn-tt89-3.0.9-entry", "menuId": "Y8", "businessClass": "Ntnn01TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/01_NTNN_NCCNN_TT89_309.xsd", "annexes": [], "mode": "original-entry-export"},
-    {"adapterId": "03-ntnn-tt80-3.0.8", "menuId": "J1", "businessClass": "Ntnn03TT80", "xmlVersion": "3.0.8", "schemaId": "Validate/03_NTNN_TT80_308.xsd", "annexes": [], "mode": "web-xml-import-reexport"}
+    {"adapterId": "03-ntnn-tt80-3.0.8", "menuId": "J1", "businessClass": "Ntnn03TT80", "xmlVersion": "3.0.8", "schemaId": "Validate/03_NTNN_TT80_308.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
+    {"adapterId": "04-ntnn-tt80-3.0.8", "menuId": "D6", "businessClass": "Ntnn04TT80", "xmlVersion": "3.0.8", "schemaId": "Validate/04_NTNN_TT80_308.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
+    {"adapterId": "04-ntnn-tt89-3.0.9", "menuId": "Y1", "businessClass": "Ntnn04TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/04_NTNN_TT89_309.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"}
   ],
   "cases": [
     {"caseId": "05KK-zero-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
@@ -71,6 +73,20 @@
     {"caseId": "01NTNN-NCCNN-entry-M10-2026", "adapterId": "01-ntnn-nccnn-tt89-3.0.9-entry", "releaseGate": false,
      "unit": {"menuId": "Y8", "adapterVersion": "3.0.9", "periodType": "month", "periodValue": "10/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"nopThayNTNN": "0", "nopThayNCCNN": "1", "mucII_tong_ct5": "100000000", "mucII_tong_ct7": "100000000", "mucII_tong_ct9": "5000000", "mucII_tong_ct10": "100000000", "mucII_tong_ct12": "0", "mucII_tong_ct13": "2000000", "mucII_tong_ct14": "7000000"},
-     "question": "Tích M8 trước, gõ hai dòng vào lưới gốc (F5 không cần: mỗi bảng có sẵn một dòng), chọn ngành nghề bằng bàn phím: bản kết xuất gốc trùng toàn cây với web? Dòng mẫu ThueNTNN khóa kết xuất thế nào?"}
+     "question": "Tích M8 trước, gõ hai dòng vào lưới gốc (F5 không cần: mỗi bảng có sẵn một dòng), chọn ngành nghề bằng bàn phím: bản kết xuất gốc trùng toàn cây với web? Dòng mẫu ThueNTNN khóa kết xuất thế nào?"},
+    {"caseId": "04NTNN-TT80-zero-2026", "adapterId": "04-ntnn-tt80-3.0.8", "releaseGate": false,
+     "unit": {"menuId": "D6", "adapterVersion": "3.0.8", "periodType": "range", "periodValue": "01/01/2026-30/09/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
+     "expectedLeaves": {"GiaTriHDong/quyetToan": "0", "DThuChuaGomGTGT/quyetToan": "0", "DThuTinhThue/quyetToan": "0", "SoThueTNDNPNop/chenhLech": "0", "SoThueConPNop/quyetToan": "0", "SoThueNopThua/quyetToan": "0"},
+     "question": "Chỉ thiết kế: không phụ lục, AB32/AB33 là ô nhập (CellChange_1 chỉ đặt công thức BD32/BD33 khi có 02-2/NTNN); số/ngày hợp đồng bắt buộc (Header B23/B24)."},
+    {"caseId": "04NTNN-TT80-one-subcontractor-2026", "adapterId": "04-ntnn-tt80-3.0.8", "releaseGate": false,
+     "unit": {"menuId": "D6", "adapterVersion": "3.0.8", "periodType": "range", "periodValue": "01/01/2026-30/09/2026", "activityCode": "00", "annexes": ["01-1"], "amendmentOrder": 0},
+     "expectedLeaves": {"GiaTriHDong/keKhai": "2500000000", "GiaTriHDong/quyetToan": "2500000000", "GiaTriHDong/chenhLech": "0", "DThuChuaGomGTGT/quyetToan": "2400000000", "DThuNTPhu/quyetToan": "400000000", "DThuTinhThue/keKhai": "2400000000", "DThuTinhThue/quyetToan": "2000000000", "SoThueTNDNPNop/chenhLech": "4000000", "SoThueDaNop/quyetToan": "96000000", "SoThueConPNop/quyetToan": "4000000", "SoThueNopThua/quyetToan": "0"},
+     "expectedRows": {"PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu": 1},
+     "question": "Kỳ KieuKy 22 (D_D): HTKK nhận kieuKy Y + kyKKhaiTuNgay/DenNgay của web khi nhập XML (0437)? Refresh_1 đặt lại AB32/AB33 = BD32/BD33 (bằng giá trị web)?"},
+    {"caseId": "04NTNN-TT89-one-subcontractor-2026", "adapterId": "04-ntnn-tt89-3.0.9", "releaseGate": false,
+     "unit": {"menuId": "Y1", "adapterVersion": "3.0.9", "periodType": "range", "periodValue": "01/07/2026-30/09/2026", "activityCode": "00", "annexes": ["01-1"], "amendmentOrder": 0},
+     "expectedLeaves": {"GiaTriHDong/keKhai": "2000000000", "GiaTriHDong/quyetToan": "2000000000", "GiaTriHDong/chenhLech": "0", "DThuTinhThue/quyetToan": "1800000000", "DThuNTPhu/quyetToan": "300000000", "DThuTinhThueNTNN/keKhai": "1800000000", "DThuTinhThueNTNN/quyetToan": "1500000000", "SoThueTNDNPNop/chenhLech": "3000000", "SoThueDaNop/quyetToan": "72000000", "SoThueConPNop/quyetToan": "3000000", "SoThueNopThua/quyetToan": "0"},
+     "expectedRows": {"PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu": 1},
+     "question": "Không có ca 0: Header B42 chặn kết xuất khi [5] chênh lệch (AJ36) = 0. Mã CR của 02-2 là SelectedValue của AG (control XML) dù XLS có công thức khóa trùng ở CR49?"}
   ]
 }

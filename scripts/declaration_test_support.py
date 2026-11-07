@@ -63,6 +63,10 @@ def _tree(case_id, native=False, created=None):
         values, rows = d._descriptor_expected[case_id]
         # 01/NTNN table totals are written under their own parent below (mục II under ThueNCCNN_CNKCT).
         owned = {leaf for _, _, _, totals in (d.ntnn_tables(case_id) if case_id in d.NTNN_ROWS else ()) for leaf in totals}
+        if case_id in d.NTNN04:  # 04/NTNN: every oracle row leaf (Group/leaf) under CTieuTKhaiChinh
+            owned = set(values)
+            for path, value in d.ntnn04_expected(case_id)[0].items():
+                _path(main, 'CTieuTKhaiChinh/' + path).text = value
         for name, value in values.items():
             if name not in owned:
                 _add(main, name, value)
@@ -80,6 +84,13 @@ def _tree(case_id, native=False, created=None):
         pluc = _add(hs, 'PLuc')
         for annex in spec['annexElements']:
             node = _add(pluc, annex)
+            if case_id in d.NTNN04:  # 02-2/NTNN subcontractor rows and totals of the oracle
+                table = _add(node, 'BKCacNTPhu')
+                for index, (ct9, ct10) in enumerate(d.NTNN04[case_id][3]):
+                    row = _add(table, 'CTietBKCacNTPhu', attrib={'id': 'ID_%d' % (index + 1)}); _add(row, 'ct9', ct9); _add(row, 'ct10', ct10)
+                for leaf, value in d.ntnn04_expected(case_id)[1].items():
+                    _add(node, leaf, value)
+                continue
             for key, count in rows.items():
                 if key.split('/')[0] == annex:
                     for index in range(count):
