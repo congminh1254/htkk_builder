@@ -148,6 +148,40 @@ Y1 `01-2!BI51/BX51`). Y1 không có ca 0: Header B42 (`IF(01!AJ36=0,0,1)`, cờ 
 (ngày trước hôm nay, mã tỉnh 101)? (4) Y1: mã CR của 02-2 có là SelectedValue của AG khi nhập XML (CR49 trong XLS là công
 thức khóa trùng)?
 
+Release 244 (web ff456d23, builder 9c4260b): D6 `04NTNN-TT80-one-subcontractor-2026` (run 42373360682, 75 lá) và X9
+`02NTNN-TT89-two-annexes-2026` (run 42373365304, 108 lá) **khớp toàn bộ**, bản xuất gốc lưu ở nhánh
+`declaration-web-native-ntnn04-tt80-one-subcontractor-2026-output` 94c0b4dc / `declaration-web-native-ntnn02-tt89-two-annexes-2026-output`
+b77fc69f; htkk_web ghim và bật D6, X9. Câu hỏi (1)–(3) đã có lời đáp: HTKK nhận kỳ, sheet và dòng phụ lục.
+
+Y1 `04NTNN-TT89-one-subcontractor-2026` (run 42373362877): nhập, kết xuất, 11 ô kiểm và 13 lá XML khớp; so cây
+`declarationTreeMismatchMask` 16 (chỉ PLuc), 75 lá so (= 79 lá của web trừ 4 lá `TTinDVu`, không phải 4 lá lệch; không có bit 32
+nên cấu trúc trùng, thứ tự lá trùng với input web). Lưu trữ bị từ chối `XML_PRIVACY` lá 71 = `PL02_2_NTNN/BKCacNTPhu/
+CTietBKCacNTPhu/ct6_ma` (web ghi `01`), dạng `text-other`. Trả lời câu hỏi (4) từ nguồn (snapshot `afc42204`):
+
+- `InterfaceTemplates/xml/04_1_NTNN_TT89_309.xml` (sha256 a585052e…fa48): `ct6_ten` = AG (control 87, `SelectedValue="CR"`),
+  **`ct6_ma` = CR** (control 0), `pathCheckTrung` = CS; dòng dữ liệu 49.
+- `InterfaceTemplates/excel/04_NTNN_TT89_309.xls` (sha256 3326d1ab…ca61) sheet `01-2`: CR49 khóa, có công thức khóa trùng
+  `TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49)` — chép từ 02-2 của X9 (`02_2_NTNN_TT89_309.xml`: ở đó
+  CR là `pathCheckTrung`, `ct6_ma` là CQ; X9 khớp). Ở Y1 cột mã và cột khóa trùng lệch một cột, nên công thức nằm trong cột mã.
+- `WinSpreadProcess.fpSpBindDataCell` (HTKK.exe 0x60001a8, IL sha256 f791ac662986fecf18a27a3c5ccc54a0a65bec1cf6a2ce1167d9e53fa35e5e49),
+  nhánh control không đặc biệt: chỉ gọi `ResetFormula` khi ô **không khóa** và giá trị khác rỗng; ô khóa chỉ được `set_Text`. CR49
+  khóa nên công thức còn nguyên sau nhập XML và được tính lại khi `ProcessSheet` (0x60001a2, IL sha256 dba83252…5035e) bật lại
+  `AutoCalculation` của sheet. HTKK.exe sha256 411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938.
+- `WinDoWorkEvent.ExportDataTableToTableNode` (HTKK.exe 0x6000050, IL sha256 de6af1d32db04b6a542259b23ea70b4f4d2391a78e70fad3847472ccc24659e8)
+  đọc lá bảng từ `Cells[DataLocationTemplateRowStart + i - 1, cột].Value` của lưới rồi `GeneralFunctions.GetValueExportXML`, nên
+  `ct6_ma` = kết quả công thức CR49 (chuỗi ghép tên nhà thầu, ngành nghề, số và ngày hợp đồng), không phải mã `01`.
+
+Đó là văn bản tự do theo thiết kế, quy tắc privacy từ chối đúng. Header B32/B34/B37/B38 bắt buộc E, R, AR, AW (B36 đọc CR49 nên
+không bao giờ rỗng), vậy mọi input hợp lý đều cho chuỗi có chữ. Chỉ một input dị thường (tên E/R và số hợp đồng toàn chữ số,
+ngành nghề trống) mới có thể cho chuỗi toàn số qua được quy tắc, và điều đó tùy cách FarPoint trả AW49 — không chứng minh được,
+nên không dùng. Không nới quy tắc, không đổi kỳ vọng của ca, web không đổi (vẫn ghi mã ngành nghề).
+Chưa chứng minh được từ nguồn: chuỗi chính xác FarPoint tính cho `TRIM(AG49)` (ô combo control 87, `EditorValue` mặc định) và
+`TRIM(AW49)` (ô `MaskCellType` "00/00/0000", `InsertDateCell` 0x60001af đặt Text `dd/MM/yyyy`). Chẩn đoán mới, không chứa giá trị:
+`value_shape` trả `allowed-text-concat-date` / `allowed-text-concat` khi giá trị bị từ chối ghép hoàn toàn từ văn bản cho phép của
+ca và dãy số (có / không có mảnh ngày `dd/MM/yyyy` hoặc `yyyy-MM-dd`); vẫn từ chối, không lưu. Lần chạy Windows sau của Y1 (không
+đổi input) phải cho cùng mask 16, cùng lá 71, dạng `allowed-text-concat-date` (ngày dạng `dd/MM/yyyy`) hoặc `allowed-text-concat`
+(ngày thành dãy số hay combo trả chỉ số); dạng `text-other` nghĩa là giả thuyết sai.
+
 X9 (02/NTNN quyết toán TT89, non-gating, nhập XML) dùng `02NTNN-TT89-two-annexes-2026`: cùng kỳ KieuKy 22 (`range`); hộp kỳ
 tích "02-1/NTNN" và "02-2/NTNN" (Sheet ID Menu.xml `01-1`/`01-2` = sheet workbook cùng tên). `Ntnn02TT89Nckt309` không có
 `FinishImportXML`; `AutoBindData_0` (0x600191a) ghi trường hợp quyết toán vào BK8/BL8; `Refresh_1/2` gọi

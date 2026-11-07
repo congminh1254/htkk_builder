@@ -359,6 +359,33 @@ class NativeOutput(unittest.TestCase):
         self.assertEqual(out.safe_failure(out.OutputError('HASH', {'nativeRule': 'PRIVACY'}))['code'], 'HASH')
         self.assertNotIn('nativeRule', out.safe_failure(out.OutputError('HASH', {'nativeRule': 'PRIVACY'})))
 
+    def test_y1_check_key_in_the_code_leaf_is_rejected_with_a_bounded_concat_shape(self):
+        """Release 244 (run 42373362877): Y1 retention was refused at leaf 71 (PL02_2_NTNN/.../ct6_ma, section 16,
+        text-other). The 04_1_NTNN_TT89_309.xml control template binds ct6_ma to column CR, where the workbook keeps
+        the locked check-key formula CR49 = TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49); the
+        import keeps formulas of locked cells (fpSpBindDataCell 0x60001a8) and the table export reads the cell value
+        (ExportDataTableToTableNode 0x6000050). Such a value is still rejected; the shape only says that it is made of
+        the case's own synthetic texts (and whether a date piece occurs), never the value."""
+        case = '04NTNN-TT89-one-subcontractor-2026'; native = native_of(dfx.declaration_fixture(case), case)
+        # The offline fixture is a padded stand-in without ct6_ma: a code leaf "01" is placed in the annex row.
+        coded = native.replace(b'<ct9>2000000000</ct9>', b'<ct6_ma>01</ct6_ma><ct9>2000000000</ct9>', 1); self.assertNotEqual(coded, native)
+        self.assertTrue(out.validate_native(coded, case, TODAY)['privacyValuesVerified'])
+        items = d.leaves(d._parse(coded, False))
+        ordinal = next(i + 1 for i, (p, _) in enumerate(items) if p.endswith('/ct6_ma'))
+        names = 'NHA THAU PHU VIET NAM A - GIẢ LẬPNHA THAU NUOC NGOAI B - GIẢ LẬPDịch vụ, cho thuê máy móc thiết bị, bảo hiểmHD-GL-041'
+        for tail, shape in (('15/03/2026', 'allowed-text-concat-date'), ('15032026', 'allowed-text-concat'), ('PRIVATE', 'text-other')):
+            body = coded.replace(b'<ct6_ma>01<', ('<ct6_ma>' + names + tail + '<').encode(), 1); self.assertNotEqual(body, coded)
+            with self.subTest(shape=shape), self.assertRaises(out.OutputError) as error:
+                out.validate_native(body, case, TODAY)
+            status = out.safe_failure(error.exception)
+            self.assertEqual(status, {'format': 'htkk-declaration-native-output-publication-status-v1', 'status': 'rejected', 'code': 'XML_PRIVACY',
+                                      'nativeRule': 'PRIVACY', 'leafOrdinal': ordinal, 'section': 16, 'valueShape': shape})
+            self.assertNotIn('NHA THAU', json.dumps(status, ensure_ascii=False))
+        # A single allowed text or digits alone is no concatenation; unrelated text stays text-other.
+        allowed = d.case(case)['texts']
+        self.assertIsNone(d._concat_shape('HD-GL-041', allowed)); self.assertIsNone(d._concat_shape('PRIVATE CUSTOMER', allowed))
+        self.assertIsNone(d._concat_shape('x' * 3000, allowed))
+
     def test_whitespace_only_leaf_reads_empty_like_the_original_reader(self):
         """Release 222: both BCTC native exports (tree matched in the harness) were rejected as
         PRIVACY at leaf 20 (GiaHan/maLyDoGiaHan, section 2, text-other): the original writer emits an

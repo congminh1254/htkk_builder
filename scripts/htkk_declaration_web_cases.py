@@ -41,7 +41,39 @@ hkd_design = _load('declaration_hkd_design', 'htkk_hkd_web_cases.py')
 # Bounded, value-free description of a rejected leaf (never its text). A rejected native export is
 # never retained, so these let the next run name the cause: the rule, the leaf's 1-based ordinal in
 # document order (the same tree as the private web input), its section bit and a coarse shape.
-VALUE_SHAPES = frozenset(('empty', 'whitespace-variant', 'case-variant', 'bool-titlecase', 'grouped-number', 'date-like', 'numeric-other', 'text-other'))
+# 'allowed-text-concat' / 'allowed-text-concat-date': the value is two or more pieces glued together, each an exact
+# allowed text of the case or a digit run (the '-date' variant also holds a dd/MM/yyyy or yyyy-MM-dd piece), e.g. a
+# check-key formula such as Y1 01-2!CR49 = TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49) written into
+# a code leaf. Diagnostic only: the value is still rejected and never retained.
+VALUE_SHAPES = frozenset(('empty', 'whitespace-variant', 'case-variant', 'bool-titlecase', 'grouped-number', 'date-like', 'numeric-other',
+                          'allowed-text-concat', 'allowed-text-concat-date', 'text-other'))
+_PIECE_DATE = re.compile(r'[0-9]{2}/[0-9]{2}/[0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}')
+_PIECE_DIGITS = re.compile(r'[0-9]+')
+
+
+def _concat_shape(value, allowed):
+    """Bounded test: can ``value`` be split into >= 2 pieces, each an exact allowed text (as TRIM leaves it) or
+    a digit run / date? Returns the shape name or None; never the pieces."""
+    texts = sorted({a.strip() for a in allowed if a and a.strip()}, key=len, reverse=True)
+    if len(value) > 2048 or not texts:
+        return None
+    best = {0: (0, False)}  # position -> (pieces, saw a date piece)
+    for i in range(len(value)):
+        if i not in best:
+            continue
+        count, dated = best[i]
+        steps = [(i + len(a), False) for a in texts if value.startswith(a, i)]
+        for pattern, is_date in ((_PIECE_DATE, True), (_PIECE_DIGITS, False)):
+            match = pattern.match(value, i)
+            if match:
+                steps.append((match.end(), is_date))
+        for end, is_date in steps:
+            state = (count + 1, dated or is_date)
+            if end not in best or state > best[end]:
+                best[end] = state
+    if len(value) not in best or best[len(value)][0] < 2:
+        return None
+    return 'allowed-text-concat-date' if best[len(value)][1] else 'allowed-text-concat'
 
 
 class DeclarationWebCaseError(ValueError):
@@ -73,7 +105,7 @@ def value_shape(value, allowed=()):
         return 'date-like'
     if re.fullmatch(r'[-+(]?[0-9.,E+\- )]+', value):
         return 'numeric-other'
-    return 'text-other'
+    return _concat_shape(value, allowed) or 'text-other'
 
 
 def _where(items, path, value=None, allowed=()):
