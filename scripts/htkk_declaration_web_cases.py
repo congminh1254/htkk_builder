@@ -244,8 +244,11 @@ SIGNER = 'NGUOI KY GIA LAP'
 # Texts the original profile/period dialog may legitimately add on a native re-export.
 PROFILE_TEXTS = frozenset((NAME, ADDRESS, SIGNER, 'Thành phố Hà Nội', 'Phường Sơn Tây', 'Thuế Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội'))
 NATIVE_SERVICE = ('HTKK', 'HỖ TRỢ KÊ KHAI THUẾ', '5.8.1')
+# Every case form is verified against HTKK, so the web exporters (htkk_web lib/export-labelling.ts) write
+# no pre-root comment and the neutral tool identity WEB_CODE/WORKBOOK_SERVICE. The earlier draft
+# disclaimer (COMMENT) is now rejected like any other comment.
 COMMENT = '<!-- BẢN NHÁP; KHÔNG NỘP THUẾ; CHƯA KIỂM CHỨNG VỚI HTKK WINDOWS. -->'
-PREAMBLE = '<?xml version="1.0" encoding="UTF-8"?>\n' + COMMENT + '\n'
+PREAMBLE = '<?xml version="1.0" encoding="UTF-8"?>\n'
 SERVICE_PATH = 'HSoThueDTu/HSoKhaiThue/TTinChung/TTinDVu/'
 SERVICE_NAMES = ('maDVu', 'tenDVu', 'pbanDVu', 'ttinNhaCCapDVu')
 CREATION_PATH = 'HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayLapTKhai'
@@ -257,6 +260,7 @@ CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
 TEMPLATE_TT89 = '(Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
+WEB_CODE = 'CCKK'
 MISMATCH_ORDINALS = 8
 SECTIONS = {'TTinDVu': 1, 'TKhaiThue': 2, 'NNT': 4, 'CTieuTKhaiChinh': 8, 'PLuc': 16}
 
@@ -265,11 +269,11 @@ def _case(producer, menu, ma, version, schema, period, dates, sign, created, lea
     kieu, ky, tu, den = period
     return {'producerCase': producer, 'menuId': menu, 'maTKhai': ma, 'xmlVersion': version, 'schemaId': schema,
             'kieuKy': kieu, 'kyKKhai': ky, 'tuNgay': tu, 'denNgay': den, 'ngayKy': sign, 'createdDate': created,
-            'leafCount': leaves, 'annexElements': tuple(annexes), 'webService': ('CCKK-DRAFT', service, '0.9.2', WEB_TOOL),
-            'texts': frozenset(texts) | {'C', kieu, version, NAME, SIGNER, 'CCKK-DRAFT', service, '0.9.2', WEB_TOOL}, 'dates': dates}
+            'leafCount': leaves, 'annexElements': tuple(annexes), 'webService': (WEB_CODE, service, '0.9.2', WEB_TOOL),
+            'texts': frozenset(texts) | {'C', kieu, version, NAME, SIGNER, WEB_CODE, service, '0.9.2', WEB_TOOL}, 'dates': dates}
 
 
-WORKBOOK_SERVICE = 'Công cụ Kê khai — bản nháp'
+WORKBOOK_SERVICE = 'Công cụ Kê khai'
 CASES = {
     '03TNDN-profit20-Y2025': _case('tndn03-profit20-y2025', 'N8', '892', '2.9.4', 'Validate/03_TNDN_TT80_294.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-03-20', '2026-03-20', 147, ['PLuc_03_1A_TNDN'], WORKBOOK_SERVICE,
                                    # Period default settlement case (AutoBindData_0) and the reviewed industry code (Header B25/B26).
@@ -348,7 +352,7 @@ CASES = {
     '03NTNN-occurrence-D20-10-2026': _case('ntnn03-occurrence-d20-10-2026', 'J1', '840', '3.0.8', 'Validate/03_NTNN_TT80_308.xsd', ('D', '20/10/2026', '20/10/2026', '20/10/2026'), None, '2026-10-27', '2026-10-27', 65, [], WORKBOOK_SERVICE,
                                            ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 03/NTNN', TEMPLATE_TT89, ADDRESS, 'TU VAN KY THUAT A - GIẢ LẬP', 'LAP DAT THIET BI B - GIẢ LẬP', 'NHA THAU PHU A - GIẢ LẬP', 'HD-GL-031', 'HD-GL-032',
                                             'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
-    '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
+    '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], WORKBOOK_SERVICE,
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
                                                      '10129 - Thuế cơ sở 16 Thành phố Hà Nội', '1140759 - Phường Sơn Tây - Thuế cơ sở 16 Thành phố Hà Nội',
@@ -396,11 +400,9 @@ def _parse(body, web):
     except UnicodeError:
         reject('ENCODING')
     if web:
-        # Workbook/CNKD exporters emit exactly this disclaimer before the root; the
-        # descriptor exporter emits none. No other comment is accepted anywhere.
-        if text.startswith(PREAMBLE) and text.count(COMMENT) == 1:
-            text = text.replace(COMMENT, '', 1)
-        elif not text.startswith('<?xml version="1.0" encoding="UTF-8"?>\n<HSoThueDTu ') or COMMENT in text:
+        # Every family exporter emits the XML declaration and then the root; no comment
+        # (the old draft disclaimer included) is accepted anywhere.
+        if not text.startswith(PREAMBLE + '<HSoThueDTu '):
             reject('DECLARATION')
     if re.search(r'<!|<\?(?!xml\s)', text, re.I) or text.count('<?') > 1:
         reject('DECLARATION')
@@ -753,11 +755,11 @@ def validate_web_input(body, case_id, manifest=None):
         reject('STRUCTURE')
     # The web draft now carries the synthetic profile leaves original export copies (release 213).
     _texts(items, spec['texts'] | PROFILE_TEXTS, spec['caseId'])
-    raw = bytes(body).decode('utf-8').replace(COMMENT, '', 1).encode('utf-8')  # disclaimer only
+    raw = bytes(body)
     _expected(case_id, spec, root, items, raw)
     if manifest is not None and manifest.get('leafCount') != spec['leafCount']:
         reject('MANIFEST')
-    return {'privacyValuesVerified': True, 'leafCount': len(items), 'serviceIdentity': 'web-draft', 'nativeProvenance': False}
+    return {'privacyValuesVerified': True, 'leafCount': len(items), 'serviceIdentity': 'web-tool', 'nativeProvenance': False}
 
 
 def validate_native_output(body, case_id, today=None):

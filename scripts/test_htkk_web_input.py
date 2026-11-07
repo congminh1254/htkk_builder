@@ -114,7 +114,7 @@ class PrivacyTests(unittest.TestCase):
   with self.assertRaises(w.InputError) as error:w.validate_web_xml(body,TODAY)
   self.assertEqual(error.exception.code,code)
  def test_exact_web_identity_comment_and_zero_case_accepted(self):
-  result=w.validate_web_xml(self.body,TODAY);self.assertEqual(result,{'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False})
+  result=w.validate_web_xml(self.body,TODAY);self.assertEqual(result,{'privacyValuesVerified':True,'serviceIdentity':'web-tool','nativeProvenance':False})
  def test_historical_case_is_repeatable_but_created_and_signing_dates_are_fixed(self):
   self.assertTrue(w.validate_web_xml(self.body,datetime.date(2027,10,25))['privacyValuesVerified'])
   for name in ('ngayLapTKhai','ngayKy'):
@@ -125,7 +125,9 @@ class PrivacyTests(unittest.TestCase):
   for name,value in (('maDVu','HTKK'),('ttinNhaCCapDVu','0'*32),('pbanDVu','0.9.3'),('tenDVu','PRIVATE')):
    before=w.SERVICE[name].encode();self.reject(self.body.replace(before,value.encode(),1),'XML_SERVICE')
  def test_other_comment_dtd_entity_pi_or_comment_position_rejected(self):
-  for body in (self.body.replace(w.COMMENT.encode(),b'<!-- PRIVATE -->'),self.body+w.COMMENT.encode(),self.body+b'<!-- extra -->',self.body+b'<!DOCTYPE x>',self.body+b'<?secret raw?>',self.body+b'<!ENTITY x "secret">',self.body.replace(w.COMMENT.encode()+b'\n',b'')+w.COMMENT.encode()):
+  pre=w.PREAMBLE.encode();self.assertTrue(self.body.startswith(pre))
+  # The earlier draft disclaimer is now refused in its old place too, like any other comment.
+  for body in (pre+w.COMMENT.encode()+b'\n'+self.body[len(pre):],pre+b'<!-- PRIVATE -->\n'+self.body[len(pre):],self.body+w.COMMENT.encode(),self.body+b'<!-- extra -->',self.body+b'<!DOCTYPE x>',self.body+b'<?secret raw?>',self.body+b'<!ENTITY x "secret">'):
    self.reject(body,'XML_DECLARATION')
  def test_unknown_attributes_private_taxpayer_and_extra_node_rejected(self):
   self.reject(self.body.replace(b'<HSoKhaiThue id="ID_1"',b'<HSoKhaiThue private="secret" id="ID_1"'),'XML_PRIVACY')
@@ -160,7 +162,7 @@ class ReadAndStageTests(unittest.TestCase):
   self.assertEqual(files['01GTGT-web.xml'],self.body);self.assertTrue(all(token=='synthetic-token' for _,token in calls));self.assertEqual(calls[0][0],'')
   self.assertTrue(all('?ref='+'b'*40 in path for path,_ in calls if '/contents/' in path));self.assertIn(('/git/commits/'+'a'*40,'synthetic-token'),calls)
   with tempfile.TemporaryDirectory() as temporary:
-   destination=w.stage(files,temporary,TODAY);self.assertEqual(set(path.name for path in destination.iterdir()),set(w.NAMES));self.assertEqual((destination/'01GTGT-web.xml').read_bytes(),self.body);self.assertIn(b'CCKK-DRAFT',(destination/'01GTGT-web.xml').read_bytes());self.assertEqual((destination/'manifest.json').read_bytes(),files['manifest.json'])
+   destination=w.stage(files,temporary,TODAY);self.assertEqual(set(path.name for path in destination.iterdir()),set(w.NAMES));self.assertEqual((destination/'01GTGT-web.xml').read_bytes(),self.body);self.assertIn(b'<maDVu>CCKK</maDVu>',(destination/'01GTGT-web.xml').read_bytes());self.assertNotIn(b'<!--',(destination/'01GTGT-web.xml').read_bytes());self.assertEqual((destination/'manifest.json').read_bytes(),files['manifest.json'])
  def test_immutable_artifact_commit_does_not_follow_mutable_branch(self):
   fetch,calls=fake_fetch(self.body)
   def pinned(path,token):

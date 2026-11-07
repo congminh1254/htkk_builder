@@ -22,9 +22,12 @@ CASE_CHECKBOX={case:('1' if case in ('01GTGT-noactivity-zero-M10-2026', '01GTGT-
 MAX_XML=262144
 MAX_MANIFEST=16384
 MAX_API=600000
+# 01/GTGT is verified against HTKK, so the web exporter (htkk_web lib/export-labelling.ts) writes no
+# pre-root comment and the neutral tool identity. The earlier draft disclaimer (COMMENT) is now
+# rejected like any other comment.
 COMMENT='<!-- BẢN NHÁP; KHÔNG NỘP THUẾ; CHƯA KIỂM CHỨNG ĐẦY ĐỦ VỚI HTKK WINDOWS. -->'
-PREAMBLE='<?xml version="1.0" encoding="UTF-8"?>\n'+COMMENT+'\n'
-SERVICE={'maDVu':'CCKK-DRAFT','tenDVu':'Công cụ Kê khai — bản nháp','pbanDVu':'0.9.2','ttinNhaCCapDVu':'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'}
+PREAMBLE='<?xml version="1.0" encoding="UTF-8"?>\n'
+SERVICE={'maDVu':'CCKK','tenDVu':'Công cụ Kê khai','pbanDVu':'0.9.2','ttinNhaCCapDVu':'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'}
 CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
 _spec=importlib.util.spec_from_file_location('htkk_export_privacy',pathlib.Path(__file__).with_name('publish-gtgt-export-evidence.py'))
 privacy=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(privacy)
@@ -145,10 +148,10 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
  except UnicodeError:raise InputError('XML_ENCODING') from None
- # The actual exporter emits exactly this pre-root disclaimer. No other comment
- # is stripped, and no arbitrary declaration or entity can reach the parser.
- if not text.startswith(PREAMBLE) or text.count(COMMENT)!=1:raise InputError('XML_DECLARATION')
- no_comment=text.replace(COMMENT,'',1)
+ # The actual exporter emits the XML declaration and then the root, nothing else. No
+ # comment (the old draft disclaimer included), declaration or entity reaches the parser.
+ if not text.startswith(PREAMBLE+'<HSoThueDTu '):raise InputError('XML_DECLARATION')
+ no_comment=text
  if re.search(r'<!|<\?(?!xml\s)',no_comment,re.I) or no_comment.count('<?')!=1:raise InputError('XML_DECLARATION')
  try:
   for event,(prefix,uri) in ET.iterparse(io.BytesIO(no_comment.encode('utf-8')),events=('start-ns',)):
@@ -200,7 +203,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
  try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),fixed_day)
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
- result={'privacyValuesVerified':True,'serviceIdentity':'web-draft','nativeProvenance':False}
+ result={'privacyValuesVerified':True,'serviceIdentity':'web-tool','nativeProvenance':False}
  if annex:result['annexTaxLeafCount']=annex12.tax_leaves(case_id)
  return result
 def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None):
