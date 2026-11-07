@@ -361,30 +361,66 @@ class NativeOutput(unittest.TestCase):
 
     def test_y1_check_key_in_the_code_leaf_is_rejected_with_a_bounded_concat_shape(self):
         """Release 244 (run 42373362877): Y1 retention was refused at leaf 71 (PL02_2_NTNN/.../ct6_ma, section 16,
-        text-other). The 04_1_NTNN_TT89_309.xml control template binds ct6_ma to column CR, where the workbook keeps
-        the locked check-key formula CR49 = TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49); the
-        import keeps formulas of locked cells (fpSpBindDataCell 0x60001a8) and the table export reads the cell value
-        (ExportDataTableToTableNode 0x6000050). Such a value is still rejected; the shape only says that it is made of
-        the case's own synthetic texts (and whether a date piece occurs), never the value."""
-        case = '04NTNN-TT89-one-subcontractor-2026'; native = native_of(dfx.declaration_fixture(case), case)
-        # The offline fixture is a padded stand-in without ct6_ma: a code leaf "01" is placed in the annex row.
-        coded = native.replace(b'<ct9>2000000000</ct9>', b'<ct6_ma>01</ct6_ma><ct9>2000000000</ct9>', 1); self.assertNotEqual(coded, native)
-        self.assertTrue(out.validate_native(coded, case, TODAY)['privacyValuesVerified'])
-        items = d.leaves(d._parse(coded, False))
+        text-other); release 246 (run 42380879950) at the same leaf with shape allowed-text-concat (no date piece).
+        The 04_1_NTNN_TT89_309.xml control template binds ct6_ma to column CR, where the workbook keeps the locked
+        check-key formula CR49 = TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49); the import keeps
+        formulas of locked cells (fpSpBindDataCell 0x60001a8) and the table export reads the cell value
+        (ExportDataTableToTableNode 0x6000050). Only the exact value the oracle recomputes from the case's own
+        synthetic inputs is accepted at that one leaf of that one case; any other value is rejected with a bounded
+        shape and a value-free piece layout, never the value."""
+        case = '04NTNN-TT89-one-subcontractor-2026'; web = dfx.declaration_fixture(case); native = native_of(web, case)
+        key = d.check_key(case)
+        self.assertEqual(key, 'NHA THAU PHU VIET NAM A - GIẢ LẬPNHA THAU NUOC NGOAI B - GIẢ LẬP'
+                              'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểmHD-GL-04115032026')
+        tag = ('<ct6_ma>' + key + '<').encode()
+        self.assertIn(tag, web); self.assertIn(tag, native)
+        self.assertTrue(out.validate_native(native, case, TODAY)['privacyValuesVerified'])
+        self.assertTrue(reader.validate_web_xml(web, case_id=case)['privacyValuesVerified'])
+        self.assertTrue(d.compare_tree(web, native)['allTaxValuesMatched'])
+        items = d.leaves(d._parse(native, False))
         ordinal = next(i + 1 for i, (p, _) in enumerate(items) if p.endswith('/ct6_ma'))
-        names = 'NHA THAU PHU VIET NAM A - GIẢ LẬPNHA THAU NUOC NGOAI B - GIẢ LẬPDịch vụ, cho thuê máy móc thiết bị, bảo hiểmHD-GL-041'
-        for tail, shape in (('15/03/2026', 'allowed-text-concat-date'), ('15032026', 'allowed-text-concat'), ('PRIVATE', 'text-other')):
-            body = coded.replace(b'<ct6_ma>01<', ('<ct6_ma>' + names + tail + '<').encode(), 1); self.assertNotEqual(body, coded)
-            with self.subTest(shape=shape), self.assertRaises(out.OutputError) as error:
+        self.assertEqual(items[ordinal - 1][0], d.CHECK_KEY_PATH)  # leaf 71 of the real export; the padded fixture differs
+        stem = key[:-len('15032026')]
+        for value, shape, layout in ((stem + '15/03/2026', 'allowed-text-concat-date', 'E.R.AG.AR.dmy=AW'),
+                                     (stem + '46096', 'allowed-text-concat', 'E.R.AG.AR.n5=oadate'),
+                                     (stem + '20260315', 'allowed-text-concat', 'E.R.AG.AR.n8=yyyyMMdd'),
+                                     (stem.replace('HD-GL-041', '0HD-GL-041') + '15032026', 'allowed-text-concat', 'E.R.AG.n1=index.AR.n8=ddMMyyyy'),
+                                     (stem.replace('HD-GL-041', '01HD-GL-041') + '15032026', 'allowed-text-concat', 'E.R.AG.n2=code.AR.n8=ddMMyyyy'),
+                                     (stem + '15032027', 'allowed-text-concat', 'E.R.AG.AR.n8'),
+                                     (stem + 'PRIVATE', 'text-other', None), ('01', None, None)):
+            body = native.replace(tag, ('<ct6_ma>' + value + '<').encode(), 1); self.assertNotEqual(body, native)
+            if shape is None:  # a plain code is a CODE leaf (allowed everywhere); the exact oracle still refuses it
+                self.assertTrue(out.validate_native(body, case, TODAY)['privacyValuesVerified'])
+                with self.assertRaises(reader.InputError):
+                    reader.validate_web_xml(web.replace(tag, b'<ct6_ma>01<', 1), case_id=case)
+                continue
+            with self.subTest(shape=shape, layout=layout), self.assertRaises(out.OutputError) as error:
                 out.validate_native(body, case, TODAY)
             status = out.safe_failure(error.exception)
-            self.assertEqual(status, {'format': 'htkk-declaration-native-output-publication-status-v1', 'status': 'rejected', 'code': 'XML_PRIVACY',
-                                      'nativeRule': 'PRIVACY', 'leafOrdinal': ordinal, 'section': 16, 'valueShape': shape})
-            self.assertNotIn('NHA THAU', json.dumps(status, ensure_ascii=False))
-        # A single allowed text or digits alone is no concatenation; unrelated text stays text-other.
+            expected = {'format': 'htkk-declaration-native-output-publication-status-v1', 'status': 'rejected', 'code': 'XML_PRIVACY',
+                        'nativeRule': 'PRIVACY', 'leafOrdinal': ordinal, 'section': 16, 'valueShape': shape}
+            if layout:
+                expected['concatLayout'] = layout
+            self.assertEqual(status, expected)
+            for secret in ('NHA THAU', '1503', '46096', '2026', 'PRIVATE', 'GIẢ'):
+                self.assertNotIn(secret, json.dumps(status, ensure_ascii=False))
+        # The allowance is keyed to the case and the leaf: another case or another leaf never accepts the key.
+        other = '04NTNN-TT80-one-subcontractor-2026'; theirs = native_of(dfx.declaration_fixture(other), other)
+        with self.assertRaises(out.OutputError):
+            out.validate_native(theirs.replace(b'<ct9>', tag[:-1] + b'</ct6_ma><ct9>', 1), other, TODAY)
+        with self.assertRaises(out.OutputError):
+            out.validate_native(native.replace(b'<ct9>2000000000<', ('<ct9>' + key + '<').encode(), 1), case, TODAY)
+        # Layout grammar: only fixed tokens leave the process.
+        self.assertEqual(out.safe_context({'valueShape': 'allowed-text-concat', 'concatLayout': 'E.R.n8=ddMMyyyy'})['concatLayout'], 'E.R.n8=ddMMyyyy')
+        for bad in ('E.R.15032026', 'E.R.n8=private', 'x' * 300, 'E', 'E.' * 40 + 'E'):
+            self.assertNotIn('concatLayout', out.safe_context({'valueShape': 'allowed-text-concat', 'concatLayout': bad}))
+        self.assertNotIn('concatLayout', out.safe_context({'valueShape': 'text-other', 'concatLayout': 'E.R'}))
         allowed = d.case(case)['texts']
         self.assertIsNone(d._concat_shape('HD-GL-041', allowed)); self.assertIsNone(d._concat_shape('PRIVATE CUSTOMER', allowed))
-        self.assertIsNone(d._concat_shape('x' * 3000, allowed))
+        self.assertIsNone(d._concat_shape('x' * 3000, allowed)); self.assertIsNone(d.concat_layout('x' * 3000, allowed))
+        # FarPoint primitives of the oracle.
+        self.assertEqual(d.mask_value('15/03/2026'), '15032026'); self.assertEqual(d.mask_value(''), '')
+        self.assertEqual(d.farpoint_trim(' A  \tB \u00a0'), 'A B'); self.assertEqual(d.farpoint_trim('A\t  B'), 'A\tB')
 
     def test_whitespace_only_leaf_reads_empty_like_the_original_reader(self):
         """Release 222: both BCTC native exports (tree matched in the harness) were rejected as

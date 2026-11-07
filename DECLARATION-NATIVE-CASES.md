@@ -182,6 +182,59 @@ ca và dãy số (có / không có mảnh ngày `dd/MM/yyyy` hoặc `yyyy-MM-dd`
 đổi input) phải cho cùng mask 16, cùng lá 71, dạng `allowed-text-concat-date` (ngày dạng `dd/MM/yyyy`) hoặc `allowed-text-concat`
 (ngày thành dãy số hay combo trả chỉ số); dạng `text-other` nghĩa là giả thuyết sai.
 
+#### Y1, chuỗi CR49 (release 246 và quyết định ghi đúng chuỗi HTKK)
+
+Release 246 (run 42380879950, builder 0545e50, web 2d83a6eb): như release 244 (nhập/kết xuất, 11 ô kiểm, 13 lá XML, mask 16,
+lá 71 = `ct6_ma`), dạng `allowed-text-concat`: giá trị tách hết thành văn bản cho phép của ca và dãy số, **không** có mảnh
+`dd/MM/yyyy`. PM quyết định: web ghi `ct6_ma` đúng chuỗi HTKK. Từng phần của `TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49)`
+theo nguồn (snapshot `afc42204`, đọc IL như dữ liệu; HTKK.exe 411141d2…1938, FarPoint.Win.dll fae1320c…ef4d2a,
+FarPoint.Win.Spread.dll 2e7a0d4f…4c50, FarPoint.CalcEngine.dll 19183e5a…0d5a, TAX.HTKK.Utilities.dll ccc35605…17ec):
+
+- **E, R, AR** (control 0, ô nhập không khóa): `fpSpBindDataCell` 0x60001a8 (IL f791ac66…5e49) nhánh mặc định: `Trim` giá trị XML
+  rồi `set_Text`; văn bản giữ nguyên (D6/X9 xuất lại cùng các cột đó khớp). Độ tin cậy cao.
+- **AG** (control 87): `fpSpFormatTableCell` 0x60001ab (IL 937b945f…6c20) → `WinInsertCombox` 0x60001be (IL 3c4f6dae…074f) tạo
+  `ComboBoxCellType` (MaxLength 1000, Items/ItemData, Editable) và **không** gọi `set_EditorValue` (không assembly HTKK nào gọi;
+  `ComboBoxCellType..ctor` 0x6007145 IL 13c050cb…70ad không gán trường `q`) → EditorValue 0 = Item; `ComboBoxCellType.Parse`
+  0x6007151 (IL bd312555…b4b2) trả nguyên văn bản khi `IsValid` (0x6007150: độ dài ≤ MaxLength). `GetValueFromSelectedCell`
+  bảng 0x6000085 (IL 977739e9…0695) không có nhánh '87', nên tên `ct6_ten` nhập vào AG giữ nguyên (X9 release 244: `ct6_ten`
+  của 02-2 khớp). Phần AG = chữ mục danh mục ("Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm"). Độ tin cậy cao.
+- **AM**: control template không có ô AM; XLS AM49 trống (BIFF blank) → "". Độ tin cậy cao.
+- **AW** (control 14): `ReChangeValue` 0x600008f (IL 2d977d98…e27e) đổi `yyyy-MM-dd` của XML thành `dd/MM/yyyy`;
+  `HTKKFormater.toDateDDMMYYYY` (Utilities 0x600040e, IL 1a5fe17c…461e) giữ `15/03/2026`; `InsertDateCell` 0x60001af (IL
+  92fe05f4…7bc7f55) đặt `MaskCellType` mặt nạ "00/00/0000", MaskChar '.', rồi `set_Text`. `Cell.set_Text` 0x600009c (IL
+  40ab4966…f927) gọi `Formatter.Parse` rồi `SetValue`; `EditBaseCellType.Parse` 0x6006e77 (IL e2269139…dcf) →
+  `MaskFormatter.FromFormattedString` 0x60000ff (IL 231379ad…0579; formatter kiểu 1 do `MaskCellType..ctor` 0x6006ffd IL
+  d4ed3285…26ea tạo) → phần tử `h` (dựng bởi `r.a` 0x6000fbd IL 1d8212fa…2e04 với mã ký tự `r.b` 0x6000fc0 IL 86a6fa7a…4d78:
+  '0' → 19, '/' → 0) → `h.a` 0x6000ec3 (IL 82f3aef2…e2ea) → `h.f` 0x6000edb (IL 42bdb017…f382): chỉ giữ ký tự ở vị trí có mã ≥ 6
+  (chỗ giữ chỗ của mặt nạ), `TrimEnd(' ')`. Giá trị ô AW = **"15032026"** (ddMMyyyy, chuỗi). Khớp dạng release 246 (dãy số, không
+  mảnh ngày). Độ tin cậy trung bình–cao (chuỗi IL đầy đủ; chưa có bản xuất gốc lưu được).
+- **TRIM, &**: `TrimFunctionInfo.Evaluate` 0x60008da (IL ec9d65b6…f85f: `String.Trim`, mỗi dãy khoảng trắng giữ ký tự đầu),
+  `ConcatenateOperatorInfo.Evaluate` 0x6000124 (IL fdd637e8…c30e: `ToString` hai vế).
+
+Chuỗi kỳ vọng của ca (oracle `check_key` trong `htkk_declaration_web_cases.py`, tính từ input tổng hợp của ca):
+`NHA THAU PHU VIET NAM A - GIẢ LẬP` + `NHA THAU NUOC NGOAI B - GIẢ LẬP` + `Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm` + "" +
+`HD-GL-041` + `15032026`. Web (htkk_web `work/ntnn-y1`, plugin `check-key-code-cell`) ghi đúng chuỗi đó vào `ct6_ma`.
+
+**Cho phép lưu theo lá, theo ca (không nới quy tắc chung)**: `_texts` chấp nhận ở đúng một đường dẫn
+`HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu/ct6_ma` của đúng ca `04NTNN-TT89-one-subcontractor-2026` đúng
+một giá trị: `check_key(case)` mà oracle tính lại từ input của ca (CHECK_KEYS). Mọi giá trị khác ở lá đó, và chuỗi đó ở lá khác
+hay ca khác, vẫn qua quy tắc privacy như cũ. An toàn vì: mọi phần của chuỗi là dữ liệu tổng hợp đã có trong danh sách văn bản cho
+phép của ca (tên nhà thầu giả lập, mục danh mục nguồn, số hợp đồng giả lập) cộng ngày hợp đồng giả lập; giá trị so khớp chính xác,
+không phải mẫu. Oracle `_ntnn_qt` cũng kiểm `ct6_ma` của dòng phụ lục bằng `check_key` (VALUE) cho cả input web lẫn bản xuất gốc.
+Ca vẫn non-gating.
+
+**Chẩn đoán khi giá trị khác**: ngoài `valueShape`, trạng thái từ chối có `concatLayout` — bố cục mảnh không chứa giá trị: chữ cột
+của phần có tên (E, R, AG, AR), `a<chỉ số>` cho văn bản cho phép khác (chỉ số trong danh sách văn bản đã sắp xếp), `dmy`/`iso`
+(`=AW` nếu bằng ngày của ca), `n<độ dài>` cho dãy số, kèm `=ddMMyyyy|yyyyMMdd|MMddyyyy|ddMMyy|oadate|code|index` nếu bằng một
+cách mã hóa ngày AW / mã AG của chính ca. Ngữ pháp cố định (regex `LAYOUT`), `publish-htkk-declaration-native-output.safe_context`
+bỏ mọi thứ ngoài ngữ pháp.
+
+Lần chạy Windows sau của Y1 (input web mới, `ct6_ma` = chuỗi trên): nếu giả thuyết đúng → nhập/kết xuất, 11 ô kiểm, 13 lá XML
+khớp, so cây **mask 0**, lưu bản xuất gốc (published), `allTaxValuesMatched` true. Nếu sai → từ chối `XML_PRIVACY` lá 71
+section 16 với `concatLayout`, ví dụ `E.R.AG.AR.n5=oadate` (AW là số serial), `E.R.AG.AR.dmy=AW` (giữ dấu "/"),
+`E.R.AG.n1=index.AR.n8=ddMMyyyy` (combo trả chỉ số) — đủ để chọn ứng viên mà không lộ giá trị. Y1 vẫn ẩn trên web tới khi khớp
+toàn bộ.
+
 X9 (02/NTNN quyết toán TT89, non-gating, nhập XML) dùng `02NTNN-TT89-two-annexes-2026`: cùng kỳ KieuKy 22 (`range`); hộp kỳ
 tích "02-1/NTNN" và "02-2/NTNN" (Sheet ID Menu.xml `01-1`/`01-2` = sheet workbook cùng tên). `Ntnn02TT89Nckt309` không có
 `FinishImportXML`; `AutoBindData_0` (0x600191a) ghi trường hợp quyết toán vào BK8/BL8; `Refresh_1/2` gọi

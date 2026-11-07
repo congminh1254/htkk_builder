@@ -27,14 +27,17 @@ class OutputError(ValueError):
   self.code=code;self.context=context or {};super().__init__(code)
 def fail(code,context=None):raise OutputError(code,context)
 def safe_context(context):
- """Only the bounded native-rule diagnostic: a fixed rule name, a leaf ordinal, a section bit
- and a coarse value shape. Never a value, path or text."""
+ """Only the bounded native-rule diagnostic: a fixed rule name, a leaf ordinal, a section bit,
+ a coarse value shape and, for a concatenation, its value-free piece layout. Never a value, path or text."""
  result={}
  if not isinstance(context,dict):return result
  if context.get('nativeRule')in declaration.CODES:result['nativeRule']=context['nativeRule']
  if type(context.get('leafOrdinal'))is int and 0<=context['leafOrdinal']<=4096:result['leafOrdinal']=context['leafOrdinal']
  if type(context.get('section'))is int and context['section']in (1,2,4,8,16,32):result['section']=context['section']
  if context.get('valueShape')in declaration.VALUE_SHAPES:result['valueShape']=context['valueShape']
+ # Value-free piece layout of a rejected concatenation (part letters, allowed-text indices, digit-run lengths and
+ # encoding ids of the case's own synthetic inputs); anything outside the fixed grammar is dropped.
+ if isinstance(context.get('concatLayout'),str) and len(context['concatLayout'])<=256 and declaration.LAYOUT.match(context['concatLayout']) and result.get('valueShape','').startswith('allowed-text-concat'):result['concatLayout']=context['concatLayout']
  return result
 def safe_failure(error):
  context={}

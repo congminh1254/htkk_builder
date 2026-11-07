@@ -76,6 +76,120 @@ def _concat_shape(value, allowed):
     return 'allowed-text-concat-date' if best[len(value)][1] else 'allowed-text-concat'
 
 
+# Value-free layout of a rejected concatenation (diagnostic only; the value is still rejected and never retained):
+# the fewest pieces, each a named part of the case's check key (its column letter), another allowed text of the case
+# ('a' + index into the sorted allowed texts), a dd/MM/yyyy ('dmy') or yyyy-MM-dd ('iso') piece, or a digit run
+# ('n' + length). A date or digit piece equal to an encoding of the case's own synthetic inputs carries that encoding's
+# id ('=ddMMyyyy', '=oadate', '=code', ...), never the digits. E.g. 'E.R.AG.AR.n8=ddMMyyyy'.
+LAYOUT_ENCODINGS = ('ddMMyyyy', 'yyyyMMdd', 'MMddyyyy', 'ddMMyy', 'oadate', 'code', 'index')
+LAYOUT_TOKEN = r'(?:[A-Z]{1,3}|a[0-9]{1,3}|(?:dmy|iso)(?:=AW)?|n[0-9]{1,4}(?:=(?:%s))?)' % '|'.join(LAYOUT_ENCODINGS)
+LAYOUT = re.compile(r'%s(?:\.%s){1,31}\Z' % (LAYOUT_TOKEN, LAYOUT_TOKEN))
+
+
+def _date_encodings(text):
+    """Candidate digit/date renderings of one synthetic dd/MM/yyyy input (FarPoint OADate: days since 1899-12-30)."""
+    day = datetime.datetime.strptime(text, '%d/%m/%Y').date()
+    return {'ddMMyyyy': day.strftime('%d%m%Y'), 'yyyyMMdd': day.strftime('%Y%m%d'), 'MMddyyyy': day.strftime('%m%d%Y'),
+            'ddMMyy': day.strftime('%d%m%y'), 'oadate': str((day - datetime.date(1899, 12, 30)).days)}
+
+
+def concat_layout(value, allowed, parts=None):
+    """Bounded, value-free decomposition of ``value`` (see LAYOUT) or None. ``parts`` is the case's check-key input
+    (CHECK_KEYS): named texts, the date column and the combobox code."""
+    parts = parts or {}
+    named = [(column, text.strip()) for column, text in parts.get('texts', ()) if text.strip()]
+    texts = sorted({a.strip() for a in allowed if a and a.strip()})
+    others = sorted(((t, 'a%d' % i) for i, t in enumerate(texts)), key=lambda x: (-len(x[0]), x[0]))
+    digits = {}
+    if parts.get('date'):
+        digits.update({v: k for k, v in _date_encodings(parts['date']).items()})
+    if parts.get('code'):
+        digits.setdefault(parts['code'], 'code'); digits.setdefault(str(int(parts['code']) - 1), 'index')
+    if len(value) > 2048 or not (named or texts):
+        return None
+    seen, frontier = {0: ()}, [0]
+    while frontier:
+        following = []
+        for i in frontier:
+            tokens = seen[i]
+            steps = [(i + len(t), c) for c, t in named if value.startswith(t, i)]
+            steps += [(i + len(t), tag) for t, tag in others if value.startswith(t, i)]
+            match = _PIECE_DATE.match(value, i)
+            if match:
+                piece = match.group(0)
+                tag = 'dmy' if '/' in piece else 'iso'
+                if parts.get('date') and piece == (parts['date'] if tag == 'dmy' else '-'.join(reversed(parts['date'].split('/')))):
+                    tag += '=AW'
+                steps.append((match.end(), tag))
+            match = _PIECE_DIGITS.match(value, i)
+            if match:
+                run = match.group(0)
+                steps.append((match.end(), 'n%d' % len(run) + ('=' + digits[run] if run in digits else '')))
+            for end, tag in steps:
+                if end not in seen:
+                    seen[end] = tokens + (tag,); following.append(end)
+        if len(value) in seen:
+            break
+        frontier = following
+    tokens = seen.get(len(value))
+    if not tokens or len(tokens) < 2 or len(tokens) > 32:
+        return None
+    layout = '.'.join(tokens)
+    return layout if LAYOUT.match(layout) else None
+
+
+# Y1 04/NTNN TT89, annex 02-2/NTNN (04_1_NTNN_TT89_309.xml binds ct6_ma to column CR): HTKK writes ct6_ma as the value of
+# the LOCKED check-key formula of sheet 01-2 (XLS 04_NTNN_TT89_309.xls sha256 3326d1ab...ca61, CR49), kept on import
+# (WinSpreadProcess.fpSpBindDataCell 0x60001a8) and exported from the grid value (WinDoWorkEvent.ExportDataTableToTableNode
+# 0x6000050). Each part renders as the original grid holds it (DECLARATION-NATIVE-CASES.md, "Y1, chuỗi CR49"):
+# E, R, AR plain text; AG the combobox item text (WinInsertCombox 0x60001be: ComboBoxCellType, EditorValue never set ->
+# Item, ComboBoxCellType.Parse returns the text); AM not bound by the control template (blank); AW the value of the
+# MaskCellType "00/00/0000" that InsertDateCell 0x60001af creates: Cell.set_Text -> EditBaseCellType.Parse ->
+# MaskFormatter.FromFormattedString keeps only the mask's placeholder positions (h.f), so "15/03/2026" -> "15032026".
+# TRIM is FarPoint's TrimFunctionInfo (.NET Trim, inner whitespace runs kept as their first character).
+CHECK_KEY_FORMULA = 'TRIM(E49)&TRIM(R49)&TRIM(AG49)&TRIM(AM49)&TRIM(AR49)&TRIM(AW49)'
+CHECK_KEY_PATH = 'HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu/ct6_ma'
+CHECK_KEYS = {
+    # The case's own synthetic inputs (htkk_web scripts/generate-htkk-descriptor-reference.mjs, row 01-2): AG is the
+    # DM_NNKD_NTNN item 01 the web draft selects; AM is unbound; AW is ngày hợp đồng.
+    '04NTNN-TT89-one-subcontractor-2026': {'texts': (('E', 'NHA THAU PHU VIET NAM A - GIẢ LẬP'), ('R', 'NHA THAU NUOC NGOAI B - GIẢ LẬP'),
+                                                     ('AG', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm'), ('AM', ''), ('AR', 'HD-GL-041')),
+                                           'date': '15/03/2026', 'code': '01', 'dateColumn': 'AW'},
+}
+
+
+def farpoint_trim(text):
+    """FarPoint.CalcEngine TrimFunctionInfo.Evaluate (0x60008da): String.Trim, then each run of whitespace keeps
+    only its first character."""
+    out, keep = [], True
+    for ch in text.strip():
+        if not ch.isspace():
+            out.append(ch); keep = True
+        elif keep:
+            out.append(ch); keep = False
+    return ''.join(out)
+
+
+def mask_value(text, mask='00/00/0000'):
+    """Value of a FarPoint MaskCellType cell whose Text is ``text``: the characters at the mask's placeholder
+    positions (MaskFormatter h.f keeps codes >= 6; '0' is a placeholder, '/' a literal), trailing spaces trimmed."""
+    if set(mask) - set('0/'):
+        raise ValueError('Unreviewed mask')
+    return ''.join(ch for ch, m in zip(text, mask) if m == '0').rstrip(' ')
+
+
+def check_key(case_id):
+    """Exact ct6_ma of the case recomputed from its own synthetic inputs (the CR49 formula, column by column)."""
+    parts = CHECK_KEYS[case_id]
+    columns = re.findall(r'TRIM\(([A-Z]{1,3})49\)', CHECK_KEY_FORMULA)
+    if '&'.join('TRIM(%s49)' % c for c in columns) != CHECK_KEY_FORMULA:
+        raise ValueError('Unreviewed check-key formula')
+    values = dict(parts['texts']); values[parts['dateColumn']] = mask_value(parts['date'])
+    if list(values) != columns:
+        raise ValueError('Check-key parts drift')
+    return ''.join(farpoint_trim(values[c]) for c in columns)
+
+
 class DeclarationWebCaseError(ValueError):
     def __init__(self, code, context=None):
         if code not in CODES:
@@ -108,13 +222,17 @@ def value_shape(value, allowed=()):
     return _concat_shape(value, allowed) or 'text-other'
 
 
-def _where(items, path, value=None, allowed=()):
+def _where(items, path, value=None, allowed=(), parts=None):
     """Context for the first leaf at ``path`` (ordinal is 1-based; 0 if absent)."""
     ordinal = next((i + 1 for i, (p, _) in enumerate(items) if p == path), 0)
     section = next((bit for name, bit in SECTIONS.items() if '/' + name + '/' in path + '/'), 32)
     context = {'leafOrdinal': ordinal, 'section': section}
     if value is not None:
         context['valueShape'] = value_shape(value, allowed)
+        if context['valueShape'] in ('allowed-text-concat', 'allowed-text-concat-date'):
+            layout = concat_layout(value, allowed, parts)
+            if layout:
+                context['concatLayout'] = layout
     return context
 
 
@@ -228,6 +346,7 @@ _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows',
 # A2 has no control bound to TKhaiThue/ngayKy, so TTinChung.ngayKy keeps DateTime.Now.
 EXPORT_DATES = {'BCTC133-B01a-basic-Y2025': (TK + 'ngayKy',)}
 for _id, _c in CASES.items():
+    _c['caseId'] = _id
     _c['exportDates'] = EXPORT_DATES.get(_id, ())
     _c['family'] = 'cnkd' if _id in hkd_design.CASES else 'descriptor' if _id in _descriptor_expected else 'workbook'
     if _c['family'] == 'workbook' and _id not in _workbook_expected:
@@ -328,12 +447,17 @@ def _one(items, path):
     return found[0]
 
 
-def _texts(items, allowed):
+def _texts(items, allowed, case_id=None):
+    # Per-case exact leaf (Y1 ct6_ma only): this one path of this one case accepts exactly the value the oracle
+    # recomputes from the case's own synthetic inputs; any other value there is checked like every other leaf.
+    exact = {CHECK_KEY_PATH: check_key(case_id)} if case_id in CHECK_KEYS else {}
     for path, value in items:
         if value == '' or NUMBER.match(value) or CODE.match(value) or DATE.match(value) or value in ('true', 'false'):
             continue
+        if path in exact and value == exact[path]:
+            continue
         if value not in allowed:
-            reject('PRIVACY', _where(items, path, value, allowed))
+            reject('PRIVACY', _where(items, path, value, allowed, CHECK_KEYS.get(case_id)))
 
 
 def _common(items, spec, created):
@@ -530,6 +654,10 @@ def ntnn_qt_expected(case_id):
     """04/NTNN or 02/NTNN TT89 settlement: (main leaves, annex tables) of the Decimal oracle."""
     if case_id in NTNN04:
         main, totals = ntnn04_expected(case_id)
+        if case_id in CHECK_KEYS:  # Y1: each annex row also carries ct6_ma = the CR49 check key (one reviewed row)
+            if len(NTNN04[case_id][3]) != 1:
+                raise ValueError('DECLARATION_CASE_POLICY')
+            return main, (('PL02_2_NTNN', 'BKCacNTPhu', 'CTietBKCacNTPhu', ('ct6_ma', 'ct9', 'ct10'), tuple((check_key(case_id),) + tuple(r) for r in NTNN04[case_id][3]), totals),)
         return main, (('PL02_2_NTNN', 'BKCacNTPhu', 'CTietBKCacNTPhu', ('ct9', 'ct10'), NTNN04[case_id][3], totals),)
     return ntnn02_expected(case_id)
 
@@ -599,7 +727,7 @@ def validate_web_input(body, case_id, manifest=None):
     if tuple(_pluc(root)) != spec['annexElements']:
         reject('STRUCTURE')
     # The web draft now carries the synthetic profile leaves original export copies (release 213).
-    _texts(items, spec['texts'] | PROFILE_TEXTS)
+    _texts(items, spec['texts'] | PROFILE_TEXTS, spec['caseId'])
     raw = bytes(body).decode('utf-8').replace(COMMENT, '', 1).encode('utf-8')  # disclaimer only
     _expected(case_id, spec, root, items, raw)
     if manifest is not None and manifest.get('leafCount') != spec['leafCount']:
@@ -624,7 +752,7 @@ def validate_native_output(body, case_id, today=None):
     today = today or datetime.datetime.now(datetime.timezone.utc).date()
     if created_date is None or abs((today - created_date).days) > 1:
         reject('DATE')
-    _texts(items, spec['texts'] | PROFILE_TEXTS | set(service))
+    _texts(items, spec['texts'] | PROFILE_TEXTS | set(service), spec['caseId'])
     return {'privacyValuesVerified': True, 'leafCount': len(items), 'nativeServiceIdentityVerified': True, 'creationDateRule': 'native-export-current-date'}
 
 
