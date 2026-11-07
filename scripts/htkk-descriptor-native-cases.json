@@ -16,7 +16,8 @@
     {"adapterId": "03-ntnn-tt80-3.0.8", "menuId": "J1", "businessClass": "Ntnn03TT80", "xmlVersion": "3.0.8", "schemaId": "Validate/03_NTNN_TT80_308.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
     {"adapterId": "04-ntnn-tt80-3.0.8", "menuId": "D6", "businessClass": "Ntnn04TT80", "xmlVersion": "3.0.8", "schemaId": "Validate/04_NTNN_TT80_308.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
     {"adapterId": "04-ntnn-tt89-3.0.9", "menuId": "Y1", "businessClass": "Ntnn04TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/04_NTNN_TT89_309.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
-    {"adapterId": "02-ntnn-tt89-3.0.9", "menuId": "X9", "businessClass": "Ntnn02TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/02_NTNN_TT89_309.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"}
+    {"adapterId": "02-ntnn-tt89-3.0.9", "menuId": "X9", "businessClass": "Ntnn02TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/02_NTNN_TT89_309.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"},
+    {"adapterId": "02-ntnn-tt80-2.5.1", "menuId": "C9", "businessClass": "Ntnn02TT80", "xmlVersion": "2.5.1", "schemaId": "Validate/02_NTNN_TT80_251.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"}
   ],
   "cases": [
     {"caseId": "05KK-zero-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
@@ -93,6 +94,15 @@
      "unit": {"menuId": "X9", "adapterVersion": "3.0.9", "periodType": "range", "periodValue": "01/07/2026-30/09/2026", "activityCode": "00", "annexes": ["01-1", "01-2"], "amendmentOrder": 0},
      "expectedLeaves": {"GiaTriHDong/keKhai": "3000000000", "GiaTriHDong/quyetToan": "3000000000", "DThuTinhThue/quyetToan": "2800000000", "DThuTinhThueNTPhu/quyetToan": "1000000000", "DThuTinhThueNTNN/quyetToan": "1800000000", "SoThuePhaiNopNTNN/keKhai": "126000000", "SoThuePhaiNopNTNN/quyetToan": "130000000", "ThueTNDNPhaiNop/chenhLech": "4000000", "SoThueDaNop/quyetToan": "126000000", "SoThueConPhaiNop/quyetToan": "4000000", "ThueGTGTConPNop/quyetToan": "0", "ThueTNDNConPNop/quyetToan": "4000000", "SoThueNopThua/quyetToan": "0"},
      "expectedRows": {"PL02_1_NTNN/BKCacNTNN/CTietBKCacNTNN": 1, "PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu": 1},
-     "question": "Không có ca 0: Header B55 chặn khi chênh lệch 5a/5b đều 0. Nhập XML giữ ct3_ma (nước cư trú, control 56) và Refresh_1/2 chép lại BO34/BO35 vào AF34/AF35? Một phụ lục: HTKK đọc liên kết phụ lục kia (01-1!CW26 / 01-2!CQ30) là 0?"}
+     "question": "Không có ca 0: Header B55 chặn khi chênh lệch 5a/5b đều 0. Nhập XML giữ ct3_ma (nước cư trú, control 56) và Refresh_1/2 chép lại BO34/BO35 vào AF34/AF35? Một phụ lục: HTKK đọc liên kết phụ lục kia (01-1!CW26 / 01-2!CQ30) là 0?"},
+    {"caseId": "02NTNN-TT80-zero-2026", "adapterId": "02-ntnn-tt80-2.5.1", "releaseGate": false,
+     "unit": {"menuId": "C9", "adapterVersion": "2.5.1", "periodType": "range", "periodValue": "01/01/2026-30/09/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
+     "expectedLeaves": {"GiaTriHDong/quyetToan": "0", "DThuChuaGomGTGT/quyetToan": "0", "DThuTinhThueNTNN/quyetToan": "0", "SoThuePhaiNopNTNN/quyetToan": "0", "SoThueConPhaiNop/quyetToan": "0", "SoThueNopThua/quyetToan": "0"},
+     "question": "Chỉ thiết kế: không phụ lục, AF34/AF35 giữ công thức XLS =BK34/=BK35 = 0; số/ngày hợp đồng bắt buộc (Header B32/B33)."},
+    {"caseId": "02NTNN-TT80-two-annexes-2026", "adapterId": "02-ntnn-tt80-2.5.1", "releaseGate": false,
+     "unit": {"menuId": "C9", "adapterVersion": "2.5.1", "periodType": "range", "periodValue": "01/01/2026-30/09/2026", "activityCode": "00", "annexes": ["01-1", "01-2"], "amendmentOrder": 0},
+     "expectedLeaves": {"GiaTriHDong/keKhai": "3000000000", "GiaTriHDong/quyetToan": "3000000000", "DThuChuaGomGTGT/quyetToan": "2800000000", "DThuTinhThueNTPhu/quyetToan": "1000000000", "DThuTinhThueNTNN/quyetToan": "1800000000", "SoThuePhaiNopNTNN/keKhai": "126000000", "SoThuePhaiNopNTNN/quyetToan": "130000000", "ThueTNDNPhaiNop/chenhLech": "4000000", "SoThueDaNop/quyetToan": "126000000", "SoThueConPhaiNop/quyetToan": "4000000", "ThueGTGTConPNop/quyetToan": "0", "ThueTNDNConPNop/quyetToan": "4000000", "SoThueNopThua/quyetToan": "0"},
+     "expectedRows": {"PL02_1_NTNN/BKCacNTNN/CTietBKCacNTNN": 1, "PL02_2_NTNN/BKCacNTPhu/CTietBKCacNTPhu": 1},
+     "question": "Nhập XML giữ ct3_ma (control 56) và ct6_ma/ct7_ma (control 100, Catalogue_Dia_Ban_Tinh_Moi); AF34/AF35 là công thức =BK34/=BK35 (tổng hai phụ lục). checkPL2_1/checkPL2_2 không chặn khi kết xuất (ngày trước hôm nay, [8]/[9] khác 0)?"}
   ]
 }

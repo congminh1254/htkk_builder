@@ -25,6 +25,8 @@ TRUSTED={
  '04-ntnn-tt89-3.0.9':{'menuId':'Y1','businessClass':'Ntnn04TT89','xmlVersion':'3.0.9','schemaId':'Validate/04_NTNN_TT89_309.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
  # 02/NTNN quyết toán TT89 (X9 3.0.9): KieuKy 22 ('range'), annexes 01-1 (02-1/NTNN) and 01-2 (02-2/NTNN).
  '02-ntnn-tt89-3.0.9':{'menuId':'X9','businessClass':'Ntnn02TT89','xmlVersion':'3.0.9','schemaId':'Validate/02_NTNN_TT89_309.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
+ # 02/NTNN quyết toán TT80 (C9 2.5.1): KieuKy 22 ('range', Menu.xml EndDate 01/10/2026), annexes as X9.
+ '02-ntnn-tt80-2.5.1':{'menuId':'C9','businessClass':'Ntnn02TT80','xmlVersion':'2.5.1','schemaId':'Validate/02_NTNN_TT80_251.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
 }
 NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9'})
 def validate(value):

@@ -22,6 +22,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `04NTNN-TT80-one-subcontractor-2026` | `101 → 101_8 → D6` (04/NTNN TT80 3.0.8) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (sheet Menu `01-1` = sheet XLS `01-2`, 1 nhà thầu phụ) | 75 |
 | `04NTNN-TT89-one-subcontractor-2026` | `101 → 101_8 → Y1` (04/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (1 nhà thầu phụ) | 75 |
 | `02NTNN-TT89-two-annexes-2026` | `101 → 101_8 → X9` (02/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài, nước cư trú JP), 02-2/NTNN (1 nhà thầu phụ) | 108 |
+| `02NTNN-TT80-two-annexes-2026` | `101 → 101_8 → C9` (02/NTNN TT80 2.5.1) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài: JP, địa điểm 101), 02-2/NTNN (1 nhà thầu phụ, địa điểm 103) | 111 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -158,6 +159,23 @@ IF(5 − 6 < 0, 0, 5 − 6), 47–49 = IF(5 − 6 ≥ 0, 0, |5 − 6|)): AF34 3.
 130.000.000, AO40 4.000.000, AF41 126.000.000, AF44 = AF46 4.000.000; dòng và tổng hai phụ lục. Không có ca 0: Header B55
 (`IF(AND(01!AO39=0,01!AO40=0),0,1)`, cờ Y) chặn kết xuất khi cả hai chênh lệch thuế bằng 0. Câu hỏi mở: nhập XML giữ `ct3_ma`
 và kết xuất lại `ct4` (MST nhà thầu nước ngoài, control 26 rỗng) là `xsi:nil` như web?
+
+C9 (02/NTNN quyết toán TT80, non-gating, nhập XML) dùng `02NTNN-TT80-two-annexes-2026`: kỳ KieuKy 22 (`range`) 01/01/2026–30/09/2026
+(Menu.xml `EndDate` 01/10/2026, `CheckToKhaiHetHieuLuc` như D6); hộp kỳ tích "02-1/NTNN" và "02-2/NTNN". `Ntnn02TT80Nckt251` không có
+`FinishImportXML`; `AutoBindData_0` (0x600190b) ghi trường hợp quyết toán vào BK8/BL8. Khác X9: AF34/AF35 là **công thức XLS**
+`=BK34`/`=BK35` (BK34 = 02-1 BG27 + 02-2 BD26, BK35 = 02-1 BY27 + 02-2 BS26); `CellChange_1/2`, `UpdateFormula_1/2`, `ClearData_1/2`,
+`Refresh_1/2` chỉ đặt lại đúng công thức đó (như D6). Dòng 2 của tờ khai là `DThuChuaGomGTGT`; dòng 02-1 có `ct10` = số lượng lao
+động (5), tổng `tong_ct10` 5. Control 100 (địa điểm, `dicTinhTPMoi` từ `Catalogue_Dia_Ban_Tinh_Moi.xml`): 02-1 AJ → CO `ct6_ma` 101
+"Thành phố Hà Nội", 02-2 AM → CB `ct7_ma` 103 "Thành phố Hải Phòng" (kiểm ô CO25/CB24 sau nhập). `isValidDuLieuTK` (0x6001915) chạy
+`checkPL2_1`/`checkPL2_2` trên phụ lục đang hiện, mọi lỗi tô hồng (chặn, 0016): dữ liệu ca đủ mọi ô bắt buộc, ngày trước hôm nay,
+[8]/[9] (02-1) và [9]/[10] (02-2) khác 0, không trùng. Oracle `NTNN02` mở rộng (`_NTNN02_TT80`): cùng công thức dòng 34–49 như X9,
+tên `DThuChuaGomGTGT`, 02-1 ba lá `ct8/ct9/ct10`: AF34 3.000.000.000, AF35 2.800.000.000, AF37 1.800.000.000, AF38 130.000.000, AO40
+4.000.000, AF41 126.000.000, AF44 = AF46 4.000.000, AF47 0; 02-1 `tong_ct8` 2.000.000.000, `tong_ct9` 1.800.000.000, `tong_ct10` 5; 02-2
+`tong_ct9` = `tong_ct10` 1.000.000.000. XML web 115 lá (111 lá thuế). Ca 0 chỉ thiết kế (`02NTNN-TT80-zero-2026`, không phụ lục; C9 không
+có quy tắc Header chặn quyết toán 0). Câu hỏi mở cho lần chạy Windows: (1) nhập XML giữ `ct6_ma`/`ct7_ma` (control 100) và
+`ct3_ma`; (2) sau nhập AF34/AF35 vẫn là công thức `=BK34`/`=BK35` (không có Refresh chế độ 2 nào chạy); (3) `checkPL2_1`/`checkPL2_2`
+không chặn kết xuất với ngày 05/01/2026–30/09/2026; (4) `ct4` (MST nhà thầu nước ngoài) và `ct3`/`ct5` của 02-2 rỗng kết xuất lại
+`xsi:nil` như web; (5) `ct10` của 02-1 (số lượng lao động, control 16) kết xuất là `5`.
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →

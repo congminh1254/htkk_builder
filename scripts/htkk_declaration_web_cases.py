@@ -177,6 +177,13 @@ CASES = {
                                           ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI (Mẫu số 02/NTNN)', TEMPLATE_TT89, ADDRESS, 'HD-GL-020', 'HD-GL-021', 'HD-GL-022', 'Kết thúc hợp đồng nhà thầu',
                                            'NHA THAU NUOC NGOAI E - GIẢ LẬP', 'NHA THAU PHU VIET NAM F - GIẢ LẬP', 'JP', 'Nhật',
                                            'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    # C9 02/NTNN quyết toán TT80 (non-gating): KieuKy 22 like D6 (Menu.xml EndDate 01/10/2026); annexes 02-1 (one foreign
+    # contractor: nước cư trú Nhật / JP, control 56; địa điểm Thành phố Hà Nội / 101, control 100) and 02-2 (one Vietnamese
+    # subcontractor, địa điểm Thành phố Hải Phòng / 103). 02-1 ct10 is the labour count (5), not an amount.
+    '02NTNN-TT80-two-annexes-2026': _case('ntnn02-tt80-two-annexes-2026', 'C9', '921', '2.5.1', 'Validate/02_NTNN_TT80_251.xsd', ('Y', '2026', '01/01/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 115, ['PL02_1_NTNN', 'PL02_2_NTNN'], WORKBOOK_SERVICE,
+                                          ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI (Mẫu số 02/NTNN)', TEMPLATE_TT80, ADDRESS, 'HD-GL-030', 'Kết thúc hợp đồng nhà thầu',
+                                           'NHA THAU NUOC NGOAI G - GIẢ LẬP', 'NHA THAU PHU VIET NAM H - GIẢ LẬP', 'JP', 'Nhật', 'Thành phố Hà Nội', 'Thành phố Hải Phòng',
+                                           'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
     '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
@@ -450,11 +457,17 @@ NTNN02 = {
     # (kê khai W34, W35, W36, W39, W40; quyết toán AF36, AF39, AF40, AF42, AF43; 02-1 rows (ct8, ct9); 02-2 rows (ct9, ct10))
     '02NTNN-TT89-two-annexes-2026': (('3000000000', '2800000000', '1000000000', '90000000', '36000000'), ('1000000000', '90000000', '40000000', '90000000', '36000000'),
                                      (('2000000000', '1800000000'),), (('1000000000', '1000000000'),)),
+    # C9 (TT80 2.5.1): 02-1 rows (ct8, ct9, ct10 = số lượng lao động); AF34/AF35 are the XLS formulas =BK34/=BK35 with
+    # BK34 = 02-1 BG27 (tổng ct8) + 02-2 BD26 (tổng ct9), BK35 = 02-1 BY27 (tổng ct9) + 02-2 BS26 (tổng ct10).
+    '02NTNN-TT80-two-annexes-2026': (('3000000000', '2800000000', '1000000000', '90000000', '36000000'), ('1000000000', '90000000', '40000000', '90000000', '36000000'),
+                                     (('2000000000', '1800000000', '5'),), (('1000000000', '1000000000'),)),
 }
+# The TT80 form (C9) names row 2 DThuChuaGomGTGT (TT89: DThuTinhThue) and its 02-1 rows carry ct10 (số lượng lao động).
+_NTNN02_TT80 = frozenset({'02NTNN-TT80-two-annexes-2026'})
 
 
 def ntnn02_expected(case_id):
-    """Leaves under CTieuTKhaiChinh and the annex tables (element, table, row, leaves, rows, totals) of an X9 case."""
+    """Leaves under CTieuTKhaiChinh and the annex tables (element, table, row, leaves, rows, totals) of an X9 or C9 case."""
     D = decimal.Decimal
     declared, settled, rows1, rows2 = NTNN02[case_id]
     w34, w35, w36, w39, w40 = (D(v) for v in declared)
@@ -466,14 +479,17 @@ def ntnn02_expected(case_id):
     kk = (w34, w35, w36, pos(w35 - w36), w39 + w40, w39, w40)
     qt = (a34, a35, a36, pos(a35 - a36), a39 + a40, a39, a40)
     out = {}
-    for name, k, q in zip(_NTNN02_DECLARED, kk, qt):
+    tt80 = case_id in _NTNN02_TT80
+    declared_names = tuple('DThuChuaGomGTGT' if tt80 and n == 'DThuTinhThue' else n for n in _NTNN02_DECLARED)
+    for name, k, q in zip(declared_names, kk, qt):
         out[name + '/keKhai'], out[name + '/quyetToan'], out[name + '/chenhLech'] = str(k), str(q), str(q - k)
     a41 = a42 + a43
     for name, value in (('SoThueDaNop', a41), ('ThueGTGTDaNop', a42), ('ThueTNDNDaNop', a43),
                         ('SoThueConPhaiNop', D(0) if qt[4] - a41 < 0 else qt[4] - a41), ('ThueGTGTConPNop', D(0) if a39 - a42 < 0 else a39 - a42), ('ThueTNDNConPNop', D(0) if a40 - a43 < 0 else a40 - a43),
                         ('SoThueNopThua', D(0) if qt[4] - a41 >= 0 else abs(qt[4] - a41)), ('ThueGTGTNopThua', D(0) if a39 - a42 >= 0 else abs(a39 - a42)), ('ThueTNDNNopThua', D(0) if a40 - a43 >= 0 else abs(a40 - a43))):
         out[name + '/quyetToan'] = str(value)
-    annexes = (('PL02_1_NTNN', 'BKCacNTNN', 'CTietBKCacNTNN', ('ct8', 'ct9'), rows1, {'tong_ct8': str(t1[0]), 'tong_ct9': str(t1[1])}),
+    first = (('ct8', 'ct9', 'ct10'), {'tong_ct8': str(t1[0]), 'tong_ct9': str(t1[1]), 'tong_ct10': str(sum(D(r[2]) for r in rows1))}) if tt80 else (('ct8', 'ct9'), {'tong_ct8': str(t1[0]), 'tong_ct9': str(t1[1])})
+    annexes = (('PL02_1_NTNN', 'BKCacNTNN', 'CTietBKCacNTNN', first[0], rows1, first[1]),
                ('PL02_2_NTNN', 'BKCacNTPhu', 'CTietBKCacNTPhu', ('ct9', 'ct10'), rows2, {'tong_ct9': str(t2[0]), 'tong_ct10': str(t2[1])}))
     return out, annexes
 

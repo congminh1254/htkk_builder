@@ -150,6 +150,16 @@
       "driver": "declaration-web-import-inspect",
       "privacyValidator": "declaration-v1",
       "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "02-ntnn-tt80-2.5.1",
+      "htkkVersion": "5.8.1",
+      "menuId": "C9",
+      "xmlVersion": "2.5.1",
+      "producer": "scripts/generate-htkk-declaration-reference.mjs",
+      "driver": "declaration-web-import-inspect",
+      "privacyValidator": "declaration-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
     }
   ],
   "cases": [
@@ -725,6 +735,26 @@
         "adapterVersion": "3.0.9",
         "periodType": "range",
         "periodValue": "01/07/2026-30/09/2026",
+        "activityCode": "00",
+        "annexes": ["01-1", "01-2"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "02NTNN-TT80-two-annexes-2026",
+      "producerCase": "ntnn02-tt80-two-annexes-2026",
+      "adapterId": "02-ntnn-tt80-2.5.1",
+      "format": "htkk-web-ntnn02-tt80-two-annexes-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn02-tt80-two-annexes-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn02-tt80-two-annexes-2026-input",
+      "outputBranch": "declaration-web-native-ntnn02-tt80-two-annexes-2026-output",
+      "statusContext": "htkk-native/ntnn02-tt80-two-annexes-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "C9",
+        "adapterVersion": "2.5.1",
+        "periodType": "range",
+        "periodValue": "01/01/2026-30/09/2026",
         "activityCode": "00",
         "annexes": ["01-1", "01-2"],
         "amendmentOrder": 0
