@@ -108,6 +108,8 @@ Release 240 (web fbd22dad, builder 9d14366d, run 42353849411): nhập XML, 6 ô 
 (thứ tự 46, 59): `ct9` HTKK ghi `0`, web khi đó ghi `0.00`. Nguồn: `GeneralFunctions.GetValueExportXML` (0x6002617) thay mọi
 giá trị Controltype 16 có `Convert.ToDouble` = 0 bằng `"0"` trước khi định dạng (áp dụng cho cả số 0 nhập tay). Web
 `work/j1-fix` ghi `0`; oracle (`_EMPTY_ROW` của Y8 và dòng J1) theo đó. Cần chạy lại ca ở release sau.
+Release 241 (web 349cd65b, builder 8a1b4820, run 42356589757): **khớp toàn bộ** (61 lá, mismatch mask 0; bản
+native trùng byte với release 240, chỉ input web đổi `ct9` thành `0`). htkk_web bật J1 (fixture `ntnn03-no-rate-m10-2026-release241`).
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →
