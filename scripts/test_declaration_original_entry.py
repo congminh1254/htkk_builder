@@ -48,47 +48,40 @@ def entries():
 
 
 class Registration(unittest.TestCase):
-    def test_entry_case_is_a_non_gating_declaration_case_of_its_own_mode(self):
+    def test_entry_case_is_the_only_y8_case_non_gating_and_of_its_own_mode(self):
         self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE,))
         self.assertIn(CASE, registry.DECLARATION_CASES)
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.GATE_CASES)
         self.assertEqual(registry.input_mode(CASE), registry.ENTRY_MODE)
-        self.assertEqual(registry.input_mode(BASE), registry.IMPORT_MODE)
-        # The import-based Y8 case stays registered and non-gating as well.
-        self.assertIs(registry.CASES[BASE]['releaseGate'], False)
         self.assertEqual(registry.driver(CASE), MODE)
-        self.assertEqual(registry.CASES[CASE]['unit'], registry.CASES[BASE]['unit'])
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'ntnn01-nccnn-entry-m10-2026')
+        # The import-based Y8 case was removed after release 242 (HTKK resets the tables on import).
+        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8'], [CASE])
+        self.assertNotIn(BASE, registry.CASES); self.assertNotIn(BASE, d.CASES); self.assertNotIn('01-ntnn-nccnn-tt89-3.0.9', registry.TRUSTED_ADAPTERS)
+        self.assertNotIn(BASE, automation['resultFields']['webCaseId']['values'])
         adapters = {a['adapterId']: a['mode'] for a in design.DESIGN['adapters']}
         self.assertEqual(adapters['01-ntnn-nccnn-tt89-3.0.9-entry'], 'original-entry-export')
-        self.assertEqual(adapters['01-ntnn-nccnn-tt89-3.0.9'], 'web-xml-import-reexport')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationEntryCases=@('" + CASE + "')", formats)
+        self.assertIn("$HtkkDeclarationEntryCases=@('" + CASE + "')", formats); self.assertNotIn(BASE, formats)
 
-    def test_same_input_as_the_import_case_told_apart_only_by_manifest(self):
-        self.assertEqual(d.SAME_INPUT, {CASE: BASE})
+    def test_entry_input_is_the_reviewed_design_case(self):
+        designs = {c['caseId']: c['expectedLeaves'] for c in design.DESIGN['cases']}
+        self.assertEqual(designs[CASE], designs[BASE])  # BASE stays as the reviewed design case only
         body = dfx.declaration_fixture(CASE)
-        self.assertEqual(body, dfx.declaration_fixture(BASE))
-        self.assertEqual(d.ntnn_tables(CASE), d.ntnn_tables(BASE))
         reader.validate_web_xml(body, case_id=CASE)
         own = json.dumps(dfx.declaration_manifest(body, CASE), ensure_ascii=False).encode()
-        other = json.dumps(dfx.declaration_manifest(body, BASE), ensure_ascii=False).encode()
         self.assertEqual(reader.validate_manifest(own)['caseId'], CASE)
-        relabelled = json.loads(other); relabelled['caseId'] = CASE
-        with self.assertRaises(reader.InputError):
-            reader.validate_manifest(json.dumps(relabelled, ensure_ascii=False).encode())
 
 
 class EntryPlan(unittest.TestCase):
-    def test_import_plan_identity_is_shared_and_only_cell_checks_grow(self):
-        base, entry = plan_block(BASE), plan_block(CASE)
-        def strip_checks(block):
-            arrays = re.findall(r'new string\[\]\{.*?\}', block, re.S)
-            return block.replace(arrays[2], 'CHECKS').replace('"' + CASE + '"', 'ID').replace('caseId', 'ID')
-        self.assertEqual(strip_checks(base), strip_checks(entry))
-        self.assertTrue(set(string_array(base, 2)) <= set(string_array(entry, 2)))
-        self.assertEqual(string_array(base, 3), string_array(entry, 3))
+    def test_plan_identity_pins_and_xml_checks(self):
+        entry = plan_block(CASE)
+        self.assertIn('"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false', entry)
+        self.assertIn('"53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1"', entry)
+        leaves = {k: v for k, v in d._descriptor_expected[CASE][0].items()}
+        self.assertEqual({c.split('|')[0].rsplit('/', 1)[-1]: c.split('|')[1] for c in string_array(entry, 3)}, leaves)
+        self.assertNotIn('"' + BASE + '"', PLANS.split('internal static readonly string[] CaseIds=')[1].split('\n')[0])
         self.assertIn('"' + CASE + '"};', PLANS.split('internal static readonly string[] CaseIds=')[1].split('\n')[0])
 
     def test_typed_values_are_the_reviewed_rows_of_the_decimal_oracle(self):

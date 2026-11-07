@@ -34,8 +34,9 @@ TRUSTED_ADAPTERS={
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).
  '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('10/2026',)},[]),
- # Y8 01/NTNN, NCCNN TT89 (non-gating): KieuKy 18 like I9; Menu.xml validity from 01/10/2026.
- '01-ntnn-nccnn-tt89-3.0.9':_declaration('Y8','3.0.9',{'month':('10/2026',)},[]),
+ # Y8 01/NTNN, NCCNN TT89: KieuKy 18 like I9; Menu.xml validity from 01/10/2026. The import-based adapter
+ # 01-ntnn-nccnn-tt89-3.0.9 (case 01NTNN-NCCNN-two-parts-M10-2026) was removed after release 242: HTKK resets
+ # the Y8 tables on import, so it could never match; the original-entry case below superseded it.
  # Y8 original entry (non-gating): HTKK 5.8.1 resets the Y8 tables on "Nhập từ XML" (AutoBindData_0 ->
  # LockUnlock -> LockUnLockColsInTable deleteData=true, release 238), so the same synthetic rows are
  # typed into the original grid and exported with the original export instead.

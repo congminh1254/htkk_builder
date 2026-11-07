@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'Y8', 'J1', 'Y8'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -233,9 +233,7 @@ class InputPrivacy(unittest.TestCase):
     def test_cases_cannot_be_relabelled_or_routed_through_the_d1_validator(self):
         for case in CASES:
             body = dfx.declaration_fixture(case)
-            # A case of another native-case mode may reuse a reviewed input byte for byte (SAME_INPUT); only
-            # its manifest (caseId, format, producer case) differs, which test_same_input_cases_differ_by_manifest pins.
-            for other in (c for c in CASES if c != case and d.SAME_INPUT.get(c) != case and d.SAME_INPUT.get(case) != c):
+            for other in (c for c in CASES if c != case):
                 with self.subTest(case=case, other=other), self.assertRaises(reader.InputError):
                     reader.validate_web_xml(body, case_id=other)
             with self.assertRaises(reader.InputError):

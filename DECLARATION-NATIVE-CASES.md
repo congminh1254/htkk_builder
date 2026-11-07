@@ -17,9 +17,8 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `01CNKD-TT50-revenue-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD 2.9.8) | 21 | quý 3/2026 | — | 257 |
 | `02QTT-dependants-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3) | 12 | năm 2025 (NopTheoTinhCQT 3) | 02-1 (danh sách ẩn; nhập XML thêm mọi phụ lục) | 126 |
 | `01NTNN-two-contractors-M10-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 10/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
-| `01NTNN-NCCNN-two-parts-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9) | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa) | 103 |
 | `03NTNN-no-rate-M10-2026` | `101 → 101_8 → J1` (03/NTNN 3.0.8) | 18 | tháng 10/2026 | — (bảng `BKThueNTNN/ThueNTNN`, 2 dòng, tỷ lệ [9] = 0) | 65 |
-| `01NTNN-NCCNN-entry-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9), **nhập tay** | 18 | tháng 10/2026 | — (như two-parts, gõ vào lưới gốc) | 103 |
+| `01NTNN-NCCNN-entry-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9), **nhập tay** | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa; gõ vào lưới gốc) | 103 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -32,7 +31,7 @@ tổng `tong_ct5…ct14`: A 50tr/50tr/100tr, B 15tr/8tr/23tr, tổng [14] 123.00
 theo `01_NTNN_TT80_xml_251.xml`/XSD), nên `leaves()` nhận cả `id` và `ID` với giá trị `ID_n`; so cây vẫn so thuộc tính chính xác.
 Câu hỏi mở: tỷ lệ ct8/ct11 (control 16, DefaultValue `0,00`) web ghi `5.00` như 03/TNDN `ct05` của release 214.
 
-Y8 (01/NTNN, NCCNN TT89, non-gating) dùng `01NTNN-NCCNN-two-parts-M10-2026`: tích M8 `nopThayNCCNN`
+Y8 (01/NTNN, NCCNN TT89, non-gating) dùng ca thiết kế `01NTNN-NCCNN-two-parts-M10-2026` (ca native import cùng tên đã bỏ sau release 242, xem dưới): tích M8 `nopThayNCCNN`
 (`Ntnn01TT89Nckt309.ButtonClick_0` giữ M6 = false), bảng `ThueNTNN` khóa (`LockUnlock`) và chỉ có dòng mẫu mặc định;
 một nhà cung cấp nước ngoài (200tr: GTGT 10tr, TNDN 10tr, [14] 20tr) và một cá nhân không cư trú (100tr: GTGT 5tr,
 TNCN 2tr, [14] 7tr). Oracle `NTNN_ROWS` theo từng bảng (đường dẫn dòng, cha của dòng tổng, tiền tố `tong_`/`mucI_tong_`/
@@ -50,8 +49,8 @@ native cho Y8 cần chế độ nhập tay trên lưới gốc sau khi tích M6/
 
 ### Chế độ ca native `original-entry-export` (Y8, `01NTNN-NCCNN-entry-M10-2026`, non-gating)
 
-Cùng driver/GUI mode `declaration-web-import-inspect`, cùng menu/kỳ/pin/kiểm XML/so cây, cùng input web (byte-identical với
-`01NTNN-NCCNN-two-parts-M10-2026`, `SAME_INPUT`; chỉ manifest/caseId/format/nhánh khác) nhưng **không** bấm "Nhập từ XML":
+Cùng driver/GUI mode `declaration-web-import-inspect`, cùng menu/kỳ/pin/kiểm XML/so cây, cùng input web (dữ liệu của ca thiết kế
+`01NTNN-NCCNN-two-parts-M10-2026`; trước release 242 trùng byte với ca import cùng tên, `SAME_INPUT`, nay đã bỏ) nhưng **không** bấm "Nhập từ XML":
 adapter `01-ntnn-nccnn-tt89-3.0.9-entry` (mode `original-entry-export` trong `TRUSTED_ADAPTERS` và
 `htkk-descriptor-native-cases.json`) làm `HtkkDeclarationCasePlans.Entry(caseId)` khác null, và
 `HtkkDeclarationOriginalEntry.cs` gõ kế hoạch cố định vào lưới gốc. Web XML vẫn là bản tham chiếu của so toàn cây.
@@ -95,8 +94,16 @@ Câu hỏi lần chạy Windows đầu sẽ trả lời: ButtonClicked đọc M8
 `ComboBoxCellType` (bit 16/32) hay phải dùng ENTER/DOWN; `SendInput` Unicode vào editor chung của FarPoint (mã 12); ô ngày của
 dòng bảng là mask (`DateTextMask`); AY98 (công thức `TRIM(Header!V42)`) mở cho gõ hay khóa (`SigningDateLocked`, khi đó ngày ký
 xuất ra có thể lệch → mask cây 2); HTKK kết xuất dòng mẫu của bảng khóa và `ct2` rỗng thế nào (mask cây 8). Ca import
-`01NTNN-NCCNN-two-parts-M10-2026` giữ nguyên, non-gating; **khi ca nhập tay khớp, nó thay thế ca import cho Y8** (quyết định
-bỏ ca import để sau).
+`01NTNN-NCCNN-two-parts-M10-2026` ban đầu được giữ, non-gating.
+
+**Release 242** (web 192d4c03, builder d1d87637, run 42359742133): `01NTNN-NCCNN-entry-M10-2026` **khớp toàn bộ** ngay lần
+chạy đầu: 103 lá, mask cây 0, 15/15 ô kiểm và 9/9 lá XML khớp; pin phương thức/danh mục khớp; khóa trước/sau/cuối 7/1/1;
+`RowsBefore/After` 273 (một dòng/bảng, không F5); 21/21 giá trị; `Combo1Mask` = `Combo2Mask` = 1599 (AutoSearch bằng chữ đầu
+chọn đúng ngay, không dùng ENTER/DOWN; mã BX do CellChange ghi); `SigningDateLocked` false (AY98 gõ được); `DateTextMask` 0.
+Bản xuất gốc: nhánh `declaration-web-native-ntnn01-nccnn-entry-m10-2026-output` 7a01607c (htkk_web ghim làm fixture
+`ntnn01-nccnn-entry-m10-2026-release242`; Y8 được bật). Ca import `01NTNN-NCCNN-two-parts-M10-2026` (thất bại như dự kiến ở
+release 242) **bị bỏ** khỏi registry, kế hoạch biên dịch, allowlist privacy và producer web: HTKK 5.8.1 đặt lại bảng kê Y8
+khi nhập XML nên ca đó không thể khớp, ca nhập tay thay thế. Ca thiết kế cùng tên vẫn là nguồn dữ liệu (design-only).
 
 J1 (03/NTNN 3.0.8, non-gating) dùng `03NTNN-no-rate-M10-2026`: `Ntnn03TT80Nckt308.FinishImportXML` (0x6001937) ghi
 `BU := GeneralFunctions.getThuSuatByMa(CR, "DC_97")` cho mọi dòng nhập; cột ẩn CR (`pathTLTNDN`) không có trong mẫu

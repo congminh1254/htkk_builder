@@ -13,7 +13,7 @@ class DescriptorNativeCaseDesign(unittest.TestCase):
   self.assertFalse(design.DESIGN['dispatchable'])
   # Only reviewed cases are promoted, through the declaration driver and never as a gate.
   promoted=set(design.CASE_IDS)&set(native.CASES)
-  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026'})
+  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026'})
   for case in promoted:self.assertEqual(native.driver(case),'declaration-web-import-inspect');self.assertIs(native.CASES[case]['releaseGate'],False)
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   for case in set(design.CASE_IDS)-promoted:self.assertNotIn(case,workflow)

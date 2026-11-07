@@ -1,6 +1,6 @@
 # Ca native thiết kế cho họ descriptor: TNCN (05/KK, 05/QTT, 02/QTT) và NTNN (01/NTNN TT80)
 
-> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `01NTNN-NCCNN-two-parts-M10-2026`, `03NTNN-no-rate-M10-2026` và `01NTNN-NCCNN-entry-M10-2026` (nhập tay) đã được đăng ký (releaseGate false) với driver
+> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `03NTNN-no-rate-M10-2026` và `01NTNN-NCCNN-entry-M10-2026` (nhập tay; thay ca import `01NTNN-NCCNN-two-parts-M10-2026`, nay chỉ còn là ca thiết kế, release 242) đã được đăng ký (releaseGate false) với driver
 > chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
