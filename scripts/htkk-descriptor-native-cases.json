@@ -63,7 +63,7 @@
     {"caseId": "03NTNN-no-rate-M10-2026", "adapterId": "03-ntnn-tt80-3.0.8", "releaseGate": false,
      "unit": {"menuId": "J1", "adapterVersion": "3.0.8", "periodType": "month", "periodValue": "10/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"tongct6": "1100000000", "tongct8": "1100000000", "tongct10": "0", "tongct11": "0"},
-     "question": "FinishImportXML ghi BU := getThuSuatByMa(CR, DC_97) = \"\" (CR/pathTLTNDN không có trong XML): với tỷ lệ 0 HTKK kết xuất lại ct9 là 0.00 như web?"},
+     "question": "FinishImportXML ghi BU := getThuSuatByMa(CR, DC_97) = \"\" (CR/pathTLTNDN không có trong XML): release 240: HTKK ghi ct9 là 0 (GetValueExportXML: mọi số 0 của control 16 thành \"0\"); web nay cũng vậy, cần chạy lại."},
     {"caseId": "01NTNN-NCCNN-entry-zero-M10-2026", "adapterId": "01-ntnn-nccnn-tt89-3.0.9-entry", "releaseGate": false,
      "unit": {"menuId": "Y8", "adapterVersion": "3.0.9", "periodType": "month", "periodValue": "10/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"mucII_tong_ct5": "0", "mucII_tong_ct7": "0", "mucII_tong_ct9": "0", "mucII_tong_ct10": "0", "mucII_tong_ct12": "0", "mucII_tong_ct13": "0", "mucII_tong_ct14": "0"},
