@@ -264,6 +264,37 @@ có quy tắc Header chặn quyết toán 0). Câu hỏi mở cho lần chạy W
 không chặn kết xuất với ngày 05/01/2026–30/09/2026; (4) `ct4` (MST nhà thầu nước ngoài) và `ct3`/`ct5` của 02-2 rỗng kết xuất lại
 `xsi:nil` như web; (5) `ct10` của 02-1 (số lượng lao động, control 16) kết xuất là `5`.
 
+**Kỳ lần phát sinh (KieuKy 18, kiểu kỳ plan `day`; non-gating, chưa chạy)** — I9 `01NTNN-occurrence-D20-10-2026` (nhập XML),
+Y8 `01NTNN-NCCNN-occurrence-D20-10-2026` (nhập tay, cùng chế độ `original-entry-export` như ca tháng) và J1
+`03NTNN-occurrence-D20-10-2026` (nhập XML), ngày phát sinh 20/10/2026. Dò từ HTKK 5.8.1 (snapshot `afc42204`, htkk_web
+`docs/NGHIEP-VU-NTNN.md` mục "Kỳ lần phát sinh"):
+
+- Hộp kỳ: `frmHTKKPeriod_Load` (0x6000484) → `SetLayoutToKhaiThangLanPhatSinh` (0x60004a9; SHA-256 thân phương thức như htkk_web: `5fabdefc…`): Tháng tích sẵn, có
+  "Lần phát sinh" (`chkTKLanPS`). Tích `chkTKLanPS` → `CheckedChanged` (0x60004b2, `bea14e68…`) → `ResetpnVT1_2NgayThangQuyNam`
+  (0x60004b1, `d758413b…`, nhánh 6) hiện `pnNgay`/`pnThang`/`pnNam` và điền ngày hôm nay (`LoadDefaultInfor` 0x60004e0);
+  `pnTuNgay`/`pnDenNgay` vẫn ẩn. Driver: `SetCheck(chkTKLanPS)`, gõ `mskYear`, `mskMonth`, `mskDay` qua `SetDeclarationText`
+  (Leave gốc `mskDay_Leave` 0x60004d0 / `mskMonth_Leave` 0x60004d1 đệm 2 chữ số), **không** đụng `mskTuNgay`/`mskDenNgay`;
+  `periodDateMatched` đòi `chkTKLanPS` tích, `chkTkhaiThang` không, ba ô đang hiện đúng ngày của plan và hai ô từ/đến ngày ẩn.
+- Sau Đồng ý: `GetPeriodInfo` (0x60004e2, `7e938338…`; bảng KieuKy chỉ số 16 = "18", nhánh `chkTKLanPS` tại 0x2667) cho
+  `KieuKy` `D`, `Ngay`/`Thang` (đệm 2), `Nam`, `TuNgay` = `DenNgay` = `kyKKhai` = `dd/MM/yyyy`; `DeclarationIdentity` kiểm cả bảy.
+  `CheckPeriod` (0x60004ef): `CheckNgayThangNam` (0x60004db: năm < 2000 → 0067, tháng/năm sai → 0062, ngày sai → 0071), `D` sau
+  hôm nay → 0223, `CheckHLToKhaiTT80` (0x60004f2) `D` trước 01/01/2022 → 0576 (I9/J1; Y8 không thuộc danh sách TT80),
+  `CheckHieuLuc` (0x6000504) trước `StartDate` (Y8 01/10/2026) → 0441. 20/10/2026 qua hết.
+- XML: `BindToKhaiInfoToTTinChung` (0x60000f4) chép kỳ; `xmlExportTTinChung` (0x6000049) không đổi `kieuKy` `D` cho ba menu này:
+  `kieuKy` D, `kyKKhai`/`kyKKhaiTuNgay`/`kyKKhaiDenNgay` 20/10/2026, tháng trống (manifest kỳ `('D', '20/10/2026', '20/10/2026',
+  '20/10/2026')`). `WinDoWorkImportFormXml` (0x600007d) báo 0437 nếu `kieuKy`, từ/đến ngày, từ/đến tháng hoặc `loaiTKhai` khác kỳ đang mở.
+- Dòng: `AutoBindData_0` I9 (0x60018ef) / J1 (0x6001931) ghi `kyKKhai` vào AE / BE mọi dòng đang có lúc nạp sheet và khóa; Y8
+  (0x60018f9) ghi rồi `LockUnlock` (deleteData) đặt lại AE về mặc định, nên ca Y8 gõ AE = 20/10/2026 (`Entry`: cùng 21 lệnh như ca
+  tháng, chỉ AE78/AE86 đổi; E_27 của `checkTKChinh` bắt AE nằm trong TuNgay–DenNgay = đúng ngày đó). Web XML I9/J1 đã mang ngày
+  đó ở `ct6`/`ct7` (`2026-10-20`).
+- Oracle: `NTNN_ROWS` của ba ca = dòng của ca tháng tương ứng + `ct6`/`ct7` = `2026-10-20` (Decimal giữ nguyên: I9 tổng `tong_ct5`
+  1.500.000.000, `tong_ct9` 65.000.000, `tong_ct13` 58.000.000, `tong_ct14` 123.000.000; Y8 `mucII_tong_ct14` 7.000.000, mục I.II
+  `mucI_tong_ct14` 20.000.000; J1 `tongct6` = `tongct8` 1.100.000.000, `tongct10` = `tongct11` 0). Ô kiểm và lá XML như ca tháng.
+- Câu hỏi mở cho lần chạy Windows: (1) nhập XML I9/J1 với `kieuKy` D không bị 0437; (2) sau nhập AE/BE bị khóa và giữ 20/10/2026
+  (kết xuất `ct6`/`ct7` = `2026-10-20`); (3) J1: `checkTKChinh` đưa văn bản BE nguyên dạng cho `ValidateFullDate(…, "ddMMyyyy")`
+  — nếu giá trị ô có dấu `/` thì E_18 chặn kết xuất (điểm mở từ ca tháng, nay BE luôn khác rỗng); (4) Y8: AE gõ được sau khi tích
+  M8 (LockUnlock mở lại) và E_27 nhận; (5) hộp kỳ hiện đúng ba ô ngày/tháng/năm, từ/đến ngày ẩn, và `KieuKy` D sau Đồng ý.
+
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →
   kết xuất lại trùng byte), ghi `declaration-web.xml` + `manifest.json`. Định danh là hồ sơ NNT giả lập

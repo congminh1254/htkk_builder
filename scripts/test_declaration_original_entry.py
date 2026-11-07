@@ -25,6 +25,8 @@ ENTRY = (ROOT / 'HtkkDeclarationOriginalEntry.cs').read_text(encoding='utf-8')
 IMPORT = (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8')
 CODE = re.sub(r'//[^\n]*', '', ENTRY)  # entry driver without comments
 CASE = '01NTNN-NCCNN-entry-M10-2026'
+# Lần phát sinh (KieuKy 18, kieuKy D) of the same rows: the second entry case, with (6) AE typed as the period day.
+OCCURRENCE = '01NTNN-NCCNN-occurrence-D20-10-2026'
 BASE = '01NTNN-NCCNN-two-parts-M10-2026'
 MODE = 'declaration-web-import-inspect'
 
@@ -49,7 +51,7 @@ def entries():
 
 class Registration(unittest.TestCase):
     def test_entry_case_is_the_only_y8_case_non_gating_and_of_its_own_mode(self):
-        self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE,))
+        self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE, OCCURRENCE))
         self.assertIn(CASE, registry.DECLARATION_CASES)
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.GATE_CASES)
@@ -57,13 +59,14 @@ class Registration(unittest.TestCase):
         self.assertEqual(registry.driver(CASE), MODE)
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'ntnn01-nccnn-entry-m10-2026')
         # The import-based Y8 case was removed after release 242 (HTKK resets the tables on import).
-        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8'], [CASE])
+        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8'], [CASE, OCCURRENCE])
+        self.assertEqual(registry.input_mode(OCCURRENCE), registry.ENTRY_MODE); self.assertIs(registry.CASES[OCCURRENCE]['releaseGate'], False)
         self.assertNotIn(BASE, registry.CASES); self.assertNotIn(BASE, d.CASES); self.assertNotIn('01-ntnn-nccnn-tt89-3.0.9', registry.TRUSTED_ADAPTERS)
         self.assertNotIn(BASE, automation['resultFields']['webCaseId']['values'])
         adapters = {a['adapterId']: a['mode'] for a in design.DESIGN['adapters']}
         self.assertEqual(adapters['01-ntnn-nccnn-tt89-3.0.9-entry'], 'original-entry-export')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationEntryCases=@('" + CASE + "')", formats); self.assertNotIn(BASE, formats)
+        self.assertIn("$HtkkDeclarationEntryCases=@('" + CASE + "','" + OCCURRENCE + "')", formats); self.assertNotIn(BASE, formats)
 
     def test_entry_input_is_the_reviewed_design_case(self):
         designs = {c['caseId']: c['expectedLeaves'] for c in design.DESIGN['cases']}
@@ -134,7 +137,7 @@ class EntryPlan(unittest.TestCase):
 
     def test_part_choice_tables_and_lock_columns_follow_the_source(self):
         block = entry_block()
-        self.assertIn('return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",', block)
+        self.assertIn('HtkkDeclarationEntryPlan entry=new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",', block)
         self.assertEqual(string_array(block, 0), ['ThueNTNN|60|1|1', 'ThueNCCNN|78|1|0', 'ThueCNKCT|86|1|0'])
         # Ntnn01TT89Nckt309.getCols literal "C###L###M###S###W###Y###AE###AJ###AN###AZ###BD###BH".
         self.assertEqual(string_array(block, 1), 'C###L###M###S###W###Y###AE###AJ###AN###AZ###BD###BH'.split('###'))
@@ -156,14 +159,19 @@ class EntryPlan(unittest.TestCase):
     def test_compiled_plans_construct_and_select_the_entry_mode(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = pathlib.Path(directory)
-            (folder / 'P.cs').write_text('using System;class P{static void Main(){foreach(string id in HtkkDeclarationCasePlans.CaseIds){HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find(id);HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry(id);Console.WriteLine(id+" "+(p!=null)+" "+(e==null?0:e.Entries.Length)+" "+(e==null?0:e.MethodPins.Length));}}}')
+            (folder / 'P.cs').write_text('using System;class P{static void Main(){foreach(string id in HtkkDeclarationCasePlans.CaseIds){HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find(id);HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry(id);Console.WriteLine(id+" "+(p!=null)+" "+(e==null?0:e.Entries.Length)+" "+(e==null?0:e.MethodPins.Length));}foreach(string id in new string[]{"01NTNN-NCCNN-entry-M10-2026","01NTNN-NCCNN-occurrence-D20-10-2026"})Console.Error.WriteLine(id+"\t"+String.Join("\t",HtkkDeclarationCasePlans.Entry(id).Entries));}}')
             subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
-            lines = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True, text=True).stdout.split('\n')
+            run = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True, text=True); lines = run.stdout.split('\n')
+        typed = {line.split('\t')[0]: line.split('\t')[1:] for line in run.stderr.split('\n') if line}
+        # The lần phát sinh entry types the same values except (6) AE, which is the period day (E_27).
+        for monthly, occurrence in zip(typed[CASE], typed[OCCURRENCE]):
+            self.assertEqual(occurrence, monthly if not monthly.startswith('date|AE') else monthly.rsplit('|', 1)[0] + '|20/10/2026')
+        self.assertEqual([e for e in typed[OCCURRENCE] if e.startswith('date|AE')], ['date|AE78|20/10/2026', 'date|AE86|20/10/2026'])
         rows = {line.split()[0]: line.split()[1:] for line in lines if line}
         self.assertEqual(list(rows), list(registry.DECLARATION_CASES))
         for case, (found, count, pins) in rows.items():
             self.assertEqual(found, 'True')
-            self.assertEqual((count, pins), ('21', '14') if case == CASE else ('0', '0'))
+            self.assertEqual((count, pins), ('21', '14') if case in (CASE, OCCURRENCE) else ('0', '0'))
 
 
 class Driver(unittest.TestCase):

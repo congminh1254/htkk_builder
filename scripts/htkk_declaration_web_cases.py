@@ -334,6 +334,20 @@ CASES = {
                                           ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI (Mẫu số 02/NTNN)', TEMPLATE_TT80, ADDRESS, 'HD-GL-030', 'Kết thúc hợp đồng nhà thầu',
                                            'NHA THAU NUOC NGOAI G - GIẢ LẬP', 'NHA THAU PHU VIET NAM H - GIẢ LẬP', 'JP', 'Nhật', 'Thành phố Hà Nội', 'Thành phố Hải Phòng',
                                            'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    # Kỳ lần phát sinh (KieuKy 18, chkTKLanPS; non-gating): GetPeriodInfo (0x60004e2, KieuKy table index 16) gives KieuKy D
+    # and TuNgay = DenNgay = kyKKhai = the day 20/10/2026; xmlExportTTinChung (0x6000049) keeps kieuKy D. Same synthetic
+    # rows as the monthly cases. I9/J1 by import (AutoBindData_0 writes the day into ct6/ct7 and locks it; the web XML
+    # carries that day), Y8 by original entry (AutoBindData_0's AE is reset by LockUnlock; the plan types the day).
+    '01NTNN-occurrence-D20-10-2026': _case('ntnn01-occurrence-d20-10-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('D', '20/10/2026', '20/10/2026', '20/10/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+                                           ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 01/NTNN', TEMPLATE_TT80, ADDRESS, 'NHA THAU NUOC NGOAI A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'HD-GL-001', 'HD-GL-002',
+                                            'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    '01NTNN-NCCNN-occurrence-D20-10-2026': _case('ntnn01-nccnn-occurrence-d20-10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('D', '20/10/2026', '20/10/2026', '20/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
+                                                 ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
+                                                  TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-003', 'HD-GL-004',
+                                                  'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Hoạt động kinh doanh khác']),
+    '03NTNN-occurrence-D20-10-2026': _case('ntnn03-occurrence-d20-10-2026', 'J1', '840', '3.0.8', 'Validate/03_NTNN_TT80_308.xsd', ('D', '20/10/2026', '20/10/2026', '20/10/2026'), None, '2026-10-27', '2026-10-27', 65, [], WORKBOOK_SERVICE,
+                                           ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 03/NTNN', TEMPLATE_TT89, ADDRESS, 'TU VAN KY THUAT A - GIẢ LẬP', 'LAP DAT THIET BI B - GIẢ LẬP', 'NHA THAU PHU A - GIẢ LẬP', 'HD-GL-031', 'HD-GL-032',
+                                            'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
     '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
@@ -514,6 +528,15 @@ NTNN_ROWS = {
         {'ct1b_ma': '02', 'ct6': '300000000', 'ct8': '300000000', 'ct9': '0', 'ct10': '0'},
     ), '03'),),
 }
+# Lần phát sinh: the same reviewed rows; the payment date of every row is the period day in the XML date form
+# (01/NTNN ct6, 03/NTNN ct7 = '2026-10-20': AutoBindData_0 for I9/J1, the entry plan for Y8 ThueNCCNN/ThueCNKCT).
+_OCCURRENCE_DAY = '2026-10-20'
+NTNN_ROWS['01NTNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct6=_OCCURRENCE_DAY) for row in rows), *rest)
+                                                for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-two-contractors-M10-2026'])
+NTNN_ROWS['01NTNN-NCCNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(row if row is _EMPTY_ROW else dict(row, ct6=_OCCURRENCE_DAY) for row in rows), *rest)
+                                                      for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-NCCNN-entry-M10-2026'])
+NTNN_ROWS['03NTNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct7=_OCCURRENCE_DAY) for row in rows), *rest)
+                                                for path, parent, prefix, rows, *rest in NTNN_ROWS['03NTNN-no-rate-M10-2026'])
 
 
 def _round(value):
@@ -521,13 +544,15 @@ def _round(value):
 
 
 def _computed03(row):
-    n = {k: decimal.Decimal(v) for k, v in row.items() if k != 'ct1b_ma'}
+    # ct7 (03/NTNN) is the payment date, not an amount.
+    n = {k: decimal.Decimal(v) for k, v in row.items() if k not in ('ct1b_ma', 'ct7')}
     base = n['ct8'] * n['ct9'] / 100 - n['ct10']
     return {**row, 'ct11': str(decimal.Decimal(0) if base < 0 else _round(base))}
 
 
 def _computed(row):
-    n = {k: decimal.Decimal(v) for k, v in row.items() if k != 'ct1b_ma'}
+    # ct6 (01/NTNN) is the payment date, not an amount.
+    n = {k: decimal.Decimal(v) for k, v in row.items() if k not in ('ct1b_ma', 'ct6')}
     ct9 = _round(n['ct7'] * n['ct8'] / 100)
     ct13 = max(decimal.Decimal(0), _round(n['ct10'] * n['ct11'] / 100) - n['ct12'])
     return {**row, 'ct9': str(ct9), 'ct13': str(ct13), 'ct14': str(ct9 + ct13)}

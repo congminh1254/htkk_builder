@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -101,7 +101,7 @@ class CompiledPlans(unittest.TestCase):
             self.assertIn('"' + spec['schemaId'] + '"', block)
             self.assertIn(',' + str(spec['leafCount']) + ',', block)
             self.assertIn('"' + spec['webService'][1] + '"', block.replace('WorkbookService', '"Công cụ Kê khai — bản nháp"').replace('CnkdService', '"Công cụ Kê khai — bản nháp"'))
-            kind = {'month': 'month', 'quarter': 'quarter', 'year': 'year', 'range': 'range'}[unit['periodType']]
+            kind = {'month': 'month', 'quarter': 'quarter', 'year': 'year', 'range': 'range', 'day': 'day'}[unit['periodType']]
             self.assertIn('"' + kind + '"', block)
 
     def test_menu_chain_kieuky_and_annexes_follow_menu_xml_design_units(self):
@@ -598,3 +598,44 @@ class WorkflowAndProbe(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class OccurrencePeriod(unittest.TestCase):
+    """Kỳ lần phát sinh (KieuKy 18, chkTKLanPS): period kind 'day' of I9/Y8/J1 (GetPeriodInfo KieuKy D)."""
+    DAY_CASES = ('01NTNN-occurrence-D20-10-2026', '01NTNN-NCCNN-occurrence-D20-10-2026', '03NTNN-occurrence-D20-10-2026')
+
+    def test_day_cases_are_non_gating_kieuky_18_plans_with_one_day(self):
+        for case in self.DAY_CASES:
+            unit = registry.CASES[case]['unit']
+            self.assertEqual((unit['periodType'], unit['periodValue']), ('day', '20/10/2026'))
+            self.assertIs(registry.CASES[case]['releaseGate'], False)
+            self.assertIn('"day","18","2026","","20/10/2026","20/10/2026",false', plan_block(case))
+            spec = d.case(case)
+            self.assertEqual((spec['kieuKy'], spec['kyKKhai'], spec['tuNgay'], spec['denNgay']), ('D', '20/10/2026', '20/10/2026', '20/10/2026'))
+        # The plan refuses a day period that is not KieuKy 18 or whose from/to differ.
+        constructor = PLANS[PLANS.index('internal HtkkDeclarationCasePlan('):PLANS.index('internal sealed class HtkkDeclarationEntryPlan')]
+        self.assertIn('periodKind=="day"&&(kieuKy!="18"||fromDate.Length!=10||fromDate!=toDate', constructor)
+
+    def test_driver_types_only_the_visible_day_month_year_boxes_and_checks_kieuky_d(self):
+        configure = DRIVER[DRIVER.index('private void ConfigureDeclarationPeriod('):DRIVER.index('// ---- Original declaration sheet')]
+        self.assertIn('else if(plan.PeriodKind=="day"){SetCheck(Named(period,"chkTKLanPS"),true);}', configure)
+        self.assertIn('if(plan.PeriodKind=="day"){SetDeclarationText(period,"mskMonth",plan.FromDate.Substring(3,2));SetDeclarationText(period,"mskDay",plan.FromDate.Substring(0,2));}', configure)
+        # mskTuNgay/mskDenNgay are typed only for KieuKy 11/26/22, never for a day period; they must stay hidden.
+        self.assertIn('if(plan.KieuKy=="11"||plan.KieuKy=="26"||plan.KieuKy=="22"){SetDeclarationText(period,"mskTuNgay"', configure)
+        self.assertIn('!VisibleNamed(period,"mskTuNgay")&&!VisibleNamed(period,"mskDenNgay")', configure)
+        identity = DRIVER[DRIVER.index('private bool DeclarationIdentity('):DRIVER.index('private void InspectDeclarationSheetCore(')]
+        self.assertIn('plan.PeriodKind=="day"?"D"', identity)
+        for name in ('"TuNgay"', '"DenNgay"', '"kyKKhai"', '"Ngay"', '"Thang"'):
+            self.assertIn(name, identity)
+
+    def test_web_inputs_carry_kieuky_d_and_the_day_and_fail_closed_on_any_other_period(self):
+        for case in self.DAY_CASES:
+            body = dfx.declaration_fixture(case)
+            reader.validate_web_xml(body, case_id=case)
+            date = b'<ct7>2026-10-20</ct7>' if case.startswith('03') else b'<ct6>2026-10-20</ct6>'
+            self.assertIn(date, body)
+            for name, (old, new) in {'kieuKy': (b'<kieuKy>D</kieuKy>', b'<kieuKy>M</kieuKy>'), 'kyKKhai': (b'<kyKKhai>20/10/2026</kyKKhai>', b'<kyKKhai>10/2026</kyKKhai>'),
+                                     'den': (b'<kyKKhaiDenNgay>20/10/2026</kyKKhaiDenNgay>', b'<kyKKhaiDenNgay>31/10/2026</kyKKhaiDenNgay>'), 'payment': (date, date.replace(b'20<', b'21<'))}.items():
+                self.assertIn(old, body, (case, name))
+                with self.subTest(case=case, name=name), self.assertRaises(reader.InputError):
+                    reader.validate_web_xml(body.replace(old, new, 1), case_id=case)

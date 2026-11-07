@@ -15,9 +15,12 @@ internal sealed class HtkkDeclarationCasePlan {
   Annexes=annexes;SheetNames=sheetNames;WorkbookFile=workbookFile;WorkbookSha256=workbookSha256;LayoutFile=layoutFile;LayoutSha256=layoutSha256;SchemaFile=schemaFile;SchemaSha256=schemaSha256;BaseSchemaFile=baseSchemaFile;BaseSchemaSha256=baseSchemaSha256;
   WebServiceName=webServiceName;LeafCount=leafCount;CellChecks=cellChecks;XmlChecks=xmlChecks;
   if(menuChain.Length<2||menuChain.Length>3||menuChain[menuChain.Length-1]!=menuId||cellChecks.Length>24||xmlChecks.Length>24||annexes.Length>8||leafCount<1||leafCount>4096)throw new InvalidOperationException();
-  if(periodKind!="month"&&periodKind!="quarter"&&periodKind!="year"&&periodKind!="range")throw new InvalidOperationException();
+  if(periodKind!="month"&&periodKind!="quarter"&&periodKind!="year"&&periodKind!="range"&&periodKind!="day")throw new InvalidOperationException();
   // KieuKy 22 (frmHTKKPeriod.SetLayoutToKhaiTuNgayDenNgay 0x60004ae): only the from/to date boxes, no year box.
   if((periodKind=="range")!=(kieuKy=="22")||(periodKind=="range"&&(fromDate.Length!=10||toDate.Length!=10||toDate.Substring(6)!=year||periodNumber!="")))throw new InvalidOperationException();
+  // KieuKy 18 "Lần phát sinh" (chkTKLanPS): one day typed into the ngày/tháng/năm boxes; GetPeriodInfo (0x60004e2,
+  // KieuKy table index 16) gives KieuKy D, TuNgay = DenNgay = kyKKhai = dd/MM/yyyy, so FromDate = ToDate = that day.
+  if(periodKind=="day"&&(kieuKy!="18"||fromDate.Length!=10||fromDate!=toDate||fromDate[2]!='/'||fromDate[5]!='/'||fromDate.Substring(6)!=year||periodNumber!=""))throw new InvalidOperationException();
  }
 }
 
@@ -40,7 +43,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-10-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -165,6 +168,39 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
     new string[]{"01|AV78|10000000","01|BN78|10000000","01|BR78|20000000","01|Y80|200000000","01|AV80|10000000","01|BN80|10000000","01|BR80|20000000","01|AV86|5000000","01|BN86|2000000","01|BR86|7000000","01|Y88|100000000","01|AV88|5000000","01|BN88|2000000","01|BR88|7000000","01|BR62|0"},
     new string[]{Main+"nopThayNTNN|0",Main+"nopThayNCCNN|1",Main+"ThueNCCNN_CNKCT/mucII_tong_ct5|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct7|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct9|5000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct10|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct12|0",Main+"ThueNCCNN_CNKCT/mucII_tong_ct13|2000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct14|7000000"});
+   // Kỳ lần phát sinh (KieuKy 18, non-gating). frmHTKKPeriod_Load -> SetLayoutToKhaiThangLanPhatSinh (0x60004a9): Tháng
+   // ticked by default, Lần phát sinh offered; ticking chkTKLanPS (CheckedChanged 0x60004b2 -> ResetpnVT1_2NgayThangQuyNam
+   // 0x60004b1 case 6) shows pnNgay/pnThang/pnNam with today's date (LoadDefaultInfor). The driver types the day into
+   // mskDay/mskMonth/mskYear only (mskTuNgay/mskDenNgay stay hidden and untouched). After Đồng ý, GetPeriodInfo gives
+   // KieuKy D, Ngay/Thang/Nam, TuNgay = DenNgay = kyKKhai = 20/10/2026 (DeclarationIdentity checks all of them).
+   // CheckPeriod: CheckNgayThangNam, D after today -> 0223, CheckHLToKhaiTT80 D (I9/J1 in the TT80 list) before 01/01/2022
+   // -> 0576, CheckHieuLuc before the Menu.xml StartDate (Y8 01/10/2026) -> 0441; 20/10/2026 passes all of them.
+   // I9/J1: AutoBindData_0 (0x60018ef / 0x6001931) writes kyKKhai into (6) AE / (7) BE of every row bound at load and
+   // locks it; the web XML carries that day already (ct6 / ct7 = 2026-10-20), so the import changes nothing there.
+   // Sheet and XML checks as the monthly cases (same rows; the period does not enter the row formulas).
+   case "01NTNN-occurrence-D20-10-2026":return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"day","18","2026","","20/10/2026","20/10/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/01_NTNN_TT80_251.xls","feebf2a918138aad860b52fb409232716027dc7ba59ec8aed861714d7e7de652","InterfaceTemplates/xml/01_NTNN_TT80_251.xml","cb8f1c83df2ebb590e314b2ca71fde4751760906e57df666e92086d6a1f9983c",
+    "Validate/01_NTNN_TT80_251.xsd","aa17404343424b1d3bf429d7279d7ea1c4a858f8509c087be9c4dc9db6b192da",TKhaiThue,TKhaiThueSha256,WorkbookService,74,
+    new string[]{"01|AV55|50000000","01|BN55|50000000","01|BR55|100000000","01|AV56|15000000","01|BN56|8000000","01|BR56|23000000","01|AV58|65000000","01|BN58|58000000","01|BR58|123000000"},
+    new string[]{Main+"tong_ct5|1500000000",Main+"tong_ct7|1500000000",Main+"tong_ct9|65000000",Main+"tong_ct10|1500000000",Main+"tong_ct12|2000000",Main+"tong_ct13|58000000",Main+"tong_ct14|123000000"});
+   // Y8 (original entry): Ntnn01TT89Nckt309.AutoBindData_0 (0x60018f9) writes the day into ThueNTNN AE and then runs
+   // LockUnlock, whose LockUnLockColsInTable(deleteData=true) resets AE of every table, so AE is typed as in the monthly
+   // entry case; checkTKChinh E_27 (TuNgay <= AE <= DenNgay) makes it the period day: the entry plan types 20/10/2026.
+   case "01NTNN-NCCNN-occurrence-D20-10-2026":return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"day","18","2026","","20/10/2026","20/10/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",
+    "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
+    new string[]{"01|AV78|10000000","01|BN78|10000000","01|BR78|20000000","01|Y80|200000000","01|AV80|10000000","01|BN80|10000000","01|BR80|20000000","01|AV86|5000000","01|BN86|2000000","01|BR86|7000000","01|Y88|100000000","01|AV88|5000000","01|BN88|2000000","01|BR88|7000000","01|BR62|0"},
+    new string[]{Main+"nopThayNTNN|0",Main+"nopThayNCCNN|1",Main+"ThueNCCNN_CNKCT/mucII_tong_ct5|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct7|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct9|5000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct10|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct12|0",Main+"ThueNCCNN_CNKCT/mucII_tong_ct13|2000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct14|7000000"});
+   // J1: rate [9] = 0 as in 03NTNN-no-rate-M10-2026 (FinishImportXML clears every imported rate). (7) BE is the day here,
+   // so the run also observes checkTKChinh's ValidateFullDate(BE text, "ddMMyyyy") on a non-empty BE (E_18 open point).
+   case "03NTNN-occurrence-D20-10-2026":return new HtkkDeclarationCasePlan(caseId,"J1","3.0.8","840","Ntnn03TT80Nckt308",new string[]{"101","101_8","J1"},"day","18","2026","","20/10/2026","20/10/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/03_NTNN_TT80_308.xls","ef4451f19a8a74ad667add7fd580ac83be149f7d35e65bbbe12aa42ccad11142","InterfaceTemplates/xml/03_NTNN_TT80_308.xml","41c8c6c92a684485aff87790739958948c94bf966cc5e56b6150a17f6beac550",
+    "Validate/03_NTNN_TT80_308.xsd","97eaf67183cba1723fa00db46565598568288763185a503daf255b091eedb0b7",TKhaiThue,TKhaiThueSha256,WorkbookService,65,
+    new string[]{"01|CG34|0","01|CG35|0","01|AU37|1100000000","01|BK37|1100000000","01|BX37|0","01|CG37|0"},
+    new string[]{Main+"tongct6|1100000000",Main+"tongct8|1100000000",Main+"tongct10|0",Main+"tongct11|0"});
    // D6/Y1 04/NTNN quyết toán (non-gating, mode web-xml-import-reexport): Menu.xml KieuKy 22 -> frmHTKKPeriod
    // SetLayoutToKhaiTuNgayDenNgay (0x60004ae): no month/quarter/year box, only mskTuNgay/mskDenNgay and the visible
    // annex list. GetPeriodInfo (0x60004e2, branch 80/82/C9/D6/X9/Y1) sets KieuKy "D_D", Nam = year of mskDenNgay,
@@ -235,8 +271,10 @@ internal static class HtkkDeclarationCasePlans {
  //    key of the chosen name into the SelectedValue column BX. Items 01 (index 0) and 05 (index 4).
  //  * Ntnn01TT89Nckt309.CellChange_0 is empty: AV/BN/BR and the row-80/88 totals are XLS formulas.
  internal static HtkkDeclarationEntryPlan Entry(string caseId){
-  if(caseId!="01NTNN-NCCNN-entry-M10-2026")return null;
-  return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
+  // The lần phát sinh case types the same rows with (6) AE = the period day (checkTKChinh E_27).
+  bool occurrence=caseId=="01NTNN-NCCNN-occurrence-D20-10-2026";
+  if(caseId!="01NTNN-NCCNN-entry-M10-2026"&&!occurrence)return null;
+  HtkkDeclarationEntryPlan entry=new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
    // Table name | 1-based first data row | rows required | locked after the choice (1) or open (0).
    new string[]{"ThueNTNN|60|1|1","ThueNCCNN|78|1|0","ThueCNKCT|86|1|0"},
    new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},
@@ -265,5 +303,8 @@ internal static class HtkkDeclarationCasePlans {
     "H|WinSpreadProcess|InsertDateCell|0x060001af|203|d58a8897e64e6dcb1a2e2384cecff2acf6d7430e653d92a95dab8661a1b343d0", // [92fe05f4…]
     "H|frmWinToKhai|ProcessCmdKey|0x0600039f|9783|32a0b79138f778aa1f4e9a4ea5f29b7faac4df0e046c001aed5f31d88ce31845", // [0ef81f1a…]
     "H|frmWinToKhai|cmdExport_Click|0x060003a2|1941|37de581c58099f8c3243310c0b95eebd2d7dd9750fc48f3cdd842a4303312031"}); // [0dd56a23…]
+  // Lần phát sinh: every (6) AE is typed as the period day (checkTKChinh E_27: TuNgay <= AE <= DenNgay, both the day).
+  if(occurrence)for(int i=0;i<entry.Entries.Length;i++)if(entry.Entries[i].StartsWith("date|AE",StringComparison.Ordinal))entry.Entries[i]=entry.Entries[i].Substring(0,entry.Entries[i].LastIndexOf('|')+1)+Find(caseId).FromDate;
+  return entry;
  }
 }

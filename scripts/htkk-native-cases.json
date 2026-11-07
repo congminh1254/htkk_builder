@@ -759,6 +759,66 @@
         "annexes": ["01-1", "01-2"],
         "amendmentOrder": 0
       }
+    },
+    {
+      "caseId": "01NTNN-occurrence-D20-10-2026",
+      "producerCase": "ntnn01-occurrence-d20-10-2026",
+      "adapterId": "01-ntnn-tt80-2.5.1",
+      "format": "htkk-web-ntnn01-occurrence-d20-10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn01-occurrence-d20-10-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn01-occurrence-d20-10-2026-input",
+      "outputBranch": "declaration-web-native-ntnn01-occurrence-d20-10-2026-output",
+      "statusContext": "htkk-native/ntnn01-occurrence-d20-10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "I9",
+        "adapterVersion": "2.5.1",
+        "periodType": "day",
+        "periodValue": "20/10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01NTNN-NCCNN-occurrence-D20-10-2026",
+      "producerCase": "ntnn01-nccnn-occurrence-d20-10-2026",
+      "adapterId": "01-ntnn-nccnn-tt89-3.0.9-entry",
+      "format": "htkk-web-ntnn01-nccnn-occurrence-d20-10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn01-nccnn-occurrence-d20-10-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn01-nccnn-occurrence-d20-10-2026-input",
+      "outputBranch": "declaration-web-native-ntnn01-nccnn-occurrence-d20-10-2026-output",
+      "statusContext": "htkk-native/ntnn01-nccnn-occurrence-d20-10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Y8",
+        "adapterVersion": "3.0.9",
+        "periodType": "day",
+        "periodValue": "20/10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "03NTNN-occurrence-D20-10-2026",
+      "producerCase": "ntnn03-occurrence-d20-10-2026",
+      "adapterId": "03-ntnn-tt80-3.0.8",
+      "format": "htkk-web-ntnn03-occurrence-d20-10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn03-occurrence-d20-10-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn03-occurrence-d20-10-2026-input",
+      "outputBranch": "declaration-web-native-ntnn03-occurrence-d20-10-2026-output",
+      "statusContext": "htkk-native/ntnn03-occurrence-d20-10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "J1",
+        "adapterVersion": "3.0.8",
+        "periodType": "day",
+        "periodValue": "20/10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
     }
   ]
 }

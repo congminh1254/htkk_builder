@@ -168,16 +168,24 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!=plan.MenuId)throw new InvalidOperationException();
   if(plan.PeriodKind=="month"){SetCheck(Named(period,"chkTkhaiThang"),true);}
   else if(plan.PeriodKind=="quarter"){SetCheck(Named(period,"chkTKQuy"),true);}
+  // KieuKy 18 Lần phát sinh: CheckedChanged (0x60004b2) unticks Tháng and shows the ngày/tháng/năm boxes.
+  else if(plan.PeriodKind=="day"){SetCheck(Named(period,"chkTKLanPS"),true);}
   if(VisibleNamed(period,"OptChinhthuc")){SetCheck(Named(period,"OptChinhthuc"),true);periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&(!VisibleNamed(period,"OptBosung")||!CheckValue(ReadableNamed(period,"OptBosung")));}else periodFirstMatched=true;
   if(plan.PeriodKind!="range")SetDeclarationText(period,"mskYear",plan.Year);
   if(plan.PeriodKind=="month")SetDeclarationText(period,"mskMonth",plan.PeriodNumber);
+  // The day goes into the VISIBLE original boxes only (mskDay_Leave/mskMonth_Leave pad to two digits).
+  if(plan.PeriodKind=="day"){SetDeclarationText(period,"mskMonth",plan.FromDate.Substring(3,2));SetDeclarationText(period,"mskDay",plan.FromDate.Substring(0,2));}
   if(plan.PeriodKind=="quarter"){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact(plan.PeriodNumber);if(index<0)throw new InvalidOperationException();if(quarter.SelectedIndex!=index)quarter.SelectedIndex=index;}
   if(plan.KieuKy=="11"||plan.KieuKy=="26"||plan.KieuKy=="22"){SetDeclarationText(period,"mskTuNgay",plan.FromDate);SetDeclarationText(period,"mskDenNgay",plan.ToDate);}
   if(plan.KieuKy=="12"){SetDeclarationText(period,"mskTuThang",plan.FromDate);SetDeclarationText(period,"mskDenThang",plan.ToDate);}
   bool continuous=true;
   if(plan.ContinuousOperation){Control going=ReadableNamed(period,"chkQTTungNam_HoatDongLienTuc");if(going.Enabled&&!CheckValue(going))SetCheck(going,true);continuous=CheckValue(going)&&(!VisibleNamed(period,"chkQTNamDau_KhongHoatDongLienTuc")||!CheckValue(ReadableNamed(period,"chkQTNamDau_KhongHoatDongLienTuc")));}
   // KieuKy 22: the year box is hidden (GetPeriodInfo takes Nam from mskDenNgay), so only the two VISIBLE date boxes count.
-  if(plan.PeriodKind=="range")periodDateMatched=VisibleNamed(period,"mskTuNgay")&&VisibleNamed(period,"mskDenNgay")&&ReadableNamed(period,"mskTuNgay").Text==plan.FromDate&&ReadableNamed(period,"mskDenNgay").Text==plan.ToDate&&continuous;
+  // Lần phát sinh: chkTKLanPS ticked (Tháng not), the three visible boxes hold the day, from/to boxes hidden.
+  if(plan.PeriodKind=="day")periodDateMatched=CheckValue(ReadableNamed(period,"chkTKLanPS"))&&!CheckValue(ReadableNamed(period,"chkTkhaiThang"))
+   &&VisibleNamed(period,"mskDay")&&VisibleNamed(period,"mskMonth")&&VisibleNamed(period,"mskYear")&&!VisibleNamed(period,"mskTuNgay")&&!VisibleNamed(period,"mskDenNgay")
+   &&ReadableNamed(period,"mskDay").Text==plan.FromDate.Substring(0,2)&&ReadableNamed(period,"mskMonth").Text==plan.FromDate.Substring(3,2)&&ReadableNamed(period,"mskYear").Text==plan.Year&&continuous;
+  else if(plan.PeriodKind=="range")periodDateMatched=VisibleNamed(period,"mskTuNgay")&&VisibleNamed(period,"mskDenNgay")&&ReadableNamed(period,"mskTuNgay").Text==plan.FromDate&&ReadableNamed(period,"mskDenNgay").Text==plan.ToDate&&continuous;
   else periodDateMatched=ReadableNamed(period,"mskYear").Text==plan.Year&&(plan.PeriodKind!="month"||(ReadableNamed(period,"mskMonth").Text==plan.PeriodNumber&&CheckValue(ReadableNamed(period,"chkTkhaiThang"))))&&(plan.PeriodKind!="quarter"||CheckValue(ReadableNamed(period,"chkTKQuy")))
    &&((plan.KieuKy!="11"&&plan.KieuKy!="26")||(MaskedTextMatches(period,"mskTuNgay",plan.FromDate)&&MaskedTextMatches(period,"mskDenNgay",plan.ToDate)))&&continuous;
   // Geography/tax-office panel only where the original layout shows it (e.g. NopTheoTinhCQT).
@@ -211,10 +219,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   HtkkDeclarationCasePlan plan=declarationPlan;object business=Global("InstanceClass"),info=Global("ToKhaiInfo"),period=Global("TTPeriodInfo");
   if(business==null||info==null||period==null)return false;
   bool menu=Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)==plan.MenuId&&Convert.ToString(Get(info,"VersionXML"),CultureInfo.InvariantCulture)==plan.VersionXml&&business.GetType().FullName=="TAX.HTKK.Business."+plan.BusinessClass;
-  string kind=plan.PeriodKind=="month"?"M":plan.PeriodKind=="quarter"?"Q":plan.PeriodKind=="range"?"D_D":"Y";
+  string kind=plan.PeriodKind=="month"?"M":plan.PeriodKind=="quarter"?"Q":plan.PeriodKind=="range"?"D_D":plan.PeriodKind=="day"?"D":"Y";
   bool periodMatched=Convert.ToString(Get(period,"KieuKy"),CultureInfo.InvariantCulture)==kind&&Convert.ToString(Get(period,"Nam"),CultureInfo.InvariantCulture)==plan.Year&&Convert.ToString(Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C"
    &&(plan.PeriodKind!="month"||Convert.ToString(Get(period,"Thang"),CultureInfo.InvariantCulture)==plan.PeriodNumber)&&(plan.PeriodKind!="quarter"||Convert.ToString(Get(period,"Quy"),CultureInfo.InvariantCulture)==plan.PeriodNumber)
-   &&(plan.PeriodKind!="range"||(Convert.ToString(Get(period,"TuNgay"),CultureInfo.InvariantCulture)==plan.FromDate&&Convert.ToString(Get(period,"DenNgay"),CultureInfo.InvariantCulture)==plan.ToDate));
+   &&(plan.PeriodKind!="range"||(Convert.ToString(Get(period,"TuNgay"),CultureInfo.InvariantCulture)==plan.FromDate&&Convert.ToString(Get(period,"DenNgay"),CultureInfo.InvariantCulture)==plan.ToDate))
+   // KieuKy D (GetPeriodInfo chkTKLanPS branch): the same day in TuNgay, DenNgay and kyKKhai; Ngay/Thang padded.
+   &&(plan.PeriodKind!="day"||(Convert.ToString(Get(period,"TuNgay"),CultureInfo.InvariantCulture)==plan.FromDate&&Convert.ToString(Get(period,"DenNgay"),CultureInfo.InvariantCulture)==plan.ToDate
+    &&Convert.ToString(Get(period,"kyKKhai"),CultureInfo.InvariantCulture)==plan.FromDate&&Convert.ToString(Get(period,"Ngay"),CultureInfo.InvariantCulture)==plan.FromDate.Substring(0,2)&&Convert.ToString(Get(period,"Thang"),CultureInfo.InvariantCulture)==plan.FromDate.Substring(3,2)));
   return menu&&periodMatched;
  }
  private void InspectDeclarationSheetCore(){

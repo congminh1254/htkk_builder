@@ -33,16 +33,17 @@ TRUSTED_ADAPTERS={
  # B8 02/QTT-TNCN (non-gating): KieuKy 12 like B9; the import adds every annex (AddFullPLImportXML).
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).
- '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('10/2026',)},[]),
+ # Lần phát sinh (period 'day', KieuKy 18 chkTKLanPS: GetPeriodInfo KieuKy D, TuNgay = DenNgay = kyKKhai = the day).
+ '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('10/2026',),'day':('20/10/2026',)},[]),
  # Y8 01/NTNN, NCCNN TT89: KieuKy 18 like I9; Menu.xml validity from 01/10/2026. The import-based adapter
  # 01-ntnn-nccnn-tt89-3.0.9 (case 01NTNN-NCCNN-two-parts-M10-2026) was removed after release 242: HTKK resets
  # the Y8 tables on import, so it could never match; the original-entry case below superseded it.
  # Y8 original entry (non-gating): HTKK 5.8.1 resets the Y8 tables on "Nhập từ XML" (AutoBindData_0 ->
  # LockUnlock -> LockUnLockColsInTable deleteData=true, release 238), so the same synthetic rows are
  # typed into the original grid and exported with the original export instead.
- '01-ntnn-nccnn-tt89-3.0.9-entry':_declaration('Y8','3.0.9',{'month':('10/2026',)},[],ENTRY_MODE),
+ '01-ntnn-nccnn-tt89-3.0.9-entry':_declaration('Y8','3.0.9',{'month':('10/2026',),'day':('20/10/2026',)},[],ENTRY_MODE),
  # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 like I9; FinishImportXML clears rate [9], so the case uses rate 0.
- '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',)},[]),
+ '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',),'day':('20/10/2026',)},[]),
  # D6/Y1 04/NTNN quyết toán (non-gating): KieuKy 22 = SetLayoutToKhaiTuNgayDenNgay, period 'range' (from-to
  # dates, GetPeriodInfo KieuKy D_D); Menu.xml sheet 01-1 (SheetName 02-2/NTNN) ticked in the period dialog.
  # D6 validity ends 01/10/2026 (CheckToKhaiHetHieuLuc), Y1 starts 01/07/2026 (CheckHieuLuc 0441).

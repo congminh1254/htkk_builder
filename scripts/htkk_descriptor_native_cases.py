@@ -12,14 +12,14 @@ TRUSTED={
  '05-kk-tncn-2.9.3':{'menuId':'L7','businessClass':'TncnKk05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_KK_TNCN_TT80_293.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'}},
  '05-qtt-tncn-2.9.3':{'menuId':'B9','businessClass':'TncnQtt05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_QTT_TNCN_TT80_293.xsd','annexes':['05-1','05-2','05-3'],'mode':'web-xml-import-reexport','periodTypes':{'year'}},
  '02-qtt-tncn-2.7.3':{'menuId':'B8','businessClass':'TncnQtt02TT80','xmlVersion':'2.7.3','schemaId':'Validate/02_QTT_TNCN_TT80_273.xsd','annexes':['02-1'],'mode':'original-entry-export','periodTypes':{'year'}},
- # 01/NTNN TT80 (I9): main-sheet contractor table only, KieuKy 18 monthly.
- '01-ntnn-tt80-2.5.1':{'menuId':'I9','businessClass':'Ntnn01TT80','xmlVersion':'2.5.1','schemaId':'Validate/01_NTNN_TT80_251.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
+ # 01/NTNN TT80 (I9): main-sheet contractor table only, KieuKy 18 monthly or lần phát sinh ('day', dd/MM/yyyy).
+ '01-ntnn-tt80-2.5.1':{'menuId':'I9','businessClass':'Ntnn01TT80','xmlVersion':'2.5.1','schemaId':'Validate/01_NTNN_TT80_251.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','day'}},
  # 01/NTNN, NCCNN TT89 (Y8): three main-sheet tables, part chosen by nopThayNTNN/nopThayNCCNN.
  '01-ntnn-nccnn-tt89-3.0.9':{'menuId':'Y8','businessClass':'Ntnn01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_NTNN_NCCNN_TT89_309.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
  # 03/NTNN (J1, 3.0.8): one ThueNTNN table, TNDN only; the import clears rate [9] (FinishImportXML).
  # Y8 original entry: the same declaration typed into the original grid (the import resets the tables).
- '01-ntnn-nccnn-tt89-3.0.9-entry':{'menuId':'Y8','businessClass':'Ntnn01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_NTNN_NCCNN_TT89_309.xsd','annexes':[],'mode':'original-entry-export','periodTypes':{'month'}},
- '03-ntnn-tt80-3.0.8':{'menuId':'J1','businessClass':'Ntnn03TT80','xmlVersion':'3.0.8','schemaId':'Validate/03_NTNN_TT80_308.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
+ '01-ntnn-nccnn-tt89-3.0.9-entry':{'menuId':'Y8','businessClass':'Ntnn01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_NTNN_NCCNN_TT89_309.xsd','annexes':[],'mode':'original-entry-export','periodTypes':{'month','day'}},
+ '03-ntnn-tt80-3.0.8':{'menuId':'J1','businessClass':'Ntnn03TT80','xmlVersion':'3.0.8','schemaId':'Validate/03_NTNN_TT80_308.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','day'}},
  # 04/NTNN quyết toán (D6 TT80 3.0.8, Y1 TT89 3.0.9): KieuKy 22 from-to dates ('range'), annex 01-1 (sheet 01-2).
  '04-ntnn-tt80-3.0.8':{'menuId':'D6','businessClass':'Ntnn04TT80','xmlVersion':'3.0.8','schemaId':'Validate/04_NTNN_TT80_308.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
  '04-ntnn-tt89-3.0.9':{'menuId':'Y1','businessClass':'Ntnn04TT89','xmlVersion':'3.0.9','schemaId':'Validate/04_NTNN_TT89_309.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
@@ -52,7 +52,7 @@ def validate(value):
   check(u['menuId']==t['menuId'] and u['adapterVersion']==t['xmlVersion'] and u['activityCode']=='00' and type(u['amendmentOrder']) is int and u['amendmentOrder']==0)
   check(u['periodType'] in t['periodTypes'])
   _day=r'(0[1-9]|[12]\d|3[01])/(0[1-9]|1[0-2])/20\d\d'
-  check(re.fullmatch(r'(0[1-9]|1[0-2])/20\d\d',u['periodValue']) if u['periodType']=='month' else re.fullmatch(r'[1-4]/20\d\d',u['periodValue']) if u['periodType']=='quarter' else re.fullmatch(_day+'-'+_day,u['periodValue']) if u['periodType']=='range' else re.fullmatch(r'20\d\d',u['periodValue']))
+  check(re.fullmatch(r'(0[1-9]|1[0-2])/20\d\d',u['periodValue']) if u['periodType']=='month' else re.fullmatch(r'[1-4]/20\d\d',u['periodValue']) if u['periodType']=='quarter' else re.fullmatch(_day+'-'+_day,u['periodValue']) if u['periodType']=='range' else re.fullmatch(_day,u['periodValue']) if u['periodType']=='day' else re.fullmatch(r'20\d\d',u['periodValue']))
   check(type(u['annexes']) is list and len(set(u['annexes']))==len(u['annexes']) and set(u['annexes'])<=set(t['annexes']))
   leaves=c['expectedLeaves'];check(type(leaves) is dict and 0<len(leaves)<=64)
   for name,text in leaves.items():
