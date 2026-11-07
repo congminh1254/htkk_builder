@@ -48,6 +48,8 @@ TRUSTED_ADAPTERS={
  # D6 validity ends 01/10/2026 (CheckToKhaiHetHieuLuc), Y1 starts 01/07/2026 (CheckHieuLuc 0441).
  '04-ntnn-tt80-3.0.8':_declaration('D6','3.0.8',{'range':('01/01/2026-30/09/2026',)},['01-1']),
  '04-ntnn-tt89-3.0.9':_declaration('Y1','3.0.9',{'range':('01/07/2026-30/09/2026',)},['01-1']),
+ # X9 02/NTNN quyết toán TT89 (non-gating): KieuKy 22 like Y1; annexes 01-1 (02-1/NTNN) and 01-2 (02-2/NTNN).
+ '02-ntnn-tt89-3.0.9':_declaration('X9','3.0.9',{'range':('01/07/2026-30/09/2026',)},['01-1','01-2']),
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))

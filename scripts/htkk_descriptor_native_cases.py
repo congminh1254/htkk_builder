@@ -23,8 +23,10 @@ TRUSTED={
  # 04/NTNN quyết toán (D6 TT80 3.0.8, Y1 TT89 3.0.9): KieuKy 22 from-to dates ('range'), annex 01-1 (sheet 01-2).
  '04-ntnn-tt80-3.0.8':{'menuId':'D6','businessClass':'Ntnn04TT80','xmlVersion':'3.0.8','schemaId':'Validate/04_NTNN_TT80_308.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
  '04-ntnn-tt89-3.0.9':{'menuId':'Y1','businessClass':'Ntnn04TT89','xmlVersion':'3.0.9','schemaId':'Validate/04_NTNN_TT89_309.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
+ # 02/NTNN quyết toán TT89 (X9 3.0.9): KieuKy 22 ('range'), annexes 01-1 (02-1/NTNN) and 01-2 (02-2/NTNN).
+ '02-ntnn-tt89-3.0.9':{'menuId':'X9','businessClass':'Ntnn02TT89','xmlVersion':'3.0.9','schemaId':'Validate/02_NTNN_TT89_309.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
 }
-NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9'})
+NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9'})
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})
  check(value['format']=='htkk-descriptor-native-case-design-v1' and value['htkkVersion']=='5.8.1')
@@ -59,8 +61,9 @@ def validate(value):
   rows=c.get('expectedRows',{});check(type(rows) is dict and all(re.fullmatch(r'(PLuc_[A-Za-z0-9_]+/[A-Za-z]+|PL[0-9]{2}_[0-9]_NTNN/[A-Za-z]+/[A-Za-z]+)',k) and type(v) is int and 1<=v<=50 for k,v in rows.items()))
   check(bool(rows)==bool(u['annexes']))
   per.setdefault(c['adapterId'],[]).append(c)
- # Each adapter needs a zero case and at least one case with amounts. Y1 04/NTNN TT89 has no zero
- # declaration: its Header B42 (IF(01!AJ36=0,0,1), flag Y) blocks the export when [5] chênh lệch = 0.
+ # Each adapter needs a zero case and at least one case with amounts. The TT89 settlements have no zero
+ # declaration: Y1 Header B42 (IF(01!AJ36=0,0,1), flag Y) blocks the export when [5] chênh lệch = 0, X9 Header
+ # B55 (IF(AND(01!AO39=0,01!AO40=0),0,1), flag Y) when both tax differences are 0.
  for adapter,cases in per.items():
   check(adapter in NO_ZERO_CASE or any(all(v in ('0','9999999997') for v in c['expectedLeaves'].values()) for c in cases))
   check(any(any(v not in ('0','9999999997') for v in c['expectedLeaves'].values()) for c in cases))

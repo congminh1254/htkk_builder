@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -106,8 +106,8 @@ class CompiledPlans(unittest.TestCase):
 
     def test_menu_chain_kieuky_and_annexes_follow_menu_xml_design_units(self):
         units = load('declaration_workbook_units', 'htkk_workbook_native_cases.py').UNITS
-        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1']}
-        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22'}
+        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9']}
+        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22'}
         for case in CASES:
             menu = d.CASES[case]['menuId']; block = plan_block(case)
             self.assertIn('new string[]{' + ','.join('"' + x + '"' for x in chains[menu]) + '}', block)
@@ -125,13 +125,13 @@ class CompiledPlans(unittest.TestCase):
             family = d.CASES[case]['family']
             if family == 'workbook':
                 self.assertEqual(dict(checks), d._workbook_expected[case])
-            elif family == 'descriptor' and case in d.NTNN04:
-                # 04/NTNN: Group/leaf checks under CTieuTKhaiChinh are the design leaves, and the oracle agrees
-                # with them; the 02-2/NTNN totals are the oracle annex totals.
-                main_prefix, annex_prefix = 'HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/', 'HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/'
-                oracle, totals = d.ntnn04_expected(case)
+            elif family == 'descriptor' and (case in d.NTNN04 or case in d.NTNN02):
+                # 04/NTNN, 02/NTNN TT89: Group/leaf checks under CTieuTKhaiChinh are the design leaves, and the oracle
+                # agrees with them; the annex checks are the oracle annex totals.
+                main_prefix, annex_prefix = 'HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/', 'HSoThueDTu/HSoKhaiThue/PLuc/'
+                oracle, annexes = d.ntnn_qt_expected(case)
                 self.assertEqual({p[len(main_prefix):]: v for p, v in checks if p.startswith(main_prefix)}, d._descriptor_expected[case][0])
-                self.assertEqual({p[len(annex_prefix):]: v for p, v in checks if p.startswith(annex_prefix)}, totals)
+                self.assertEqual({p[len(annex_prefix):]: v for p, v in checks if p.startswith(annex_prefix)}, {a[0] + '/' + k: v for a in annexes for k, v in a[5].items()})
                 for name, value in d._descriptor_expected[case][0].items():
                     self.assertEqual(oracle[name], value)
                 for path, value in checks:
@@ -234,6 +234,14 @@ class InputPrivacy(unittest.TestCase):
             with self.subTest(name=name), self.assertRaises(reader.InputError):
                 reader.validate_web_xml(body.replace(old, new, 1), case_id=case)
         self.assertEqual(d.ntnn04_expected('04NTNN-TT80-one-subcontractor-2026')[0]['DThuTinhThue/chenhLech'], '-400000000')
+        # X9 02/NTNN TT89: AF34/AF35 = 02-1 + 02-2 totals; nước cư trú keeps its catalogue code.
+        case = '02NTNN-TT89-two-annexes-2026'; body = dfx.declaration_fixture(case)
+        for name, (old, new) in {'02-1 ct8': (b'<ct8>2000000000', b'<ct8>2000000001'), 'AF34': (b'<GiaTriHDong><keKhai>3000000000</keKhai><quyetToan>3000000000', b'<GiaTriHDong><keKhai>3000000000</keKhai><quyetToan>2000000000'),
+                                 '02-2 total': (b'<tong_ct10>1000000000', b'<tong_ct10>1000000001')}.items():
+            self.assertIn(old, body, name)
+            with self.subTest(name=name), self.assertRaises(reader.InputError):
+                reader.validate_web_xml(body.replace(old, new, 1), case_id=case)
+        self.assertEqual(d.ntnn02_expected(case)[0]['SoThueConPhaiNop/quyetToan'], '4000000')
 
     def test_identity_privacy_period_service_structure_and_values_fail_closed(self):
         case = '05KK-withheld-Q3-2026'; body = dfx.declaration_fixture(case)

@@ -21,6 +21,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `01NTNN-NCCNN-entry-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9), **nhập tay** | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa; gõ vào lưới gốc) | 103 |
 | `04NTNN-TT80-one-subcontractor-2026` | `101 → 101_8 → D6` (04/NTNN TT80 3.0.8) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (sheet Menu `01-1` = sheet XLS `01-2`, 1 nhà thầu phụ) | 75 |
 | `04NTNN-TT89-one-subcontractor-2026` | `101 → 101_8 → Y1` (04/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (1 nhà thầu phụ) | 75 |
+| `02NTNN-TT89-two-annexes-2026` | `101 → 101_8 → X9` (02/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài, nước cư trú JP), 02-2/NTNN (1 nhà thầu phụ) | 108 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -145,6 +146,18 @@ Y1 `01-2!BI51/BX51`). Y1 không có ca 0: Header B42 (`IF(01!AJ36=0,0,1)`, cờ 
 (2) sheet phụ lục trong lưới gốc tên `01-2` hay "02-2/NTNN" (driver nhận cả hai)? (3) D6 `checkPL4_1` từ chối gì khi kết xuất
 (ngày trước hôm nay, mã tỉnh 101)? (4) Y1: mã CR của 02-2 có là SelectedValue của AG khi nhập XML (CR49 trong XLS là công
 thức khóa trùng)?
+
+X9 (02/NTNN quyết toán TT89, non-gating, nhập XML) dùng `02NTNN-TT89-two-annexes-2026`: cùng kỳ KieuKy 22 (`range`); hộp kỳ
+tích "02-1/NTNN" và "02-2/NTNN" (Sheet ID Menu.xml `01-1`/`01-2` = sheet workbook cùng tên). `Ntnn02TT89Nckt309` không có
+`FinishImportXML`; `AutoBindData_0` (0x600191a) ghi trường hợp quyết toán vào BK8/BL8; `Refresh_1/2` gọi
+`tinhGiaTriHDCt4_tk`/`tinhDoanhThuChuaThueCt4_tk` chép BO34/BO35 (= tổng [8]/[9] của 02-1 + tổng [9]/[10] của 02-2) vào AF34/AF35,
+bằng giá trị web. Nước cư trú (control 56, 02-1 J → CW `ct3_ma`): `GetDMQuocGia` (`Catalogue_Quoc_Gia_full.xml`), nhập XML
+ghi thẳng CW. Oracle Decimal `NTNN02`/`ntnn02_expected` (gộp với 04/NTNN trong `ntnn_qt_expected`/`_ntnn_qt`) tính lại sheet 01
+dòng 34–49 (AF34/AF35 = tổng hai phụ lục, dòng 37 = IF(r35 − r36 > 0, …, 0), 38 = 39 + 40, AO = AF − W, 41 = 42 + 43, 44–46 =
+IF(5 − 6 < 0, 0, 5 − 6), 47–49 = IF(5 − 6 ≥ 0, 0, |5 − 6|)): AF34 3.000.000.000, AF35 2.800.000.000, AF37 1.800.000.000, AF38
+130.000.000, AO40 4.000.000, AF41 126.000.000, AF44 = AF46 4.000.000; dòng và tổng hai phụ lục. Không có ca 0: Header B55
+(`IF(AND(01!AO39=0,01!AO40=0),0,1)`, cờ Y) chặn kết xuất khi cả hai chênh lệch thuế bằng 0. Câu hỏi mở: nhập XML giữ `ct3_ma`
+và kết xuất lại `ct4` (MST nhà thầu nước ngoài, control 26 rỗng) là `xsi:nil` như web?
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →

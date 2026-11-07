@@ -40,7 +40,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai — bản nháp",CnkdService="Công cụ Kê khai — bản nháp";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -186,6 +186,18 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/04_NTNN_TT89_309.xsd","eaa0ab3ed35eed6ff0a2dd33cf2bd5dba8c179cd65169cc869ca46f1c03ea591",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,79,
     new string[]{"01|AB32|2000000000","01|AB33|1800000000","01|AJ32|0","01|T35|1800000000","01|AB35|1500000000","01|AJ35|-300000000","01|AJ36|3000000","01|AB38|3000000","01|AB39|0","01-2|BI51|2000000000","01-2|BX51|1800000000"},
     new string[]{Main+"GiaTriHDong/keKhai|2000000000",Main+"GiaTriHDong/quyetToan|2000000000",Main+"GiaTriHDong/chenhLech|0",Main+"DThuTinhThue/quyetToan|1800000000",Main+"DThuNTPhu/quyetToan|300000000",Main+"DThuTinhThueNTNN/keKhai|1800000000",Main+"DThuTinhThueNTNN/quyetToan|1500000000",Main+"SoThueTNDNPNop/chenhLech|3000000",Main+"SoThueDaNop/quyetToan|72000000",Main+"SoThueConPNop/quyetToan|3000000",Main+"SoThueNopThua/quyetToan|0","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct9|2000000000","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct10|1800000000"});
+   // X9 02/NTNN quyết toán TT89 (non-gating, web-xml-import-reexport): KieuKy 22 like D6/Y1 (period kind 'range');
+   // Menu.xml sheets 01-1 "02-1/NTNN" and 01-2 "02-2/NTNN" are the workbook sheets of the same names, both ticked in
+   // the period dialog. Ntnn02TT89Nckt309 has no FinishImportXML; AutoBindData_0 writes the settlement case (BK8/BL8)
+   // and Refresh_1/2 copy BO34/BO35 (02-1 totals + 02-2 totals) into AF34/AF35, equal to the web values. 02-1 J holds
+   // nước cư trú (control 56, GetDMQuocGia) with its code JP in CW (ct3_ma). One row per annex, no insertion: totals
+   // 02-1 BY42/CJ42, 02-2 BI56/BX56. XML checks = the Decimal oracle NTNN_QT (htkk_declaration_web_cases).
+   case "02NTNN-TT89-two-annexes-2026":return new HtkkDeclarationCasePlan(caseId,"X9","3.0.9","2013","Ntnn02TT89Nckt309",new string[]{"101","101_8","X9"},"range","22","2026","","01/07/2026","30/09/2026",false,
+    new string[]{"02-1/NTNN","02-2/NTNN"},new string[]{"01|Tờ khai","01-1|02-1/NTNN","01-2|02-2/NTNN"},
+    "InterfaceTemplates/excel/02_NTNN_TT89_309.xls","28e9ebf3d3440988f21bc219c813a172f61ca696870c20a6ee79310156915b37","InterfaceTemplates/xml/02_NTNN_TT89_309.xml","485b44e9a7ce50e8bb40a1d01e5ef9f9f6e2bb16def14b4ebb6be711a7a93696",
+    "Validate/02_NTNN_TT89_309.xsd","a63c0078197e64c317fca465b3a04287382e1e838b8cf261ae12865ea22d6b3f",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,112,
+    new string[]{"01|AF34|3000000000","01|AF35|2800000000","01|AO34|0","01|AF37|1800000000","01|AF38|130000000","01|AO40|4000000","01|AF41|126000000","01|AF44|4000000","01|AF46|4000000","01|AF47|0","01-1|BY42|2000000000","01-1|CJ42|1800000000","01-2|BI56|1000000000","01-2|BX56|1000000000"},
+    new string[]{Main+"GiaTriHDong/keKhai|3000000000",Main+"GiaTriHDong/quyetToan|3000000000",Main+"DThuTinhThue/quyetToan|2800000000",Main+"DThuTinhThueNTPhu/quyetToan|1000000000",Main+"DThuTinhThueNTNN/quyetToan|1800000000",Main+"SoThuePhaiNopNTNN/keKhai|126000000",Main+"SoThuePhaiNopNTNN/quyetToan|130000000",Main+"ThueTNDNPhaiNop/chenhLech|4000000",Main+"SoThueDaNop/quyetToan|126000000",Main+"SoThueConPhaiNop/quyetToan|4000000",Main+"ThueGTGTConPNop/quyetToan|0",Main+"ThueTNDNConPNop/quyetToan|4000000",Main+"SoThueNopThua/quyetToan|0","HSoThueDTu/HSoKhaiThue/PLuc/PL02_1_NTNN/tong_ct8|2000000000","HSoThueDTu/HSoKhaiThue/PLuc/PL02_1_NTNN/tong_ct9|1800000000","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct9|1000000000","HSoThueDTu/HSoKhaiThue/PLuc/PL02_2_NTNN/tong_ct10|1000000000"});
    default:return null;
   }
  }

@@ -1,6 +1,6 @@
 # Ca native thiết kế cho họ descriptor: TNCN (05/KK, 05/QTT, 02/QTT) và NTNN (01/NTNN TT80)
 
-> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `03NTNN-no-rate-M10-2026`, `01NTNN-NCCNN-entry-M10-2026`, `04NTNN-TT80-one-subcontractor-2026` và `04NTNN-TT89-one-subcontractor-2026` (nhập tay; thay ca import `01NTNN-NCCNN-two-parts-M10-2026`, nay chỉ còn là ca thiết kế, release 242) đã được đăng ký (releaseGate false) với driver
+> Cập nhật: `05KK-withheld-Q3-2026`, `05QTT-two-employees-Y2025`, `02QTT-dependants-Y2025`, `01NTNN-two-contractors-M10-2026`, `03NTNN-no-rate-M10-2026`, `01NTNN-NCCNN-entry-M10-2026`, `04NTNN-TT80-one-subcontractor-2026`, `04NTNN-TT89-one-subcontractor-2026` và `02NTNN-TT89-two-annexes-2026` (nhập tay; thay ca import `01NTNN-NCCNN-two-parts-M10-2026`, nay chỉ còn là ca thiết kế, release 242) đã được đăng ký (releaseGate false) với driver
 > chung `declaration-web-import-inspect` — xem `DECLARATION-NATIVE-CASES.md`. Các ca còn lại vẫn design-only.
 
 Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`). Đây là
@@ -25,6 +25,7 @@ Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`)
 | `04NTNN-TT80-zero-2026` | D6 (04/NTNN TT80, XML 3.0.8, KieuKy 22) | 01/01/2026–30/09/2026 (`range`) | — (số/ngày hợp đồng, số 0) | chỉ thiết kế |
 | `04NTNN-TT80-one-subcontractor-2026` | D6 | 01/01/2026–30/09/2026 | 02-2/NTNN (1 nhà thầu phụ, Hà Nội) | web XML → Nhập từ XML → Kết xuất |
 | `04NTNN-TT89-one-subcontractor-2026` | Y1 (04/NTNN TT89, XML 3.0.9, KieuKy 22) | 01/07/2026–30/09/2026 | 02-2/NTNN (1 nhà thầu phụ) | như trên (không có ca 0: Header B42) |
+| `02NTNN-TT89-two-annexes-2026` | X9 (02/NTNN TT89, XML 3.0.9, KieuKy 22) | 01/07/2026–30/09/2026 | 02-1/NTNN (1 nhà thầu, Nhật/JP), 02-2/NTNN (1 nhà thầu phụ) | web XML → Nhập từ XML → Kết xuất (không có ca 0: Header B55) |
 
 - `scripts/htkk-descriptor-native-cases.json` + `scripts/htkk_descriptor_native_cases.py`:
   registry riêng, `status=design-only`, `dispatchable=false`, `releaseGate=false`. Validator

@@ -26,6 +26,7 @@ $HtkkNativeCaseFormats=@{
  '01NTNN-NCCNN-entry-M10-2026'='htkk-web-ntnn01-nccnn-entry-m10-2026-input-v1'
  '04NTNN-TT80-one-subcontractor-2026'='htkk-web-ntnn04-tt80-one-subcontractor-2026-input-v1'
  '04NTNN-TT89-one-subcontractor-2026'='htkk-web-ntnn04-tt89-one-subcontractor-2026-input-v1'
+ '02NTNN-TT89-two-annexes-2026'='htkk-web-ntnn02-tt89-two-annexes-2026-input-v1'
 }
-$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026')
+$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026')
 $HtkkDeclarationEntryCases=@('01NTNN-NCCNN-entry-M10-2026')
