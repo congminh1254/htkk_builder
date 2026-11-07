@@ -31,6 +31,8 @@ TRUSTED_ADAPTERS={
  '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('10/2026',)},[]),
  # Y8 01/NTNN, NCCNN TT89 (non-gating): KieuKy 18 like I9; Menu.xml validity from 01/10/2026.
  '01-ntnn-nccnn-tt89-3.0.9':_declaration('Y8','3.0.9',{'month':('10/2026',)},[]),
+ # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 like I9; FinishImportXML clears rate [9], so the case uses rate 0.
+ '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',)},[]),
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))

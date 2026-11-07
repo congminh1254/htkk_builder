@@ -23,5 +23,6 @@ $HtkkNativeCaseFormats=@{
  '02QTT-dependants-Y2025'='htkk-web-tncn02qtt-dependants-y2025-input-v1'
  '01NTNN-two-contractors-M10-2026'='htkk-web-ntnn01-two-contractors-m10-2026-input-v1'
  '01NTNN-NCCNN-two-parts-M10-2026'='htkk-web-ntnn01-nccnn-two-parts-m10-2026-input-v1'
+ '03NTNN-no-rate-M10-2026'='htkk-web-ntnn03-no-rate-m10-2026-input-v1'
 }
-$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','01NTNN-NCCNN-two-parts-M10-2026')
+$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-no-rate-M10-2026')

@@ -18,6 +18,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `02QTT-dependants-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3) | 12 | năm 2025 (NopTheoTinhCQT 3) | 02-1 (danh sách ẩn; nhập XML thêm mọi phụ lục) | 126 |
 | `01NTNN-two-contractors-M10-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 10/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
 | `01NTNN-NCCNN-two-parts-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9) | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa) | 103 |
+| `03NTNN-no-rate-M10-2026` | `101 → 101_8 → J1` (03/NTNN 3.0.8) | 18 | tháng 10/2026 | — (bảng `BKThueNTNN/ThueNTNN`, 2 dòng, tỷ lệ [9] = 0) | 65 |
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
@@ -36,6 +37,14 @@ một nhà cung cấp nước ngoài (200tr: GTGT 10tr, TNDN 10tr, [14] 20tr) v�
 TNCN 2tr, [14] 7tr). Oracle `NTNN_ROWS` theo từng bảng (đường dẫn dòng, cha của dòng tổng, tiền tố `tong_`/`mucI_tong_`/
 `mucII_tong_`). Mẫu `_xml_` của Y8 có `HSoKhaiThue id="ID1"` (không gạch dưới) nên `leaves()` nhận `ID_?n`.
 Câu hỏi mở: HTKK kết xuất lại dòng mẫu của bảng bị khóa thế nào (web giữ một dòng mặc định).
+
+J1 (03/NTNN 3.0.8, non-gating) dùng `03NTNN-no-rate-M10-2026`: `Ntnn03TT80Nckt308.FinishImportXML` (0x6001937) ghi
+`BU := GeneralFunctions.getThuSuatByMa(CR, "DC_97")` cho mọi dòng nhập; cột ẩn CR (`pathTLTNDN`) không có trong mẫu
+`_xml_`/XSD và không có lệnh ghi (htkk_web quét IL `ntnn03-cr-no-writer`), nên tỷ lệ [9] luôn bị xóa khi nhập XML. Ca
+dùng tỷ lệ 0 và miễn giảm 0 ở cả hai dòng để phép ghi lại là no-op: oracle Decimal `NTNN_ROWS` (công thức `03`: ct11 =
+IF(ct8·ct9/100 − ct10 < 0, 0, ROUND(ct8·ct9/100 − ct10))) cho ct11 = 0, `tongct6`/`tongct8` = 1.100.000.000, `tongct10`/
+`tongct11` = 0. Ngày thanh toán (7) để trống (IL đưa nguyên văn ô BE cho `ValidateFullDate(…, "ddMMyyyy")`).
+Câu hỏi mở: HTKK kết xuất lại ô BU rỗng (sau `set_Text("")`) là `0.00` như web, `0` hay rỗng.
 
 - Producer: `htkk_web/scripts/generate-htkk-declaration-reference.mjs --case <producerCase> <thư mục>`
   chạy code sản phẩm qua `declarationEngineFor(menuId)` (calculate → exportXml → XSD → importXml →

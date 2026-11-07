@@ -154,6 +154,11 @@ CASES = {
                                              ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
                                               TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-003', 'HD-GL-004',
                                               'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Hoạt động kinh doanh khác']),
+    # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 month 10/2026, two synthetic rows with rate [9] = 0 so that
+    # Ntnn03TT80Nckt308.FinishImportXML (BU := getThuSuatByMa(CR, "DC_97") = "") changes nothing.
+    '03NTNN-no-rate-M10-2026': _case('ntnn03-no-rate-m10-2026', 'J1', '840', '3.0.8', 'Validate/03_NTNN_TT80_308.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 65, [], WORKBOOK_SERVICE,
+                                     ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 03/NTNN', TEMPLATE_TT89, ADDRESS, 'TU VAN KY THUAT A - GIẢ LẬP', 'LAP DAT THIET BI B - GIẢ LẬP', 'NHA THAU PHU A - GIẢ LẬP', 'HD-GL-031', 'HD-GL-032',
+                                      'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
     '01CNKD-TT50-revenue-two-groups-Q3-2026': _case('cnkd01-revenue-two-groups-q3-2026', 'U5', '1266', '2.9.8', 'Validate/01_CNKD_HKD_TT50_298.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 261, [], 'Công cụ Kê khai — bản nháp',
                                                     ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(b)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
                                                      'Phân phối, cung cấp hàng hóa', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
@@ -302,7 +307,7 @@ def _pluc(root):
 # Decimal recomputation of the source XLS row-55 formulas (never the TypeScript engine):
 # ct9 = ROUND(ct7*ct8/100, 0), ct13 = MAX(0, ROUND(ct10*ct11/100, 0) - ct12), ct14 = ct9 + ct13;
 # tong_ctN = SUM of the column. ROUND is half away from zero (FarPoint/Excel).
-# One entry per table: (row path, totals parent, totals prefix, reviewed rows). Y8 keeps part I locked
+# One entry per table: (row path, totals parent, totals prefix, reviewed rows[, formula '03' for 03/NTNN]). Y8 keeps part I locked
 # and empty (one default template row); CNKCT holds TNCN in ThueTNCN/ct10..13.
 _MAIN = 'HSoKhaiThue/CTieuTKhaiChinh'
 _EMPTY_ROW = {'ct1b_ma': '', 'ct5': '0', 'ct7': '0', 'ct8': '0.00', 'ct10': '0', 'ct11': '0.00', 'ct12': '0'}
@@ -318,11 +323,23 @@ NTNN_ROWS = {
         (_MAIN + '/ThueNCCNN_CNKCT/BKThueCNKCT/ThueCNKCT', _MAIN + '/ThueNCCNN_CNKCT', 'mucII_tong_', (
             {'ct1b_ma': '05', 'ct5': '100000000', 'ct7': '100000000', 'ct8': '5.00', 'ct10': '100000000', 'ct11': '2.00', 'ct12': '0'},)),
     ),
+    # J1 03/NTNN (formula '03'): ct11 = IF(ct8*ct9/100 - ct10 < 0, 0, ROUND(ct8*ct9/100 - ct10, 0)); totals
+    # tongct6/8/10/11. Rate ct9 = 0 (FinishImportXML clears every imported rate), so ct11 = 0.
+    '03NTNN-no-rate-M10-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong', (
+        {'ct1b_ma': '01', 'ct6': '800000000', 'ct8': '800000000', 'ct9': '0.00', 'ct10': '0'},
+        {'ct1b_ma': '02', 'ct6': '300000000', 'ct8': '300000000', 'ct9': '0.00', 'ct10': '0'},
+    ), '03'),),
 }
 
 
 def _round(value):
     return value.quantize(decimal.Decimal(1), rounding=decimal.ROUND_HALF_UP)
+
+
+def _computed03(row):
+    n = {k: decimal.Decimal(v) for k, v in row.items() if k != 'ct1b_ma'}
+    base = n['ct8'] * n['ct9'] / 100 - n['ct10']
+    return {**row, 'ct11': str(decimal.Decimal(0) if base < 0 else _round(base))}
 
 
 def _computed(row):
@@ -335,9 +352,11 @@ def _computed(row):
 def ntnn_tables(case_id):
     """Per table: row path, totals parent, computed rows and column totals of a 01/NTNN design case."""
     out = []
-    for row_path, parent, prefix, rows in NTNN_ROWS[case_id]:
-        computed = [_computed(row) for row in rows]
-        totals = {prefix + k: str(sum(decimal.Decimal(r[k]) for r in computed)) for k in ('ct5', 'ct7', 'ct9', 'ct10', 'ct12', 'ct13', 'ct14')}
+    for row_path, parent, prefix, rows, *formula in NTNN_ROWS[case_id]:
+        j1 = formula == ['03']
+        computed = [(_computed03 if j1 else _computed)(row) for row in rows]
+        columns = ('ct6', 'ct8', 'ct10', 'ct11') if j1 else ('ct5', 'ct7', 'ct9', 'ct10', 'ct12', 'ct13', 'ct14')
+        totals = {prefix + k: str(sum(decimal.Decimal(r[k]) for r in computed)) for k in columns}
         out.append((row_path, parent, computed, totals))
     return out
 

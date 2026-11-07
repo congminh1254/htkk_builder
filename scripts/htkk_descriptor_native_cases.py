@@ -16,6 +16,8 @@ TRUSTED={
  '01-ntnn-tt80-2.5.1':{'menuId':'I9','businessClass':'Ntnn01TT80','xmlVersion':'2.5.1','schemaId':'Validate/01_NTNN_TT80_251.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
  # 01/NTNN, NCCNN TT89 (Y8): three main-sheet tables, part chosen by nopThayNTNN/nopThayNCCNN.
  '01-ntnn-nccnn-tt89-3.0.9':{'menuId':'Y8','businessClass':'Ntnn01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_NTNN_NCCNN_TT89_309.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
+ # 03/NTNN (J1, 3.0.8): one ThueNTNN table, TNDN only; the import clears rate [9] (FinishImportXML).
+ '03-ntnn-tt80-3.0.8':{'menuId':'J1','businessClass':'Ntnn03TT80','xmlVersion':'3.0.8','schemaId':'Validate/03_NTNN_TT80_308.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month'}},
 }
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})
