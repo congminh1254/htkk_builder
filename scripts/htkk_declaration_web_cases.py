@@ -132,8 +132,10 @@ CASES = {
     # KieuKy 12 (B9/B8): frmHTKKPeriod_Load → SetLayoutToKhaiNamTuThangDenThang hides pnTuNgay/pnDenNgay,
     # so GetPeriodInfo gives TTinChung kyKKhaiTuNgay = kyKKhaiDenNgay = '' and WinDoWorkImportFormXml
     # refuses a file with any other value (0437, releases 224/225). The months come from the driver plan.
-    '05QTT-two-employees-Y2025': _case('tncn05qtt-two-employees-y2025', 'B9', '953', '2.9.3', 'Validate/05_QTT_TNCN_TT80_293.xsd', ('Y', '2025', '', ''), None, '2026-10-27', '2026-10-27', 149, ['PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT'], WORKBOOK_SERVICE,
-                                       ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu số 05/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'NGUOI LAO DONG A', 'NGUOI LAO DONG B', 'NGUOI PHU THUOC A', 'Con', 'Thẻ CCCD/Số định danh cá nhân', 'QT định kỳ']),
+    '05QTT-two-employees-Y2025': _case('tncn05qtt-two-employees-y2025', 'B9', '953', '2.9.3', 'Validate/05_QTT_TNCN_TT80_293.xsd', ('Y', '2025', '', ''), None, '2026-10-27', '2026-10-27', 162, ['PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT'], WORKBOOK_SERVICE,
+                                       # Two 05-3 rows: FinishImportXML recomputes 05-1 [16]/BF only for more than one
+                                       # 05-3 row; with one row Validate_1 E_52 refused 05-1!W24 (release 231, run 42316192917).
+                                       ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu số 05/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'NGUOI LAO DONG A', 'NGUOI LAO DONG B', 'NGUOI PHU THUOC A', 'NGUOI PHU THUOC B', 'Con', 'Thẻ CCCD/Số định danh cá nhân', 'QT định kỳ']),
     # B8 02/QTT-TNCN (non-gating): the descriptor design case with two dependants (annex 02-1).
     '02QTT-dependants-Y2025': _case('tncn02qtt-dependants-y2025', 'B8', '952', '2.7.3', 'Validate/02_QTT_TNCN_TT80_273.xsd', ('Y', '2025', '', ''), None, '2026-10-27', '2026-10-27', 130, ['PLuc_02_1_BK_QTT_TNCN'], WORKBOOK_SERVICE,
                                     ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu 02/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'Quyết toán theo năm dương lịch', 'NGUOI PHU THUOC A', 'NGUOI PHU THUOC B',
