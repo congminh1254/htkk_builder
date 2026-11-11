@@ -1,5 +1,8 @@
 """One classified retry before tax execution; never retries mismatches or weakens evidence."""
-import json,pathlib,re
+import importlib.util,json,pathlib,re
+_oracle_spec=importlib.util.spec_from_file_location('native_retry_oracle',pathlib.Path(__file__).with_name('htkk_oracle.py'));oracle=importlib.util.module_from_spec(_oracle_spec);_oracle_spec.loader.exec_module(oracle)
+# Status contexts a retried case may carry: the registry context, or it plus a reviewed non-default oracle suffix.
+CONTEXT=re.compile(r'htkk-native/[a-z0-9-]+('+'|'.join(re.escape(oracle.status_context('',v)) for v in oracle.VERSIONS if v!=oracle.DEFAULT)+')?')
 BUILDER='congminh1254/htkk_builder';SOURCE='htkk-net/htkk_web'
 FRAMEWORK='Check clean Framework UIA assembly readiness'
 PROBE='Kiểm tra nguồn và điều kiện Windows'
@@ -270,7 +273,9 @@ def _login_not_ready(r,mode,permit):
  return _pre_login_clean(r,mode,permit)
 LOGIN={'fixtureDirectoryPreexisting':False,'fixtureDirectoryCreated':True,'syntheticIdentifierOnly':True,'realTaxpayerDataUsed':False,'inputVerified':True,'loginClicked':True,'loginHidden':True,'runtimeRoundTrip':False}
 PERMIT_KEYS={'uniquePathVerified','initiallyAbsent','authorizationAttempted','absentAfterCleanup'}
-def classify(jobs,records):
+def classify(jobs,records,version=None):
+ # version: the oracle of the retried run (default 5.8.1); its supplier report must carry exactly that version.
+ version=oracle.DEFAULT if version is None else version
  ready=[j for j in jobs.get('jobs',[])if j.get('name')=='readiness']
  if len(ready)!=1 or ready[0].get('conclusion')!='failure':return None
  if len(jobs.get('jobs',[]))!=2 or not any(j.get('name')=='report_failure'and j.get('conclusion')=='success'for j in jobs['jobs']):return None
@@ -283,7 +288,7 @@ def classify(jobs,records):
    # The Framework readiness child runs before HTKK, web input or any tax data exists.
    if _exact(bounds[0],{'phase':'complete'}):return 'framework-uia-exit-timeout'
    if bounds[0].get('phase')in FRAMEWORK_RUNNING_PHASES and type(bounds[0].get('phase'))is str:return 'framework-uia-process-timeout'
- suppliers=[r for r in records if r.get('version')=='5.8.1'and 'supplierProcessBoundary'in r]
+ suppliers=[r for r in records if r.get('version')==version and 'supplierProcessBoundary'in r]
  if len(suppliers)!=1:return None
  r=suppliers[0];login=r.get('syntheticLogin',{});permit=r.get('guiAutomationPermitBoundary',{})
  if failed=={PROBE} and r.get('guiReferenceAutomationMode')==DECLARATION_MODE:
@@ -345,7 +350,7 @@ def classify(jobs,records):
 
 def recover(status,case,source,builder,input_commit,get,records,send,actions_token,status_token,retried):
  if not actions_token or not status_token:return False
- if status.get('state')not in ('failure','error')or not re.fullmatch(r'htkk-native/[a-z0-9-]+',case):return False
+ if status.get('state')not in ('failure','error')or not CONTEXT.fullmatch(case):return False
  if not re.fullmatch('[a-f0-9]{40}',source)or not re.fullmatch('[a-f0-9]{40}',builder)or not re.fullmatch('[a-f0-9]{40}',input_commit):return False
  if 'input:'+input_commit not in status.get('description',''):return False
  match=re.fullmatch(r'https://github\.com/congminh1254/htkk_builder/actions/runs/([1-9][0-9]*)',status.get('target_url',''))
@@ -363,7 +368,9 @@ def recover(status,case,source,builder,input_commit,get,records,send,actions_tok
  if jobs.get('total_count')!=len(jobs.get('jobs',[])):return False
  ready=[j for j in jobs.get('jobs',[])if j.get('name')=='readiness']
  if len(ready)!=1:return False
- reason=classify(jobs,records(get(BUILDER,'actions/jobs/'+str(ready[0]['id'])+'/logs')))
+ # The context suffix names the run's oracle (CONTEXT admits only reviewed suffixes).
+ version=next((v for v in oracle.VERSIONS if v!=oracle.DEFAULT and case.endswith(oracle.status_context('',v))),oracle.DEFAULT)
+ reason=classify(jobs,records(get(BUILDER,'actions/jobs/'+str(ready[0]['id'])+'/logs')),version)
  if reason is None:return False
  send('https://api.github.com/repos/'+BUILDER+'/actions/runs/'+rid+'/rerun-failed-jobs',actions_token,{})
  retried.add(rid) # Prevent duplicate POSTs during eventual-consistency delays.

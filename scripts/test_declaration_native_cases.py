@@ -76,6 +76,7 @@ class Registry(unittest.TestCase):
             with self.subTest(), tempfile.TemporaryDirectory() as directory, self.assertRaises((ValueError, KeyError)):
                 folder = pathlib.Path(directory); (folder / 'htkk-native-cases.json').write_text(json.dumps(value)); target = folder / 'htkk_native_cases.py'
                 target.write_text((ROOT / 'htkk_native_cases.py').read_text())
+                for name in ('htkk_oracle.py', 'generate-htkk-oracle-baselines.py', 'htkk-oracle-baselines.json'): (folder / name).write_bytes((ROOT / name).read_bytes())
                 spec = importlib.util.spec_from_file_location('mutated_declaration_registry', target); module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
 
     def test_plan_accepts_gate_only_or_complete_source_plans(self):

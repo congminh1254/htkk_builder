@@ -150,8 +150,11 @@ class Consumers(unittest.TestCase):
             step = workflow[:workflow.index(script)]
             self.assertIn('HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}\n        run: python', step[-200:], script)
         self.assertIn("${{ inputs.htkk_version == '5.8.2' && '-htkk582' || '' }}\n  cancel-in-progress: false", workflow)
-        # Release dispatch never names a version: the default cohort is unchanged.
-        self.assertNotIn('htkk_version', (ROOT / 'dispatch-native-cases.py').read_text(encoding='utf-8'))
+        # Release dispatch names a version only for a registry case with a non-default htkkVersion (none is
+        # committed), so the default cohort is unchanged (test_per_case_oracle.py checks the bodies).
+        dispatcher = (ROOT / 'dispatch-native-cases.py').read_text(encoding='utf-8')
+        self.assertEqual(dispatcher.count("'htkk_version'"), 1)
+        self.assertIn(" if version(case)!=case_registry.oracle.DEFAULT:value['htkk_version']=version(case)\n", dispatcher)
 
     def test_csharp_reads_version_dependent_pins_from_the_selected_baseline(self):
         sources = {n: (ROOT / n).read_text(encoding='utf-8') for n in ('HtkkGuiReferenceAutomation.cs', 'HtkkGtgtPeriodAndSheet.cs', 'HtkkGtgtExportInspection.cs', 'HtkkDeclarationCasePlans.cs', 'HtkkWebTaxComparison.cs', 'HtkkDeclarationTreeComparison.cs')}

@@ -33,19 +33,21 @@ def discover(publication,builder,statuses,get=collector.api,retry=None):
  source=publication['sourceCommit'];latest={s['context']:s for s in reversed(statuses)};result=[];seen=set();ready=[];pending=False
  for item in publication['cases']:
   case=item['caseId'];check(case in registry.CASES)
+  # A case's own oracle context ('@htkk582' for a 5.8.2 case; the registry context for the default).
+  context=registry.status_context(case)
   # Candidate cases report their own status but never gate this cohort. A failed candidate
   # gets the same classified, at-most-one, pre-tax-only retry; its outcome (or any error
   # while classifying it) never makes the cohort pending, failed or ready.
   if not registry.CASES[case]['releaseGate']:
-   status=latest.get(registry.CASES[case]['statusContext'],{})
+   status=latest.get(context,{})
    if retry is not None and status.get('state')in ('failure','error')and 'input:'+item['artifactCommit']in status.get('description',''):
-    try:retry(status,registry.CASES[case]['statusContext'],source,builder,item['artifactCommit'])
+    try:retry(status,context,source,builder,item['artifactCommit'])
     except Exception:pass
    continue
-  status=latest.get(registry.CASES[case]['statusContext'],{})
+  status=latest.get(context,{})
   if status.get('state')in ('failure','error'):
    if 'input:'+item['artifactCommit']in status.get('description',''):
-    if retry is not None and retry(status,registry.CASES[case]['statusContext'],source,builder,item['artifactCommit']):pending=True;continue
+    if retry is not None and retry(status,context,source,builder,item['artifactCommit']):pending=True;continue
     raise ValueError('NATIVE_FAILED')
    pending=True;continue
   if status.get('state')!='success':pending=True;continue

@@ -8,6 +8,11 @@ CASES=tuple(case_registry.CASES)
 # Release/Pages/evidence cohort. Candidate cases still get their own dispatch and status.
 GATE_CASES=tuple(case_registry.GATE_CASES)
 CONTEXTS={id:c['statusContext']for id,c in case_registry.CASES.items()}
+# Per-case oracle: a case's registry htkkVersion (absent = default 5.8.1). Only a non-default case gets
+# the probe input, the ' [HTKK x.y.z]' run title and the '@htkkxyz' status context; a default case keeps
+# the exact inputs, title and context it had before the field existed.
+def version(case):return case_registry.htkk_version(case)
+def context(case):return case_registry.status_context(case)
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 def sha(value):
@@ -54,7 +59,9 @@ def get_json(url,token):
 def run_title(case):
  # Mirrors probe-htkk-windows.yml run-name, rendered from the same web_case_id/gui_automation
  # inputs the run later binds into its status context and retained provenance (caseId).
- return 'HTKK native case '+case+' ('+gui(case)+')'
+ # A non-default oracle adds the run-name suffix of the workflow (' [HTKK 5.8.2]').
+ v=version(case)
+ return 'HTKK native case '+case+' ('+gui(case)+')'+('' if v==case_registry.oracle.DEFAULT else ' [HTKK '+v+']')
 def gui(case):return case_registry.ADAPTERS[case_registry.CASES[case]['adapterId']]['driver']
 
 def created(case,builder,started,token,get):
@@ -95,20 +102,26 @@ def deliver(send,url,token,payload,sleep,confirm=None):
     if state is None:raise error # Unknown whether the run exists; fail closed rather than duplicate.
    print('Transient native-case API error; bounded retry '+str(attempt+1)+' of '+str(len(RETRY_DELAYS))+'.',flush=True)
 
+def inputs(source,item):
+ case=item['caseId'];value={'install_and_probe':True,'synthetic_login':True,'acknowledge_registration':True,'runtime_host':'clr2-x86-reference','gui_automation':gui(case),'web_source_sha':source,'web_case_id':case,'web_artifact_commit':item['artifactCommit']}
+ # htkk_version is sent only for a non-default case, so a default dispatch body is byte-identical.
+ if version(case)!=case_registry.oracle.DEFAULT:value['htkk_version']=version(case)
+ return value
+
 def dispatch(value,actions_token,status_token,send=None,builder=None,get=None,sleep=None,now=None):
  send=send or post;get=get or get_json;sleep=sleep or time.sleep;now=now or (lambda:datetime.datetime.now(datetime.timezone.utc))
  if builder is not None:sha(builder)
  for item in value['cases']:
   status='https://api.github.com/repos/'+REPO+'/statuses/'+value['sourceCommit']
   # Commit statuses are last-writer hints, so a blind retry of the same pending status is safe.
-  deliver(send,status,status_token,{'state':'pending','context':CONTEXTS[item['caseId']],'description':'Fixed synthetic native case queued input:'+item['artifactCommit']},sleep)
+  deliver(send,status,status_token,{'state':'pending','context':context(item['caseId']),'description':'Fixed synthetic native case queued input:'+item['artifactCommit']},sleep)
   started=now()
   # workflow_dispatch is not idempotent: only re-send once the exact case run is proven absent.
   confirm=None if builder is None else (lambda case=item['caseId'],started=started:created(case,builder,started,actions_token,get))
   try:
-   deliver(send,'https://api.github.com/repos/'+BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches',actions_token,{'ref':'main','inputs':{'install_and_probe':True,'synthetic_login':True,'acknowledge_registration':True,'runtime_host':'clr2-x86-reference','gui_automation':gui(item['caseId']),'web_source_sha':value['sourceCommit'],'web_case_id':item['caseId'],'web_artifact_commit':item['artifactCommit']}},sleep,confirm)
+   deliver(send,'https://api.github.com/repos/'+BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches',actions_token,{'ref':'main','inputs':inputs(value['sourceCommit'],item)},sleep,confirm)
   except Exception:
-   deliver(send,status,status_token,{'state':'failure','context':CONTEXTS[item['caseId']],'description':'Fixed synthetic native case dispatch failed'},sleep)
+   deliver(send,status,status_token,{'state':'failure','context':context(item['caseId']),'description':'Fixed synthetic native case dispatch failed'},sleep)
    raise
 
 def main():

@@ -1,5 +1,5 @@
 """Trusted adapter/case metadata. Private plans cannot select arbitrary commands/drivers."""
-import copy,json,pathlib,re
+import copy,importlib.util,json,pathlib,re
 ROOT=pathlib.Path(__file__).parent
 REGISTRY=json.loads((ROOT/'htkk-native-cases.json').read_text())
 def check(value):
@@ -61,10 +61,23 @@ for a in ADAPTERS.values():
  check(set(a)=={'adapterId','htkkVersion','menuId','xmlVersion','producer','driver','privacyValidator','profilePolicy'})
  check(a['driver']==trusted['driver'] and a['privacyValidator']==trusted['privacyValidator'] and a['profilePolicy']=='synthetic-9999999997-v1')
  check(a['producer']==trusted['producer'] and a['menuId']==trusted['menuId'] and a['xmlVersion']==trusted['xmlVersion'] and a['htkkVersion']=='5.8.1')
+# Per-case HTKK oracle (optional 'htkkVersion'). Absent = the default oracle (5.8.1), so a case without
+# the field dispatches and reports exactly as before. When present it must name a reviewed NON-default
+# baseline (one canonical spelling per version) and the case must not gate a release: release, Pages and
+# scoped evidence stay on the default oracle (htkk_oracle.py keeps such runs on their own
+# '@htkk582' status context, '-htkk582' output branch and immutable anchor).
+_oracle_spec=importlib.util.spec_from_file_location('trusted_case_oracle',ROOT/'htkk_oracle.py');oracle=importlib.util.module_from_spec(_oracle_spec);_oracle_spec.loader.exec_module(oracle)
+CASE_KEYS=frozenset({'caseId','producerCase','adapterId','format','stagingDirectory','inputBranch','outputBranch','statusContext','releaseGate','unit'})
+def case_version(c):
+ """The reviewed oracle version of one registry case; refuses anything else."""
+ check(type(c)is dict and CASE_KEYS<=set(c)<=CASE_KEYS|{'htkkVersion'})
+ if 'htkkVersion' not in c:return oracle.DEFAULT
+ value=c['htkkVersion'];check(type(value)is str and value in oracle.VERSIONS and value!=oracle.DEFAULT and c['releaseGate']is False)
+ return value
 CASES={c['caseId']:c for c in REGISTRY['cases']}
 check(0<len(CASES)<=256 and len(CASES)==len(REGISTRY['cases']))
 for c in CASES.values():
- check(set(c)=={'caseId','producerCase','adapterId','format','stagingDirectory','inputBranch','outputBranch','statusContext','releaseGate','unit'})
+ case_version(c)
  check(re.fullmatch('[A-Za-z0-9-]{1,100}',c['caseId']) and re.fullmatch('[a-z0-9-]{1,80}',c['producerCase']))
  a=ADAPTERS[c['adapterId']];u=c['unit']
  check(u['menuId']==a['menuId'] and u['adapterVersion']==a['xmlVersion'] and u['activityCode']=='00' and u['annexes']==TRUSTED_ADAPTERS[a['adapterId']]['annexes'] and type(u['amendmentOrder'])is int and u['amendmentOrder']==0)
@@ -87,6 +100,9 @@ DECLARATION_ENTRY_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS
 def input_mode(case):check(case in DECLARATION_CASES);return TRUSTED_ADAPTERS[CASES[case]['adapterId']]['mode']
 DRIVERS=tuple(sorted({a['driver'] for a in ADAPTERS.values()}))
 def driver(case):check(case in CASES);return ADAPTERS[CASES[case]['adapterId']]['driver']
+def htkk_version(case):check(case in CASES);return case_version(CASES[case])
+# Status context of a dispatched case: the registry context, suffixed '@htkk582' for a 5.8.2 case.
+def status_context(case):return oracle.status_context(CASES[case]['statusContext'],htkk_version(case))
 def is_declaration(case):return case in DECLARATION_CASES
 def policy(case):
  check(case in CASES);return copy.deepcopy(CASES[case])
