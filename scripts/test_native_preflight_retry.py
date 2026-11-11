@@ -77,7 +77,7 @@ class NativePreflightRetry(unittest.TestCase):
   import test_caseflow_batch as original
   f=original.fixture();registry=original.batch.registry
   candidates=[c for c in f['publication']['cases'] if not registry.CASES[c['caseId']]['releaseGate']];self.assertTrue(candidates)
-  for c in candidates:f['statuses'].append({'context':registry.CASES[c['caseId']]['statusContext'],'state':'failure','description':'failed input:'+c['artifactCommit'],'target_url':'https://github.com/'+original.batch.BUILDER+'/actions/runs/9'})
+  for c in candidates:f['statuses'].append({'context':registry.status_context(c['caseId']),'state':'failure','description':'failed input:'+c['artifactCommit'],'target_url':'https://github.com/'+original.batch.BUILDER+'/actions/runs/9'})
   for outcome in (True,False,'raise'):
    called=[]
    def candidate_retry(*args):
@@ -86,7 +86,7 @@ class NativePreflightRetry(unittest.TestCase):
     return outcome
    proof=original.batch.discover(f['publication'],original.BUILDER,f['statuses'],f['get'],retry=candidate_retry)
    self.assertEqual([c['caseId'] for c in proof['cases']],list(registry.GATE_CASES),outcome)
-   self.assertEqual(sorted(called),sorted(registry.CASES[c['caseId']]['statusContext'] for c in candidates),outcome)
+   self.assertEqual(sorted(called),sorted(registry.status_context(c['caseId']) for c in candidates),outcome)
   # A stale candidate failure for another input is not retried; no retry callback, no retry.
   for st in f['statuses'][-len(candidates):]:st['description']='failed input:'+'d'*40
   called=[];original.batch.discover(f['publication'],original.BUILDER,f['statuses'],f['get'],retry=lambda *a:called.append(a));self.assertEqual(called,[])

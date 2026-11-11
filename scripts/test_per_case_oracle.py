@@ -26,6 +26,8 @@ BUILDER_SHA = '9' * 40
 START = datetime.datetime(2026, 11, 11, 10, 0, 0, tzinfo=datetime.timezone.utc)
 GATE = registry.GATE_CASES[0]
 CANDIDATE = '01NTNN-NCCNN-entry-M10-2026'
+# The one committed 5.8.2 case: U5 3.1.0 exists only in HTKK 5.8.2, so its adapter is pinned to that oracle.
+U5_310 = '01CNKD-TT50-310-pl01-three-groups-Q3-2026'
 OTHER = '03TNDN-profit20-Y2025'
 
 
@@ -45,10 +47,22 @@ def record(calls):
 
 class Registry(unittest.TestCase):
     def test_committed_registry_keeps_every_case_on_the_default_oracle(self):
+        # Every case but U5 3.1.0 (adapter 01-cnkd-hkd-3.1.0-pl01, htkkVersion 5.8.2) stays on the default oracle.
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
-        self.assertFalse(any('htkkVersion' in c for c in RAW['cases']))
-        self.assertEqual({registry.htkk_version(c) for c in registry.CASES}, {'5.8.1'})
-        self.assertEqual({c: registry.status_context(c) for c in registry.CASES}, {c: v['statusContext'] for c, v in registry.CASES.items()})
+        self.assertEqual([c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c], [U5_310])
+        self.assertEqual({c: registry.htkk_version(c) for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, {U5_310: '5.8.2'})
+        self.assertFalse(registry.CASES[U5_310]['releaseGate'])
+        self.assertEqual(registry.status_context(U5_310), 'htkk-native/cnkd01-310-pl01-three-groups-q3-2026@htkk582')
+        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c != U5_310}, {c: v['statusContext'] for c, v in registry.CASES.items() if c != U5_310})
+
+    def test_an_adapter_of_a_later_release_runs_only_on_that_oracle(self):
+        index = {c['caseId']: i for i, c in enumerate(RAW['cases'])}
+        adapters = {a['adapterId']: i for i, a in enumerate(RAW['adapters'])}
+        for mutate in (lambda r: r['cases'][index[U5_310]].pop('htkkVersion'),
+                       lambda r: r['adapters'][adapters['01-cnkd-hkd-3.1.0-pl01']].update(htkkVersion='5.8.1'),
+                       lambda r: r['adapters'][adapters['01-cnkd-hkd-2.9.8']].update(htkkVersion='5.8.2')):
+            with self.subTest(), self.assertRaises(ValueError):
+                self.mutated(mutate)
 
     def test_case_version_accepts_only_a_reviewed_non_default_oracle_on_a_candidate(self):
         candidate = copy.deepcopy(registry.CASES[CANDIDATE]); gate = copy.deepcopy(registry.CASES[GATE])
@@ -92,10 +106,14 @@ class Dispatch(unittest.TestCase):
                                                   'web_source_sha': 'a' * 40, 'web_case_id': case, 'web_artifact_commit': artifact}}
             self.assertEqual(json.dumps(probe[1], separators=(',', ':')), json.dumps(expected, separators=(',', ':')))
             self.assertEqual(d.run_title(case), 'HTKK native case ' + case + ' (' + registry.driver(case) + ')')
-        # The whole committed cohort never names a version.
+        # The whole committed default cohort never names a version; only U5 3.1.0 is dispatched on 5.8.2.
         calls = []
-        d.dispatch({'format': 'htkk-web-input-publication-v1', 'sourceCommit': 'a' * 40, 'cases': [{'caseId': c, 'artifactCommit': 'b' * 40} for c in d.CASES]}, 'builder', 'source', record(calls))
+        d.dispatch({'format': 'htkk-web-input-publication-v1', 'sourceCommit': 'a' * 40, 'cases': [{'caseId': c, 'artifactCommit': 'b' * 40} for c in d.CASES if c != U5_310]}, 'builder', 'source', record(calls))
         self.assertFalse(any('htkk_version' in p.get('inputs', {}) or '@' in p.get('context', '') for _, p in calls))
+        calls = []
+        d.dispatch(publication(U5_310), 'builder', 'source', record(calls))
+        self.assertEqual([p['inputs'].get('htkk_version') for _, p in calls if 'inputs' in p], ['5.8.2'])
+        self.assertTrue(all(p['context'].endswith('@htkk582') for _, p in calls if 'context' in p))
 
     def test_5_8_2_case_dispatches_with_its_version_title_and_context(self):
         calls = []

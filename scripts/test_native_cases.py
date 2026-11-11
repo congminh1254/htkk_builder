@@ -13,7 +13,7 @@ class NativeCases(unittest.TestCase):
   self.assertEqual(len(calls),2*len(d.CASES))
   for index,case in enumerate(d.CASES):
    status,dispatch=calls[index*2:index*2+2]
-   self.assertEqual(status[0],'https://api.github.com/repos/'+d.REPO+'/statuses/'+'a'*40);self.assertEqual(status[1],'source-token');self.assertEqual(status[2]['context'],d.CONTEXTS[case]);self.assertEqual(status[2]['state'],'pending')
+   self.assertEqual(status[0],'https://api.github.com/repos/'+d.REPO+'/statuses/'+'a'*40);self.assertEqual(status[1],'source-token');self.assertEqual(status[2]['context'],d.case_registry.status_context(case));self.assertEqual(status[2]['context'].split('@')[0],d.CONTEXTS[case]);self.assertEqual(status[2]['state'],'pending')
    self.assertEqual(dispatch[1],'builder-token');self.assertEqual(dispatch[2]['inputs']['web_case_id'],case);self.assertEqual(dispatch[2]['inputs']['web_artifact_commit'],document()['cases'][index]['artifactCommit']);self.assertEqual(dispatch[2]['inputs']['web_source_sha'],'a'*40)
  def test_dispatch_failure_sets_failure_status_without_retrying_action(self):
   calls=[]

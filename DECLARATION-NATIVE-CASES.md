@@ -23,6 +23,15 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `04NTNN-TT89-one-subcontractor-2026` | `101 → 101_8 → Y1` (04/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (1 nhà thầu phụ) | 75 |
 | `02NTNN-TT89-two-annexes-2026` | `101 → 101_8 → X9` (02/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài, nước cư trú JP), 02-2/NTNN (1 nhà thầu phụ) | 108 |
 | `02NTNN-TT80-two-annexes-2026` | `101 → 101_8 → C9` (02/NTNN TT80 2.5.1) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài: JP, địa điểm 101), 02-2/NTNN (1 nhà thầu phụ, địa điểm 103) | 111 |
+| `01CNKD-TT50-310-pl01-three-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-4 "PL 01 43/2026/QH16" (`PLuc_01_GiamTNCN_NQ43`, 2 dòng) | 295 |
+
+U5 3.1.0 (`01CNKD-TT50-310-pl01-three-groups-Q3-2026`, non-gating, `htkkVersion` 5.8.2; adapter `01-cnkd-hkd-3.1.0-pl01`
+ghim vào oracle 5.8.2 vì XML 3.1.0 chỉ có trong HTKK 5.8.2): ca doanh thu 2.9.8 thêm nhóm 04 (200tr); tích giảm thuế NQ 43/2026/QH16
+(cột AJ `chonGiamThue`) ở nhóm 01 và 04. Oracle Decimal (`htkk_hkd_web_cases.py`): CE = ([15]−[16])×tỷ lệ TNCN (1,5tr / 3tr / 3tr),
+PL 01 H = G×30% (H20 = `G20*30.0%`), [17] = CE − CD + CF (AE291 = `CE291-CD291+CF291`, CD = H, CF = 0): 1.050.000 / 3.000.000 /
+2.100.000, [20] TNCN 6.150.000, [47] 22.150.000. Tổng PL 01 theo đúng ràng buộc của `01_43_1_CNKD_HKD_TT50_310.xml`: H_22 (Σ được
+giảm) → `tongSoThueTNCN_phaiNop` = 1.350.000, G_22 (Σ phải nộp) → `tongsoThueTNCN_duocGiam` = 4.500.000. Câu hỏi mở: AJ và CD không
+có trong XML; nếu "Nhập từ XML" để AE tính lại với CD = 0 thì ô kiểm AE291/AE293 thất bại và ca cần chế độ `original-entry-export`.
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 

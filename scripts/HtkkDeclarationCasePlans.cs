@@ -43,7 +43,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -128,6 +128,18 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/01_CNKD_HKD_TT50_298.xsd","016f97894b9a1472282ba342349b654b5bfd0f5e4ebba8ab5cbe176134adb31d",TKhaiThue,TKhaiThueSha256,CnkdService,261,
     new string[0],
     new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|10000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|4500000",Main+"HoTroThongTinNopThue/tongTienCT47|14500000"});
+   // U5 01/CNKD TT50 3.1.0 (non-gating, HTKK 5.8.2 oracle only): Menu.xml 5.8.2 VersionXML 3.1.0, class
+   // CnkdHkd01TT50Nckt310. The period dialog ticks "PL 01 43/2026/QH16" (sheet 01-4; frmHTKKPeriod.LoadPhuLucSpread locks
+   // PL 01/PL 03 outside kỳ quý, btnDongY_Click refuses both with 0709). Three groups (rows 291-293), PL 01 rows 20-21.
+   // chonGiamThue (AJ) and soThueGiam (CD) are not in the XML: the AE checks show whether the import keeps the reduced
+   // [17] (AE = CE - CD + CF); if HTKK recomputes AE with CD = 0 the case needs the original-entry mode instead.
+   case "01CNKD-TT50-310-pl01-three-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","3.1.0","1266","CnkdHkd01TT50Nckt310",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
+    new string[]{"PL 01 43/2026/QH16"},new string[]{"01|Tờ khai","01-4|PL 01 43/2026/QH16"},
+    "InterfaceTemplates/excel/01_CNKD_HKD_TT50_310.xls","864ef2c1c28f4f0c807265fa2497264ec72283912dda1f3f6294b6b9aa8a3c56","InterfaceTemplates/xml/01_CNKD_HKD_TT50_310.xml","30f4d3162d6179ce8c233c977898b86f63756e741bda1a423c15e45babea0d86",
+    "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,299,
+    new string[]{"01|U291|300000000","01|U292|150000000","01|U293|200000000","01|AE291|1050000","01|AE292|3000000","01|AE293|2100000","01-4|G20|1500000","01-4|H20|450000","01-4|G21|3000000","01-4|H21|900000"},
+    new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|16000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|6150000",Main+"HoTroThongTinNopThue/tongTienCT47|22150000",
+     "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongSoThueTNCN_phaiNop|1350000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongsoThueTNCN_duocGiam|4500000"});
    // I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh (frmHTKKPeriod_Load
    // 0x6000484 -> index 21; chkTkhaiThang checked by default), month 09/2026; no annex. CheckPeriod ->
    // CheckHLToKhaiTT80 only refuses months before 01/2022 (0577). HTKK 5.8.2 adds I9 to

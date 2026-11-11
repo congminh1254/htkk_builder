@@ -30,6 +30,9 @@ TRUSTED_ADAPTERS={
  '05-kk-tncn-2.9.3':_declaration('L7','2.9.3',{'quarter':('3/2026',)},[]),
  '05-qtt-tncn-2.9.3':_declaration('B9','2.9.3',{'year':('2025',)},['05-1','05-3']),
  '01-cnkd-hkd-2.9.8':_declaration('U5','2.9.8',{'quarter':('3/2026',)},[]),
+ # U5 3.1.0 exists only in HTKK 5.8.2 (Menu.xml VersionXML 3.1.0, CnkdHkd01TT50Nckt310): the adapter is pinned to that
+ # oracle; the period dialog ticks sheet 01-4 "PL 01 43/2026/QH16" (NQ 43/2026/QH16, kỳ quý only: LoadPhuLucSpread).
+ '01-cnkd-hkd-3.1.0-pl01':{**_declaration('U5','3.1.0',{'quarter':('3/2026',)},['01-4']),'htkkVersion':'5.8.2'},
  # B8 02/QTT-TNCN (non-gating): KieuKy 12 like B9; the import adds every annex (AddFullPLImportXML).
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).
@@ -62,7 +65,7 @@ for a in ADAPTERS.values():
  trusted=TRUSTED_ADAPTERS[a['adapterId']]
  check(set(a)=={'adapterId','htkkVersion','menuId','xmlVersion','producer','driver','privacyValidator','profilePolicy'})
  check(a['driver']==trusted['driver'] and a['privacyValidator']==trusted['privacyValidator'] and a['profilePolicy']=='synthetic-9999999997-v1')
- check(a['producer']==trusted['producer'] and a['menuId']==trusted['menuId'] and a['xmlVersion']==trusted['xmlVersion'] and a['htkkVersion']=='5.8.1')
+ check(a['producer']==trusted['producer'] and a['menuId']==trusted['menuId'] and a['xmlVersion']==trusted['xmlVersion'] and a['htkkVersion']==trusted.get('htkkVersion','5.8.1'))
 # Per-case HTKK oracle (optional 'htkkVersion'). Absent = the default oracle (5.8.1), so a case without
 # the field dispatches and reports exactly as before. When present it must name a reviewed NON-default
 # baseline (one canonical spelling per version) and the case must not gate a release: release, Pages and
@@ -82,6 +85,8 @@ for c in CASES.values():
  case_version(c)
  check(re.fullmatch('[A-Za-z0-9-]{1,100}',c['caseId']) and re.fullmatch('[a-z0-9-]{1,80}',c['producerCase']))
  a=ADAPTERS[c['adapterId']];u=c['unit']
+ # An adapter of a later HTKK release (an XML version absent from 5.8.1) runs only on that oracle.
+ check(a['htkkVersion']=='5.8.1' or case_version(c)==a['htkkVersion'])
  check(u['menuId']==a['menuId'] and u['adapterVersion']==a['xmlVersion'] and u['activityCode']=='00' and u['annexes']==TRUSTED_ADAPTERS[a['adapterId']]['annexes'] and type(u['amendmentOrder'])is int and u['amendmentOrder']==0)
  periods=TRUSTED_ADAPTERS[a['adapterId']]['periods'];check(u['periodType'] in periods and u['periodValue'] in periods[u['periodType']])
  for key in ('stagingDirectory','inputBranch','outputBranch'):check(re.fullmatch('[a-zA-Z0-9-]{1,120}',c[key]))

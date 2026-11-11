@@ -1,4 +1,4 @@
-"""Candidate synthetic 01/CNKD TT50 (menu U5, XML 2.9.8) web->HTKK cases.
+"""Candidate synthetic 01/CNKD TT50 (menu U5, XML 2.9.8; 3.1.0 on the HTKK 5.8.2 oracle) web->HTKK cases.
 
 NOT native proof and NOT registered in htkk-native-cases.json: no Windows driver
 exists yet for menu U5 (see HKD-WEB-CASES.md). This module is the independent
@@ -21,6 +21,10 @@ NS = 'http://kekhaithue.gdt.gov.vn/TKhaiThue'
 MENU_ID = 'U5'
 MA_TKHAI = '1266'
 XML_VERSION = '2.9.8'
+# HTKK 5.8.2 Menu.xml U5 VersionXML (CnkdHkd01TT50Nckt310). A 3.1.0 case may tick PL 01 of NQ 43/2026/QH16
+# (01_43_1_CNKD_HKD_TT50_310): CE = the 2.9.8 AE, PL 01 H = G*30% (H20), [17] = CE - CD + CF (AE291), CD = H.
+XML_VERSION_310 = '3.1.0'
+PL01_RATE = Decimal('0.3')
 FAKE_MST = '9999999997'
 # XLS 01_CNKD_HKD_TT50_298 BZ291/AE291 (GTGT/TNCN) and I291 (ct10) by ct09_ma.
 GROUPS = {
@@ -44,8 +48,11 @@ def reject(code, field=''):
     raise HkdWebCaseError(code, field)
 
 
-def row(group, ct11, ct12='0', ct13='0', ct15=None, ct16='0'):
-    return {'group': group, 'ct11': ct11, 'ct12': ct12, 'ct13': ct13, 'ct15': ct11 if ct15 is None else ct15, 'ct16': ct16}
+def row(group, ct11, ct12='0', ct13='0', ct15=None, ct16='0', reduce=False):
+    value = {'group': group, 'ct11': ct11, 'ct12': ct12, 'ct13': ct13, 'ct15': ct11 if ct15 is None else ct15, 'ct16': ct16}
+    if reduce:
+        value['reduce'] = True  # 3.1.0 chonGiamThue (AJ): the row goes to PL 01
+    return value
 
 
 CASES = {
@@ -61,6 +68,12 @@ CASES = {
             {'headOffice': False, 'code': '00002', 'ward': '10129088', 'rows': [row('01', '100000000')]},
         ],
         'annexSales': [{'section': 'I', 'group': '02', 'revenue': '140000000'}],
+    },
+    # 3.1.0 on the HTKK 5.8.2 oracle (non-gating): the revenue case with a third group and PL 01 ticked on 01 and 04.
+    '01CNKD-TT50-310-pl01-three-groups-Q3-2026': {
+        'xmlVersion': XML_VERSION_310, 'period': ('Q', 3, 2026), 'kyKKhai': '3/2026', 'due': '2026-10-30', 'header': {'c1': True, 'c2': False},
+        'locations': [{'headOffice': True, 'code': '00001', 'ward': '10129087', 'rows': [row('01', '300000000', reduce=True), row('02', '150000000', ct12='10000000'), row('04', '200000000', reduce=True)]}],
+        'annexSales': [], 'pl01': True,
     },
 }
 
@@ -87,8 +100,11 @@ def expected(case_id):
         for r in loc['rows']:
             gt, tn, letter = GROUPS[r['group']]
             ct14 = (Decimal(r['ct11']) - Decimal(r['ct12']) - Decimal(r['ct13'])) * Decimal(gt) - reductions.get(('I', r['group']), Decimal(0))
-            ct17 = (Decimal(r['ct15']) - Decimal(r['ct16'])) * Decimal(tn)
-            rows.append({'loc': loc, 'ct10': letter, 'ct14': ct14, 'ct17': ct17, 'bt': ct17})
+            ce = (Decimal(r['ct15']) - Decimal(r['ct16'])) * Decimal(tn)
+            # 3.1.0 PL 01: a ticked row with CE > 0 gets CD = H = CE x 30% (daySangPLGiamThue); CF = 0 without PL 03.
+            cd = ce * PL01_RATE if case.get('pl01') and r.get('reduce') and ce > 0 else Decimal(0)
+            ct17 = ce - cd
+            rows.append({'loc': loc, 'ct10': letter, 'ct14': ct14, 'ct17': ct17, 'bt': ct17, 'ce': ce, 'cd': cd, 'reduced': bool(cd), 'group': r['group']})
     if case['header']['c2']:
         others = sum((r['bt'] for r in rows if not r['loc']['headOffice']), Decimal(0))
         if rows and rows[0]['loc']['headOffice']:
@@ -107,7 +123,15 @@ def expected(case_id):
             keys.append(key); sums[key] = Decimal(0)
         sums[key] += r['bt']
     total14 = sum((r['ct14'] for r in rows), Decimal(0)); total17 = sum((r['ct17'] for r in rows), Decimal(0))
-    return {
+    pl01 = [r for r in rows if r['reduced']]
+    extra = {}
+    if case.get('pl01'):
+        # One PL 01 row per ticked row (G = CE, H = CE x 30%). 01_43_1_CNKD_HKD_TT50_310.xml binds H_22 (sum of H) to
+        # tongSoThueTNCN_phaiNop and G_22 (sum of G) to tongsoThueTNCN_duocGiam: the totals follow that binding.
+        extra = {'soThueTNCN_phaiNop': [display(r['ce']) for r in pl01], 'soThueTNCN_duocGiam': [display(r['cd']) for r in pl01],
+                 'ma_nhomNNKD': [r['group'] for r in pl01], 'ma_hoatDongSXKD': ['01' for _ in pl01],
+                 'tongSoThueTNCN_phaiNop': [display(sum((r['cd'] for r in pl01), Decimal(0)))], 'tongsoThueTNCN_duocGiam': [display(sum((r['ce'] for r in pl01), Decimal(0)))]}
+    return {**extra,
         'ct10': [r['ct10'] for r in rows], 'ct14_soThue': [display(r['ct14']) for r in rows], 'ct17_soThue': [display(r['ct17']) for r in rows],
         'soThueGTGT_ct14': [display(total14)], 'soThueTNCN_ct17': [display(total17)],
         'ct38_ma': [k[0] for k in keys], 'ct42_ma': [k[2] for k in keys], 'ct40': [display(sums[k]) for k in keys],
@@ -138,7 +162,7 @@ def validate_case_xml(case_id, xml_bytes):
     for node in root.iter():
         _local(node)
     case = CASES[case_id]
-    if _texts(root, 'maTKhai') != [MA_TKHAI] or _texts(root, 'pbanTKhaiXML') != [XML_VERSION] or _texts(root, 'loaiTKhai') != ['C'] or _texts(root, 'soLan') != ['0']:
+    if _texts(root, 'maTKhai') != [MA_TKHAI] or _texts(root, 'pbanTKhaiXML') != [case.get('xmlVersion', XML_VERSION)] or _texts(root, 'loaiTKhai') != ['C'] or _texts(root, 'soLan') != ['0']:
         reject('IDENTITY')
     if _texts(root, 'kieuKy') != [case['period'][0]] or _texts(root, 'kyKKhai') != [case['kyKKhai']]:
         reject('PERIOD')
