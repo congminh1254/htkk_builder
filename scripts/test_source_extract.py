@@ -1,6 +1,9 @@
 """Offline contracts for the private HTKK 5.8.1 source extract (source-extract.yml)."""
 import hashlib, importlib.util, io, json, os, pathlib, re, shutil, subprocess, tempfile, unittest, urllib.error
 from unittest import mock
+import sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from sandbox_test_support import Sandbox
 
 ROOT = pathlib.Path(__file__).resolve().parent
 WORKFLOW = ROOT.parent / '.github' / 'workflows' / 'source-extract.yml'
@@ -324,13 +327,17 @@ class BundleTests(unittest.TestCase):
 class FakeRemote:
     """GitHub API double backed by a local bare repository."""
 
-    def __init__(self, bare, private=True):
+    def __init__(self, bare, private=True, box=None):
         self.bare = bare
+        self.box = box
         self.private = private
         self.calls = []
 
     def git(self, *args):
-        return subprocess.run(['git', '--git-dir', str(self.bare)] + list(args), capture_output=True, text=True)
+        command = ['git', '--git-dir', str(self.bare)] + list(args)
+        if self.box is not None:
+            self.box.check_git(command)
+        return subprocess.run(command, capture_output=True, text=True)
 
     def __call__(self, path, token, payload=None, method=None):
         self.calls.append((path, token, payload is not None))
@@ -349,18 +356,20 @@ class FakeRemote:
 @unittest.skipUnless(shutil.which('git'), 'git unavailable')
 class PublishTests(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.TemporaryDirectory()
-        self.base = pathlib.Path(self.tmp.name)
+        # Bundle, work directories and the fake remote all live in a sandbox this test created; every git command
+        # of source-extract.py is checked against it.
+        self.box = Sandbox.for_test(self)
+        self.box.guard(x, self)
+        self.base = self.box.root
         self.fixture, _ = BundleTests().build(str(self.base / 'f'))
         self.bare = self.base / 'remote.git'
-        subprocess.run(['git', 'init', '--quiet', '--bare', str(self.bare)], check=True)
-        self.remote = FakeRemote(self.bare)
+        self.box.git('init', '--quiet', '--bare', self.bare)
+        self.remote = FakeRemote(self.bare, box=self.box)
         self.push = mock.patch.object(x, 'PUSH_URL', str(self.bare))
         self.push.start()
 
     def tearDown(self):
         self.push.stop()
-        self.tmp.cleanup()
 
     def publish(self, name, **kw):
         return x.publish(self.fixture.bundle, self.base / name, TOKEN, '123', 1, 'a' * 40, fetch=self.remote, **kw)

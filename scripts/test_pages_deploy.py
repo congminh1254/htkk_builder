@@ -1,5 +1,7 @@
 """Offline contracts: every Pages release deploys under its own marker commit and is proven live."""
-import base64,contextlib,importlib.util,io,json,pathlib,re,shutil,subprocess,tempfile,unittest
+import base64,contextlib,importlib.util,io,json,pathlib,re,shutil,subprocess,sys,tempfile,unittest
+sys.path.insert(0,str(pathlib.Path(__file__).parent))
+from sandbox_test_support import Sandbox
 spec=importlib.util.spec_from_file_location('pages_deploy',pathlib.Path(__file__).with_name('pages-deploy.py'));d=importlib.util.module_from_spec(spec);spec.loader.exec_module(d)
 WORKFLOW=(pathlib.Path(__file__).parent.parent/'.github/workflows/pages.yml').read_text()
 P,S,B,M='8'*40,'f'*40,'5'*40,'a'*40
@@ -61,10 +63,11 @@ class WorkflowContract(unittest.TestCase):
 @unittest.skipUnless(shutil.which('git'),'git required')
 class MarkerCommit(unittest.TestCase):
  def setUp(self):
-  self.dir=tempfile.TemporaryDirectory();root=pathlib.Path(self.dir.name)
+  # Every git call of pages-deploy.py runs against bare repositories in a sandbox this test created; the guard
+  # refuses any other location (the old setUp ran `git -C .` from the checkout).
+  self.box=Sandbox.for_test(self);self.box.guard(d,self);root=self.box.root
   self.remote=str(root/'remote.git');self.repo=str(root/'work.git')
-  for path in (self.remote,self.repo):d.git('.','init','--quiet','--bare',path)
- def tearDown(self):self.dir.cleanup()
+  for path in (self.remote,self.repo):d.git(str(root),'init','--quiet','--bare',path)
  def record(self,run='7',attempt='1'):return d.provenance(P,S,B,run,attempt)
  def publish(self,record):
   old=d.remote_head(self.repo,self.remote)
