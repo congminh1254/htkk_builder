@@ -21,6 +21,8 @@ reader = load('entry_reader_test', 'fetch-htkk-web-input.py')
 design = load('entry_descriptor_design_test', 'htkk_descriptor_native_cases.py')
 automation = json.loads((ROOT / 'htkk-native-automation-registry.json').read_text())
 PLANS = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+BASELINE_CS = (ROOT / 'HtkkOracleBaseline.cs').read_text(encoding='utf-8')
+BASELINES = json.loads((ROOT / 'htkk-oracle-baselines.json').read_text(encoding='utf-8'))
 ENTRY = (ROOT / 'HtkkDeclarationOriginalEntry.cs').read_text(encoding='utf-8')
 IMPORT = (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8')
 CODE = re.sub(r'//[^\n]*', '', ENTRY)  # entry driver without comments
@@ -142,15 +144,45 @@ class EntryPlan(unittest.TestCase):
         # Ntnn01TT89Nckt309.getCols literal "C###L###M###S###W###Y###AE###AJ###AN###AZ###BD###BH".
         self.assertEqual(string_array(block, 1), 'C###L###M###S###W###Y###AE###AJ###AN###AZ###BD###BH'.split('###'))
 
+    def entry_pins(self):
+        """Generated per-version pin lists, in version order (the plan takes the selected one)."""
+        block = BASELINE_CS[BASELINE_CS.index(' private static readonly string[][] Entry=new string[][]{'):]
+        block = block[:block.index(' };')]
+        return dict(zip(BASELINES['versions'], (re.findall(r'"([^"]+)"', row) for row in re.findall(r'new string\[\]\{(.*?)\}', block, re.S))))
+
     def test_method_pins_name_token_size_and_il_hash(self):
-        pins = string_array(entry_block(), 3)
-        self.assertEqual(len(pins), 14)
-        names = set()
-        for pin in pins:
+        self.assertIn('HtkkOracleBaseline.EntryMethodPins());', entry_block())
+        self.assertNotRegex(entry_block(), r'"[BH]\|')  # no inline, version-blind method pin
+        pins_by_version = self.entry_pins()
+        self.assertEqual(list(pins_by_version), ['5.8.1', '5.8.2'])
+        reviewed = pins_by_version['5.8.1']
+        # The reviewed 5.8.1 list, unchanged (token, IL size, IL-code SHA-256).
+        self.assertEqual(reviewed[0], 'B|Ntnn01TT89Nckt309|AutoBindData_0|0x060018f9|352|86baaca777e636dd3d76918c3b779dbcdd557467f8704bba44d89838d52068c9')
+        self.assertEqual(reviewed[12], 'H|frmWinToKhai|ProcessCmdKey|0x0600039f|9783|32a0b79138f778aa1f4e9a4ea5f29b7faac4df0e046c001aed5f31d88ce31845')
+        self.assertEqual(reviewed[13], 'H|frmWinToKhai|cmdExport_Click|0x060003a2|1941|37de581c58099f8c3243310c0b95eebd2d7dd9750fc48f3cdd842a4303312031')
+        renumbered = pins_by_version['5.8.2']
+        self.assertEqual(len(renumbered), len(reviewed))
+        methods = {m['id']: m for m in BASELINES['versions']['5.8.2']['methods']}
+        changed = [i for i, m in enumerate(m for m in BASELINES['versions']['5.8.2']['methods'] if m['id'].startswith('y8-entry-')) if m['status'] == 'changed']
+        # winFpSpread_CellChange and ProcessCmdKey really changed in 5.8.2: they keep the REVIEWED size and
+        # hash at the new token, so the harness fails closed with exactly these mask bits.
+        self.assertEqual(changed, [8, 12])
+        for index, (old, new) in enumerate(zip(reviewed, renumbered)):
+            o, n = old.split('|'), new.split('|')
+            self.assertEqual(o[:3], n[:3])
+            if index in changed:
+                self.assertEqual(o[4:], n[4:]); self.assertNotEqual(o[3], n[3])
+            else:
+                self.assertEqual(o[4], n[4])
+        self.assertEqual(methods['y8-entry-f5-row']['ilBytes'], 9939); self.assertEqual(methods['y8-entry-grid-cellchange']['ilBytes'], 25029)
+        for pins in pins_by_version.values():
+         self.assertEqual(len(pins), 14)
+         names = set()
+         for pin in pins:
             assembly, type_name, method, token, size, digest = pin.split('|')
             self.assertIn(assembly, ('B', 'H')); self.assertRegex(token, r'\A0x060[0-9a-f]{5}\Z'); self.assertRegex(size, r'\A[1-9][0-9]{0,5}\Z'); self.assertRegex(digest, r'\A[0-9a-f]{64}\Z')
             names.add((type_name, method))
-        for required in (('Ntnn01TT89Nckt309', 'ButtonClick_0'), ('Ntnn01TT89Nckt309', 'LockUnlock'), ('Ntnn01TT89Nckt309', 'AutoBindData_0'), ('GeneralFunctions', 'LockUnLockColsInTable'),
+         for required in (('Ntnn01TT89Nckt309', 'ButtonClick_0'), ('Ntnn01TT89Nckt309', 'LockUnlock'), ('Ntnn01TT89Nckt309', 'AutoBindData_0'), ('GeneralFunctions', 'LockUnLockColsInTable'),
                          ('frmWinToKhai', 'winFpSpread_ButtonClicked'), ('WinDoWorkEvent', 'ButtonClick'), ('frmWinToKhai', 'winFpSpread_CellChange'), ('WinSpreadProcess', 'DMNnkdNtnn'), ('frmWinToKhai', 'ProcessCmdKey')):
             self.assertIn(required, names)
         self.assertIn('module.ResolveMethod(', ENTRY); self.assertIn('GetILAsByteArray()', ENTRY)
@@ -159,8 +191,8 @@ class EntryPlan(unittest.TestCase):
     def test_compiled_plans_construct_and_select_the_entry_mode(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = pathlib.Path(directory)
-            (folder / 'P.cs').write_text('using System;class P{static void Main(){foreach(string id in HtkkDeclarationCasePlans.CaseIds){HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find(id);HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry(id);Console.WriteLine(id+" "+(p!=null)+" "+(e==null?0:e.Entries.Length)+" "+(e==null?0:e.MethodPins.Length));}foreach(string id in new string[]{"01NTNN-NCCNN-entry-M10-2026","01NTNN-NCCNN-occurrence-D20-10-2026"})Console.Error.WriteLine(id+"\t"+String.Join("\t",HtkkDeclarationCasePlans.Entry(id).Entries));}}')
-            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
+            (folder / 'P.cs').write_text('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.1");foreach(string id in HtkkDeclarationCasePlans.CaseIds){HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find(id);HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry(id);Console.WriteLine(id+" "+(p!=null)+" "+(e==null?0:e.Entries.Length)+" "+(e==null?0:e.MethodPins.Length));}foreach(string id in new string[]{"01NTNN-NCCNN-entry-M10-2026","01NTNN-NCCNN-occurrence-D20-10-2026"})Console.Error.WriteLine(id+"\t"+String.Join("\t",HtkkDeclarationCasePlans.Entry(id).Entries));}}')
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs'), str(ROOT / 'HtkkOracleBaseline.cs')], check=True, capture_output=True)
             run = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True, text=True); lines = run.stdout.split('\n')
         typed = {line.split('\t')[0]: line.split('\t')[1:] for line in run.stderr.split('\n') if line}
         # The lần phát sinh entry types the same values except (6) AE, which is the period day (E_27).

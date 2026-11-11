@@ -12,7 +12,7 @@ function Get-HtkkSyntheticLoginSampleSignature {
 }
 function Invoke-HtkkSyntheticLogin {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory,[ValidateRange(5,90)][int]$PostLoginDeadlineSeconds=60)
+ param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory,[ValidateRange(5,90)][int]$PostLoginDeadlineSeconds=60,[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
  $safe=[ordered]@{status='not-started';fixtureDirectoryPreexisting=$null;fixtureDirectoryCreated=$false;syntheticIdentifierOnly=$true;realTaxpayerDataUsed=$false;newIdClicked=$false;inputVerified=$false;loginClicked=$false;loginHidden=$false;profileWindowObserved=$false;nextOwnedWindowObserved=$false;nativeControlKinds=@{};postLoginControlKinds=@{};allowedLabels=@();profileInChildWindow=$false;profileRecognition='not-verified';profileMainCaptionMatched=$false;profileSaveCloseMatched=$false;profileManagedContainerCount=0;postLoginDeadlineSeconds=0;postLoginWaitSeconds=0;postLoginPollCount=0;profileRecognitionSeconds=-1;postLoginTimeline=@();postLoginTimelineTruncated=$false;runtimeRoundTrip=$false}
  $retained=$null
  try {
@@ -54,6 +54,8 @@ public static class HtkkSyntheticLoginNative {
  public static bool ProfileMainCaptionMatched=false,ProfileSaveCloseMatched=false;
  public static int ProfileManagedContainerCount=0;
  public static string ProfileRecognition="not-verified";
+ // Exact original main-window caption of the selected oracle version (set before Find).
+ public static string MainCaption=null;
  public static Dictionary<string,int> PostCounts=new Dictionary<string,int>();
  public static bool Find(int root){
   login=combo=newId=submit=IntPtr.Zero;Counts.Clear();var labels=new HashSet<string>();
@@ -93,7 +95,7 @@ public static class HtkkSyntheticLoginNative {
    // FarPoint.Win.Spread is managed and can expose only generic native WinForms HWNDs.
    // Never call a generic native class proof of the managed grid's identity.
    string caption=Text(window).Replace(" ",String.Empty);
-   bool mainCaption=caption=="Hỗ trợ kê khai thuế - Phiên bản 5.8.1".Replace(" ",String.Empty);
+   bool mainCaption=MainCaption!=null&&caption==MainCaption.Replace(" ",String.Empty);
    if(mainCaption){
     ProfileMainCaptionMatched=true;int save=0,close=0,containers=0;
     EnumProc profileChild=(nested,ignored)=>{
@@ -121,7 +123,7 @@ public static class HtkkSyntheticLoginNative {
  public static bool SampleTruncated;
  public static void Sample(int root){
   SampleMain=SampleProfile=SampleEmpty=SampleUnread=SampleOther=SampleNativeDialogs=SampleManaged=SampleStatic=SampleButton=0;SampleTruncated=false;
-  int count=0;var clock=Stopwatch.StartNew();string main="Hỗ trợ kê khai thuế - Phiên bản 5.8.1".Replace(" ",String.Empty);
+  int count=0;var clock=Stopwatch.StartNew();string main=MainCaption==null?null:MainCaption.Replace(" ",String.Empty);
   EnumProc top=(window,unused)=>{
    if(++count>2048||clock.ElapsedMilliseconds>2000){SampleTruncated=true;return false;}
    if(window==login||!Owned(window,root)||!IsWindowVisible(window))return true;
@@ -153,6 +155,7 @@ public static class HtkkSyntheticLoginNative {
 }
 '@
   }
+  . (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); [HtkkSyntheticLoginNative]::MainCaption=(Get-HtkkOracleBaseline -Version $OracleVersion).mainWindowCaption
   $found=[HtkkSyntheticLoginNative]::Find($RootProcessId)
   $safe.nativeControlKinds=[HtkkSyntheticLoginNative]::Counts;$safe.allowedLabels=@([HtkkSyntheticLoginNative]::Labels)
   if(-not $found){$safe.status='exact-login-controls-not-found';return $safe}

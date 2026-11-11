@@ -1,11 +1,12 @@
 # No tax data, credentials, public screenshots or installer logs are published.
 [CmdletBinding()]
-param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin,[ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')][string]$GuiAutomation='none')
+param([switch]$InstallAndProbe,[ValidateSet('original','clr2-x86-reference')][string]$RuntimeHost='original',[switch]$AcknowledgeRegistration,[switch]$SyntheticLogin,[ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')][string]$GuiAutomation='none',[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 Set-StrictMode -Version Latest
+. (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); $htkkOracle=Get-HtkkOracleBaseline -Version $OracleVersion
 $report = [ordered]@{
-  version = '5.8.1'; stage = 'started'; sourceHashesVerified = $false; sourceDownloads = @()
+  version = $htkkOracle.version; stage = 'started'; sourceHashesVerified = $false; sourceDownloads = @()
   runtimeHost = $RuntimeHost; customReferenceHost = $RuntimeHost -eq 'clr2-x86-reference'
   referenceHostPreparation = $null; referenceHostResult = $null; referenceHostExit = $null; originalSourcesUnmodified = $null
   childEnvironmentPolicy = 'not-launched'; hostOutboundBlocked = $false; originalOutboundBlocked = $false
@@ -633,10 +634,11 @@ Set-UiaPhase 'complete'
 
 try {
   if($GuiAutomation -ne 'none' -and ($RuntimeHost -ne 'clr2-x86-reference' -or -not $SyntheticLogin -or -not $InstallAndProbe)) { throw 'GUI_REFERENCE_AUTOMATION_MODE_INVALID' }
+  if($OracleVersion -cne $HtkkOracleDefaultVersion -and $InstallAndProbe -and $GuiAutomation -notin @('gtgt-web-import-inspect','declaration-web-import-inspect')) { throw 'ORACLE_VERSION_MODE_UNSUPPORTED' }
   New-Item -ItemType Directory -Path $work | Out-Null
   $report.stage = 'download'
   $rar = Join-Path $work 'official.rar'
-  Get-PinnedFile 'https://www.fshare.vn/file/TPW3FMLVAJL1' $rar '5d52c06595e933a3b246480785d5d4010fad669baed6fb38311f8a09b20e1e95'
+  Get-PinnedFile $htkkOracle.officialUrl $rar $htkkOracle.archiveSha256
   $report.sourceHashesVerified = $true
   $report.stage = 'extract-data'
   $seven = Join-Path $env:ProgramFiles '7-Zip\7z.exe'
@@ -646,11 +648,11 @@ try {
   $official = Join-Path $work 'official'
   & $seven x '-y' "-o$official" $rar *> (Join-Path $work 'extract-private.log')
   if ($LASTEXITCODE -ne 0) { throw 'OFFICIAL_DISTRIBUTION_EXTRACTION_FAILED' }
-  $source = Join-Path $official 'HTKK_5.8.1_DLL_signed'
+  $source = Join-Path $official $htkkOracle.archiveFolder
   $cab = Join-Path $source 'Data1.cab'; $msi = Join-Path $source 'HTKK.msi'
-  Assert-Hash $cab '00669905937fb29e10cb53209ece5e8a9f8097970e4cb40bb28f89baa9fc3744'
-  Assert-Hash $msi '7c1da251ee2acd126a2363e4457502b8ad6fc0792d78dc0a92b153701dc29080'
-  Assert-Hash (Join-Path $source 'setup.exe') '19394e89351dc213306864168e16808d48401597f56d5fe4c977f9a5833d2936'
+  Assert-Hash $cab $htkkOracle.cabSha256
+  Assert-Hash $msi $htkkOracle.msiSha256
+  Assert-Hash (Join-Path $source 'setup.exe') $htkkOracle.setupSha256
   $report.officialDistributionFilesVerified = $true
   $report.stage = 'verify-msi'
   $signature = Get-AuthenticodeSignature -LiteralPath $msi
@@ -683,13 +685,13 @@ try {
   $candidates = @("${env:ProgramFiles}\HTKK\Project\HTKK.exe", "${env:ProgramFiles(x86)}\HTKK\Project\HTKK.exe", 'C:\HTKK\Project\HTKK.exe')
   $exe = $candidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
   if (-not $exe) { throw 'INSTALLED_HTKK_NOT_FOUND' }
-  Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
+  Assert-Hash $exe $htkkOracle.files['Project/HTKK.exe']
   . (Join-Path $PSScriptRoot 'Test-HtkkTaxIdOracle.ps1')
-  $report.taxIdOracle = Invoke-HtkkTaxIdOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+  $report.taxIdOracle = Invoke-HtkkTaxIdOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work -OracleVersion $OracleVersion
   . (Join-Path $PSScriptRoot 'Test-HtkkProfileAliasOracle.ps1')
-  $report.profileAliasOracle = Invoke-HtkkProfileAliasOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+  $report.profileAliasOracle = Invoke-HtkkProfileAliasOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work -OracleVersion $OracleVersion
   . (Join-Path $PSScriptRoot 'Test-HtkkCommonHeaderOracle.ps1')
-  $report.commonHeaderOracle = Invoke-HtkkCommonHeaderOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work
+  $report.commonHeaderOracle = Invoke-HtkkCommonHeaderOracle -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work -OracleVersion $OracleVersion
   # Both modes block the original image; the reference mode additionally
   # blocks its own new host before any original code executes inside that host.
   $originalFirewall='HTKK readiness original '+[guid]::NewGuid().ToString('N')
@@ -699,7 +701,7 @@ try {
   if($RuntimeHost -eq 'clr2-x86-reference') {
     $report.stage='prepare-x86-reference-host'
     . (Join-Path $PSScriptRoot 'New-HtkkX86ReferenceHost.ps1')
-    $referencePreparation=New-HtkkX86ReferenceHost -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work -GuiAutomation $GuiAutomation
+    $referencePreparation=New-HtkkX86ReferenceHost -ProjectDirectory (Split-Path $exe) -TemporaryDirectory $work -GuiAutomation $GuiAutomation -OracleVersion $OracleVersion
     $safeCompilerCodes=@($referencePreparation.compilerErrorCodes | Where-Object { $_ -match '^CS[0-9]{4}$' } | Select-Object -First 10)
     $report.referenceHostPreparation=[ordered]@{ status=$referencePreparation.status; mode='custom-x86-clr2-reference-host'; hostSha256=$null; originalExeHashVerified=$referencePreparation.originalExeHashVerified; businessDllHashVerified=$referencePreparation.businessDllHashVerified; originalConfigHashVerified=$referencePreparation.originalConfigHashVerified; compilerTrustVerified=$referencePreparation.compilerTrustVerified; compilerExitCode=$referencePreparation.compilerExitCode; compilerErrorCodes=$safeCompilerCodes; originalExecutableModified=$false; originalConfigurationModified=$false }
     if($referencePreparation.status -ne 'prepared') { throw 'X86_REFERENCE_HOST_PREPARATION_FAILED' }
@@ -897,7 +899,7 @@ try {
   if ($SyntheticLogin) {
     if (-not $report.loginReady) { throw 'SYNTHETIC_LOGIN_NOT_READY' }
     . (Join-Path $PSScriptRoot 'Invoke-HtkkSyntheticLogin.ps1')
-    $report.syntheticLogin = Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $rootStartTime -ProjectDirectory (Split-Path $exe)
+    $report.syntheticLogin = Invoke-HtkkSyntheticLogin -RootProcessId $process.Id -RootStartTime $rootStartTime -ProjectDirectory (Split-Path $exe) -OracleVersion $OracleVersion
     if ($report.syntheticLogin.status -ne 'synthetic-profile-window-observed') {
       # Read-only: the in-process reference automation's own allowlisted stage tells whether the
       # original profile form existed when native recognition gave up. No permit is written and
@@ -1023,11 +1025,11 @@ try {
   if($RuntimeHost -eq 'clr2-x86-reference' -and $null -ne $referencePreparation -and $referencePreparation.status -eq 'prepared') {
     try {
       $report.referenceHostResult=Get-HtkkSafeReferenceResult -ResultPath $referencePreparation.resultPath
-      Assert-Hash $exe '411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
-      Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Business.dll') '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
-      Assert-Hash ($exe+'.config') 'b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
+      Assert-Hash $exe $htkkOracle.files['Project/HTKK.exe']
+      Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Business.dll') $htkkOracle.files['Project/TAX.HTKK.Business.dll']
+      Assert-Hash ($exe+'.config') $htkkOracle.files['Project/HTKK.exe.config']
       if($GuiAutomation -in @('gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','declaration-web-import-inspect')) {
-        Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Utilities.dll') 'ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec'
+        Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.Utilities.dll') $htkkOracle.files['Project/TAX.HTKK.Utilities.dll']
         Assert-Hash (Join-Path (Split-Path $exe) 'FarPoint.Win.Spread.dll') '2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50'
         Assert-Hash (Join-Path (Split-Path $exe) 'TAX.HTKK.ComputeHash.dll') 'd9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5'
       }
@@ -1057,7 +1059,7 @@ try {
       Copy-Item -LiteralPath $original -Destination (Join-Path $evidence '01GTGT.xml')
       Assert-Hash (Join-Path $evidence '01GTGT.xml') $gui.exportSha256
       $evidenceStage='provenance'
-      [ordered]@{format='htkk-gtgt-export-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';originalSourcesUnmodified=$true;inputsSynthetic=$true;guiExportInvoked=$true;originalExportSucceeded=$true;originalExporterValidatedSchema=$true;fullRoundTrip=$false;originalOutputSha256=$gui.exportSha256;originalOutputBytes=[int]$originalFile.Length} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $evidence 'provenance.json') -Encoding utf8NoBOM
+      [ordered]@{format='htkk-gtgt-export-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceVersion=$htkkOracle.version;runtimeHost='clr2-x86-reference';originalSourcesUnmodified=$true;inputsSynthetic=$true;guiExportInvoked=$true;originalExportSucceeded=$true;originalExporterValidatedSchema=$true;fullRoundTrip=$false;originalOutputSha256=$gui.exportSha256;originalOutputBytes=[int]$originalFile.Length} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $evidence 'provenance.json') -Encoding utf8NoBOM
       $report.privateGtgtExportEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
     } catch {
       if($evidenceCreated) { Remove-Item -LiteralPath $evidence -Recurse -Force -ErrorAction SilentlyContinue }
@@ -1135,7 +1137,7 @@ try {
       Assert-Hash $initialOriginal $gui.exportSha256
       if((Get-Item -LiteralPath (Join-Path $nativeEvidence '01GTGT-initial.xml')).Length -ne $gui.exportBytes){throw 'STAGING_NOT_VERIFIED'}
       $nativeEvidenceStage='provenance'
-      [ordered]@{format='htkk-web-native-output-staging-v3';initialSigningDateRule='fixed-web-synthetic-date';runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;initialOutputSha256=$gui.exportSha256;initialOutputBytes=[int]$initialFile.Length;builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=[int]$gui.webTaxLeafCount;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
+      [ordered]@{format='htkk-web-native-output-staging-v3';initialSigningDateRule='fixed-web-synthetic-date';runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;initialOutputSha256=$gui.exportSha256;initialOutputBytes=[int]$initialFile.Length;builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion=$htkkOracle.version;runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;originalExportSucceeded=$true;originalImportSucceeded=$true;originalReexportSucceeded=$true;originalExporterValidatedSchema=$true;webTaxComparisonPassed=$true;webTaxCheckedLeafCount=[int]$gui.webTaxLeafCount;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.roundtripReexportSha256;originalOutputBytes=[int]$nativeFile.Length;artifactCommit=$env:WEB_ARTIFACT_COMMIT;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $nativeEvidence 'provenance.json') -Encoding utf8NoBOM
       $report.privateWebNativeOutputEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
     } catch {
       if($nativeEvidenceCreated){Remove-Item -LiteralPath $nativeEvidence -Recurse -Force -ErrorAction SilentlyContinue}
@@ -1179,7 +1181,7 @@ try {
       Assert-Hash (Join-Path $declarationEvidence 'declaration-native.xml') $gui.exportSha256
       Assert-Hash $declarationOriginal $gui.exportSha256
       $declarationEvidenceStage='provenance'
-      [ordered]@{format='htkk-declaration-native-output-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion='5.8.1';runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;artifactCommit=$env:WEB_ARTIFACT_COMMIT;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;inputMode=$(if($declarationEntryCase){'original-entry-export'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase);originalExportSucceeded=$true;originalExporterValidatedSchema=$true;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.exportSha256;originalOutputBytes=[int]$declarationFile.Length;harnessSchemaValid=[bool]$gui.declarationSchemaValid;harnessTreeMatched=[bool]$gui.declarationTreeMatched;harnessTreeMismatchMask=[int]$gui.declarationTreeMismatchMask;harnessTreeLeafCount=[int]$gui.declarationTreeLeafCount;harnessXmlMismatchMask=[int]$gui.declarationXmlMismatchMask;harnessCellMismatchMask=[int]$gui.declarationCellMismatchMask;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $declarationEvidence 'provenance.json') -Encoding utf8NoBOM
+      [ordered]@{format='htkk-declaration-native-output-staging-v1';builderRepository='congminh1254/htkk_builder';builderCommit=$env:GITHUB_SHA;runId=$env:GITHUB_RUN_ID;runAttempt=[int]$env:GITHUB_RUN_ATTEMPT;sourceRepository='htkk-net/htkk_web';sourceCommit=$gui.webSourceSha;sourceVersion=$htkkOracle.version;runtimeHost='clr2-x86-reference';caseId=$gui.webCaseId;artifactCommit=$env:WEB_ARTIFACT_COMMIT;inputsSynthetic=$true;originalProcessStopped=$true;originalSourcesUnmodified=$true;inputMode=$(if($declarationEntryCase){'original-entry-export'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase);originalExportSucceeded=$true;originalExporterValidatedSchema=$true;webImportInputSha256=$gui.webImportInputSha256;originalOutputSha256=$gui.exportSha256;originalOutputBytes=[int]$declarationFile.Length;harnessSchemaValid=[bool]$gui.declarationSchemaValid;harnessTreeMatched=[bool]$gui.declarationTreeMatched;harnessTreeMismatchMask=[int]$gui.declarationTreeMismatchMask;harnessTreeLeafCount=[int]$gui.declarationTreeLeafCount;harnessXmlMismatchMask=[int]$gui.declarationXmlMismatchMask;harnessCellMismatchMask=[int]$gui.declarationCellMismatchMask;creationDateRule='native-export-current-date';fullRoundTrip=$false} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $declarationEvidence 'provenance.json') -Encoding utf8NoBOM
       $report.privateDeclarationNativeOutputEvidence=@{status='staged';stage='complete';supplierStopped=[bool]$supplierStopped;rawBytesPreserved=$true;fullRoundTrip=$false}
     } catch {
       if($declarationEvidenceCreated){Remove-Item -LiteralPath $declarationEvidence -Recurse -Force -ErrorAction SilentlyContinue}

@@ -12,6 +12,7 @@ def module(name,file):
 transport=module('declaration_output_transport','publish-htkk-web-inputs.py')
 reader=transport.reader
 declaration=reader.declaration
+oracle=module('htkk_oracle_declaration_output','htkk_oracle.py')
 REPO=reader.REPO
 BUILDER=reader.BUILDER
 DIRECTORY='htkk-declaration-native-output'
@@ -49,21 +50,21 @@ def exact_sha(value,count=40):
  if not isinstance(value,str) or not re.fullmatch('[0-9a-f]{'+str(count)+'}',value):fail('PROVENANCE')
  return value
 
-def validate_native(body,case_id,today=None):
+def validate_native(body,case_id,today=None,version=oracle.DEFAULT):
  if case_id not in BRANCHES:fail('PROVENANCE')
- try:return declaration.validate_native_output(body,case_id,today)
+ try:return declaration.validate_native_output(body,case_id,today,oracle.service_version(version))
  except declaration.DeclarationWebCaseError as error:
   code=NATIVE_ERRORS.get(error.code,'XML_PRIVACY')
   fail(code,dict(error.context,nativeRule=error.code) if code=='XML_PRIVACY' else None)
 
-def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt):
+def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt,version=oracle.DEFAULT):
  if case_id not in BRANCHES:fail('PROVENANCE')
  if not isinstance(run_id,str) or not re.fullmatch('[0-9]{1,20}',run_id) or not isinstance(run_attempt,str) or not re.fullmatch('[1-9][0-9]{0,5}',run_attempt):fail('PROVENANCE')
  exact_sha(builder_commit);exact_sha(source_commit);exact_sha(artifact_commit)
  if not isinstance(body,bytes) or not 0<len(body)<=reader.MAX_MANIFEST or not isinstance(native,bytes):fail('PROVENANCE')
  try:observed=reader.json_object(body,'MANIFEST')
  except reader.InputError:fail('PROVENANCE')
- expected={'format':'htkk-declaration-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'runAttempt':int(run_attempt),'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':'5.8.1','runtimeHost':'clr2-x86-reference','caseId':case_id,'artifactCommit':artifact_commit,
+ expected={'format':'htkk-declaration-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'runAttempt':int(run_attempt),'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':oracle.baseline(version)['serviceVersion'],'runtimeHost':'clr2-x86-reference','caseId':case_id,'artifactCommit':artifact_commit,
   'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,
   # Native-case input mode: the original import of the web XML, or the fixed plan typed into the original grid.
   'inputMode':reader.case_registry.input_mode(case_id),'originalImportSucceeded':reader.case_registry.input_mode(case_id)==reader.case_registry.IMPORT_MODE,'originalExportSucceeded':True,'originalExporterValidatedSchema':True,
@@ -77,19 +78,19 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
   elif type(value) is not int or not rule[0]<=value<=rule[1]:fail('PROVENANCE')
  return observed
 
-def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt,today=None):
+def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt,today=None,version=oracle.DEFAULT):
  directory=pathlib.Path(directory)
  if transport.unsafe_path(directory) or not directory.is_dir() or set(p.name for p in directory.iterdir())!=set(NAMES):fail('FILES')
  native=transport.safe_read(directory/NAMES[0],reader.MAX_XML)
  provenance=transport.safe_read(directory/NAMES[1],reader.MAX_MANIFEST)
- metadata=validate_provenance(provenance,native,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt)
- validate_native(native,case_id,today)
+ metadata=validate_provenance(provenance,native,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt,version)
+ validate_native(native,case_id,today,version)
  return native,metadata
 
-def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False):
+def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False,version=oracle.DEFAULT):
  # Revalidate even when called independently of the fixed-path staging reader.
- metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),str(metadata.get('runAttempt','')))
- checked=validate_native(native,metadata['caseId'],today)
+ metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),str(metadata.get('runAttempt','')),version)
+ checked=validate_native(native,metadata['caseId'],today,version)
  if not isinstance(token,str) or not token:fail('AUTH')
  fetch=fetch or transport.api
  if retain_immutable:transport.assert_current(fetch,token,metadata['sourceCommit'])
@@ -121,8 +122,9 @@ def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False):
  if not isinstance(commit,dict):fail('API_SHAPE')
  artifact=exact_sha(commit.get('sha'))
  if retain_immutable:
-  transport.assert_current(fetch,token,metadata['sourceCommit']);transport.immutable_refs.retain(fetch,token,'output',metadata['sourceCommit'],metadata['caseId'],artifact)
- branch=BRANCHES[metadata['caseId']];missing=False
+  transport.assert_current(fetch,token,metadata['sourceCommit']);transport.immutable_refs.retain(fetch,token,'output',metadata['sourceCommit'],metadata['caseId']+oracle.suffix(version),artifact)
+ # A non-default oracle keeps its own branch: it never replaces the default cohort's retained output.
+ branch=oracle.output_branch(BRANCHES[metadata['caseId']],version);missing=False
  # Only an explicit GET 404 establishes absence; failed mutations are never retried as creation.
  try:existing=fetch('/git/ref/heads/'+branch,token)
  except urllib.error.HTTPError as error:
@@ -143,8 +145,9 @@ def main():
   token=os.environ.get('SOURCE_PUBLISH_TOKEN') or os.environ.get('SOURCE_READ_TOKEN')
   if not token:fail('AUTH')
   if not directory.exists():print(json.dumps({'format':'htkk-declaration-native-output-publication-status-v1','status':'not-staged'},separators=(',',':')));return
-  native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),os.environ.get('GITHUB_RUN_ATTEMPT',''))
-  print(json.dumps(publish(native,metadata,token,retain_immutable=True),separators=(',',':')))
+  version=oracle.version(os.environ)
+  native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),os.environ.get('GITHUB_RUN_ATTEMPT',''),version=version)
+  print(json.dumps(publish(native,metadata,token,retain_immutable=True,version=version),separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')))
   raise SystemExit('Native declaration output retention failed; no XML, paths, credentials or raw remote error published.')

@@ -138,7 +138,9 @@ class NativeDispatchRetry(unittest.TestCase):
   self.assertEqual(sleeps,[2,5]);self.assertEqual(sum('/statuses/' in u for u in calls),3);self.assertEqual(sum('/dispatches' in u for u in calls),1)
  def test_probe_run_name_matches_dispatcher_identity(self):
   text=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
-  self.assertIn('\nrun-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})\n',text)
+  # The default oracle keeps the exact title the dispatcher matches; only 5.8.2 adds a suffix, so a
+  # 5.8.2 run is never mistaken for a default-cohort run.
+  self.assertIn("\nrun-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})${{ inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || '' }}\n",text)
   self.assertEqual(d.run_title(d.CASES[0]),'HTKK native case '+d.CASES[0]+' ('+d.case_registry.ADAPTERS[d.case_registry.CASES[d.CASES[0]]['adapterId']]['driver']+')')
 
 

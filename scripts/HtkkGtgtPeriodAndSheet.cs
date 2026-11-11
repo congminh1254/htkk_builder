@@ -280,8 +280,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void SelectOriginalAnnex12(Control grid,object sheet){
   if(!Annex12InspectionMode()||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   string root=Path.GetDirectoryName(project);
-  annex12SourcePinsMatched=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_283.xml"))=="9512dcfef9551892d132fd905250427c580a1320f77318ab048d6d26fd3a32e5"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_xml_283.xml"))=="9dafb55263fa2729383cf57bc73f3b97cf48dc9a28632a596806ad0afe8f17d3"&&Hash(Path.Combine(root,"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd"))=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003";
-  if(Annex12InputMode())annex12SourcePinsMatched=annex12SourcePinsMatched&&Hash(Path.Combine(root,"InterfaceIni/DM_DUNG_CHUNG.xml"))=="cff4311dff86113853b2a70ca43992d72f4f5dd7ac643041e3d4d9ac2b1ba0b0";
+  annex12SourcePinsMatched=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))==HtkkOracleBaseline.File("InterfaceTemplates/excel/01_GTGT_TT80_283.xls")&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_283.xml"))=="9512dcfef9551892d132fd905250427c580a1320f77318ab048d6d26fd3a32e5"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_xml_283.xml"))=="9dafb55263fa2729383cf57bc73f3b97cf48dc9a28632a596806ad0afe8f17d3"&&Hash(Path.Combine(root,"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd"))=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003";
+  if(Annex12InputMode())annex12SourcePinsMatched=annex12SourcePinsMatched&&Hash(Path.Combine(root,"InterfaceIni/DM_DUNG_CHUNG.xml"))==HtkkOracleBaseline.File("InterfaceIni/DM_DUNG_CHUNG.xml");
   if(!annex12SourcePinsMatched)throw new InvalidOperationException();
   int rowCount=Convert.ToInt32(Get(sheet,"RowCount")),columnCount=Convert.ToInt32(Get(sheet,"ColumnCount")),target=-1;
   if(rowCount<1||rowCount>512||columnCount<1||columnCount>16)throw new InvalidOperationException();
@@ -423,7 +423,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool SelectSourceActivity(Control period){
   const string label="Hoạt động sản xuất kinh doanh thông thường";
   string file=Path.Combine(Path.GetDirectoryName(project),"InterfaceIni/Catalogue_DM_NNKD.xml");
-  if(new FileInfo(file).Length>2000000||Hash(file)!="8e19468e899e1b6e35a9d584dddd5e278c0daf1127d4f14ac5c4e03b3164ea88")return false;
+  if(new FileInfo(file).Length>2000000||Hash(file)!=HtkkOracleBaseline.File("InterfaceIni/Catalogue_DM_NNKD.xml"))return false;
   XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
   using(XmlReader reader=XmlReader.Create(file,settings)){document.Load(reader);}int sourceMatches=0;
   foreach(XmlNode item in document.SelectNodes("//Item[@Value]")){if(item.Attributes["Value"].Value=="01_GTGT_TT80###00###"+label)sourceMatches++;}
@@ -490,7 +490,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtRows<67||gtgtColumns<15){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   gtgtSheet=true;gtgtDimensions=gtgtRows==72&&gtgtColumns==24;string sheetName=Convert.ToString(Get(sheet,"SheetName"),CultureInfo.InvariantCulture);gtgtName=sheetName=="01"||sheetName=="Tờ khai";
   string root=Path.GetDirectoryName(project);
-  gtgtPins=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))=="8ad9ec9f0f3462da75ce4e873e4bb60003947e9edd5d738a5055e37d6c73b310"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_283.xml"))=="40f5d6f711f7acb69dcc4098e3e3bb0b1849224d1c185902a50b8cae6fc50aae"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml"))=="7ba334067c52ea22cd744dcf2c0ff444190d6661f6b3e9b3ea08e5ead574830c";
+  gtgtPins=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))==HtkkOracleBaseline.File("InterfaceTemplates/excel/01_GTGT_TT80_283.xls")&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_283.xml"))=="40f5d6f711f7acb69dcc4098e3e3bb0b1849224d1c185902a50b8cae6fc50aae"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml"))=="7ba334067c52ea22cd744dcf2c0ff444190d6661f6b3e9b3ea08e5ead574830c";
   gtgtVersion=Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)=="D1"&&Convert.ToString(Get(Global("ToKhaiInfo"),"VersionXML"),CultureInfo.InvariantCulture)=="2.8.3";
   object currentPeriod=Global("TTPeriodInfo");gtgtPeriod=Convert.ToString(Get(currentPeriod,"KieuKy"),CultureInfo.InvariantCulture)==(QuarterCase()?"Q":"M")&&Convert.ToString(Get(currentPeriod,"Nam"),CultureInfo.InvariantCulture)=="2026"&&Convert.ToString(Get(currentPeriod,QuarterCase()?"Quy":"Thang"),CultureInfo.InvariantCulture)==(QuarterCase()?"4":"10")&&Convert.ToString(Get(currentPeriod,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C";
   gtgtIdentity=CellText(sheet,9,3)==FakeName&&CellText(sheet,10,3).Replace("-",String.Empty)==Mst;gtgtSigner=CellText(sheet,63,10)==FakeSigner;

@@ -59,3 +59,22 @@ messages, file names and paths are never written. Bootstrap failures (helper
 loading, unhandled worker errors) still write a coded result (`HELPER_LOAD`,
 `WORKER_UNHANDLED`); a worker that wrote a blocked result is reported by its own
 code even when it exits nonzero.
+
+## HTKK 5.8.2
+
+Not published yet; this workflow still extracts only 5.8.1 to `htkk-source-5.8.1`. The 5.8.2
+pins it needs (archive/setup/MSI/CAB SHA-256, folder `HTKK_5.8.2_DLL_signed`, Media last
+sequence and File rows 4781, 4748 signed MD5 matches, 33 versioned files without MsiFileHash,
+`HTKK.exe.config` VERSION 5.8.2, same signer) are reviewed in `scripts/htkk-oracle-baselines.json`.
+Still required, in order:
+
+1. In the private `htkk_web`: a 5.8.2 inventory, scope matrix and active menu, and
+   `scripts/prepare-htkk-source-extract-policy.py` run for 5.8.2 (it accepts only the 5.8.1
+   inventory pin today); copy the result here as a separate 5.8.2 policy.
+2. Here: select the version in `source-extract.py`, `Test-HtkkSourceCandidateTrust.ps1`,
+   `Export-HtkkSourcePayload.ps1` and `source-extract.yml` from that baseline (branch
+   `htkk-source-5.8.2`, tag prefix `htkk-source-5.8.2/run-`), keeping 5.8.1 the default.
+3. Merge to `main` and dispatch `source-extract.yml` for 5.8.2 with `publish=false`, then
+   `publish=true` (`SOURCE_PUBLISH_TOKEN`, Contents write on `htkk_web` only).
+4. In `htkk_web`: let `scripts/fetch-htkk-source.sh` / `verify-htkk-source.py` accept the
+   5.8.2 ref and inventory.

@@ -1,15 +1,16 @@
 # Read-only oracle for the original property loader. This is not a GUI save/export round trip.
 function Invoke-HtkkProfileAliasOracle {
   [CmdletBinding()]
-  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
+  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
+  . (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); $htkkOracle=Get-HtkkOracleBaseline -Version $OracleVersion
   $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; originalLoaderInvocations=0; runtime='unknown'; oracleStage='not-started'; oracleStatus='not-run'; compilerExitCode=$null; compilerErrorCodes=@();compilerJobCleanupVerified=$true; oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; templateHashVerified=$false; originalMethodInvoked=$false; aliasValuesRemainDistinct=$false; caseSensitiveBackingFieldUntouched=$false; loaderIgnoresCellId2=$false; legacyPhuongXaConstructorEmpty=$false; templateValuesBlanked=$false; projectSampleUsed=$false; guiOrExportRoundTrip=$false; userDataUsed=$false }
   $directory=$null;   $firewallName=$null
   try {
     $dll=Join-Path $ProjectDirectory 'TAX.HTKK.Utilities.dll'
-    if((Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec') { $safe.status='dll-hash-mismatch'; return $safe }
+    if((Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash.ToLowerInvariant() -ne $htkkOracle.files['Project/TAX.HTKK.Utilities.dll']) { $safe.status='dll-hash-mismatch'; return $safe }
     $safe.dllHashVerified=$true
     $template=Join-Path (Split-Path $ProjectDirectory) 'InterfaceTemplates/xml/HEADER.xml'
     if((Get-FileHash -LiteralPath $template -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ac34c57b29d4ff85f81be98ebf191630850e8b951f410ef3e4fa810a160d01a7') { $safe.status='template-hash-mismatch'; return $safe }

@@ -244,6 +244,11 @@ SIGNER = 'NGUOI KY GIA LAP'
 # Texts the original profile/period dialog may legitimately add on a native re-export.
 PROFILE_TEXTS = frozenset((NAME, ADDRESS, SIGNER, 'Thành phố Hà Nội', 'Phường Sơn Tây', 'Thuế Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội'))
 NATIVE_SERVICE = ('HTKK', 'HỖ TRỢ KÊ KHAI THUẾ', '5.8.1')
+
+
+def native_service(service_version=None):
+    """The original's service identity; pbanDVu is the release of the selected oracle (default 5.8.1)."""
+    return NATIVE_SERVICE if service_version is None else NATIVE_SERVICE[:2] + (service_version,)
 # Every case form is verified against HTKK, so the web exporters (htkk_web lib/export-labelling.ts) write
 # no pre-root comment and the neutral tool identity WEB_CODE/WORKBOOK_SERVICE. The earlier draft
 # disclaimer (COMMENT) is now rejected like any other comment.
@@ -762,13 +767,13 @@ def validate_web_input(body, case_id, manifest=None):
     return {'privacyValuesVerified': True, 'leafCount': len(items), 'serviceIdentity': 'web-tool', 'nativeProvenance': False}
 
 
-def validate_native_output(body, case_id, today=None):
+def validate_native_output(body, case_id, today=None, service_version=None):
     """Native re-export: original service identity, fresh creation date, synthetic data only."""
     spec = case(case_id)
     root = _parse(body, False)
     items = leaves(root)
     service = tuple(_one(items, SERVICE_PATH + name) for name in SERVICE_NAMES)
-    if service[:3] != NATIVE_SERVICE or not re.fullmatch(r'[0-9A-F]{32}', service[3]):
+    if service[:3] != native_service(service_version) or not re.fullmatch(r'[0-9A-F]{32}', service[3]):
         reject('SERVICE')
     _common(items, spec, False)
     created = _one(items, CREATION_PATH)

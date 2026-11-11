@@ -304,8 +304,10 @@ class OriginalMessageDiagnosticContract(unittest.TestCase):
   self.assertIn('{exportRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(HtkkAutomationStage.GtgtExportOriginalMessageRejected);',export)
   self.assertIn('{importRejectedMessageId=OriginalMessageCatalogueId(labels[0].Text);SetStage(',roundtrip)
   block=export[export.index(' private int OriginalMessageCatalogueId('):export.index(' private static string EscapeSendKeys(')]
-  pin='586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606'
+  # The catalogue pin is the selected oracle's Message.xml; the default stays the reviewed 5.8.1 file.
+  pin='HtkkOracleBaseline.File("Project/Message.xml")'
   self.assertIn(pin,block);self.assertIn('Path.Combine(project,"Message.xml")',start+block);self.assertIn(pin,start)
+  self.assertEqual(json.loads((ROOT/'htkk-oracle-baselines.json').read_text(encoding='utf-8'))['versions']['5.8.1']['files']['Project/Message.xml'],'586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606')
   for term in ('settings.ProhibitDtd=true','settings.XmlResolver=null','/Message/Infor[@ID and @Msg]','node.Attributes["Msg"].Value.Trim()==wanted','return 9999;','value>9998'):self.assertIn(term,block)
   for forbidden in ('Record()','Contains(','StartsWith(','IndexOf('):self.assertNotIn(forbidden,block)
   # Release 222 (05/QTT import: 9999): a multi-line catalogue message (0437) reaches the original

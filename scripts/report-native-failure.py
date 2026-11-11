@@ -8,7 +8,7 @@ def request(env):
  if not re.fullmatch('[1-9][0-9]{0,19}',run):raise ValueError('RUN')
  case=env.get('WEB_CASE_ID')
  if case not in callback.dispatch.CASES or callback.dispatch.case_registry.driver(case)!=env.get('GUI_AUTOMATION'):raise ValueError('RESULT')
- payload=callback.payload(case,'failure',env.get('GITHUB_SERVER_URL'),run,env.get('WEB_ARTIFACT_COMMIT')or None)
+ payload=callback.payload(case,'failure',env.get('GITHUB_SERVER_URL'),run,env.get('WEB_ARTIFACT_COMMIT')or None,callback.oracle.version(env))
  return 'https://api.github.com/repos/'+callback.dispatch.REPO+'/statuses/'+commit,payload
 def main():
  try:

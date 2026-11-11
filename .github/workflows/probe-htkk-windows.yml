@@ -1,6 +1,6 @@
 name: Kiểm tra điều kiện chạy HTKK Windows
 # Public fixed case id only; lets the release dispatcher detect an already-created run before any retry.
-run-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})
+run-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})${{ inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || '' }}
 on:
   workflow_dispatch:
     inputs:
@@ -45,11 +45,17 @@ on:
         options: [original, clr2-x86-reference]
         default: original
         required: true
+      htkk_version:
+        description: 'Phiên bản HTKK làm oracle (5.8.1 mặc định; 5.8.2 chỉ cho cohort native riêng, không gate release)'
+        type: choice
+        options: ['5.8.1', '5.8.2']
+        default: '5.8.1'
+        required: false
 permissions:
   contents: read
   actions: read
 concurrency:
-  group: native-${{ inputs.web_source_sha || github.run_id }}-${{ inputs.web_case_id }}-${{ inputs.gui_automation }}
+  group: native-${{ inputs.web_source_sha || github.run_id }}-${{ inputs.web_case_id }}-${{ inputs.gui_automation }}${{ inputs.htkk_version == '5.8.2' && '-htkk582' || '' }}
   cancel-in-progress: false
 jobs:
   readiness:
@@ -148,6 +154,7 @@ jobs:
           PROBE_GUI_AUTOMATION: ${{ inputs.gui_automation }}
           PROBE_SYNTHETIC_LOGIN: ${{ inputs.synthetic_login }}
           PROBE_ACK_REGISTRATION: ${{ inputs.acknowledge_registration }}
+          PROBE_HTKK_VERSION: ${{ inputs.htkk_version }}
         run: |
           $probe = $env:PROBE_INSTALL -eq 'true'
           $syntheticLogin = $env:PROBE_SYNTHETIC_LOGIN -eq 'true'
@@ -156,7 +163,9 @@ jobs:
           if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')) { throw 'Invalid reference GUI automation mode.' }
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
-          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation
+          $oracleVersion = if ([string]::IsNullOrEmpty($env:PROBE_HTKK_VERSION)) { '5.8.1' } else { $env:PROBE_HTKK_VERSION }
+          if ($oracleVersion -cnotin @('5.8.1','5.8.2')) { throw 'Invalid HTKK oracle version.' }
+          & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation -OracleVersion $oracleVersion
       # Native web regressions retain only their dedicated per-case output; shared
       # startup/common-header references remain available in manual reference modes.
       - name: Publish supplier startup window privately
@@ -197,6 +206,7 @@ jobs:
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}
         run: python ./scripts/publish-htkk-web-native-output.py
       # Declaration families: the raw original export is retained even when the harness reported
       # a whole-tree mismatch (status stays failure); the publisher re-validates privacy first.
@@ -208,6 +218,7 @@ jobs:
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}
         run: python ./scripts/publish-htkk-declaration-native-output.py
       - name: Retain native-first harness sample and report its separate status privately
         id: native_sample_publish
@@ -238,6 +249,7 @@ jobs:
           WEB_CASE_ID: ${{ inputs.web_case_id }}
           WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           PROBE_RESULT: ${{ steps.native_probe.outcome }}
+          HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}
         run: python ./scripts/report-native-case.py
       # No public artifact, cache, screenshot, raw process/window title or taxpayer input.
       # Only bounded verified supplier windows may enter the fixed PRIVATE diagnostic branch.
@@ -267,4 +279,5 @@ jobs:
           WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
           GUI_AUTOMATION: ${{ inputs.gui_automation }}
           READINESS_RESULT: ${{ needs.readiness.result }}
+          HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}
         run: python3 scripts/report-native-failure.py

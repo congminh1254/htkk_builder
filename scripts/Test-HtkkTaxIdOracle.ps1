@@ -2,11 +2,12 @@
 # This helper executes only fixed synthetic checksum vectors, never taxpayer input or a tax lookup.
 function Invoke-HtkkTaxIdOracle {
   [CmdletBinding()]
-  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
+  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
-  $expectedHash = '281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
+  . (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); $htkkOracle=Get-HtkkOracleBaseline -Version $OracleVersion
+  $expectedHash = $htkkOracle.files['Project/TAX.HTKK.Business.dll']
   $safe = [ordered]@{ status='not-run'; cases=0; matched=0; mismatches=0; runtime='unknown'; compilerExitCode=$null; compilerErrorCodes=@();compilerJobCleanupVerified=$true; oracleExitCode=$null; oracleJobCleanupVerified=$true; dllHashVerified=$false; originalMethodInvoked=$false; fullRoundTrip=$false; userDataUsed=$false }
   $directory = $null; $firewallName = $null
   try {

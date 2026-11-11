@@ -12,6 +12,10 @@ Releases retain verified static output on the private generated branch `htkk-net
 
 `source-extract.yml` (main only, `workflow_dispatch`) reverifies the pinned 5.8.1 installer, exports MSI layout/CAB members read-only without running vendor code, and pushes the priority-form resources plus all business DLLs with a SHA-256 manifest to the PRIVATE branch `htkk-net/htkk_web:htkk-source-5.8.1` using `SOURCE_PUBLISH_TOKEN` (fallback `SOURCE_READ_TOKEN`). No payload is uploaded or logged. See [SOURCE-EXTRACT.md](SOURCE-EXTRACT.md).
 
+## Oracle version
+
+Native cases use HTKK 5.8.1 by default. `probe-htkk-windows.yml` input `htkk_version=5.8.2` runs a case against the pinned 5.8.2 installer for a separate, non-gating cohort (own statuses `@htkk582`, own output branches). Pins live in `scripts/htkk-oracle-baselines.json`; see [WINDOWS-PROBE.md](WINDOWS-PROBE.md#selectable-oracle-version-htkk-582-non-gating).
+
 ## Configure dedicated credentials
 
 Do not reuse a general personal/session token. Fine-grained tokens must have only the selected repository and permissions listed below; metadata read is implicit. Do not place these credentials in source files or command arguments.

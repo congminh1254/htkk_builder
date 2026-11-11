@@ -11,6 +11,7 @@
       "timeoutSeconds": 30,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -41,6 +42,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -71,6 +73,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -101,6 +104,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -131,6 +135,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -161,6 +166,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -191,6 +197,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -221,6 +228,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -251,6 +259,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -281,6 +290,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -311,6 +321,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -341,6 +352,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -371,6 +383,7 @@
       "timeoutSeconds": 180,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -401,6 +414,7 @@
       "timeoutSeconds": 120,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -431,6 +445,7 @@
       "timeoutSeconds": 180,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -461,6 +476,7 @@
       "timeoutSeconds": 180,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",
@@ -491,6 +507,7 @@
       "timeoutSeconds": 180,
       "orderedCompileInputs": [
         "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
         "HtkkGuiReferenceAutomation.cs",
         "HtkkGtgtReferenceNavigation.cs",
         "HtkkGtgtPeriodAndSheet.cs",

@@ -7,11 +7,13 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')][string]$GuiAutomation='none'
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')][string]$GuiAutomation='none',
+    [ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1'
   )
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
   . (Join-Path $PSScriptRoot 'HtkkNativeCompileInputs.ps1')
+  . (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); $htkkOracle=Get-HtkkOracleBaseline -Version $OracleVersion
   $safe = [ordered]@{
     status='not-prepared'; mode='custom-x86-clr2-reference-host'; launched=$false
     originalExeHashVerified=$false; businessDllHashVerified=$false; originalConfigHashVerified=$false
@@ -24,9 +26,9 @@ function New-HtkkX86ReferenceHost {
     secondaryDomainUsesOriginalConfiguration=$true; runtimeRoundTrip=$false
   }
    $directory=$null; $owned=@(); $prepared=$false
-  $expectedExe='411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
-  $expectedBusiness='281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7'
-  $expectedConfig='b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
+  $expectedExe=$htkkOracle.files['Project/HTKK.exe']
+  $expectedBusiness=$htkkOracle.files['Project/TAX.HTKK.Business.dll']
+  $expectedConfig=$htkkOracle.files['Project/HTKK.exe.config']
   try {
     foreach($candidate in @($ProjectDirectory,$TemporaryDirectory)) {
       if(-not [IO.Path]::IsPathRooted($candidate) -or $candidate.StartsWith('\\') -or $candidate.IndexOfAny([IO.Path]::GetInvalidPathChars()) -ge 0) { $safe.status='invalid-local-directory'; return $safe }
@@ -73,9 +75,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 internal static class HtkkX86ReferenceHost {
-  private const string ExeHash="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938";
-  private const string BusinessHash="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7";
-  private const string ConfigHash="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047";
+  private const string OracleVersion="__HTKK_ORACLE_VERSION__";
   private static string resultPath;
   private static bool exeVerified, businessVerified, configVerified;
   private static string category="none", outerCategory="none", hresult="none";
@@ -147,7 +147,7 @@ internal static class HtkkX86ReferenceHost {
       string original=Path.Combine(project,"HTKK.exe");
       string business=Path.Combine(project,"TAX.HTKK.Business.dll");
       string configuration=original+".config";
-      exeVerified=Hash(original)==ExeHash; businessVerified=Hash(business)==BusinessHash; configVerified=Hash(configuration)==ConfigHash;
+      HtkkOracleBaseline.Select(OracleVersion); exeVerified=Hash(original)==HtkkOracleBaseline.File("Project/HTKK.exe"); businessVerified=Hash(business)==HtkkOracleBaseline.File("Project/TAX.HTKK.Business.dll"); configVerified=Hash(configuration)==HtkkOracleBaseline.File("Project/HTKK.exe.config");
       if(!exeVerified || !businessVerified || !configVerified) { WriteResult("source-hash-mismatch",-1); return 4; }
       Directory.SetCurrentDirectory(project);
       AppDomainSetup setup=new AppDomainSetup();
@@ -164,7 +164,7 @@ internal static class HtkkX86ReferenceHost {
       const string automationMode="__GUI_AUTOMATION_MODE__";
       if(automationMode!="none") {
         HtkkGuiReferenceAutomation agent=(HtkkGuiReferenceAutomation)domain.CreateInstanceFromAndUnwrap(host,"HtkkGuiReferenceAutomation");
-        agent.Start(automationMode);
+        agent.Start(automationMode,OracleVersion);
       }
       int code=domain.ExecuteAssembly(original);
       WriteResult("original-exited",code);
@@ -177,7 +177,7 @@ internal static class HtkkX86ReferenceHost {
   }
 }
 '@
-    $hostSource.Replace('__GUI_AUTOMATION_MODE__',$GuiAutomation) | Set-Content -LiteralPath $source -Encoding ASCII
+    $hostSource.Replace('__GUI_AUTOMATION_MODE__',$GuiAutomation).Replace('__HTKK_ORACLE_VERSION__',$OracleVersion) | Set-Content -LiteralPath $source -Encoding ASCII
     # The generated contract is the exact compilation closure, including launch-only.
     # Copy only repository-owned, bounded leaf files into the private compiler directory.
     $compilerSources=@($source)

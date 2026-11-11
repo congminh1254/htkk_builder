@@ -1,10 +1,11 @@
 # Original metadata binding + common-header serializer only. Never a GUI export/import oracle.
 function Invoke-HtkkCommonHeaderOracle {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory)
+ param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
  $ErrorActionPreference='Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')
+  . (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); $htkkOracle=Get-HtkkOracleBaseline -Version $OracleVersion
  $safe=[ordered]@{status='not-run';runtime='unknown';stage='not-started';cases=0;matched=0;failedCaseIndices=@();getToKhaiInfoInvocations=0;bindInvocations=0;serializeInvocations=0;compilerExitCode=$null;compilerErrorCodes=@();compilerJobCleanupVerified=$true;oracleExitCode=$null; oracleJobCleanupVerified=$true;sourceHashesVerified=$false;sourceHashesUnchanged=$false;privateSyntheticXmlSaved=$false;fullRoundTrip=$false;guiExportInvoked=$false;userDataUsed=$false}
  $directory=$null;$firewallName=$null
  try {
@@ -12,10 +13,10 @@ function Invoke-HtkkCommonHeaderOracle {
   foreach($name in @('common-header-first.xml','common-header-supplement.xml')){Remove-Item -LiteralPath (Join-Path $privateDirectory $name) -Force -ErrorAction SilentlyContinue}
   $root=Split-Path $ProjectDirectory
   $pins=[ordered]@{
-   'Project/HTKK.exe'='411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938'
-   'Project/TAX.HTKK.Utilities.dll'='ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec'
-   'Project/HTKK.exe.config'='b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047'
-   'Project/Menu.xml'='4ac42eae600f4c98ed3df8a17b6d18770904acff5267913fdc9f98be4a9f24b4'
+   'Project/HTKK.exe'=$htkkOracle.files['Project/HTKK.exe']
+   'Project/TAX.HTKK.Utilities.dll'=$htkkOracle.files['Project/TAX.HTKK.Utilities.dll']
+   'Project/HTKK.exe.config'=$htkkOracle.files['Project/HTKK.exe.config']
+   'Project/Menu.xml'=$htkkOracle.files['Project/Menu.xml']
    'InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml'='7ba334067c52ea22cd744dcf2c0ff444190d6661f6b3e9b3ea08e5ead574830c'
   }
   foreach($path in $pins.Keys){if((Get-FileHash -LiteralPath (Join-Path $root $path) -Algorithm SHA256).Hash.ToLowerInvariant() -ne $pins[$path]){$safe.status='source-hash-mismatch';return $safe}}

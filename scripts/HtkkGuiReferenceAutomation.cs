@@ -39,7 +39,10 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+(adapter!=null?adapter.BuildNavigationJson():NavigationJson())+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
   File.WriteAllText(result,json,new UTF8Encoding(false));
  }
- public void Start(string requestedMode){
+ // The host passes the oracle version it already verified (HTKK.exe/Business/config) for; every
+ // version-dependent pin below is read from that one closed baseline.
+ public void Start(string requestedMode,string oracleVersion){
+  HtkkOracleBaseline.Select(oracleVersion);HtkkWebTaxComparison.NativeServiceVersion=HtkkOracleBaseline.ServiceVersion;HtkkDeclarationTreeComparison.NativeServiceVersion=HtkkOracleBaseline.ServiceVersion;
   modeEnum=HtkkNativeAutomationWireMap.ParseMode(requestedMode);
   if(modeEnum==HtkkAutomationMode.None)throw new ArgumentException();
   mode=HtkkNativeAutomationWireMap.ToWireString(modeEnum);string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
@@ -49,7 +52,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    adapter.Initialize(this,project,modeEnum);
   }
   try{
-   pins=Hash(Path.Combine(project,"HTKK.exe"))=="411141d2e728a45f4a35a876afb169d0ac2450de2499e8a1f43ac29ab6401938"&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))=="281689aaa7df4db33d0debcfc61d32c0c318bb871d4a19a0277d871a7c04bba7"&&Hash(Path.Combine(project,"HTKK.exe.config"))=="b3547d6a6a61fd6e8e8b64c8976e8702aa94a2b5a44a1cf394c5486162297047"&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))=="ccc35605a4d3bb235f896d6ab43cec4c6543a404159cf10897a57cba23d817ec"&&Hash(Path.Combine(project,"Message.xml"))=="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606"&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
+   pins=Hash(Path.Combine(project,"HTKK.exe"))==HtkkOracleBaseline.File("Project/HTKK.exe")&&Hash(Path.Combine(project,"TAX.HTKK.Business.dll"))==HtkkOracleBaseline.File("Project/TAX.HTKK.Business.dll")&&Hash(Path.Combine(project,"HTKK.exe.config"))==HtkkOracleBaseline.File("Project/HTKK.exe.config")&&Hash(Path.Combine(project,"TAX.HTKK.Utilities.dll"))==HtkkOracleBaseline.File("Project/TAX.HTKK.Utilities.dll")&&Hash(Path.Combine(project,"Message.xml"))==HtkkOracleBaseline.File("Project/Message.xml")&&Hash(Path.Combine(project,"FarPoint.Win.Spread.dll"))=="2e7a0d4fc1ef6f219dd3a237ae6b26549ad03541d58da6f45d638309d2fa4c50";
    if(!pins||Environment.Version.Major!=2||IntPtr.Size!=4){SetStage(HtkkAutomationStage.SourceOrRuntimeNotMatched);finished=true;Record();return;}
    // Never reuse a source/sample/previous-run fixture directory.
    if(Directory.Exists(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst))){SetStage(HtkkAutomationStage.FixturePreexists);finished=true;Record();return;}
@@ -91,7 +94,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   foreach(Form form in Application.OpenForms){
    if(!form.Visible||form.IsDisposed)continue;forms++;
    string caption=form.Text.Replace(" ",String.Empty);
-   if(caption!="Hỗ trợ kê khai thuế - Phiên bản 5.8.1".Replace(" ",String.Empty))continue;
+   if(caption!=HtkkOracleBaseline.MainWindowCaption.Replace(" ",String.Empty))continue;
    kinds.Clear();List<Control> found=new List<Control>();List<Button> saves=new List<Button>();List<Button> closes=new List<Button>();int visited=0;Walk(form,found,saves,closes,ref visited);spreads=found.Count;
    if(found.Count!=1||saves.Count!=1||closes.Count!=1){SetStage(HtkkAutomationStage.ProfileControlsNotYetUnique);Record();continue;}
    Control spread=found[0];object sheet=Get(spread,"ActiveSheet");rows=Convert.ToInt32(Get(sheet,"RowCount"));columns=Convert.ToInt32(Get(sheet,"ColumnCount"));

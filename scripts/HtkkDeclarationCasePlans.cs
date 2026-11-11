@@ -255,8 +255,8 @@ internal static class HtkkDeclarationCasePlans {
  // ---- Fixed original-entry plans (native-case mode original-entry-export) ----
  // The ONLY values the entry driver may type, in this order, into HTKK's own editors. A value is
  // never assigned to a cell, row, DTO or total: the original CellChange/formulas compute the rest.
- // Source (HTKK 5.8.1, pinned below by metadata token and IL-code SHA-256; the raw-body SHA-256 in
- // brackets is the one htkk_web records in data/htkk-descriptor-declarations.json):
+ // Source (HTKK 5.8.1, pinned by metadata token and IL-code SHA-256 in htkk-oracle-baselines.json; the
+ // raw-body SHA-256 prefixes listed below are the ones htkk_web records in data/htkk-descriptor-declarations.json):
  //  * 01_NTNN_NCCNN_TT89_309.xml: M_6/M_8 checkboxes (Controltype 2, nopThayNTNN/nopThayNCCNN);
  //    ThueNTNN data row 60, ThueNCCNN 78, ThueCNKCT 86 (DataLocationTemplateRowStart); row cells C ct1a,
  //    L ct1b (Controltype 87, SelectedValue BX = ct1b_ma), S ct3, W ct4 / AE ct6 (Controltype 14), Y ct5,
@@ -287,22 +287,12 @@ internal static class HtkkDeclarationCasePlans {
     "text|C86|CA NHAN KHONG CU TRU D - GIẢ LẬP","combo|L86|4|H|Hoạt động kinh doanh khác|BX86|05","text|S86|HD-GL-004","date|W86|02/09/2026","number|Y86|100000000",
     "date|AE86|16/10/2026","number|AJ86|100000000","number|AN86|5","number|AZ86|100000000","number|BD86|2",
     "date-optional|AY98|27/10/2026"},
-   // assembly (B = TAX.HTKK.Business, H = HTKK.exe) | type | method | token | IL bytes | IL-code SHA-256
-   new string[]{
-    "B|Ntnn01TT89Nckt309|AutoBindData_0|0x060018f9|352|86baaca777e636dd3d76918c3b779dbcdd557467f8704bba44d89838d52068c9", // [363197ad…]
-    "B|Ntnn01TT89Nckt309|getCols|0x060018fb|70|4e1e803244481d03026f9ae6853bf8aab84e408231ad846733979dda6052969b", // [6ec04bdb…]
-    "B|Ntnn01TT89Nckt309|ButtonClick_0|0x060018fc|334|ffaa6fc9bbc450ef7f0477d89c0ddcff40d891c26e086249f32ae38f4b6dbf66", // [1ea954f3…]
-    "B|Ntnn01TT89Nckt309|LockUnlock|0x060018fd|90|8d2a68d81882fda119adc9255b8f1b761d5f76764ec5283ea8db3391fa895dec", // [aa17c417…]
-    "B|Ntnn01TT89Nckt309|CellChange_0|0x060018ff|28|9f9a3e4f1b799483a1cc7ebba4429ca156e0d68538cf893b1a60b822934df6ac", // [cd2fd820…]
-    "B|GeneralFunctions|LockUnLockColsInTable|0x06002676|451|782360e75e1659cd4fe4ae171daa6f431362c7623f5b03fa68afd206761aaab7", // [52ebc630…]
-    "H|frmWinToKhai|winFpSpread_ButtonClicked|0x060003b8|178|72d1aea7781d9d8352c8cee92819beda5ae5153d8672cb1963c32571db6289cb", // [8b1f6212…]
-    "H|WinDoWorkEvent|ButtonClick|0x06000062|783|043ef431c6449bf1bcd8d0b469b7daf171fb523ce1437d33c47637064d72eca6", // [10bc7699…]
-    "H|frmWinToKhai|winFpSpread_CellChange|0x060003b2|24666|003007c0bb5ee2b26bd57e21d1604690b9662594ea2c1cbc067415c4bfa5d85b", // [d46d5971…]
-    "H|WinSpreadProcess|DMNnkdNtnn|0x060001f1|218|c21744b0248f384108da6140fcfe6218a084845ae9731c829249c69d5b7f16d1", // [4b1e82f3…]
-    "H|WinSpreadProcess|WinInsertCombox|0x060001be|827|e7bd7c1f2b90ad619b6017a99e9e200ada457b31a91a6f9acef877937d9c5604", // [3c4f6dae…]
-    "H|WinSpreadProcess|InsertDateCell|0x060001af|203|d58a8897e64e6dcb1a2e2384cecff2acf6d7430e653d92a95dab8661a1b343d0", // [92fe05f4…]
-    "H|frmWinToKhai|ProcessCmdKey|0x0600039f|9783|32a0b79138f778aa1f4e9a4ea5f29b7faac4df0e046c001aed5f31d88ce31845", // [0ef81f1a…]
-    "H|frmWinToKhai|cmdExport_Click|0x060003a2|1941|37de581c58099f8c3243310c0b95eebd2d7dd9750fc48f3cdd842a4303312031"}); // [0dd56a23…]
+   // assembly (B = TAX.HTKK.Business, H = HTKK.exe) | type | method | token | IL bytes | IL-code SHA-256, for the
+   // selected oracle (htkk-oracle-baselines.json). The 5.8.1 list is the reviewed one; raw-body SHA-256 prefixes
+   // (htkk_web) in order: 363197ad 6ec04bdb 1ea954f3 aa17c417 cd2fd820 52ebc630 8b1f6212 10bc7699 d46d5971 4b1e82f3
+   // 3c4f6dae 92fe05f4 0ef81f1a 0dd56a23. 5.8.2 renumbers 12 of them (same instructions); winFpSpread_CellChange
+   // and ProcessCmdKey really changed and keep the reviewed body, so they fail closed (mask bits 8 and 12).
+   HtkkOracleBaseline.EntryMethodPins());
   // Lần phát sinh: every (6) AE is typed as the period day (checkTKChinh E_27: TuNgay <= AE <= DenNgay, both the day).
   if(occurrence)for(int i=0;i<entry.Entries.Length;i++)if(entry.Entries[i].StartsWith("date|AE",StringComparison.Ordinal))entry.Entries[i]=entry.Entries[i].Substring(0,entry.Entries[i].LastIndexOf('|')+1)+Find(caseId).FromDate;
   return entry;

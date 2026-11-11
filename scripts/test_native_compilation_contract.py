@@ -20,7 +20,7 @@ class NativeCompilationContractTests(unittest.TestCase):
             self.assertEqual(metadata['orderedCompileInputs'], closure, name)
         # This discovers real partial definitions and shared types, including future
         # partials: an omitted file must fail before reaching a Windows runner.
-        required = {'HtkkNativeAutomationEnums.cs', 'HtkkNativeUiHarness.cs',
+        required = {'HtkkNativeAutomationEnums.cs', 'HtkkNativeUiHarness.cs', 'HtkkOracleBaseline.cs',
                     'HtkkWebTaxComparison.cs', 'HtkkDeclarationCasePlans.cs',
                     'HtkkDeclarationTreeComparison.cs'}
         for path in ROOT.glob('Htkk*.cs'):
@@ -48,5 +48,9 @@ class NativeCompilationContractTests(unittest.TestCase):
         self.assertIn('if(automationMode!="none") {', host)
         start = host.index('if(automationMode!="none") {')
         end = host.index('int code=domain.ExecuteAssembly(original)', start)
-        self.assertIn('agent.Start(automationMode);', host[start:end])
+        # The agent receives exactly the oracle version the host verified; no unversioned Start.
+        self.assertIn('agent.Start(automationMode,OracleVersion);', host[start:end])
+        self.assertIn('private const string OracleVersion="__HTKK_ORACLE_VERSION__";', host)
+        self.assertIn(".Replace('__HTKK_ORACLE_VERSION__',$OracleVersion)", host)
+        self.assertIn("[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1'", host)
         self.assertIn('originalExecutableModified=$false; originalConfigurationModified=$false', host)

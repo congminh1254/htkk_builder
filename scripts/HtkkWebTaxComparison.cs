@@ -16,11 +16,14 @@ public static class HtkkWebTaxComparison {
  // equal content with another key, or different content with the same key, is not native.
  // A baseline built with other annex rows than the imported input (two-plant case) therefore
  // carries another key (run 42310299991: roundtripXmlExactMatched false, identity false).
+ // pbanDVu is the original's own release: the selected oracle (HtkkGuiReferenceAutomation.Start sets it
+ // from HtkkOracleBaseline before any comparison; standalone use keeps the default 5.8.1).
+ public static string NativeServiceVersion="5.8.1";
  public static bool NativeIdentity(XmlDocument baseline,XmlDocument output){
   foreach(string name in new string[]{"maDVu","tenDVu","pbanDVu"})if(Leaf(output,ServicePath+name).InnerText!=Leaf(baseline,ServicePath+name).InnerText)return false;
   string provider=Leaf(output,ServicePath+"ttinNhaCCapDVu").InnerText,baselineProvider=Leaf(baseline,ServicePath+"ttinNhaCCapDVu").InnerText;
   if(!Regex.IsMatch(baselineProvider,"^[A-F0-9]{32}$")||(provider==baselineProvider)!=(HashedContent(baseline)==HashedContent(output)))return false;
-  return Leaf(output,ServicePath+"maDVu").InnerText=="HTKK"&&Leaf(output,ServicePath+"tenDVu").InnerText=="HỖ TRỢ KÊ KHAI THUẾ"&&Leaf(output,ServicePath+"pbanDVu").InnerText=="5.8.1"&&Regex.IsMatch(provider,"^[A-F0-9]{32}$");
+  return Leaf(output,ServicePath+"maDVu").InnerText=="HTKK"&&Leaf(output,ServicePath+"tenDVu").InnerText=="HỖ TRỢ KÊ KHAI THUẾ"&&Leaf(output,ServicePath+"pbanDVu").InnerText==NativeServiceVersion&&Regex.IsMatch(provider,"^[A-F0-9]{32}$");
  }
  // The content the original key covers: HSoKhaiThue without TTinDVu (an in-memory copy only).
  private static string HashedContent(XmlDocument document){

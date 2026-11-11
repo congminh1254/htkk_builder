@@ -16,9 +16,12 @@ public static class HtkkDeclarationTreeComparison {
  public const int StructureBit=32;
  private static XmlElement Leaf(XmlDocument document,string path){string query="";foreach(string name in path.Split('/'))query+="/*[local-name()='"+name+"']";XmlNodeList nodes=document.SelectNodes(query);if(nodes.Count!=1||nodes[0].NamespaceURI!=Ns)return null;return (XmlElement)nodes[0];}
  private static string LeafText(XmlDocument document,string path){XmlElement leaf=Leaf(document,path);return leaf==null?null:leaf.InnerText;}
+ // pbanDVu is the original's own release: the selected oracle (HtkkGuiReferenceAutomation.Start sets it
+ // from HtkkOracleBaseline before any comparison; standalone use keeps the default 5.8.1).
+ public static string NativeServiceVersion="5.8.1";
  public static bool NativeIdentity(XmlDocument output){
   string provider=LeafText(output,ServicePath+"ttinNhaCCapDVu");
-  return LeafText(output,ServicePath+"maDVu")=="HTKK"&&LeafText(output,ServicePath+"tenDVu")=="HỖ TRỢ KÊ KHAI THUẾ"&&LeafText(output,ServicePath+"pbanDVu")=="5.8.1"&&provider!=null&&Regex.IsMatch(provider,"^[A-F0-9]{32}$");
+  return LeafText(output,ServicePath+"maDVu")=="HTKK"&&LeafText(output,ServicePath+"tenDVu")=="HỖ TRỢ KÊ KHAI THUẾ"&&LeafText(output,ServicePath+"pbanDVu")==NativeServiceVersion&&provider!=null&&Regex.IsMatch(provider,"^[A-F0-9]{32}$");
  }
  public static bool CreationDateValid(XmlDocument output){string date=LeafText(output,DatePath);return date!=null&&Regex.IsMatch(date,"^[0-9]{4}-[0-9]{2}-[0-9]{2}$");}
  public static int Section(string path){

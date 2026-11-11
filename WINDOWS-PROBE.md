@@ -170,3 +170,73 @@ Source `d5e46e0d81ee61f14671ebdc27e5159d1790782b`, Linux release builder `c91868
 | native-import-sale10 | 40382902525 |
 
 The separate successful annex-inspection run40382737399 is not one of these thirteen XML round-trip cases. Neither its initial structure observations nor these main-declaration cases establish annex export, amendment support, all version/period routing or full HTKK compatibility.
+
+## Selectable oracle version: HTKK 5.8.2 (non-gating)
+
+The oracle is **5.8.1 by default**: the release dispatcher passes no version, so release, Pages and
+scoped evidence are unchanged. `probe-htkk-windows.yml` has a `htkk_version` input
+(`5.8.1` | `5.8.2`). Every version-dependent pin comes from one reviewed data file,
+`scripts/htkk-oracle-baselines.json`, rendered by `scripts/generate-htkk-oracle-baselines.py`
+into `HtkkOracleBaseline.ps1` and `HtkkOracleBaseline.cs` (`--check` runs in the unit tests).
+
+| Pin | 5.8.1 | 5.8.2 |
+|---|---|---|
+| Official URL | `fshare.vn/file/TPW3FMLVAJL1` | `fshare.vn/file/WYSRASTITCWB` |
+| Archive SHA-256 / bytes | `5d52c065…` / 86,398,816 | `51baf5c8…d424` / 89,262,341 |
+| Folder | `HTKK_5.8.1_DLL_signed` | `HTKK_5.8.2_DLL_signed` |
+| setup / MSI / CAB | `19394e89…` / `7c1da251…` / `00669905…` | `1c2612d3…` / `17c21f3c…` / `5427c663…` |
+| Signer | Tổng Cục Thuế, serial `6435F70483012A5DBC374003`, GlobalSign GCC R45 EV CodeSigning CA 2020, root GlobalSign Code Signing Root R45 | same |
+| MSI ProductVersion | 4.2.2 | 4.2.2 (installer version, not the release) |
+| MSI files / size matches / MD5 matches / no MsiFileHash | 4526 / 4526 / 4493 / 33 | 4781 / 4781 / 4748 / 33 |
+| `HTKK.exe.config` VERSION, `pbanDVu`, main caption | 5.8.1 | 5.8.2 |
+| HTKK.exe, config, Business, Utilities, Menu.xml, Message.xml, `01_GTGT_TT80_283.xls`, `Catalogue_DM_NNKD.xml`, `DM_DUNG_CHUNG.xml` | reviewed pins | all re-pinned (every one changed) |
+
+The 5.8.2 values were re-verified from the downloaded installer as inert data (no installer,
+setup or vendor code executed): archive, setup, MSI and CAB SHA-256; MSI tables read with
+msitools; all 4781 sizes and 4748 signed-MSI MD5 values matched the extracted CAB members; the
+signer serial and chain matched 5.8.1.
+
+Method pins (tokens and IL-code SHA-256 of `GetILAsByteArray`), compared token-normalised
+(operand tokens resolved to names, signatures decoded):
+
+- Y8 original entry (14): 12 have the same instructions with renumbered tokens (status
+  `token-renumbered`, new token and hash recorded). `frmWinToKhai.winFpSpread_CellChange`
+  (Z8 in the menu lists, new control 110) and `frmWinToKhai.ProcessCmdKey` (F5 row insertion
+  writes `GetRowValueDefault`, new 2-row cap 0585) **really changed** (status `changed`). They
+  keep the reviewed 5.8.1 size and hash at the new token, so on 5.8.2 the entry cases fail
+  closed at the method-pin step (`declarationEntryMethodPinMask` bits 8 and 12) until the new
+  bodies are reviewed.
+- Oracle-workflow tokens (recorded only; those workflows stay 5.8.1): `BindToKhaiInfoToTTinChung`
+  0x060000f4 → 0x060000f6, `WinLoadTTinChungInfo` 0x060000ed → 0x060000ef, `InsertTable`
+  0x060001fd → 0x06000200, `RemoveTable` 0x060001fa → 0x060001fd (all token-renumbered).
+
+A 5.8.2 run is kept apart from the default cohort: run title suffix ` [HTKK 5.8.2]`, own
+concurrency group, status context `<context>@htkk582`, output branch `<branch>-htkk582` and
+immutable anchor case `<case>-htkk582`; provenance `sourceVersion` and the native `pbanDVu`
+must be 5.8.2. The probe accepts 5.8.2 only for `gtgt-web-import-inspect` and
+`declaration-web-import-inspect` (or a verification-only run without install). Manual reference
+modes, the separate oracle workflows and the private source extract stay 5.8.1-only and fail
+closed on a 5.8.2 install.
+
+### Running the 5.8.2 cohort
+
+Run right after a release of the current `htkk_web` main (the inputs and callbacks must belong
+to the current main commit) and not while a release is still dispatching:
+
+```sh
+SRC=$(gh api repos/htkk-net/htkk_web/git/ref/heads/main -q .object.sha)
+python3 -c "import json;d=json.load(open('scripts/htkk-native-cases.json'));a={x['adapterId']:x['driver'] for x in d['adapters']}
+for c in d['cases']:print(c['caseId'],a[c['adapterId']],c['inputBranch'])" |
+while read CASE DRIVER BRANCH; do
+  ART=$(gh api repos/htkk-net/htkk_web/git/ref/heads/$BRANCH -q .object.sha)
+  gh workflow run probe-htkk-windows.yml -R congminh1254/htkk_builder --ref main \
+    -f install_and_probe=true -f synthetic_login=true -f acknowledge_registration=true \
+    -f runtime_host=clr2-x86-reference -f gui_automation=$DRIVER -f web_case_id=$CASE \
+    -f web_source_sha=$SRC -f web_artifact_commit=$ART -f htkk_version=5.8.2
+done
+```
+
+Results appear as `htkk-native/...@htkk582` statuses on that `htkk_web` commit. Expected
+failures from the impact assessment: I9 periods after 09/2026 (refused by the period dialog),
+U5 (5.8.2 opens the 3.1.0 template, not the pinned 2.9.8 one) and the two Y8 entry cases (method
+pins above).

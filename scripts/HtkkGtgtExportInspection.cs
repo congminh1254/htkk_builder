@@ -162,7 +162,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // attribute normalization turns them into spaces (release 222: 05/QTT import gave 9999).
   try{
    string file=Path.Combine(project,"Message.xml");FileInfo info=new FileInfo(file);
-   if(text==null||!info.Exists||(info.Attributes&FileAttributes.ReparsePoint)!=0||info.Length>2000000||Hash(file)!="586fa399b2996c84eadfa5fbad74dfdeb0d1e349e27cee355a22f92e14474606")return 9999;
+   if(text==null||!info.Exists||(info.Attributes&FileAttributes.ReparsePoint)!=0||info.Length>2000000||Hash(file)!=HtkkOracleBaseline.File("Project/Message.xml"))return 9999;
    XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
    using(XmlReader reader=XmlReader.Create(file,settings))document.Load(reader);
    int found=9999,folded=9999;string wanted=text.Trim(),loose=FoldMessageWhitespace(text);
