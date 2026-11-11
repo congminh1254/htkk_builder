@@ -26,6 +26,12 @@ def stage(directory,body):
  (directory/'01GTGT.xml').write_bytes(body);(directory/'provenance.json').write_text(json.dumps(p));return p
 class XmlPrivacyTests(unittest.TestCase):
  def setUp(self):self.body=parser_fixture()
+ def test_service_version_follows_selected_oracle_only(self):
+  e.validate_xml(self.body,TODAY)
+  newer=change(self.body,'pbanDVu','5.8.2')
+  with self.assertRaises(e.EvidenceError):e.validate_xml(newer,TODAY)
+  e.validate_xml(newer,TODAY,'5.8.2')
+  with self.assertRaises(e.EvidenceError):e.validate_xml(self.body,TODAY,'5.8.2')
  def reject(self,body,reason=None):
   with self.assertRaises(e.EvidenceError) as caught:e.validate_xml(body,TODAY)
   if reason:self.assertEqual(caught.exception.reason,reason)

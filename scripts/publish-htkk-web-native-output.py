@@ -109,7 +109,7 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False,version=
   if len(values)!=1 or values[0].attrib or len(values[0]) or values[0].text!=expected.get(name,'0'):fail('XML_PRIVACY')
   values[0].text='0'
  ET.register_namespace('',privacy.NS);ET.register_namespace('xsi',privacy.XSI)
- checked=privacy.validate_xml(ET.tostring(root,encoding='utf-8'),today)
+ checked=privacy.validate_xml(ET.tostring(root,encoding='utf-8'),today,oracle.service_version(version))
  if checked['leafCount']!=74:fail('XML_PRIVACY')
  return {'privacyValuesVerified':True,'leafCount':74,'fixedSyntheticCase':case_id,'historicalSigningDate':None if initial and not aligned else signing_date(case_id),'signingDateRule':'native-initial-creation-date' if initial and not aligned else 'fixed-web-synthetic-date','creationDateRule':'native-export-current-date','nativeServiceIdentityVerified':True}
 

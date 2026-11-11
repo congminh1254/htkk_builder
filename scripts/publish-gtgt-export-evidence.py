@@ -60,9 +60,11 @@ def validate_date(value,today,path,allow_empty=False):
   else:raise ValueError()
  except ValueError:raise EvidenceError('DATE_VALUE',leafIndex=LEAF_ORDER.index(path)+1,valueShape=value_shape(value)) from None
  if abs((today-date).days)>1:raise EvidenceError('DATE_STALE',leafIndex=LEAF_ORDER.index(path)+1,valueShape='date')
-def expected_values():
+def expected_values(service_version='5.8.1'):
  prefix='HSoKhaiThue/TTinChung/'
  expected={prefix+path:(value,) for path,value in BASE_HEADER.items()}
+ # pbanDVu is the release HTKK writes into its own export (5.8.1 by default, or the selected oracle).
+ expected[prefix+'TTinDVu/pbanDVu']=(service_version,)
  def header(path,*values):expected[prefix+path]=values
  header('TTinDVu/ttinNhaCCapDVu','@SOURCE_MD5')
  header('TTinTKhaiThue/TKhaiThue/loaiTKhai','C');header('TTinTKhaiThue/TKhaiThue/soLan','0')
@@ -88,7 +90,8 @@ def expected_values():
    else:expected[path]=('',)
  return expected
 EXPECTED=expected_values()
-def validate_xml(body,today=None):
+def validate_xml(body,today=None,service_version='5.8.1'):
+ expected_map=EXPECTED if service_version=='5.8.1' else expected_values(service_version)
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise EvidenceError('SIZE')
  try:text=body.decode('utf-8-sig')
  except UnicodeError:raise EvidenceError('ENCODING') from None
@@ -115,8 +118,8 @@ def validate_xml(body,today=None):
   elif path=='HSoKhaiThue/PLuc':
    if len(node) or (node.text or '').strip():raise EvidenceError('STRUCTURE')
   else:
-   if len(node) or path not in EXPECTED or path in observed:raise EvidenceError('STRUCTURE',observedLeafCount=len(observed))
-   value=node.text or '';observed[path]=value;allowed=EXPECTED[path]
+   if len(node) or path not in expected_map or path in observed:raise EvidenceError('STRUCTURE',observedLeafCount=len(observed))
+   value=node.text or '';observed[path]=value;allowed=expected_map[path]
    if '@SOURCE_MD5' in allowed:
     # GenerateKey -> EncryptText -> ObjectToByteArray -> MD5, X2 formatting.
     # Source ComputeHash.dll d9d639...; hash privacy check, not a signature claim.
