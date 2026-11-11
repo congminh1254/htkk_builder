@@ -603,16 +603,18 @@ if __name__ == '__main__':
 
 class OccurrencePeriod(unittest.TestCase):
     """Kỳ lần phát sinh (KieuKy 18, chkTKLanPS): period kind 'day' of I9/Y8/J1 (GetPeriodInfo KieuKy D)."""
-    DAY_CASES = ('01NTNN-occurrence-D20-10-2026', '01NTNN-NCCNN-occurrence-D20-10-2026', '03NTNN-occurrence-D20-10-2026')
+    DAY_CASES = ('01NTNN-occurrence-D20-09-2026', '01NTNN-NCCNN-occurrence-D20-10-2026', '03NTNN-occurrence-D20-10-2026')
+    # I9 moved to 20/09/2026: HTKK 5.8.2 refuses an I9 day period after its Menu.xml EndDate 30/09/2026.
+    DAYS = {'01NTNN-occurrence-D20-09-2026': '20/09/2026', '01NTNN-NCCNN-occurrence-D20-10-2026': '20/10/2026', '03NTNN-occurrence-D20-10-2026': '20/10/2026'}
 
     def test_day_cases_are_non_gating_kieuky_18_plans_with_one_day(self):
         for case in self.DAY_CASES:
-            unit = registry.CASES[case]['unit']
-            self.assertEqual((unit['periodType'], unit['periodValue']), ('day', '20/10/2026'))
+            unit = registry.CASES[case]['unit']; day = self.DAYS[case]
+            self.assertEqual((unit['periodType'], unit['periodValue']), ('day', day))
             self.assertIs(registry.CASES[case]['releaseGate'], False)
-            self.assertIn('"day","18","2026","","20/10/2026","20/10/2026",false', plan_block(case))
+            self.assertIn('"day","18","2026","","%s","%s",false' % (day, day), plan_block(case))
             spec = d.case(case)
-            self.assertEqual((spec['kieuKy'], spec['kyKKhai'], spec['tuNgay'], spec['denNgay']), ('D', '20/10/2026', '20/10/2026', '20/10/2026'))
+            self.assertEqual((spec['kieuKy'], spec['kyKKhai'], spec['tuNgay'], spec['denNgay']), ('D', day, day, day))
         # The plan refuses a day period that is not KieuKy 18 or whose from/to differ.
         constructor = PLANS[PLANS.index('internal HtkkDeclarationCasePlan('):PLANS.index('internal sealed class HtkkDeclarationEntryPlan')]
         self.assertIn('periodKind=="day"&&(kieuKy!="18"||fromDate.Length!=10||fromDate!=toDate', constructor)
@@ -631,12 +633,13 @@ class OccurrencePeriod(unittest.TestCase):
 
     def test_web_inputs_carry_kieuky_d_and_the_day_and_fail_closed_on_any_other_period(self):
         for case in self.DAY_CASES:
-            body = dfx.declaration_fixture(case)
+            body = dfx.declaration_fixture(case); day = self.DAYS[case].encode(); month = day[3:]
             reader.validate_web_xml(body, case_id=case)
-            date = b'<ct7>2026-10-20</ct7>' if case.startswith('03') else b'<ct6>2026-10-20</ct6>'
+            iso = day[6:] + b'-' + day[3:5] + b'-' + day[:2]
+            date = b'<ct7>' + iso + b'</ct7>' if case.startswith('03') else b'<ct6>' + iso + b'</ct6>'
             self.assertIn(date, body)
-            for name, (old, new) in {'kieuKy': (b'<kieuKy>D</kieuKy>', b'<kieuKy>M</kieuKy>'), 'kyKKhai': (b'<kyKKhai>20/10/2026</kyKKhai>', b'<kyKKhai>10/2026</kyKKhai>'),
-                                     'den': (b'<kyKKhaiDenNgay>20/10/2026</kyKKhaiDenNgay>', b'<kyKKhaiDenNgay>31/10/2026</kyKKhaiDenNgay>'), 'payment': (date, date.replace(b'20<', b'21<'))}.items():
+            for name, (old, new) in {'kieuKy': (b'<kieuKy>D</kieuKy>', b'<kieuKy>M</kieuKy>'), 'kyKKhai': (b'<kyKKhai>' + day + b'</kyKKhai>', b'<kyKKhai>' + month + b'</kyKKhai>'),
+                                     'den': (b'<kyKKhaiDenNgay>' + day + b'</kyKKhaiDenNgay>', b'<kyKKhaiDenNgay>21/' + month + b'</kyKKhaiDenNgay>'), 'payment': (date, date.replace(b'20<', b'21<'))}.items():
                 self.assertIn(old, body, (case, name))
                 with self.subTest(case=case, name=name), self.assertRaises(reader.InputError):
                     reader.validate_web_xml(body.replace(old, new, 1), case_id=case)

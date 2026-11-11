@@ -16,7 +16,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `05QTT-two-employees-Y2025` | `101 → 101_11 → B9` (05/QTT 2.9.3) | 12 | năm 2025 | 05-1, 05-3 | 145 |
 | `01CNKD-TT50-revenue-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD 2.9.8) | 21 | quý 3/2026 | — | 257 |
 | `02QTT-dependants-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3) | 12 | năm 2025 (NopTheoTinhCQT 3) | 02-1 (danh sách ẩn; nhập XML thêm mọi phụ lục) | 126 |
-| `01NTNN-two-contractors-M10-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 10/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
+| `01NTNN-two-contractors-M09-2026` | `101 → 101_8 → I9` (01/NTNN TT80 2.5.1) | 18 | tháng 09/2026 | — (bảng nhà thầu `BKThueNTNN/ThueNTNN`, 2 dòng) | 70 |
 | `03NTNN-no-rate-M10-2026` | `101 → 101_8 → J1` (03/NTNN 3.0.8) | 18 | tháng 10/2026 | — (bảng `BKThueNTNN/ThueNTNN`, 2 dòng, tỷ lệ [9] = 0) | 65 |
 | `01NTNN-NCCNN-entry-M10-2026` | `101 → 101_8 → Y8` (01/NTNN, NCCNN TT89 3.0.9), **nhập tay** | 18 | tháng 10/2026 | — (ba bảng; phần II: `ThueNCCNN` 1 dòng, `ThueCNKCT` 1 dòng, `ThueNTNN` khóa; gõ vào lưới gốc) | 103 |
 | `04NTNN-TT80-one-subcontractor-2026` | `101 → 101_8 → D6` (04/NTNN TT80 3.0.8) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-2/NTNN (sheet Menu `01-1` = sheet XLS `01-2`, 1 nhà thầu phụ) | 75 |
@@ -26,9 +26,16 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
-I9 (01/NTNN TT80, non-gating) dùng ca thiết kế `01NTNN-two-contractors-M10-2026`: hai nhà thầu "GIẢ LẬP" không MST, ngành
-01/02 của `DM_NNKD_NTNN.xml`, ngày thanh toán trong tháng 10/2026 (checkTKChinh E_27), ngày hợp đồng trước ngày chạy (E_36).
-KieuKy 18 = `SetLayoutToKhaiThangLanPhatSinh` (tích sẵn `chkTkhaiThang`), driver đi nhánh tháng chung (`mskMonth` "10").
+I9 (01/NTNN TT80, non-gating) dùng ca thiết kế `01NTNN-two-contractors-M09-2026`: hai nhà thầu "GIẢ LẬP" không MST, ngành
+01/02 của `DM_NNKD_NTNN.xml`, ngày thanh toán trong tháng 09/2026 (checkTKChinh E_27), ngày hợp đồng trước ngày chạy (E_36).
+KieuKy 18 = `SetLayoutToKhaiThangLanPhatSinh` (tích sẵn `chkTkhaiThang`), driver đi nhánh tháng chung (`mskMonth` "09").
+
+**Đổi kỳ I9 (HTKK 5.8.2).** HTKK 5.8.2 đặt Menu.xml `EndDate` 30/09/2026 cho I9 và đưa I9 vào
+`GeneralFunctions.CheckToKhaiHetHieuLuc`: tháng sau 09/2026 và lần phát sinh sau 30/09/2026 bị từ chối ở hộp kỳ
+(`HTKK-5.8.2-IMPACT.md`). Ba ca I9 chuyển sang kỳ còn hiệu lực trên cả 5.8.1 và 5.8.2, giữ nguyên nội dung (dòng, số tiền,
+tổng): `01NTNN-two-contractors-M10-2026` → `01NTNN-two-contractors-M09-2026` (tháng 09/2026, 01/09–30/09/2026),
+`01NTNN-occurrence-D20-10-2026` → `01NTNN-occurrence-D20-09-2026` (ngày 20/09/2026), ca thiết kế `01NTNN-zero-M10-2026` →
+`01NTNN-zero-M09-2026`. Kết quả release 238/249 bên dưới là bằng chứng lịch sử của các tên cũ (kỳ 10/2026); ca mới cần chạy lại.
 Oracle độc lập `NTNN_ROWS`/`ntnn_expected` trong `htkk_declaration_web_cases.py` tính lại bằng Decimal từng dòng theo công thức XLS
 dòng 55 (ct9 = ROUND(ct7·ct8/100), ct13 = MAX(0, ROUND(ct10·ct11/100) − ct12), ct14 = ct9 + ct13; làm tròn nửa xa 0) và các
 tổng `tong_ct5…ct14`: A 50tr/50tr/100tr, B 15tr/8tr/23tr, tổng [14] 123.000.000. Dòng `ThueNTNN` mang thuộc tính `ID` (chữ hoa,
@@ -264,9 +271,9 @@ có quy tắc Header chặn quyết toán 0). Câu hỏi mở cho lần chạy W
 không chặn kết xuất với ngày 05/01/2026–30/09/2026; (4) `ct4` (MST nhà thầu nước ngoài) và `ct3`/`ct5` của 02-2 rỗng kết xuất lại
 `xsi:nil` như web; (5) `ct10` của 02-1 (số lượng lao động, control 16) kết xuất là `5`.
 
-**Kỳ lần phát sinh (KieuKy 18, kiểu kỳ plan `day`; non-gating, chưa chạy)** — I9 `01NTNN-occurrence-D20-10-2026` (nhập XML),
+**Kỳ lần phát sinh (KieuKy 18, kiểu kỳ plan `day`; non-gating)** — I9 `01NTNN-occurrence-D20-09-2026` (nhập XML; ngày 20/09/2026, trước đây `01NTNN-occurrence-D20-10-2026`),
 Y8 `01NTNN-NCCNN-occurrence-D20-10-2026` (nhập tay, cùng chế độ `original-entry-export` như ca tháng) và J1
-`03NTNN-occurrence-D20-10-2026` (nhập XML), ngày phát sinh 20/10/2026. Dò từ HTKK 5.8.1 (snapshot `afc42204`, htkk_web
+`03NTNN-occurrence-D20-10-2026` (nhập XML), ngày phát sinh 20/10/2026 (I9: 20/09/2026). Dò từ HTKK 5.8.1 (snapshot `afc42204`, htkk_web
 `docs/NGHIEP-VU-NTNN.md` mục "Kỳ lần phát sinh"):
 
 - Hộp kỳ: `frmHTKKPeriod_Load` (0x6000484) → `SetLayoutToKhaiThangLanPhatSinh` (0x60004a9; SHA-256 thân phương thức như htkk_web: `5fabdefc…`): Tháng tích sẵn, có

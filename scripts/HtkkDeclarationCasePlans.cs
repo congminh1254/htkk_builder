@@ -43,7 +43,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M10-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-10-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -129,12 +129,14 @@ internal static class HtkkDeclarationCasePlans {
     new string[0],
     new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|10000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|4500000",Main+"HoTroThongTinNopThue/tongTienCT47|14500000"});
    // I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh (frmHTKKPeriod_Load
-   // 0x6000484 -> index 21; chkTkhaiThang checked by default), month 10/2026 like the D1 cases; no
-   // annex. CheckPeriod -> CheckHLToKhaiTT80 only refuses months before 01/2022 (0577). Two contractor
+   // 0x6000484 -> index 21; chkTkhaiThang checked by default), month 09/2026; no annex. CheckPeriod ->
+   // CheckHLToKhaiTT80 only refuses months before 01/2022 (0577). HTKK 5.8.2 adds I9 to
+   // GeneralFunctions.CheckToKhaiHetHieuLuc with Menu.xml EndDate 30/09/2026 (months after 09/2026 refused),
+   // so the case moved from M10/2026 (release 238, run 42348087003) to M09/2026, valid on both oracles. Two contractor
    // rows of BKThueNTNN/ThueNTNN (template row 55): imported rows 55-56, totals row 58. Sheet checks are
    // the XLS row formulas AV=ROUND(AJ*AN/100), BN=MAX(0,ROUND(AZ*BD/100)-BH), BR=AV+BN; XML checks = the
    // design oracle's totals (mapping 01_NTNN_TT80_251.xml Y_57..BR_57).
-   case "01NTNN-two-contractors-M10-2026":return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","10","01/10/2026","31/10/2026",false,
+   case "01NTNN-two-contractors-M09-2026":return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","09","01/09/2026","30/09/2026",false,
     new string[0],new string[]{"01|Tờ khai"},
     "InterfaceTemplates/excel/01_NTNN_TT80_251.xls","feebf2a918138aad860b52fb409232716027dc7ba59ec8aed861714d7e7de652","InterfaceTemplates/xml/01_NTNN_TT80_251.xml","cb8f1c83df2ebb590e314b2ca71fde4751760906e57df666e92086d6a1f9983c",
     "Validate/01_NTNN_TT80_251.xsd","aa17404343424b1d3bf429d7279d7ea1c4a858f8509c087be9c4dc9db6b192da",TKhaiThue,TKhaiThueSha256,WorkbookService,74,
@@ -174,11 +176,12 @@ internal static class HtkkDeclarationCasePlans {
    // mskDay/mskMonth/mskYear only (mskTuNgay/mskDenNgay stay hidden and untouched). After Đồng ý, GetPeriodInfo gives
    // KieuKy D, Ngay/Thang/Nam, TuNgay = DenNgay = kyKKhai = 20/10/2026 (DeclarationIdentity checks all of them).
    // CheckPeriod: CheckNgayThangNam, D after today -> 0223, CheckHLToKhaiTT80 D (I9/J1 in the TT80 list) before 01/01/2022
-   // -> 0576, CheckHieuLuc before the Menu.xml StartDate (Y8 01/10/2026) -> 0441; 20/10/2026 passes all of them.
+   // -> 0576, CheckHieuLuc before the Menu.xml StartDate (Y8 01/10/2026) -> 0441; 20/10/2026 (Y8, J1) and 20/09/2026 (I9) pass all of them.
    // I9/J1: AutoBindData_0 (0x60018ef / 0x6001931) writes kyKKhai into (6) AE / (7) BE of every row bound at load and
    // locks it; the web XML carries that day already (ct6 / ct7 = 2026-10-20), so the import changes nothing there.
    // Sheet and XML checks as the monthly cases (same rows; the period does not enter the row formulas).
-   case "01NTNN-occurrence-D20-10-2026":return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"day","18","2026","","20/10/2026","20/10/2026",false,
+   // I9 uses 20/09/2026: HTKK 5.8.2 CheckToKhaiHetHieuLuc refuses an I9 day period after 30/09/2026 (DenNgay > EndDate).
+   case "01NTNN-occurrence-D20-09-2026":return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"day","18","2026","","20/09/2026","20/09/2026",false,
     new string[0],new string[]{"01|Tờ khai"},
     "InterfaceTemplates/excel/01_NTNN_TT80_251.xls","feebf2a918138aad860b52fb409232716027dc7ba59ec8aed861714d7e7de652","InterfaceTemplates/xml/01_NTNN_TT80_251.xml","cb8f1c83df2ebb590e314b2ca71fde4751760906e57df666e92086d6a1f9983c",
     "Validate/01_NTNN_TT80_251.xsd","aa17404343424b1d3bf429d7279d7ea1c4a858f8509c087be9c4dc9db6b192da",TKhaiThue,TKhaiThueSha256,WorkbookService,74,

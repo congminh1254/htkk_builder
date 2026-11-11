@@ -303,8 +303,9 @@ CASES = {
                                      # [08]/[07] NNT tỉnh/huyện (02!F23/N23, Catalogue_Dia_Ban_Tinh/Huyen 101/10101):
                                      # Header!B53/B54 refused the empty pair with 0016 (release 227, run 42302323087).
                                      'Hà Nội', 'Quận Ba Đình']),
-    # I9 01/NTNN TT80 (non-gating): KieuKy 18 month 10/2026, two synthetic foreign contractors without MST.
-    '01NTNN-two-contractors-M10-2026': _case('ntnn01-two-contractors-m10-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+    # I9 01/NTNN TT80 (non-gating): KieuKy 18 month 09/2026 (HTKK 5.8.2 refuses I9 after 09/2026), two synthetic
+    # foreign contractors without MST.
+    '01NTNN-two-contractors-M09-2026': _case('ntnn01-two-contractors-m09-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('M', '09/2026', '01/09/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
                                              ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 01/NTNN', TEMPLATE_TT80, ADDRESS, 'NHA THAU NUOC NGOAI A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'HD-GL-001', 'HD-GL-002',
                                               # DM_NNKD_NTNN.xml items 01/02 (ct1b name, ct1b_ma code).
                                               'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
@@ -347,7 +348,8 @@ CASES = {
     # and TuNgay = DenNgay = kyKKhai = the day 20/10/2026; xmlExportTTinChung (0x6000049) keeps kieuKy D. Same synthetic
     # rows as the monthly cases. I9/J1 by import (AutoBindData_0 writes the day into ct6/ct7 and locks it; the web XML
     # carries that day), Y8 by original entry (AutoBindData_0's AE is reset by LockUnlock; the plan types the day).
-    '01NTNN-occurrence-D20-10-2026': _case('ntnn01-occurrence-d20-10-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('D', '20/10/2026', '20/10/2026', '20/10/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+    # I9 lần phát sinh on 20/09/2026 (HTKK 5.8.2 refuses an I9 day after 30/09/2026); Y8/J1 keep 20/10/2026.
+    '01NTNN-occurrence-D20-09-2026': _case('ntnn01-occurrence-d20-09-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('D', '20/09/2026', '20/09/2026', '20/09/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
                                            ['Tờ khai thuế nhà thầu nước ngoài - MẪU SỐ 01/NTNN', TEMPLATE_TT80, ADDRESS, 'NHA THAU NUOC NGOAI A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'HD-GL-001', 'HD-GL-002',
                                             'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
     '01NTNN-NCCNN-occurrence-D20-10-2026': _case('ntnn01-nccnn-occurrence-d20-10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('D', '20/10/2026', '20/10/2026', '20/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
@@ -516,7 +518,7 @@ _MAIN = 'HSoKhaiThue/CTieuTKhaiChinh'
 # value equal to 0 by "0" before formatting (release 240 run 42353849411: J1 ct9 "0" in the native re-export).
 _EMPTY_ROW = {'ct1b_ma': '', 'ct5': '0', 'ct7': '0', 'ct8': '0', 'ct10': '0', 'ct11': '0', 'ct12': '0'}
 NTNN_ROWS = {
-    '01NTNN-two-contractors-M10-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong_', (
+    '01NTNN-two-contractors-M09-2026': ((_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'tong_', (
         {'ct1b_ma': '01', 'ct5': '1000000000', 'ct7': '1000000000', 'ct8': '5.00', 'ct10': '1000000000', 'ct11': '5.00', 'ct12': '0'},
         {'ct1b_ma': '02', 'ct5': '500000000', 'ct7': '500000000', 'ct8': '3.00', 'ct10': '500000000', 'ct11': '2.00', 'ct12': '2000000'},
     )),),
@@ -537,9 +539,11 @@ NTNN_ROWS = {
 }
 # Lần phát sinh: the same reviewed rows; the payment date of every row is the period day in the XML date form
 # (01/NTNN ct6, 03/NTNN ct7 = '2026-10-20': AutoBindData_0 for I9/J1, the entry plan for Y8 ThueNCCNN/ThueCNKCT).
+# I9 uses 20/09/2026 (its last valid day period on HTKK 5.8.2 is 30/09/2026).
 _OCCURRENCE_DAY = '2026-10-20'
-NTNN_ROWS['01NTNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct6=_OCCURRENCE_DAY) for row in rows), *rest)
-                                                for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-two-contractors-M10-2026'])
+_I9_OCCURRENCE_DAY = '2026-09-20'
+NTNN_ROWS['01NTNN-occurrence-D20-09-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct6=_I9_OCCURRENCE_DAY) for row in rows), *rest)
+                                                for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-two-contractors-M09-2026'])
 NTNN_ROWS['01NTNN-NCCNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(row if row is _EMPTY_ROW else dict(row, ct6=_OCCURRENCE_DAY) for row in rows), *rest)
                                                       for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-NCCNN-entry-M10-2026'])
 NTNN_ROWS['03NTNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct7=_OCCURRENCE_DAY) for row in rows), *rest)

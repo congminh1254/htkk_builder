@@ -34,7 +34,9 @@ TRUSTED_ADAPTERS={
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).
  # Lần phát sinh (period 'day', KieuKy 18 chkTKLanPS: GetPeriodInfo KieuKy D, TuNgay = DenNgay = kyKKhai = the day).
- '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('10/2026',),'day':('20/10/2026',)},[]),
+ # HTKK 5.8.2 ends I9 (Menu.xml EndDate 30/09/2026, GeneralFunctions.CheckToKhaiHetHieuLuc: month after 09/2026 and
+ # day after 30/09/2026 refused), so the I9 cases use M09/2026 and 20/09/2026, valid on 5.8.1 and 5.8.2 alike.
+ '01-ntnn-tt80-2.5.1':_declaration('I9','2.5.1',{'month':('09/2026',),'day':('20/09/2026',)},[]),
  # Y8 01/NTNN, NCCNN TT89: KieuKy 18 like I9; Menu.xml validity from 01/10/2026. The import-based adapter
  # 01-ntnn-nccnn-tt89-3.0.9 (case 01NTNN-NCCNN-two-parts-M10-2026) was removed after release 242: HTKK resets
  # the Y8 tables on import, so it could never match; the original-entry case below superseded it.
