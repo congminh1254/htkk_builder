@@ -294,7 +294,8 @@ internal static class HtkkDeclarationCasePlans {
    // selected oracle (htkk-oracle-baselines.json). The 5.8.1 list is the reviewed one; raw-body SHA-256 prefixes
    // (htkk_web) in order: 363197ad 6ec04bdb 1ea954f3 aa17c417 cd2fd820 52ebc630 8b1f6212 10bc7699 d46d5971 4b1e82f3
    // 3c4f6dae 92fe05f4 0ef81f1a 0dd56a23. 5.8.2 renumbers 12 of them (same instructions); winFpSpread_CellChange
-   // and ProcessCmdKey really changed and keep the reviewed body, so they fail closed (mask bits 8 and 12).
+   // and ProcessCmdKey really changed, and their 5.8.2 bodies were reviewed against this plan (Z8 list entries and
+   // control 110; big-data, D4/Z3 0585 cap and F6 last-row branches): status changed-reviewed, pinned for 5.8.2 only.
    HtkkOracleBaseline.EntryMethodPins());
   // Lần phát sinh: every (6) AE is typed as the period day (checkTKChinh E_27: TuNgay <= AE <= DenNgay, both the day).
   if(occurrence)for(int i=0;i<entry.Entries.Length;i++)if(entry.Entries[i].StartsWith("date|AE",StringComparison.Ordinal))entry.Entries[i]=entry.Entries[i].Substring(0,entry.Entries[i].LastIndexOf('|')+1)+Find(caseId).FromDate;

@@ -168,10 +168,12 @@ U5 is the exception: 5.8.2 points it to a **new** class, `CnkdHkd01TT50Nckt310`.
    - In every 5.8.1 native fixture of these forms, both nodes are already empty (`<x />`). The
      only possible difference is `<x></x>` serialisation; the infoset is equal.
 3. **`frmWinToKhai.ProcessCmdKey`** (pinned as `f5-inserts-table-row`).
-   - F5 row insertion now writes `GetRowValueDefault` into the new row.
-   - A 2-row cap (message 0585) appears in a branch that was previously shared with Z3/D4.
-   - This affects only original-entry (typed) native cases. Impact on our Y8 entry case is
-     unverified.
+   - Reviewed later (token-normalised diff, `WINDOWS-PROBE.md`): the earlier summary here was
+     imprecise. The F6 (delete row) path resets `RowsValues[0]` to `GetRowValueDefault` when the
+     last row is deleted; the 0585 two-row cap already existed for D4/Z3 and is only split
+     (Z3 now caps table 1); the big-data branches gain a null check and lose a P2 case.
+   - None of it reaches the Y8 entry plan (no big-data sheet, not D4/Z3, no F6, no insert needed).
+     The reviewed 5.8.2 body is accepted for 5.8.2 only (`changed-reviewed`).
 4. **`xmlExportTTinChungProcessNode`**: a Q9-only 2026 special case was removed. Q9 is not
    launched.
 5. The other changed pins are list extensions for new menus or the new control type 110:
@@ -398,7 +400,8 @@ Y8, X9 and Y1 are (b). Watch items:
    - `01NTNN-two-contractors-M10-2026`, `01NTNN-zero-M10-2026` and
      `01NTNN-occurrence-D20-10-2026` must now **fail at the period dialog**. Replace them with
      M09/2026 and D≤30/09/2026 variants (for example `01NTNN-two-contractors-M09-2026`,
-     `01NTNN-occurrence-D20-09-2026`).
+     `01NTNN-occurrence-D20-09-2026`). Done: the three cases are now `01NTNN-two-contractors-M09-2026`,
+     `01NTNN-occurrence-D20-09-2026` and `01NTNN-zero-M09-2026` (same rows).
    - Add negative cases asserting the 5.8.2 refusal message for I9 M10/2026 and L7 Q4/2026.
    - `05KK-*-Q3-2026` should still pass on L7.
    - `01CNKD-TT50-revenue-two-groups-Q3-2026` should re-export with pbanTKhaiXML 3.1.0.

@@ -4,7 +4,7 @@
  "notes": [
   "Reviewed pins of each official HTKK distribution the native harness may use as its oracle. Data only: no installer bytes, no extracted source.",
   "5.8.1 stays the default oracle. 5.8.2 is selectable (workflow input htkk_version) for a non-gating cohort; it never feeds release, Pages or scoped evidence.",
-  "Method status: reviewed = the body the driver was written against; token-renumbered = same instructions as the reviewed 5.8.1 body once metadata tokens are resolved to names (new token, new raw IL hash); changed = the body really differs and is NOT accepted as the reviewed body.",
+  "Method status: reviewed = the body the driver was written against; token-renumbered = same instructions as the reviewed 5.8.1 body once metadata tokens are resolved to names (new token, new raw IL hash); changed = the body really differs and is NOT accepted as the reviewed body; changed-reviewed = the body really differs, its new body was reviewed against the driver plan ('review') and is accepted for that version only (the 5.8.1 pins are unchanged).",
   "Generated consumers: HtkkOracleBaseline.ps1 and HtkkOracleBaseline.cs (python3 scripts/generate-htkk-oracle-baselines.py [--check])."
  ],
  "versions": {
@@ -376,9 +376,10 @@
      "token": "0x060003b5",
      "ilBytes": 25029,
      "ilSha256": "11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d",
-     "status": "changed",
+     "status": "changed-reviewed",
      "reviewedToken581": "0x060003b2",
-     "change": "Menu-ID lists gain Z8 and a new control type 110 branch (24666 -> 25029 IL bytes); not re-reviewed for Y8."
+     "change": "Menu-ID lists gain Z8 and a new control type 110 branch (24666 -> 25029 IL bytes).",
+     "review": "Token-normalised diff against 5.8.1: seven literals 'D1,...,Y6,Z8,Z5' become '...,Z5,Z8' (Z8 appended; Y8 in neither) and one inserted branch Controltype == '110' (GetMaTieuMucGep into indexColumnSelectedValue); nothing else. 01_NTNN_NCCNN_TT89_309.xml (byte-identical in 5.8.2) has only control types 0/1/2/14/15/16/26/87, so the Y8 entry path (control 87 BX code, 14 dates, 16 numbers) runs the same instructions. Accepted for 5.8.2 only."
     },
     {
      "id": "y8-entry-nnkd-catalogue",
@@ -421,9 +422,10 @@
      "token": "0x060003a2",
      "ilBytes": 9939,
      "ilSha256": "80f75943e426d659fc1fbc1e1d22dc8ea0e102e9be6a198fd7075f76665caf63",
-     "status": "changed",
+     "status": "changed-reviewed",
      "reviewedToken581": "0x0600039f",
-     "change": "F5 row insertion now writes GetRowValueDefault into the new row and adds a 2-row cap (message 0585) in a branch previously shared with Z3/D4 (9783 -> 9939 IL bytes); not re-reviewed for Y8."
+     "change": "Four edits (9783 -> 9939 IL bytes): F5 big-data branch null-checks dataInfoOld; the existing D4/Z3 two-row cap (0585) is split, D4 keeping table 0 and Z3 now capping table 1; the F6 big-data P2 special case is removed; F6 on the last remaining row also resets RowsValues[0] to GetRowValueDefault.",
+     "review": "Every edit is gated off the Y8 entry plan: the big-data branches need Sheet TaiDuLieuRatLon=1 (Y8 sheet 01 has none in Menu.xml), the 0585 cap needs MenuID D4 or Z3, the GetRowValueDefault reset is in the F6 (delete row) path; the driver sends only F5 and needs no insert (one template row per table, Tables rows required 1). The F5 non-big-data path is instruction-identical. Accepted for 5.8.2 only."
     },
     {
      "id": "y8-entry-export",

@@ -173,8 +173,18 @@ The separate successful annex-inspection run40382737399 is not one of these thir
 
 ## Selectable oracle version: HTKK 5.8.2 (non-gating)
 
-The oracle is **5.8.1 by default**: the release dispatcher passes no version, so release, Pages and
-scoped evidence are unchanged. `probe-htkk-windows.yml` has a `htkk_version` input
+The oracle is **5.8.1 by default**: the release dispatcher passes no version for a case without a
+registry `htkkVersion`, so release, Pages and scoped evidence are unchanged.
+
+**Per-case oracle.** A case in `scripts/htkk-native-cases.json` may carry `"htkkVersion": "5.8.2"`
+(`htkk_native_cases.case_version`). Absent means 5.8.1; the default may not be spelled explicitly, an
+unreviewed version is refused, and a release-gate case may not carry the field, so gating is unchanged.
+For such a case the release dispatcher (`dispatch-native-cases.py`) adds the probe input
+`htkk_version`, matches the run title `... [HTKK 5.8.2]` before any retry and posts its pending/failure
+status on `<context>@htkk582`; the cohort authenticator (`native_batch.py`) reads and retries that case
+on its own context, and the classified retry (`native_preflight_retry.py`) admits only reviewed context
+suffixes and requires the supplier report of the run's own version. Output branch and anchor suffixes
+come from the run's `HTKK_ORACLE_VERSION` as before. No committed case sets the field yet. `probe-htkk-windows.yml` has a `htkk_version` input
 (`5.8.1` | `5.8.2`). Every version-dependent pin comes from one reviewed data file,
 `scripts/htkk-oracle-baselines.json`, rendered by `scripts/generate-htkk-oracle-baselines.py`
 into `HtkkOracleBaseline.ps1` and `HtkkOracleBaseline.cs` (`--check` runs in the unit tests).
@@ -200,12 +210,21 @@ Method pins (tokens and IL-code SHA-256 of `GetILAsByteArray`), compared token-n
 (operand tokens resolved to names, signatures decoded):
 
 - Y8 original entry (14): 12 have the same instructions with renumbered tokens (status
-  `token-renumbered`, new token and hash recorded). `frmWinToKhai.winFpSpread_CellChange`
-  (Z8 in the menu lists, new control 110) and `frmWinToKhai.ProcessCmdKey` (F5 row insertion
-  writes `GetRowValueDefault`, new 2-row cap 0585) **really changed** (status `changed`). They
-  keep the reviewed 5.8.1 size and hash at the new token, so on 5.8.2 the entry cases fail
-  closed at the method-pin step (`declarationEntryMethodPinMask` bits 8 and 12) until the new
-  bodies are reviewed.
+  `token-renumbered`, new token and hash recorded). `frmWinToKhai.winFpSpread_CellChange` and
+  `frmWinToKhai.ProcessCmdKey` **really changed**; their 5.8.2 bodies were reviewed against the
+  entry plan (token-normalised IL diff, as inert data) and are pinned as themselves for 5.8.2 only
+  (status `changed-reviewed`, with `change` and `review` notes; the 5.8.1 pins are unchanged):
+  - `winFpSpread_CellChange` (24666 → 25029 IL bytes): seven menu-list literals gain a trailing `Z8`
+    and one branch for `Controltype == "110"` is inserted (`GetMaTieuMucGep`). Y8 is in neither list and
+    its template (byte-identical in 5.8.2) has only control types 0/1/2/14/15/16/26/87.
+  - `ProcessCmdKey` (9783 → 9939): (1) F5 big-data branch null-checks `dataInfoOld`; (2) the
+    existing D4/Z3 two-row cap (0585) is split, D4 keeping table 0 and Z3 now capping table 1;
+    (3) the F6 big-data P2 special case is removed; (4) F6 on the last remaining row also resets
+    `RowsValues[0]` to `GetRowValueDefault`. Big-data needs `TaiDuLieuRatLon="1"` (only P2/U8 sheets),
+    the cap needs MenuID D4/Z3, and (4) is the delete-row key. The driver sends only F5 and needs no
+    insert (each Y8 table has its one template row). The 5.8.1 description "F5 writes
+    GetRowValueDefault, new 2-row cap" was imprecise: neither applies to Y8.
+  On 5.8.2 the entry cases therefore no longer fail at the method-pin step (formerly mask bits 8/12).
 - Oracle-workflow tokens (recorded only; those workflows stay 5.8.1): `BindToKhaiInfoToTTinChung`
   0x060000f4 → 0x060000f6, `WinLoadTTinChungInfo` 0x060000ed → 0x060000ef, `InsertTable`
   0x060001fd → 0x06000200, `RemoveTable` 0x060001fa → 0x060001fd (all token-renumbered).
@@ -237,6 +256,6 @@ done
 ```
 
 Results appear as `htkk-native/...@htkk582` statuses on that `htkk_web` commit. Expected
-failures from the impact assessment: I9 periods after 09/2026 (refused by the period dialog),
-U5 (5.8.2 opens the 3.1.0 template, not the pinned 2.9.8 one) and the two Y8 entry cases (method
-pins above).
+failures: U5 (5.8.2 opens the 3.1.0 template, not the pinned 2.9.8 one). The I9 cases now use
+M09/2026 and 20/09/2026 (`01NTNN-two-contractors-M09-2026`, `01NTNN-occurrence-D20-09-2026`), valid on
+both oracles, and the two Y8 entry cases pass the method-pin step on 5.8.2 (reviewed bodies above).

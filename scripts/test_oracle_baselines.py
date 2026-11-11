@@ -74,8 +74,15 @@ class Baselines(unittest.TestCase):
 
     def test_5_8_2_methods_record_renumbering_and_real_changes(self):
         status = {m['id']: m['status'] for m in V2['methods']}
-        self.assertEqual(sorted(k for k, s in status.items() if s == 'changed'), ['y8-entry-f5-row', 'y8-entry-grid-cellchange'])
+        # The two really changed Y8 entry bodies were reviewed against the driver plan (accepted for 5.8.2 only).
+        self.assertEqual(sorted(k for k, s in status.items() if s == 'changed-reviewed'), ['y8-entry-f5-row', 'y8-entry-grid-cellchange'])
+        self.assertNotIn('changed', status.values())
         self.assertNotIn('reviewed', status.values())
+        methods = {m['id']: m for m in V2['methods']}
+        self.assertEqual((methods['y8-entry-f5-row']['token'], methods['y8-entry-f5-row']['ilBytes'], methods['y8-entry-f5-row']['ilSha256']), ('0x060003a2', 9939, '80f75943e426d659fc1fbc1e1d22dc8ea0e102e9be6a198fd7075f76665caf63'))
+        self.assertEqual((methods['y8-entry-grid-cellchange']['token'], methods['y8-entry-grid-cellchange']['ilBytes'], methods['y8-entry-grid-cellchange']['ilSha256']), ('0x060003b5', 25029, '11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d'))
+        for key in ('y8-entry-f5-row', 'y8-entry-grid-cellchange'):
+            self.assertIn('Accepted for 5.8.2 only.', methods[key]['review'])
         tokens = {m['id']: m['token'] for m in V2['methods']}
         self.assertEqual((tokens['oracle-common-info-bind'], tokens['oracle-header-binding-load'], tokens['oracle-table-insert'], tokens['oracle-table-remove']), ('0x060000f6', '0x060000ef', '0x06000200', '0x060001fd'))
         pins = generator.entry_pins(V2, {m['id']: m for m in V1['methods']})
@@ -85,7 +92,9 @@ class Baselines(unittest.TestCase):
                 self.assertEqual(new.split('|')[4:], old.split('|')[4:])
                 self.assertNotEqual((method['ilBytes'], method['ilSha256']), tuple(old.split('|')[4:6]))
                 self.assertTrue(method['change'])
-            else:
+            else:  # token-renumbered and changed-reviewed: the 5.8.2 body itself is pinned
+                if method['status'] == 'changed-reviewed':
+                    self.assertNotEqual((str(method['ilBytes']), method['ilSha256']), tuple(old.split('|')[4:6]))
                 self.assertEqual(new, '|'.join(old.split('|')[:3] + [method['token'], str(method['ilBytes']), method['ilSha256']]))
 
     def test_validation_refuses_loosened_or_inconsistent_data(self):
@@ -100,6 +109,11 @@ class Baselines(unittest.TestCase):
         broken(lambda d: d['versions']['5.8.2']['files'].pop('Project/Menu.xml'))
         broken(lambda d: d['versions']['5.8.1']['methods'][0].update(status='token-renumbered'))
         broken(lambda d: d['versions']['5.8.2']['methods'][12].pop('change'))
+        broken(lambda d: d['versions']['5.8.2']['methods'][12].pop('review'))
+        broken(lambda d: d['versions']['5.8.2']['methods'][1].update(review='reviewed elsewhere without a body change'))
+        broken(lambda d: d['versions']['5.8.2']['methods'][12].update(ilBytes=9783, ilSha256=d['versions']['5.8.1']['methods'][12]['ilSha256']))
+        broken(lambda d: d['versions']['5.8.2']['methods'][12].update(review='ok'))
+        broken(lambda d: d['versions']['5.8.1']['methods'][12].update(status='changed-reviewed', review='not allowed on the default oracle', change='x' * 20))
         broken(lambda d: d['versions']['5.8.2']['methods'][0].update(ilBytes=353))
         broken(lambda d: d['versions']['5.8.2']['methods'][0].update(reviewedToken581='0x06000001'))
         broken(lambda d: d['versions']['5.8.2']['methods'].pop())

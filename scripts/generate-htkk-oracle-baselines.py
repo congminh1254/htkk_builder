@@ -22,7 +22,8 @@ FILES = ('Project/HTKK.exe', 'Project/HTKK.exe.config', 'Project/TAX.HTKK.Busine
          'Project/Menu.xml', 'Project/Message.xml', 'InterfaceTemplates/excel/01_GTGT_TT80_283.xls',
          'InterfaceIni/Catalogue_DM_NNKD.xml', 'InterfaceIni/DM_DUNG_CHUNG.xml',
          'InterfaceTemplates/xml/04_GTGT_TT89_309.xml', 'InterfaceTemplates/excel/04_GTGT_TT89_309.xls')
-STATUSES = ('reviewed', 'token-renumbered', 'changed')
+STATUSES = ('reviewed', 'token-renumbered', 'changed', 'changed-reviewed')
+CHANGED = ('changed', 'changed-reviewed')
 ENTRY_PREFIX = 'y8-entry-'
 
 
@@ -81,7 +82,7 @@ def validate(data):
         for x in methods:
             base = {'id', 'assembly', 'type', 'method', 'token', 'ilBytes', 'ilSha256', 'status'}
             extra = set(x) - base
-            require(base <= set(x) and extra <= {'reviewedToken581', 'change'}, version + ' method keys')
+            require(base <= set(x) and extra <= {'reviewedToken581', 'change', 'review'}, version + ' method keys')
             require(re.fullmatch(r'[a-z0-9-]{1,40}', x['id']) and x['assembly'] in ('B', 'H') and re.fullmatch(r'[A-Za-z0-9_]{1,64}', x['type']) and re.fullmatch(r'[.A-Za-z0-9_]{1,64}', x['method']), version + ' method identity')
             require(TOKEN.fullmatch(x['token']) and type(x['ilBytes']) is int and 0 < x['ilBytes'] < 1 << 20 and SHA.fullmatch(x['ilSha256']) and x['status'] in STATUSES, version + ' method pin')
         if reviewed is None:
@@ -96,7 +97,12 @@ def validate(data):
                 require(set(x) == base and x == r, version + ' reviewed must equal the default pin')
             else:
                 require(x.get('reviewedToken581') == r['token'], version + ' reviewed token')
-                require(('change' in x) == (x['status'] == 'changed'), version + ' change note')
+                require(('change' in x) == (x['status'] in CHANGED), version + ' change note')
+                # An accepted changed body carries its review and is a different body from the default one.
+                require(('review' in x) == (x['status'] == 'changed-reviewed'), version + ' review note')
+                if x['status'] in CHANGED:
+                    require((x['ilBytes'], x['ilSha256']) != (r['ilBytes'], r['ilSha256']), version + ' changed body')
+                    require(all(type(x[k]) is str and 20 <= len(x[k]) <= 1000 for k in ('change', 'review') if k in x), version + ' notes')
                 if x['status'] == 'token-renumbered':
                     # Raw bytes may differ only through renumbered operand tokens: same length.
                     require(x['ilBytes'] == r['ilBytes'], version + ' renumbered length')
@@ -117,7 +123,8 @@ def entry_pins(value, reviewed):
 
     A changed body keeps the REVIEWED (default-version) length and hash at the new token: the
     harness then requires the reviewed body, finds another one and fails closed with that bit
-    set in declarationEntryMethodPinMask. It is never accepted as the reviewed body.
+    set in declarationEntryMethodPinMask. It is never accepted as the reviewed body. Only a
+    changed-reviewed body (reviewed against the driver plan for that version) is pinned as itself.
     """
     out = []
     for x in value['methods']:

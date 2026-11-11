@@ -163,15 +163,18 @@ class EntryPlan(unittest.TestCase):
         renumbered = pins_by_version['5.8.2']
         self.assertEqual(len(renumbered), len(reviewed))
         methods = {m['id']: m for m in BASELINES['versions']['5.8.2']['methods']}
-        changed = [i for i, m in enumerate(m for m in BASELINES['versions']['5.8.2']['methods'] if m['id'].startswith('y8-entry-')) if m['status'] == 'changed']
-        # winFpSpread_CellChange and ProcessCmdKey really changed in 5.8.2: they keep the REVIEWED size and
-        # hash at the new token, so the harness fails closed with exactly these mask bits.
-        self.assertEqual(changed, [8, 12])
-        for index, (old, new) in enumerate(zip(reviewed, renumbered)):
+        entry = [m for m in BASELINES['versions']['5.8.2']['methods'] if m['id'].startswith('y8-entry-')]
+        accepted = [i for i, m in enumerate(entry) if m['status'] == 'changed-reviewed']
+        # winFpSpread_CellChange and ProcessCmdKey really changed in 5.8.2; their new bodies were reviewed against
+        # this plan (every change is gated off Y8) and are pinned as themselves for 5.8.2 only (no fail-closed bit).
+        self.assertEqual(accepted, [8, 12])
+        self.assertNotIn('changed', [m['status'] for m in entry])
+        for index, (old, new, method) in enumerate(zip(reviewed, renumbered, entry)):
             o, n = old.split('|'), new.split('|')
             self.assertEqual(o[:3], n[:3])
-            if index in changed:
-                self.assertEqual(o[4:], n[4:]); self.assertNotEqual(o[3], n[3])
+            self.assertEqual(n[3:], [method['token'], str(method['ilBytes']), method['ilSha256']])
+            if index in accepted:
+                self.assertNotEqual(o[3:], n[3:])
             else:
                 self.assertEqual(o[4], n[4])
         self.assertEqual(methods['y8-entry-f5-row']['ilBytes'], 9939); self.assertEqual(methods['y8-entry-grid-cellchange']['ilBytes'], 25029)
