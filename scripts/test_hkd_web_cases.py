@@ -81,9 +81,9 @@ class HkdOracle(unittest.TestCase):
 
     def test_hand_computed_values_case_c_310_pl01(self):
         e = hkd.expected(C)
-        # CE = 300tr×0,5% = 1,5tr; 150tr×2% = 3tr; 200tr×1,5% = 3tr. PL 01 on 01 and 04: H = CE×30% = 450.000 / 900.000.
-        self.assertEqual(e['ct17_soThue'], ['1050000', '3000000', '2100000'])
-        self.assertEqual(e['ct14_soThue'], ['3000000', '7000000', '6000000'])
+        # Rows 01, 04 (ticked), 02. CE = 300tr×0,5% = 1,5tr; 200tr×1,5% = 3tr; 150tr×2% = 3tr. PL 01 on 01 and 04: H = CE×30% = 450.000 / 900.000.
+        self.assertEqual(e['ct17_soThue'], ['1050000', '2100000', '3000000'])
+        self.assertEqual(e['ct14_soThue'], ['3000000', '6000000', '7000000'])
         self.assertEqual(e['soThueTNCN_ct17'], ['6150000']); self.assertEqual(e['soThueGTGT_ct14'], ['16000000'])
         self.assertEqual(e['ct40'], ['16000000', '6150000']); self.assertEqual(e['tongTienCT47'], ['22150000'])
         self.assertEqual(e['soThueTNCN_phaiNop'], ['1500000', '3000000']); self.assertEqual(e['soThueTNCN_duocGiam'], ['450000', '900000'])

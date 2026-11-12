@@ -2,8 +2,8 @@
 
 U5 01/CNKD TT50 3.1.0 (HTKK 5.8.2 only): the XML carries no chonGiamThue (AJ) / ct17_soThueGiam (CD), so after
 the original "Nhap tu XML" the NQ 43 reduction is lost (runs 43127371885, 43130173107: cell mask 40 = AE291/AE293).
-The case keeps the original import and then performs fixed original actions: one edit of L291 through the original
-editor (CellChange_0 -> SetCacDongCon fills the child-row keys) and SPACE on AJ291/AJ293 (ButtonClick_0 ->
+The case keeps the original import and then performs fixed original actions: edits of L291/L292 through the original
+editor (CellChange_0 -> SetCacDongCon fills the child-row keys) and SPACE on AJ291/AJ292 (ButtonClick_0 ->
 daySangPLGiamThue rebuilds PL 01 and CD). Passing these tests is never native evidence.
 """
 import copy, importlib.util, json, pathlib, re, shutil, subprocess, tempfile, unittest
@@ -78,7 +78,11 @@ class TickPlan(unittest.TestCase):
         # Sheet order, each tick after its row's edits.
         self.assertEqual(ticks, ['AJ%d' % row for row, _ in reduced])
         self.assertEqual(unticked, ['AJ%d' % (FIRST_ROW + i) for i, r in enumerate(rows) if not r.get('reduce')])
-        self.assertEqual(ticks, ['AJ291', 'AJ293'])
+        self.assertEqual(ticks, ['AJ291', 'AJ292'])
+        # HTKK 5.8.2 daySangPLGiamThue does not advance past an unticked row (run 43138236726): every ticked row comes
+        # before every clear row in the design case, or HTKK leaves CD = 0 on a ticked row.
+        flags = [bool(r.get('reduce')) for r in rows]
+        self.assertEqual(flags, sorted(flags, reverse=True))
         code = hkd.CASES[CASE]['locations'][0]['code']
         self.assertEqual(readbacks, ['BN%d|%s' % (FIRST_ROW + i, code) for i in range(3)] + ['CA%d|%s' % (FIRST_ROW + i, hkd.FAKE_MST) for i in range(3)])
         self.assertIn('HtkkOracleBaseline.TickMethodPins()', block)

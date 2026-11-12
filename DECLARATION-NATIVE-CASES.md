@@ -36,9 +36,10 @@ mọi chỉ tiêu tính và các ô nhập chúng dùng; so sánh cả cây vẫ
 
 U5 3.1.0 (`01CNKD-TT50-310-pl01-three-groups-Q3-2026`, non-gating, `htkkVersion` 5.8.2; adapter `01-cnkd-hkd-3.1.0-pl01`
 ghim vào oracle 5.8.2 vì XML 3.1.0 chỉ có trong HTKK 5.8.2): ca doanh thu 2.9.8 thêm nhóm 04 (200tr); tích giảm thuế NQ 43/2026/QH16
-(cột AJ `chonGiamThue`) ở nhóm 01 và 04. Oracle Decimal (`htkk_hkd_web_cases.py`): CE = ([15]−[16])×tỷ lệ TNCN (1,5tr / 3tr / 3tr),
-PL 01 H = G×30% (H20 = `G20*30.0%`), [17] = CE − CD + CF (AE291 = `CE291-CD291+CF291`, CD = H, CF = 0): 1.050.000 / 3.000.000 /
-2.100.000, [20] TNCN 6.150.000, [47] 22.150.000. Tổng PL 01 theo đúng ràng buộc của `01_43_1_CNKD_HKD_TT50_310.xml`: H_22 (Σ được
+(cột AJ `chonGiamThue`) ở nhóm 01 và 04. Thứ tự dòng 291–293 = nhóm 01 (tích), 04 (tích), 02 (không giảm, cuối) — từ run
+43138236726, xem lỗi HTKK 5.8.2 bên dưới. Oracle Decimal (`htkk_hkd_web_cases.py`): CE = ([15]−[16])×tỷ lệ TNCN (1,5tr / 3tr / 3tr),
+PL 01 H = G×30% (H20 = `G20*30.0%`), [17] = CE − CD + CF (AE291 = `CE291-CD291+CF291`, CD = H, CF = 0): 1.050.000 / 2.100.000 /
+3.000.000, [20] TNCN 6.150.000, [47] 22.150.000. Tổng PL 01 theo đúng ràng buộc của `01_43_1_CNKD_HKD_TT50_310.xml`: H_22 (Σ được
 giảm) → `tongSoThueTNCN_phaiNop` = 1.350.000, G_22 (Σ phải nộp) → `tongsoThueTNCN_duocGiam` = 4.500.000. Câu hỏi mở: AJ và CD không
 có trong XML; nếu "Nhập từ XML" để AE tính lại với CD = 0 thì ô kiểm AE291/AE293 thất bại và ca cần chế độ `original-entry-export`.
 Đã xác nhận (run 43127371885, 43130173107): nhập XML thành công, `declarationCellMismatchMask` 40 = AE291/AE293; PL 01 nhập đúng.
@@ -62,16 +63,16 @@ Nguồn (đọc tĩnh TAX.HTKK.Business.dll / HTKK.exe 5.8.2, ghim `u5-310-tick-
   các dòng đã tích; CD dòng tích := H của dòng PL 01 khớp C/I/K (H = G × 30%, XLS H20), dòng không tích CD := 0; `capNhatToKhai`
   (CF = 0 khi không có PL 03). AE = CE − CD + CF là kết quả của chính HTKK.
 - `ButtonClick_0` nhận `idxRow`/`idxCol` 0-based (WinDoWorkEvent.ButtonClick truyền `e.Row`/`e.Column`) nhưng đọc CE/ghi AJ ở
-  `idxRow − 1`, tức dòng ngay trên ô bấm (dòng tiêu đề 290 trống hoặc dòng 292 chưa tích): chỉ đổi khóa/giá trị AJ của dòng
-  đó, rồi `DetectIndexOfTable(idxRow + 1)` đúng dòng bấm → `daySangPLGiamThue`, `capNhatToKhai`. AJ292 vẫn trống (kiểm lại).
+  `idxRow − 1`, tức dòng ngay trên ô bấm (dòng tiêu đề 290 trống hoặc dòng 291 vừa tích; AJ của dòng trên được tính lại từ CE của chính nó, không đổi dấu tích): chỉ đổi khóa/giá trị AJ của dòng
+  đó, rồi `DetectIndexOfTable(idxRow + 1)` đúng dòng bấm → `daySangPLGiamThue`, `capNhatToKhai`. AJ293 vẫn trống (kiểm lại).
 
-Thứ tự, mỗi lượt timer một thao tác: `tick-pins` (13 thân phương thức, cùng cách ghim với Y8) → `tick-edits`: L291 rồi L293 qua
+Thứ tự, mỗi lượt timer một thao tác: `tick-pins` (13 thân phương thức, cùng cách ghim với Y8) → `tick-edits`: L291 rồi L292 qua
 editor gốc (`^a`, giá trị, `{TAB}` như Y8), mỗi ô hai lần, `0` rồi giá trị web, để chắc chắn có thay đổi thật nên
 FpSpread.Change → `winFpSpread_CellChange` → `WinDoWorkEvent.CellChange` → `CellChange_0` chạy (cột L cũng chép L → U) →
-`tick-ticks`: SPACE trên AJ291 rồi AJ293 (ô `CheckBoxCellType` mở, chưa tích, hiện; dòng PL 01 theo thứ tự dòng tờ khai)
+`tick-ticks`: SPACE trên AJ291 rồi AJ292 (ô `CheckBoxCellType` mở, chưa tích, hiện; dòng PL 01 theo thứ tự dòng tờ khai)
 → ButtonClicked → `ButtonClick_0` →
-`tick-inspect`: AJ291/AJ293 còn tích, AJ292 trống (bắt buộc); đọc lại BN291..293 = `00001`, CA291..293 = MST hồ sơ (chỉ chẩn
-đoán, mask) → ô kiểm chung (thêm CD291 = 450.000, CD292 = 0, CD293 = 900.000; AE291/AE293 giữ nguyên, không nới) → Kết xuất.
+`tick-inspect`: AJ291/AJ292 còn tích, AJ293 trống (bắt buộc); đọc lại BN291..293 = `00001`, CA291..293 = MST hồ sơ (chỉ chẩn
+đoán, mask) → ô kiểm chung (thêm CD291 = 450.000, CD292 = 900.000, CD293 = 0; AE theo thứ tự dòng mới, không nới) → Kết xuất.
 Stage thành công `declaration-import-tick-exported`; thất bại thao tác `declaration-import-tick-not-matched`. Trường chẩn đoán
 (không giá trị): `declarationTickMethodPinsMatched`, `…EditsMatched`, `…TicksMatched`, `…ReadbackMatched`, `…PlannedCount`,
 `…ActionCount`, `…FailureCode` (1 pin, 3 ô tích không phải `CheckBoxCellType`, 7 ô tích bị khóa, 12 ô tích đã tích sẵn,
@@ -85,7 +86,19 @@ Stage thành công `declaration-import-tick-exported`; thất bại thao tác `d
 ô không phải checkbox mở chưa tích. Giải thích theo nguồn: chỉ `CellChange_0` của dòng được sửa tính lại `AJ.Locked = !(CE > 0)`
 cho dòng đó, nên sau nhập AJ của dòng chưa sửa vẫn khóa; thứ tự AJ293-trước dựa vào `lockUnLockA_TK` của chính lần bấm đó
 nên không thể mở ô trước khi bấm. Sửa: sửa cả L293 (0 rồi 200.000.000) và tích theo thứ tự dòng (AJ291, AJ293); mã 3 tách
-thành 3/7/12/14 để lần chạy sau nói rõ điều kiện nào hỏng. Chưa có lần chạy Windows của bản sửa.
+thành 3/7/12/14 để lần chạy sau nói rõ điều kiện nào hỏng.
+
+**Run 43138236726** (builder 55f1df9, thứ tự dòng cũ 01 tích / 02 trống / 04 tích): pha tích khớp hết (6/6 thao tác, mã 0, đọc
+lại khớp), dừng ở `declaration-import-sheet-not-matched`, `declarationCellMismatchMask` 4128 = bit 5 (AE293) và bit 12 (CD293);
+AE291, CD291, CD292 và PL 01 G20/H20/G21/H21 khớp. **Lỗi HTKK 5.8.2** (`CnkdHkd01TT50Nckt310.daySangPLGiamThue`, token
+0x06000927, IL 1274 byte, ghim `u5-310-tick-pl01`): sau khi dựng lại PL 01, vòng lặp các dòng của table_1/table_2 dùng bộ đếm
+dòng (bắt đầu `DataLocationTemplateRowStart`). Dòng tích: tìm dòng PL 01 khớp C/I/K, CD := H, rồi tăng bộ đếm (0x049b). Dòng
+không tích: CD := 0 (0x0321) rồi `br` thẳng về MoveNext (0x0327 → 0x04a2), **bỏ qua lệnh tăng bộ đếm**. Từ dòng không tích đầu
+tiên, mọi lần lặp sau đều đọc lại đúng dòng đó: dòng tích đứng sau không bao giờ được gán CD (giữ 0), trong khi PL 01 vẫn liệt kê
+số được giảm của nó. HTKK khi đó tự mâu thuẫn ([17] dòng đó = CE, còn PL 01 ghi giảm). Web đúng theo NQ 43/2026/QH16 và công thức
+HTKK ([17] = CE − CD + CF, CD = H của dòng PL 01 tương ứng). Ca đổi thứ tự dòng (tích trước, không giảm sau) để oracle HTKK
+không chạm lỗi; tổng không đổi. Bản mô tả lỗi để chủ dự án gửi nếu muốn: htkk_web `docs/HTKK-582-LOI-GIAM-THUE-NQ43.md`.
+Ca thứ tự mới cần nhánh input mới (release web) rồi mới chạy được.
 
 Vì sao không gõ lại cả tờ khai (`original-entry-export` như Y8): nhập XML giữ đúng mọi ô khác (ca 2.9.8 khớp toàn bộ; ca 3.1.0
 chỉ lệch AE291/AE293), phần thiếu chỉ là ô tích AJ; nhập tay đầy đủ cần thêm ba loại danh mục thả xuống chưa từng chạy

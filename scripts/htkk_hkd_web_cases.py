@@ -72,7 +72,9 @@ CASES = {
     # 3.1.0 on the HTKK 5.8.2 oracle (non-gating): the revenue case with a third group and PL 01 ticked on 01 and 04.
     '01CNKD-TT50-310-pl01-three-groups-Q3-2026': {
         'xmlVersion': XML_VERSION_310, 'period': ('Q', 3, 2026), 'kyKKhai': '3/2026', 'due': '2026-10-30', 'header': {'c1': True, 'c2': False},
-        'locations': [{'headOffice': True, 'code': '00001', 'ward': '10129087', 'rows': [row('01', '300000000', reduce=True), row('02', '150000000', ct12='10000000'), row('04', '200000000', reduce=True)]}],
+        # Reduced rows first, the unticked group last: HTKK 5.8.2 daySangPLGiamThue never reaches a row after an unticked
+        # one (DECLARATION-NATIVE-CASES.md, run 43138236726), so 01, 04 (ticked) then 02. Totals do not depend on the order.
+        'locations': [{'headOffice': True, 'code': '00001', 'ward': '10129087', 'rows': [row('01', '300000000', reduce=True), row('04', '200000000', reduce=True), row('02', '150000000', ct12='10000000')]}],
         'annexSales': [], 'pl01': True,
     },
 }

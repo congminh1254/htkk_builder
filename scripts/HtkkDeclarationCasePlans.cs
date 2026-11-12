@@ -155,16 +155,19 @@ internal static class HtkkDeclarationCasePlans {
     new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|10000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|4500000",Main+"HoTroThongTinNopThue/tongTienCT47|14500000"});
    // U5 01/CNKD TT50 3.1.0 (non-gating, HTKK 5.8.2 oracle only): Menu.xml 5.8.2 VersionXML 3.1.0, class
    // CnkdHkd01TT50Nckt310. The period dialog ticks "PL 01 43/2026/QH16" (sheet 01-4; frmHTKKPeriod.LoadPhuLucSpread locks
-   // PL 01/PL 03 outside kỳ quý, btnDongY_Click refuses both with 0709). Three groups (rows 291-293), PL 01 rows 20-21.
+   // PL 01/PL 03 outside kỳ quý, btnDongY_Click refuses both with 0709). Three groups (rows 291-293: 01 and 04 ticked, 02 clear last), PL 01 rows 20-21.
    // chonGiamThue (AJ) and soThueGiam (CD) are not in the XML: after "Nhập từ XML" AJ is clear, CD = 0 and AE = CE
    // (runs 43127371885, 43130173107: cell mask 40 = AE291/AE293). The case therefore runs in mode
    // web-xml-import-tick-reexport (HtkkDeclarationCasePlans.ImportTick): the sheet checks below (AE, CD, PL 01 G/H)
-   // are read AFTER the original ticks of AJ291/AJ293, when HTKK itself has rebuilt PL 01 and CD.
+   // are read AFTER the original ticks of AJ291/AJ292, when HTKK itself has rebuilt PL 01 and CD.
+   // Run 43138236726 (rows 01, 02, 04): mask 4128 = AE293/CD293. HTKK 5.8.2 daySangPLGiamThue never advances its row
+   // counter after an unticked row (0x0321 set CD := 0, 0x0327 br to 0x04a2 past the increment at 0x049b), so a ticked
+   // row after an unticked one keeps CD = 0 while PL 01 lists it. The case now puts the ticked rows first (01, 04, 02).
    case "01CNKD-TT50-310-pl01-three-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","3.1.0","1266","CnkdHkd01TT50Nckt310",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
     new string[]{"PL 01 43/2026/QH16"},new string[]{"01|Tờ khai","01-4|PL 01 43/2026/QH16"},
     "InterfaceTemplates/excel/01_CNKD_HKD_TT50_310.xls","864ef2c1c28f4f0c807265fa2497264ec72283912dda1f3f6294b6b9aa8a3c56","InterfaceTemplates/xml/01_CNKD_HKD_TT50_310.xml","30f4d3162d6179ce8c233c977898b86f63756e741bda1a423c15e45babea0d86",
     "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,299,
-    new string[]{"01|U291|300000000","01|U292|150000000","01|U293|200000000","01|AE291|1050000","01|AE292|3000000","01|AE293|2100000","01-4|G20|1500000","01-4|H20|450000","01-4|G21|3000000","01-4|H21|900000","01|CD291|450000","01|CD292|0","01|CD293|900000"},
+    new string[]{"01|U291|300000000","01|U292|200000000","01|U293|150000000","01|AE291|1050000","01|AE292|2100000","01|AE293|3000000","01-4|G20|1500000","01-4|H20|450000","01-4|G21|3000000","01-4|H21|900000","01|CD291|450000","01|CD292|900000","01|CD293|0"},
     new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|16000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|6150000",Main+"HoTroThongTinNopThue/tongTienCT47|22150000",
      "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongSoThueTNCN_phaiNop|1350000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongsoThueTNCN_duocGiam|4500000"});
    // I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh (frmHTKKPeriod_Load
@@ -318,23 +321,24 @@ internal static class HtkkDeclarationCasePlans {
  //    lockUnLockA_TK keeps AJ open on rows whose CE (XLS formula of U, Z and BM) is > 0.
  //  * The import fills no child-row key column (BN/BK/CA/BS/BO/BP: no XML path). They are written for every row of the
  //    table only by SetCacDongCon from CellChange_0, i.e. by an original cell edit. The plan therefore edits L291 (ct11)
- //    (and L293) through the original editor twice, 0 and then the web value (a real change each time, so FpSpread.Change
+ //    (and L292) through the original editor twice, 0 and then the web value (a real change each time, so FpSpread.Change
  //    -> winFpSpread_CellChange -> WinDoWorkEvent.CellChange -> CellChange_0 runs; column L also copies L into U).
- //  * Release run 43136692872 stopped at the first tick (AJ293, then first in the plan): failure code 3, the cell was not
- //    an open unticked checkbox. The import leaves AJ locked on rows no original edit has touched (only CellChange_0 of
- //    an edited row re-derives AJ.Locked = !(CE > 0) for that row). So every reduced row is edited (L291 and L293, 0 then
- //    the web value) and ticked in sheet order, AJ291 then AJ293; each ButtonClick_0 also starts with lockUnLockA_TK.
- //    PL 01 rows follow the sheet row order either way.
- //  * SPACE on AJ291 and AJ293 (CE > 0, open): ButtonClicked -> WinDoWorkEvent.ButtonClick -> ButtonClick_0
+ //  * Release run 43136692872 stopped at the first tick (then AJ293 of the old row order): failure code 3, the cell was
+ //    not an open unticked checkbox. The import leaves AJ locked on rows no original edit has touched (only CellChange_0
+ //    of an edited row re-derives AJ.Locked = !(CE > 0) for that row). So every reduced row is edited (L291 and L292, 0
+ //    then the web value) and ticked in sheet order, AJ291 then AJ292. PL 01 rows follow the sheet row order.
+ //  * Rows 01, 04 (ticked) come before 02 (clear): daySangPLGiamThue does not advance past an unticked row (run
+ //    43138236726, see the case plan), so no ticked row may follow an unticked one.
+ //  * SPACE on AJ291 and AJ292 (CE > 0, open): ButtonClicked -> WinDoWorkEvent.ButtonClick -> ButtonClick_0
  //    -> daySangPLGiamThue: CopyTableToTable5(deleteDataOld) rebuilds PL 01 from the ticked rows (the imported PL 01
  //    rows are discarded), CD of each ticked row := PL 01 H (= G x 30%, XLS H20), then capNhatToKhai (CF = 0 without
- //    PL 03), so AE = CE - CD is HTKK's own result. AJ292 (group 02, not reduced) stays clear.
+ //    PL 03), so AE = CE - CD is HTKK's own result. AJ293 (group 02, not reduced, last row) stays clear.
  //  * Readbacks (diagnostic): BN = ma_diaDiemKD 00001 and CA = the profile MST on the rows, written by SetCacDongCon.
  internal static HtkkDeclarationTickPlan ImportTick(string caseId){
   if(caseId!="01CNKD-TT50-310-pl01-three-groups-Q3-2026")return null;
   return new HtkkDeclarationTickPlan(
-   new string[]{"number|L291|0","number|L291|300000000","number|L293|0","number|L293|200000000"},
-   new string[]{"AJ291","AJ293"},new string[]{"AJ292"},
+   new string[]{"number|L291|0","number|L291|300000000","number|L292|0","number|L292|200000000"},
+   new string[]{"AJ291","AJ292"},new string[]{"AJ293"},
    new string[]{"BN291|00001","BN292|00001","BN293|00001","CA291|9999999997","CA292|9999999997","CA293|9999999997"},
    HtkkOracleBaseline.TickMethodPins());
  }
