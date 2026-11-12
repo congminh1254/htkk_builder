@@ -320,7 +320,9 @@ internal static class HtkkDeclarationCasePlans {
  //    table only by SetCacDongCon from CellChange_0, i.e. by an original cell edit. The plan therefore edits L291 (ct11)
  //    through the original editor twice, 0 and then the web value 300000000 (a real change each time, so FpSpread.Change
  //    -> winFpSpread_CellChange -> WinDoWorkEvent.CellChange -> CellChange_0 runs; column L also copies L into U).
- //  * Then SPACE on AJ291 and AJ293 (CE > 0, open): ButtonClicked -> WinDoWorkEvent.ButtonClick -> ButtonClick_0
+ //  * Then SPACE on AJ293 and AJ291 (CE > 0, open; AJ293 first: its ButtonClick_0 starts with lockUnLockA_TK, which
+ //    re-derives the AJ lock of every row from the recalculated CE after the L291 edits, before AJ291 is ticked;
+ //    PL 01 rows follow the sheet row order, not the tick order): ButtonClicked -> WinDoWorkEvent.ButtonClick -> ButtonClick_0
  //    -> daySangPLGiamThue: CopyTableToTable5(deleteDataOld) rebuilds PL 01 from the ticked rows (the imported PL 01
  //    rows are discarded), CD of each ticked row := PL 01 H (= G x 30%, XLS H20), then capNhatToKhai (CF = 0 without
  //    PL 03), so AE = CE - CD is HTKK's own result. AJ292 (group 02, not reduced) stays clear.
@@ -329,7 +331,7 @@ internal static class HtkkDeclarationCasePlans {
   if(caseId!="01CNKD-TT50-310-pl01-three-groups-Q3-2026")return null;
   return new HtkkDeclarationTickPlan(
    new string[]{"number|L291|0","number|L291|300000000"},
-   new string[]{"AJ291","AJ293"},new string[]{"AJ292"},
+   new string[]{"AJ293","AJ291"},new string[]{"AJ292"},
    new string[]{"BN291|00001","BN292|00001","BN293|00001","CA291|9999999997","CA292|9999999997","CA293|9999999997"},
    HtkkOracleBaseline.TickMethodPins());
  }

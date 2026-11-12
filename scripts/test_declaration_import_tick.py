@@ -72,9 +72,10 @@ class TickPlan(unittest.TestCase):
         # One real change of [11] on the first row (0, then the web value): CellChange_0 runs twice.
         self.assertEqual(edits, ['number|L%d|0' % FIRST_ROW, 'number|L%d|%s' % (FIRST_ROW, rows[0]['ct11'])])
         self.assertEqual(rows[0]['ct15'], rows[0]['ct11'])  # column L also copies L into U
-        self.assertEqual(ticks, ['AJ%d' % (FIRST_ROW + i) for i, r in enumerate(rows) if r.get('reduce')])
+        # Last reduced row first: its ButtonClick_0 -> lockUnLockA_TK re-derives every AJ lock after the L291 edits.
+        self.assertEqual(ticks, ['AJ%d' % (FIRST_ROW + i) for i, r in reversed(list(enumerate(rows))) if r.get('reduce')])
         self.assertEqual(unticked, ['AJ%d' % (FIRST_ROW + i) for i, r in enumerate(rows) if not r.get('reduce')])
-        self.assertEqual(ticks, ['AJ291', 'AJ293'])
+        self.assertEqual(ticks, ['AJ293', 'AJ291'])
         code = hkd.CASES[CASE]['locations'][0]['code']
         self.assertEqual(readbacks, ['BN%d|%s' % (FIRST_ROW + i, code) for i in range(3)] + ['CA%d|%s' % (FIRST_ROW + i, hkd.FAKE_MST) for i in range(3)])
         self.assertIn('HtkkOracleBaseline.TickMethodPins()', block)

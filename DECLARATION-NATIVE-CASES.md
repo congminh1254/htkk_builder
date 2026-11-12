@@ -68,7 +68,8 @@ Nguồn (đọc tĩnh TAX.HTKK.Business.dll / HTKK.exe 5.8.2, ghim `u5-310-tick-
 Thứ tự, mỗi lượt timer một thao tác: `tick-pins` (13 thân phương thức, cùng cách ghim với Y8) → `tick-edits`: L291 qua editor
 gốc (`^a`, giá trị, `{TAB}` như Y8) hai lần, `0` rồi `300000000` (giá trị web), để chắc chắn có thay đổi thật nên
 FpSpread.Change → `winFpSpread_CellChange` → `WinDoWorkEvent.CellChange` → `CellChange_0` chạy (cột L cũng chép L → U) →
-`tick-ticks`: SPACE trên AJ291 rồi AJ293 (ô `CheckBoxCellType` mở, chưa tích, hiện) → ButtonClicked → `ButtonClick_0` →
+`tick-ticks`: SPACE trên AJ293 rồi AJ291 (ô `CheckBoxCellType` mở, chưa tích, hiện; AJ293 trước để `lockUnLockA_TK` đầu
+`ButtonClick_0` tính lại khóa AJ mọi dòng theo CE sau khi sửa L291; dòng PL 01 theo thứ tự dòng tờ khai) → ButtonClicked → `ButtonClick_0` →
 `tick-inspect`: AJ291/AJ293 còn tích, AJ292 trống (bắt buộc); đọc lại BN291..293 = `00001`, CA291..293 = MST hồ sơ (chỉ chẩn
 đoán, mask) → ô kiểm chung (thêm CD291 = 450.000, CD292 = 0, CD293 = 900.000; AE291/AE293 giữ nguyên, không nới) → Kết xuất.
 Stage thành công `declaration-import-tick-exported`; thất bại thao tác `declaration-import-tick-not-matched`. Trường chẩn đoán
