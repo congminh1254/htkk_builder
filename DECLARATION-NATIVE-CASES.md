@@ -65,19 +65,27 @@ Nguồn (đọc tĩnh TAX.HTKK.Business.dll / HTKK.exe 5.8.2, ghim `u5-310-tick-
   `idxRow − 1`, tức dòng ngay trên ô bấm (dòng tiêu đề 290 trống hoặc dòng 292 chưa tích): chỉ đổi khóa/giá trị AJ của dòng
   đó, rồi `DetectIndexOfTable(idxRow + 1)` đúng dòng bấm → `daySangPLGiamThue`, `capNhatToKhai`. AJ292 vẫn trống (kiểm lại).
 
-Thứ tự, mỗi lượt timer một thao tác: `tick-pins` (13 thân phương thức, cùng cách ghim với Y8) → `tick-edits`: L291 qua editor
-gốc (`^a`, giá trị, `{TAB}` như Y8) hai lần, `0` rồi `300000000` (giá trị web), để chắc chắn có thay đổi thật nên
+Thứ tự, mỗi lượt timer một thao tác: `tick-pins` (13 thân phương thức, cùng cách ghim với Y8) → `tick-edits`: L291 rồi L293 qua
+editor gốc (`^a`, giá trị, `{TAB}` như Y8), mỗi ô hai lần, `0` rồi giá trị web, để chắc chắn có thay đổi thật nên
 FpSpread.Change → `winFpSpread_CellChange` → `WinDoWorkEvent.CellChange` → `CellChange_0` chạy (cột L cũng chép L → U) →
-`tick-ticks`: SPACE trên AJ293 rồi AJ291 (ô `CheckBoxCellType` mở, chưa tích, hiện; AJ293 trước để `lockUnLockA_TK` đầu
-`ButtonClick_0` tính lại khóa AJ mọi dòng theo CE sau khi sửa L291; dòng PL 01 theo thứ tự dòng tờ khai) → ButtonClicked → `ButtonClick_0` →
+`tick-ticks`: SPACE trên AJ291 rồi AJ293 (ô `CheckBoxCellType` mở, chưa tích, hiện; dòng PL 01 theo thứ tự dòng tờ khai)
+→ ButtonClicked → `ButtonClick_0` →
 `tick-inspect`: AJ291/AJ293 còn tích, AJ292 trống (bắt buộc); đọc lại BN291..293 = `00001`, CA291..293 = MST hồ sơ (chỉ chẩn
 đoán, mask) → ô kiểm chung (thêm CD291 = 450.000, CD292 = 0, CD293 = 900.000; AE291/AE293 giữ nguyên, không nới) → Kết xuất.
 Stage thành công `declaration-import-tick-exported`; thất bại thao tác `declaration-import-tick-not-matched`. Trường chẩn đoán
 (không giá trị): `declarationTickMethodPinsMatched`, `…EditsMatched`, `…TicksMatched`, `…ReadbackMatched`, `…PlannedCount`,
-`…ActionCount`, `…FailureCode` (1 pin, 3 ô tích không phải checkbox mở chưa tích, 4 tích không ăn, 5 ô tích/ô trống đổi sau đó,
+`…ActionCount`, `…FailureCode` (1 pin, 3 ô tích không phải `CheckBoxCellType`, 7 ô tích bị khóa, 12 ô tích đã tích sẵn,
+14 dòng ô tích bị ẩn, 4 tích không ăn, 5 ô tích/ô trống đổi sau đó,
 6 metadata, 8 ô sửa khóa, 9 kiểu ô, 10 foreground/focus, 11 editor, 13 đọc lại ô sửa, 17 thông báo gốc), `…MethodPinMask`,
 `…MismatchMask` (bit = chỉ số thao tác), `…ReadbackMask` (bit 0–7 đọc lại, 8–11 ô tích, 12–15 ô phải trống). Provenance:
 `inputMode` = `web-xml-import-tick-reexport`, `originalImportSucceeded` = true.
+
+**Run 43136692872** (builder 5b4c940, web 93bb0c2a, HTKK 5.8.2): nhập XML thành công, 13/13 pin khớp, hai lần sửa L291 khớp
+(`declarationTickActionCount` 2), rồi dừng ở thao tác 2 = lần tích đầu (AJ293, khi đó tích trước) với mã 3 (`MismatchMask` 4):
+ô không phải checkbox mở chưa tích. Giải thích theo nguồn: chỉ `CellChange_0` của dòng được sửa tính lại `AJ.Locked = !(CE > 0)`
+cho dòng đó, nên sau nhập AJ của dòng chưa sửa vẫn khóa; thứ tự AJ293-trước dựa vào `lockUnLockA_TK` của chính lần bấm đó
+nên không thể mở ô trước khi bấm. Sửa: sửa cả L293 (0 rồi 200.000.000) và tích theo thứ tự dòng (AJ291, AJ293); mã 3 tách
+thành 3/7/12/14 để lần chạy sau nói rõ điều kiện nào hỏng. Chưa có lần chạy Windows của bản sửa.
 
 Vì sao không gõ lại cả tờ khai (`original-entry-export` như Y8): nhập XML giữ đúng mọi ô khác (ca 2.9.8 khớp toàn bộ; ca 3.1.0
 chỉ lệch AE291/AE293), phần thiếu chỉ là ô tích AJ; nhập tay đầy đủ cần thêm ba loại danh mục thả xuống chưa từng chạy

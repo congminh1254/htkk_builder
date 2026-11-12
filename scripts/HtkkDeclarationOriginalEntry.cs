@@ -332,7 +332,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
  private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0;
  // Failure codes (declarationTickFailureCode), value-free:
- //  1 method pin   3 tick cell not an open unticked checkbox   4 tick not applied   5 ticks/clear cells changed afterwards
+ //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
+ //  4 tick not applied   5 ticks/clear cells changed afterwards
  //  6 sheet metadata   8 edit cell locked   9 edit cell type   10 foreground/focus guard   11 editor   13 edit read-back
  //  17 original message
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
@@ -386,7 +387,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int[] at=DeclarationEntryCell(declarationTickPlan.Ticks[index]);
   if(at[0]>=Convert.ToInt32(Get(sheet,"RowCount"))||at[1]>=Convert.ToInt32(Get(sheet,"ColumnCount"))){DeclarationTickFail(6);return;}
   object cell=Cell(sheet,at[0],at[1]);
-  if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(cell,"Locked"))||Selected(Get(cell,"Value"))||!RowVisible(sheet,at[0])){declarationTickMismatchMask|=1<<action;DeclarationTickFail(3);return;}
+  // Distinct value-free codes for the four preconditions (release run 43136692872 could only report code 3).
+  int precondition=DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"?3:Convert.ToBoolean(Get(cell,"Locked"))?7:Selected(Get(cell,"Value"))?12:!RowVisible(sheet,at[0])?14:0;
+  if(precondition!=0){declarationTickMismatchMask|=1<<action;DeclarationTickFail(precondition);return;}
   DeclarationEntrySelect(grid,sheet,at[0],at[1]);
   if(!DeclarationEntryActive(sheet,at[0],at[1])||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
   SendKeys.SendWait(" ");Stopwatch clock=Stopwatch.StartNew();bool ticked=false;

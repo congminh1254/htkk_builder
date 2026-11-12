@@ -69,13 +69,16 @@ class TickPlan(unittest.TestCase):
         edits, ticks, unticked, readbacks = (string_array(block, i) for i in range(4))
         rows = hkd.CASES[CASE]['locations'][0]['rows']
         self.assertEqual(len(hkd.CASES[CASE]['locations']), 1)
-        # One real change of [11] on the first row (0, then the web value): CellChange_0 runs twice.
-        self.assertEqual(edits, ['number|L%d|0' % FIRST_ROW, 'number|L%d|%s' % (FIRST_ROW, rows[0]['ct11'])])
-        self.assertEqual(rows[0]['ct15'], rows[0]['ct11'])  # column L also copies L into U
-        # Last reduced row first: its ButtonClick_0 -> lockUnLockA_TK re-derives every AJ lock after the L291 edits.
-        self.assertEqual(ticks, ['AJ%d' % (FIRST_ROW + i) for i, r in reversed(list(enumerate(rows))) if r.get('reduce')])
+        # One real change of [11] on every reduced row (0, then the web value): CellChange_0 re-derives that row's AJ lock
+        # (release run 43136692872: AJ293, never edited, was not an open checkbox after the import, code 3).
+        reduced = [(FIRST_ROW + i, r) for i, r in enumerate(rows) if r.get('reduce')]
+        self.assertEqual(edits, [e for row, r in reduced for e in ('number|L%d|0' % row, 'number|L%d|%s' % (row, r['ct11']))])
+        for _, r in reduced:
+            self.assertEqual(r['ct15'], r['ct11'])  # column L also copies L into U
+        # Sheet order, each tick after its row's edits.
+        self.assertEqual(ticks, ['AJ%d' % row for row, _ in reduced])
         self.assertEqual(unticked, ['AJ%d' % (FIRST_ROW + i) for i, r in enumerate(rows) if not r.get('reduce')])
-        self.assertEqual(ticks, ['AJ293', 'AJ291'])
+        self.assertEqual(ticks, ['AJ291', 'AJ293'])
         code = hkd.CASES[CASE]['locations'][0]['code']
         self.assertEqual(readbacks, ['BN%d|%s' % (FIRST_ROW + i, code) for i in range(3)] + ['CA%d|%s' % (FIRST_ROW + i, hkd.FAKE_MST) for i in range(3)])
         self.assertIn('HtkkOracleBaseline.TickMethodPins()', block)
@@ -149,7 +152,7 @@ class Pins(unittest.TestCase):
             subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkOracleBaseline.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
             new = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.2'], check=True, capture_output=True, text=True).stdout.split('\n')
             old = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.1'], capture_output=True, text=True).stdout.split('\n')
-        self.assertEqual(new[:2], ['True', '2 2 1 6 13'])
+        self.assertEqual(new[:2], ['True', '4 2 1 6 13'])
         self.assertNotIn('both', '\n'.join(new))
         # 5.8.1 has no CnkdHkd01TT50Nckt310: the plan refuses to run there.
         self.assertEqual(old[:2], ['True', 'HTKK_ORACLE_TICK_UNPINNED'])
@@ -169,7 +172,8 @@ class Driver(unittest.TestCase):
         self.assertIn('EditDeclarationTick(declarationTickActionCount);if(finished)return;', TICK)
         self.assertIn('TickDeclarationImport(declarationTickActionCount-declarationTickPlan.Edits.Length);if(finished)return;', TICK)
         # A tick needs an open, unticked, visible original checkbox; the read-back then sends the case to the shared sheet checks.
-        self.assertIn('if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(cell,"Locked"))||Selected(Get(cell,"Value"))||!RowVisible(sheet,at[0]))', TICK)
+        self.assertIn('int precondition=DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"?3:Convert.ToBoolean(Get(cell,"Locked"))?7:Selected(Get(cell,"Value"))?12:!RowVisible(sheet,at[0])?14:0;', TICK)
+        self.assertIn('if(precondition!=0){declarationTickMismatchMask|=1<<action;DeclarationTickFail(precondition);return;}', TICK)
         self.assertIn('declarationPhase="import-inspect";declarationClock=Stopwatch.StartNew();SetStage(HtkkAutomationStage.DeclarationImportSheetChecking);', TICK)
 
     def test_import_driver_routes_the_tick_plan_after_the_original_import(self):
