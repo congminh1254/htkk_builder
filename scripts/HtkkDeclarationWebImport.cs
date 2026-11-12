@@ -167,6 +167,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   HtkkDeclarationCasePlan plan=declarationPlan;SetStage(HtkkAutomationStage.DeclarationPeriodConfiguring);Record();
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!=plan.MenuId)throw new InvalidOperationException();
   if(plan.PeriodKind=="month"){SetCheck(Named(period,"chkTkhaiThang"),true);}
+  // KieuKy 14 (Z8, frmHTKKPeriod.SetLayoutToKhaiQuy 0x60004a7): quarter is the only period, so the original layout may
+  // show chkTKQuy already ticked and locked, or not at all. Tick it only when it is visible, enabled and unticked; the
+  // original GetPeriodInfo result (DeclarationIdentity: KieuKy Q, Quy, Nam) is the authority either way.
+  else if(plan.PeriodKind=="quarter"&&plan.KieuKy=="14"){Control[] quarterBox=period.Controls.Find("chkTKQuy",true);if(quarterBox.Length>1)throw new InvalidOperationException();if(quarterBox.Length==1&&quarterBox[0].Visible&&quarterBox[0].Enabled&&!CheckValue(quarterBox[0]))SetCheck(quarterBox[0],true);}
   else if(plan.PeriodKind=="quarter"){SetCheck(Named(period,"chkTKQuy"),true);}
   // KieuKy 18 Lần phát sinh: CheckedChanged (0x60004b2) unticks Tháng and shows the ngày/tháng/năm boxes.
   else if(plan.PeriodKind=="day"){SetCheck(Named(period,"chkTKLanPS"),true);}
@@ -186,7 +190,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    &&VisibleNamed(period,"mskDay")&&VisibleNamed(period,"mskMonth")&&VisibleNamed(period,"mskYear")&&!VisibleNamed(period,"mskTuNgay")&&!VisibleNamed(period,"mskDenNgay")
    &&ReadableNamed(period,"mskDay").Text==plan.FromDate.Substring(0,2)&&ReadableNamed(period,"mskMonth").Text==plan.FromDate.Substring(3,2)&&ReadableNamed(period,"mskYear").Text==plan.Year&&continuous;
   else if(plan.PeriodKind=="range")periodDateMatched=VisibleNamed(period,"mskTuNgay")&&VisibleNamed(period,"mskDenNgay")&&ReadableNamed(period,"mskTuNgay").Text==plan.FromDate&&ReadableNamed(period,"mskDenNgay").Text==plan.ToDate&&continuous;
-  else periodDateMatched=ReadableNamed(period,"mskYear").Text==plan.Year&&(plan.PeriodKind!="month"||(ReadableNamed(period,"mskMonth").Text==plan.PeriodNumber&&CheckValue(ReadableNamed(period,"chkTkhaiThang"))))&&(plan.PeriodKind!="quarter"||CheckValue(ReadableNamed(period,"chkTKQuy")))
+  else periodDateMatched=ReadableNamed(period,"mskYear").Text==plan.Year&&(plan.PeriodKind!="month"||(ReadableNamed(period,"mskMonth").Text==plan.PeriodNumber&&CheckValue(ReadableNamed(period,"chkTkhaiThang"))))&&(plan.PeriodKind!="quarter"||(plan.KieuKy=="14"?(!VisibleNamed(period,"chkTKQuy")||CheckValue(ReadableNamed(period,"chkTKQuy")))&&(!VisibleNamed(period,"chkTkhaiThang")||!CheckValue(ReadableNamed(period,"chkTkhaiThang"))):CheckValue(ReadableNamed(period,"chkTKQuy"))))
    &&((plan.KieuKy!="11"&&plan.KieuKy!="26")||(MaskedTextMatches(period,"mskTuNgay",plan.FromDate)&&MaskedTextMatches(period,"mskDenNgay",plan.ToDate)))&&continuous;
   // Geography/tax-office panel only where the original layout shows it (e.g. NopTheoTinhCQT).
   bool geography=true;

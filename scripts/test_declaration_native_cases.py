@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -107,8 +107,8 @@ class CompiledPlans(unittest.TestCase):
 
     def test_menu_chain_kieuky_and_annexes_follow_menu_xml_design_units(self):
         units = load('declaration_workbook_units', 'htkk_workbook_native_cases.py').UNITS
-        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9'], 'C9': ['101', '101_8', 'C9']}
-        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22', 'C9': '22'}
+        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'Z8': ['101', '101_11', 'Z8'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9'], 'C9': ['101', '101_8', 'C9']}
+        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'Z8': '14', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22', 'C9': '22'}
         for case in CASES:
             menu = d.CASES[case]['menuId']; block = plan_block(case)
             self.assertIn('new string[]{' + ','.join('"' + x + '"' for x in chains[menu]) + '}', block)
@@ -218,6 +218,22 @@ class InputPrivacy(unittest.TestCase):
             self.assertEqual(reader.validate_web_xml(body, case_id=case, manifest=manifest)['leafCount'], d.CASES[case]['leafCount'])
             self.assertEqual(reader.validate_manifest(json.dumps(manifest, ensure_ascii=False).encode())['caseId'], case)
             self.assertEqual(reader.names(case), ('declaration-web.xml', 'manifest.json'))
+
+    def test_manifest_names_the_case_oracle_exactly_where_the_web_writes_it(self):
+        # Z8 05/KK-TNCN TT89: the web manifest carries htkkVersion 5.8.2 (the registry case version); no other
+        # declaration manifest may carry the key, and the Z8 manifest must.
+        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026'}))
+        for case in d.MANIFEST_HTKK_VERSION_CASES:
+            self.assertEqual(registry.htkk_version(case), '5.8.2')
+        case = '05KK-TT89-withheld-Q4-2026'; body = dfx.declaration_fixture(case); manifest = dfx.declaration_manifest(body, case)
+        self.assertEqual(manifest['htkkVersion'], '5.8.2')
+        self.assertEqual(reader.validate_manifest(json.dumps(manifest, ensure_ascii=False).encode())['htkkVersion'], '5.8.2')
+        for bad in ({k: v for k, v in manifest.items() if k != 'htkkVersion'}, dict(manifest, htkkVersion='5.8.1'), dict(manifest, htkkVersion=582)):
+            with self.subTest(bad=bad.get('htkkVersion')), self.assertRaises(reader.InputError):
+                reader.validate_manifest(json.dumps(bad, ensure_ascii=False).encode())
+        other = '05KK-withheld-Q3-2026'; body = dfx.declaration_fixture(other)
+        with self.assertRaises(reader.InputError):
+            reader.validate_manifest(json.dumps(dict(dfx.declaration_manifest(body, other), htkkVersion='5.8.2'), ensure_ascii=False).encode())
 
     def test_04ntnn_range_period_oracle_rows_and_totals_fail_closed(self):
         # KieuKy 22: kieuKy Y, kyKKhai = year of the to-date, from/to dates; Decimal oracle NTNN04 on every row.

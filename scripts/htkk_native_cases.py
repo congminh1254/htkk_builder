@@ -19,6 +19,9 @@ def _declaration(menu,version,periods,annexes,mode=IMPORT_MODE):return {'produce
 TRUSTED_ADAPTERS={
  '01-gtgt-2.8.3':{'producer':'scripts/generate-htkk-web-reference.mjs','privacyValidator':'gtgt-v1','annexes':[],**_d1},
  '01-gtgt-2.8.3-annex12':{'producer':'scripts/generate-htkk-web-annex12-reference.mjs','privacyValidator':'gtgt-annex12-v1','annexes':['01-2/GTGT'],**_d1},
+ # 01-10/GTGT (giảm thuế GTGT NQ 204/2025/QH15, sheet 01_10, PL_NQ142_GTGT). Its only case runs on the HTKK 5.8.2
+ # oracle (per-case htkkVersion): 5.8.2 accepts negative goods values there (htkk_web docs/PHU-LUC-01-10-GTGT.md).
+ '01-gtgt-2.8.3-annex10':{'producer':'scripts/generate-htkk-web-annex10-reference.mjs','privacyValidator':'gtgt-annex10-v1','annexes':['01-10/GTGT'],**_d1},
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
  '03-tndn-2.9.4':_declaration('N8','2.9.4',{'year':('2025',)},['03-1A']),
@@ -28,6 +31,10 @@ TRUSTED_ADAPTERS={
  '200-bctc-2.2.6':_declaration('78','2.2.6',{'year':('2025',)},['01-1','01-3']),
  # L7 monthly first declarations are refused from 4/2026 (HTKK 0682): quarter only.
  '05-kk-tncn-2.9.3':_declaration('L7','2.9.3',{'quarter':('3/2026',)},[]),
+ # Z8 05/KK-TNCN TT89 3.0.9 exists only in HTKK 5.8.2 (Menu.xml 5.8.2 Z8, TncnKk05TT89Nckt309, StartDate 01/10/2026):
+ # the adapter is pinned to that oracle. KieuKy 14 = SetLayoutToKhaiQuy (quarter only); CheckToKhaiBatDauCoHieuLuc
+ # refuses quarters before 4/2026.
+ '05-kk-tncn-tt89-3.0.9':{**_declaration('Z8','3.0.9',{'quarter':('4/2026',)},[]),'htkkVersion':'5.8.2'},
  '05-qtt-tncn-2.9.3':_declaration('B9','2.9.3',{'year':('2025',)},['05-1','05-3']),
  '01-cnkd-hkd-2.9.8':_declaration('U5','2.9.8',{'quarter':('3/2026',)},[]),
  # U5 3.1.0 exists only in HTKK 5.8.2 (Menu.xml VersionXML 3.1.0, CnkdHkd01TT50Nckt310): the adapter is pinned to that
@@ -99,6 +106,7 @@ GATE_CASES=tuple(id for id,c in CASES.items() if c['releaseGate'])
 CANDIDATE_CASES=tuple(id for id,c in CASES.items() if not c['releaseGate'])
 check(GATE_CASES and list(CASES)[:len(GATE_CASES)]==list(GATE_CASES))
 ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex12')
+ANNEX10_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex10')
 # Declaration-family cases use their own input/output file names, privacy allowlist and driver.
 DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==DECLARATION_DRIVER)
 check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))

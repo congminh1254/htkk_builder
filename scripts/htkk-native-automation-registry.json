@@ -1446,6 +1446,11 @@
     "annex12WebHeadAuthorityRepairCount",
     "annex12WebHeadAuthorityFailureMask",
     "annex12WebHeadAuthorityComboMask",
+    "annex10ImportSheetObserved",
+    "annex10ImportSheetActive",
+    "annex10ImportPurchaseRows",
+    "annex10ImportSaleRows",
+    "annex10NegativeDisplayMask",
     "annex12InputReadOnlyIdentityMatched",
     "annex12InputIdentityMatched",
     "annex12InputTypesMatched",
@@ -1996,6 +2001,47 @@
       "default": 0,
       "minimum": 0,
       "maximum": 2047,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex10ImportSheetObserved": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex10ImportSheetActive": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex10ImportPurchaseRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex10ImportSaleRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 10,
+      "activeModes": [
+        "gtgt-web-import-inspect"
+      ]
+    },
+    "annex10NegativeDisplayMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 15,
       "activeModes": [
         "gtgt-web-import-inspect"
       ]
@@ -2879,6 +2925,7 @@
         "BCTC133-B01a-basic-Y2025",
         "BCTC200-LT-basic-Y2025",
         "05KK-withheld-Q3-2026",
+        "05KK-TT89-withheld-Q4-2026",
         "05QTT-two-employees-Y2025",
         "01CNKD-TT50-revenue-two-groups-Q3-2026",
         "01CNKD-TT50-310-pl01-three-groups-Q3-2026",
@@ -2892,7 +2939,8 @@
         "02NTNN-TT80-two-annexes-2026",
         "01NTNN-occurrence-D20-09-2026",
         "01NTNN-NCCNN-occurrence-D20-10-2026",
-        "03NTNN-occurrence-D20-10-2026"
+        "03NTNN-occurrence-D20-10-2026",
+        "01GTGT-annex10-nq204-M10-2026"
       ]
     },
     "webCaseEditCount": {

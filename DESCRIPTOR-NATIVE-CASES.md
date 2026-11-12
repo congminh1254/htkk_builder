@@ -10,6 +10,8 @@ Nguồn: `htkk-net/htkk_web` nhánh `work/forms-tncn` (`docs/NGHIEP-VU-TNCN.md`)
 |---|---|---|---|---|
 | `05KK-zero-Q3-2026` | L7 (05/KK-TNCN, XML 2.9.3) | quý 3/2026 | — | web XML → Nhập từ XML → Kết xuất |
 | `05KK-withheld-Q3-2026` | L7 | quý 3/2026 | — | như trên, có số (kiểm ROUND [32]) |
+| `05KK-TT89-zero-Q4-2026` | Z8 (05/KK-TNCN TT89, XML 3.0.9, chỉ HTKK 5.8.2: `htkkVersion` trên adapter và ca) | quý 4/2026 | — | web XML → Nhập từ XML → Kết xuất |
+| `05KK-TT89-withheld-Q4-2026` | Z8 | quý 4/2026 | — | như trên, có số (kiểm [35] = ROUND([23]×10%)) |
 | `05QTT-zero-Y2025` | B9 (05/QTT-TNCN, XML 2.9.3) | 2025 | — | như trên |
 | `05QTT-two-employees-Y2025` | B9 | 2025 | 05-1 (2 dòng), 05-3 (1 dòng) | như trên |
 | `02QTT-zero-Y2025` | B8 (02/QTT-TNCN, XML 2.7.3) | 2025 | — | nhập tay trong HTKK → Kết xuất XML gốc |

@@ -22,6 +22,19 @@ tương thích tổng thể vẫn là false.
 - Case plan nguồn: builder chấp nhận plan chỉ có 13 ca gate (bản hiện tại trong htkk_web) hoặc
   plan đầy đủ mọi ca. Plan thiếu một phần hoặc lẫn producer bị từ chối.
 
+## Ca 01-10/GTGT (NQ 204/2025/QH15, oracle HTKK 5.8.2)
+
+`01GTGT-annex10-nq204-M10-2026` (producer `annex10-nq204`, status `htkk-native/annex10-nq204@htkk582`, nhánh
+`gtgt-web-reference-annex10-nq204-input` / `gtgt-web-native-annex10-nq204-output`), non-gating, `htkkVersion` 5.8.2. Driver
+`gtgt-web-import-inspect`: kỳ D1 tháng 10/2026 **không** tích phụ lục; baseline = tờ khai chính số 0 xuất bằng Kết xuất gốc
+(HTKK từ chối 01-10 đính kèm mà trống: Header B104/B105, 0016), không sửa ô nào; ngày ký 27/10/2026 bằng editor gốc; rồi "Nhập từ
+XML" gốc của tệp web; sau nhập tờ khai chính phải có J45/J48/J50 = 129.999.950 và L45/L48/L50/L51/L57/L59 = 10.399.996; Kết xuất
+lại; so cả cây với tệp web: **88 lá thuế** (chỉ ngày lập và 4 lá dịch vụ theo luật native). Re-export được khác baseline
+(`roundtripXmlExactMatched` false), như ca hai nhà máy. Cờ quan sát (không chặn): `annex10ImportSheetObserved`,
+`annex10ImportSheetActive`, `annex10ImportPurchaseRows`, `annex10ImportSaleRows`, `annex10NegativeDisplayMask` (bit 0 tìm thấy ô G
+dòng II.2, bit 1 Value = −400002, bit 2 Value = 0 (bị chặn MinValue), bit 3 Text có dấu trừ). Chưa có bước "Chọn phụ lục"
+(`frmWinSelectPhuLuc`): nếu nhập XML không tự gắn sheet 01_10, lần chạy đầu cho `annex10ImportSheetObserved` false và so cây thất bại.
+
 ## Allowlist privacy/số tiền
 
 `htkk_annex12_web_cases.py` mô tả chính xác từng lá phụ lục: ID nhóm/dòng, STT, loại, mã/tên

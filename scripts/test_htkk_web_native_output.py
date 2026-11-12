@@ -29,6 +29,12 @@ def two_plant_baseline():
  body=fixture('01GTGT-annex12-zero-two-locations-M10-2026')[1]
  for name,value in n.reader.CASE_MONEY['01GTGT-annex12-two-plants-nonzero-M10-2026'].items():body=changed(body,name,value)
  return body
+def annex10_baseline(case):
+ # The 01-10 UI baseline: the zero main declaration exported before the import (no PLuc, money 0).
+ root=ET.fromstring(fixture(case)[1]);ns='{'+n.privacy.NS+'}';declaration=root.find('./'+ns+'HSoKhaiThue')
+ declaration.remove(declaration.find(ns+'PLuc'))
+ for name in n.reader.CASE_MONEY[case]:root.find('.//'+ns+name).text='0'
+ return ET.tostring(root,encoding='utf-8',xml_declaration=True)
 def changed(body,name,value):
  root=ET.fromstring(body);root.find('.//{'+n.privacy.NS+'}'+name).text=value;return ET.tostring(root,encoding='utf-8')
 

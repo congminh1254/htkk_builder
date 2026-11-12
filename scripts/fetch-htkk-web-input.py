@@ -38,6 +38,13 @@ if set(annex12.CASES)!=set(case_registry.ANNEX12_CASES):raise ValueError('CASE_P
 ANNEX_PRODUCER='scripts/generate-htkk-web-annex12-reference.mjs'
 ANNEX_NATIVE_REFERENCE='6956eea0fa865e98da71ad3ce23ed6a527e7a17761c6fb11032a11fc0a97b8cb'
 ANNEX_NATIVE_NODES={annex12.ZERO_CASE:(True,131),annex12.TWO_PLANTS_CASE:(False,0)}
+# 01-10/GTGT (PL_NQ142_GTGT, oracle HTKK 5.8.2): own producer, manifest keys and exact allowlist.
+_annex10_spec=importlib.util.spec_from_file_location('htkk_annex10_web_input_contract',pathlib.Path(__file__).with_name('htkk_annex10_web_cases.py'))
+annex10=importlib.util.module_from_spec(_annex10_spec);_annex10_spec.loader.exec_module(annex10)
+if set(annex10.CASES)!=set(case_registry.ANNEX10_CASES):raise ValueError('CASE_POLICY')
+ANNEX10_PRODUCER='scripts/generate-htkk-web-annex10-reference.mjs'
+ANNEX10_NATIVE_BASE='6956eea0fa865e98da71ad3ce23ed6a527e7a17761c6fb11032a11fc0a97b8cb'
+CASE_MONEY.update({case:annex10.money(case) for case in annex10.CASES})
 # Declaration-family cases (03/TNDN, BCTC, TNCN, 01/CNKD): own producer, file names and allowlist.
 _declaration_spec=importlib.util.spec_from_file_location('htkk_declaration_web_input_contract',pathlib.Path(__file__).with_name('htkk_declaration_web_cases.py'))
 declaration=importlib.util.module_from_spec(_declaration_spec);_declaration_spec.loader.exec_module(declaration)
@@ -113,9 +120,14 @@ def validate_manifest(body):
  if declaration.is_case(case):
   spec=declaration.case(case);c=case_registry.CASES[case]
   fixed.update(exporter='lib/htkk-declaration-engines.ts',producer=DECLARATION_PRODUCER,menuId=spec['menuId'],engine=spec['family'],xmlVersion=spec['xmlVersion'],schemaId=spec['schemaId'],annexes=c['unit']['annexes'],leafCount=spec['leafCount'],nativeQualified=False,filingEnabled=False)
+  # A per-case oracle the web manifest names must be the registry case version (never the default spelling).
+  if case in declaration.MANIFEST_HTKK_VERSION_CASES:fixed['htkkVersion']=case_registry.htkk_version(case)
  if annex12.is_case(case):
   compared,nodes=ANNEX_NATIVE_NODES[case]
   fixed.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=ANNEX_PRODUCER,nativeAnnexReferenceSha256=ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False)
+  variable=variable|{'expectedAnnexLeaves'}
+ if annex10.is_case(case):
+  fixed.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=ANNEX10_PRODUCER,htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex10.money(case))
   variable=variable|{'expectedAnnexLeaves'}
  if set(manifest)!=set(fixed)|variable:raise InputError('MANIFEST')
  if any(type(manifest[key]) is not type(value) or manifest[key]!=value for key,value in fixed.items()):raise InputError('MANIFEST')
@@ -123,7 +135,7 @@ def validate_manifest(body):
  for key in ('producerSha256','xmlSha256'):
   if not isinstance(manifest[key],str) or not re.fullmatch('[0-9a-f]{64}',manifest[key]):raise InputError('MANIFEST')
  if type(manifest['bytes']) is not int or not 0<manifest['bytes']<=MAX_XML:raise InputError('MANIFEST')
- if annex12.is_case(case):
+ if annex12.is_case(case) or annex10.is_case(case):
   rows=manifest['expectedAnnexLeaves']
   if type(rows) is not list or not 0<len(rows)<=256 or any(type(row) is not list or len(row)!=3 or any(type(item) is not str or len(item)>160 for item in row) for row in rows):raise InputError('MANIFEST')
  return manifest
@@ -144,7 +156,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  if declaration.is_case(case_id):
   try:return declaration.validate_web_input(body,case_id,manifest)
   except declaration.DeclarationWebCaseError as error:raise InputError(DECLARATION_ERRORS.get(error.code,'XML_PRIVACY')) from None
- annex=annex12.is_case(case_id);fixed_day=datetime.date.fromisoformat(annex12.FIXED_DATE if annex else '2026-10-25')
+ annex=annex12 if annex12.is_case(case_id) else annex10 if annex10.is_case(case_id) else None;fixed_day=datetime.date.fromisoformat(annex.FIXED_DATE if annex else '2026-10-25')
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
  except UnicodeError:raise InputError('XML_ENCODING') from None
@@ -179,10 +191,10 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
   # Exact fixed annex subtree first; then an IN-MEMORY projection without it
   # reuses the unchanged no-annex allowlist. Staged bytes are never changed.
   try:
-   annex12.validate_annex(root,case_id)
+   annex.validate_annex(root,case_id)
    if manifest is not None and manifest.get('expectedAnnexLeaves')!=annex_manifest_leaves(root):raise InputError('MANIFEST')
-   annex12.strip_annex(root)
-  except annex12.AnnexWebContractError:raise InputError('XML_PRIVACY') from None
+   annex.strip_annex(root)
+  except annex.AnnexWebContractError:raise InputError('XML_PRIVACY') from None
  # Verify the fixed checkbox before adapting only the in-memory privacy copy.
  nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'CTieuTKhaiChinh/'+ns+'ct21')
  if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=CASE_CHECKBOX[case_id]:raise InputError('XML_PRIVACY')
@@ -204,7 +216,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  try:privacy.validate_xml(ET.tostring(root,encoding='utf-8'),fixed_day)
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
  result={'privacyValuesVerified':True,'serviceIdentity':'web-tool','nativeProvenance':False}
- if annex:result['annexTaxLeafCount']=annex12.tax_leaves(case_id)
+ if annex:result['annexTaxLeafCount']=annex.tax_leaves(case_id)
  return result
 def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None):
  if artifact_commit is not None:git_sha(artifact_commit,'SOURCE_COMMIT')

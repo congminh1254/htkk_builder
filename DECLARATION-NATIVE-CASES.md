@@ -24,6 +24,15 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `02NTNN-TT89-two-annexes-2026` | `101 → 101_8 → X9` (02/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài, nước cư trú JP), 02-2/NTNN (1 nhà thầu phụ) | 108 |
 | `02NTNN-TT80-two-annexes-2026` | `101 → 101_8 → C9` (02/NTNN TT80 2.5.1) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài: JP, địa điểm 101), 02-2/NTNN (1 nhà thầu phụ, địa điểm 103) | 111 |
 | `01CNKD-TT50-310-pl01-three-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-4 "PL 01 43/2026/QH16" (`PLuc_01_GiamTNCN_NQ43`, 2 dòng) | 295 |
+| `05KK-TT89-withheld-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 **3.0.9**, chỉ oracle **HTKK 5.8.2**) | 14 | quý 4/2026 | — | 69 |
+
+Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
+oracle 5.8.2 vì Z8 không có trong Menu.xml 5.8.1): KieuKy 14 = `SetLayoutToKhaiQuy` (chỉ kỳ quý). Driver chỉ tích `chkTKQuy` khi
+ô hiện, bật và chưa tích; kết quả `GetPeriodInfo` (KieuKy Q, Quy 4, Nam 2026) là thẩm quyền. `CheckToKhaiBatDauCoHieuLuc` từ chối
+quý trước 4/2026 bằng thông báo danh mục (driver chỉ báo ID). Kỳ vọng Decimal theo công thức XLS 5.8.2 (htkk_web
+`docs/builder-patches/05KK-TT89-withheld-Q4-2026.md`): [35] = ROUND([23]×10/100,0) = 200001. Plan có 24 ô XML (giới hạn của plan):
+mọi chỉ tiêu tính và các ô nhập chúng dùng; so sánh cả cây vẫn phủ đủ 69 lá. Manifest web mang `htkkVersion` 5.8.2
+(`MANIFEST_HTKK_VERSION_CASES`), phải bằng `htkkVersion` của ca.
 
 U5 3.1.0 (`01CNKD-TT50-310-pl01-three-groups-Q3-2026`, non-gating, `htkkVersion` 5.8.2; adapter `01-cnkd-hkd-3.1.0-pl01`
 ghim vào oracle 5.8.2 vì XML 3.1.0 chỉ có trong HTKK 5.8.2): ca doanh thu 2.9.8 thêm nhóm 04 (200tr); tích giảm thuế NQ 43/2026/QH16

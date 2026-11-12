@@ -34,10 +34,30 @@ def annex_fixture(case):
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  annex_tree(root,case);ET.register_namespace('',w.privacy.NS)
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
+def annex10_fixture(case):
+ """Synthetic 01-10/GTGT web input built from the trusted contract (no application fixture is copied)."""
+ root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}';spec=w.annex10.CASES[case]
+ for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text=w.annex10.FIXED_DATE
+ for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
+ pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+ if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
+ for child in list(pluc):pluc.remove(child)
+ pluc.text=None;annex=ET.SubElement(pluc,ns+'PL_NQ142_GTGT')
+ for section,rows,leaves,totals,names in (('HH_DV_MuaVaoTrongKy',spec['purchases'],w.annex10.PURCHASE_LEAVES,spec['purchaseTotals'],('tongCongGiaTriHHDVMuaVao','tongCongThueGTGTHHDV')),('HH_DV_BanRaTrongKy',spec['sales'],w.annex10.SALE_LEAVES,spec['saleTotals'],('tongCongGiaTriHHDV','tongCongThueGTGTDuocGiam'))):
+  node=ET.SubElement(annex,ns+section)
+  for row_id,values in rows:
+   row=ET.SubElement(node,ns+'BangKeTenHHDV',{'ID':row_id})
+   for name,value in zip(leaves,values):ET.SubElement(row,ns+name).text=value
+  for name,value in zip(names,totals):ET.SubElement(node,ns+name).text=value
+ ET.SubElement(ET.SubElement(annex,ns+'ChenhLech'),ns+'ct9').text=spec['ct9']
+ ET.register_namespace('',w.privacy.NS)
+ return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def case_manifest(body,case,producer_sha='c'*64):
  """Exact manifest shape of the registered producer for one fixed case."""
  if w.declaration.is_case(case):return dfx.declaration_manifest(body,case,producer_sha)
  value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
+ if w.annex10.is_case(case):
+  value.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=w.ANNEX10_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex10.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex12.is_case(case):
   compared,nodes=w.ANNEX_NATIVE_NODES[case]
   value.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=w.ANNEX_PRODUCER,nativeAnnexReferenceSha256=w.ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False,expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode().replace(w.COMMENT,''))))
@@ -45,6 +65,7 @@ def case_manifest(body,case,producer_sha='c'*64):
 def sale_fixture(case="01GTGT-sale10-M10-2026"):
  if w.declaration.is_case(case):return dfx.declaration_fixture(case)
  if w.annex12.is_case(case):return annex_fixture(case)
+ if w.annex10.is_case(case):return annex10_fixture(case)
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  root.find('.//'+ns+'ct21').text=w.CASE_CHECKBOX[case]

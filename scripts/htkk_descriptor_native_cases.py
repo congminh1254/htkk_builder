@@ -10,6 +10,9 @@ def check(value):
  if not value:raise ValueError('DESCRIPTOR_CASE_POLICY')
 TRUSTED={
  '05-kk-tncn-2.9.3':{'menuId':'L7','businessClass':'TncnKk05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_KK_TNCN_TT80_293.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'}},
+ # 05/KK-TNCN TT89 (Z8 3.0.9): exists only in HTKK 5.8.2, so the adapter and its cases name that oracle (htkkVersion);
+ # KieuKy 14 = SetLayoutToKhaiQuy, quarter only.
+ '05-kk-tncn-tt89-3.0.9':{'menuId':'Z8','businessClass':'TncnKk05TT89','xmlVersion':'3.0.9','schemaId':'Validate/05_KK_TNCN_TT89_309.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'quarter'},'htkkVersion':'5.8.2'},
  '05-qtt-tncn-2.9.3':{'menuId':'B9','businessClass':'TncnQtt05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_QTT_TNCN_TT80_293.xsd','annexes':['05-1','05-2','05-3'],'mode':'web-xml-import-reexport','periodTypes':{'year'}},
  '02-qtt-tncn-2.7.3':{'menuId':'B8','businessClass':'TncnQtt02TT80','xmlVersion':'2.7.3','schemaId':'Validate/02_QTT_TNCN_TT80_273.xsd','annexes':['02-1'],'mode':'original-entry-export','periodTypes':{'year'}},
  # 01/NTNN TT80 (I9): main-sheet contractor table only, KieuKy 18 monthly or lần phát sinh ('day', dd/MM/yyyy).
@@ -37,17 +40,22 @@ def validate(value):
  check(value['producer']=='scripts/generate-htkk-descriptor-reference.mjs' and value['profilePolicy']=='synthetic-9999999997-v1')
  adapters={}
  for a in value['adapters']:
-  check(type(a) is dict and set(a)=={'adapterId','menuId','businessClass','xmlVersion','schemaId','annexes','mode'} and a['adapterId'] in TRUSTED and a['adapterId'] not in adapters)
+  check(type(a) is dict and a.get('adapterId') in TRUSTED and a['adapterId'] not in adapters)
   trusted=TRUSTED[a['adapterId']]
+  # 'htkkVersion' appears exactly on the adapters of a later HTKK release (an XML version absent from 5.8.1).
+  check(set(a)=={'adapterId','menuId','businessClass','xmlVersion','schemaId','annexes','mode'}|({'htkkVersion'} if 'htkkVersion' in trusted else set()))
+  check(a.get('htkkVersion')==trusted.get('htkkVersion'))
   for key in ('menuId','businessClass','xmlVersion','schemaId','annexes','mode'):check(a[key]==trusted[key])
   adapters[a['adapterId']]=a
  check(set(adapters)==set(TRUSTED))
  seen=set();per={}
  for c in value['cases']:
-  check(type(c) is dict and set(c)<= {'caseId','adapterId','releaseGate','unit','expectedLeaves','expectedRows','question'} and {'caseId','adapterId','releaseGate','unit','expectedLeaves'}<=set(c))
+  check(type(c) is dict and set(c)<= {'caseId','adapterId','htkkVersion','releaseGate','unit','expectedLeaves','expectedRows','question'} and {'caseId','adapterId','releaseGate','unit','expectedLeaves'}<=set(c))
   check(re.fullmatch('[A-Za-z0-9-]{1,100}',c['caseId']) and c['caseId'] not in seen);seen.add(c['caseId'])
   check(c['adapterId'] in adapters and c['releaseGate'] is False)
   t=TRUSTED[c['adapterId']];u=c['unit']
+  # A case of such an adapter names the same oracle; no other case names one.
+  check(c.get('htkkVersion')==t.get('htkkVersion') and (('htkkVersion' in c)==('htkkVersion' in t)))
   check(type(u) is dict and set(u)=={'menuId','adapterVersion','periodType','periodValue','activityCode','annexes','amendmentOrder'})
   check(u['menuId']==t['menuId'] and u['adapterVersion']==t['xmlVersion'] and u['activityCode']=='00' and type(u['amendmentOrder']) is int and u['amendmentOrder']==0)
   check(u['periodType'] in t['periodTypes'])

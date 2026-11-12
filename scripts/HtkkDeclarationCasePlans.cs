@@ -43,7 +43,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -95,6 +95,15 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/05_KK_TNCN_TT80_293.xsd","9cd4d367123ee0ac1f94fb043975738ac142420d558bb24969e4c0afe64ac846",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,56,
     new string[]{"01|U40|9","01|U43|120000000","01|U49|100000000","01|U52|9000000","01|U55|100001"},
     new string[]{Main+"mst_cu|9999999997",Main+"ct16|10",Main+"ct17|8",Main+"ct18|9",Main+"ct19|7",Main+"ct20|2",Main+"ct21|120000000",Main+"ct22|100000000",Main+"ct23|20000000",Main+"ct24|1000005",Main+"ct25|3000000",Main+"ct26|100000000",Main+"ct27|80000000",Main+"ct28|20000000",Main+"ct29|9000000",Main+"ct30|5000000",Main+"ct31|4000000",Main+"ct32|100001"});
+   // Z8 05/KK-TNCN TT89 (HTKK 5.8.2 only, case htkkVersion 5.8.2): KieuKy 14 = SetLayoutToKhaiQuy; StartDate 01/10/2026.
+   // 24 XML checks (the plan bound): every computed indicator and the inputs they depend on; the whole-tree
+   // comparison still covers all 69 leaves, including the omitted inputs [26] [28] [30] [31] [33] [34] [37] [38] [43].
+   case "05KK-TT89-withheld-Q4-2026":return new HtkkDeclarationCasePlan(caseId,"Z8","3.0.9","2036","TncnKk05TT89Nckt309",new string[]{"101","101_11","Z8"},"quarter","14","2026","4","01/10/2026","31/12/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/05_KK_TNCN_TT89_309.xls","316a2c02e2d93ed254583775e5b8db2ab8909460b932a565f9a27c5d1a1b6c91","InterfaceTemplates/xml/05_KK_TNCN_TT89_309.xml","420921c52f38b929b432ca8fecc60fd6453b8b14702777612fd251cc2873fa2d",
+    "Validate/05_KK_TNCN_TT89_309.xsd","f4ea48433b04be487587b38f10494ef4486656900faa01e595771110f43a2c9c",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,69,
+    new string[]{"01|U63|10","01|U69|180000000","01|U76|8000000","01|U84|150000000","01|U90|90000000","01|U96|200001","01|U97|5000000","01|U106|12000000"},
+    new string[]{Main+"mst_cu|9999999997",Main+"ct14|0",Main+"ct15|12",Main+"ct16|10",Main+"ct17|10",Main+"ct18|8",Main+"ct19|2",Main+"ct20|180000000",Main+"ct21|150000000",Main+"ct22|30000000",Main+"ct23|2000005",Main+"ct24|8000000",Main+"ct25|0",Main+"ct27|0",Main+"ct29|150000000",Main+"ct32|90000000",Main+"ct35|200001",Main+"ct36|5000000",Main+"ct39|0",Main+"ct40|0",Main+"ct41|1000000",Main+"ct42|12000000",Main+"ct44|6000000",Main+"ct45|200001"});
    // B9 05/QTT-TNCN TT80: KieuKy 12 = SetLayoutToKhaiNamTuThangDenThang; annexes 05-1, 05-3.
    case "05QTT-two-employees-Y2025":return new HtkkDeclarationCasePlan(caseId,"B9","2.9.3","953","TncnQtt05TT80Nckt293",new string[]{"101","101_11","B9"},"year","12","2025","","01/2025","12/2025",false,
     new string[]{"05-1/BK-TNCN|05-1/BK-QTT-TNCN","05-3/BK-TNCN|05-3/BK-QTT-TNCN"},new string[]{"05|Tờ khai","05-1|05-1/BK-TNCN"},

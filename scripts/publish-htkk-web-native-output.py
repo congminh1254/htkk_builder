@@ -14,6 +14,7 @@ reader=transport.reader
 oracle=module('htkk_oracle_web_output','htkk_oracle.py')
 privacy=reader.privacy
 annex12=reader.annex12
+annex10=reader.annex10
 REPO=reader.REPO
 BUILDER=reader.BUILDER
 DIRECTORY='htkk-web-native-output'
@@ -31,13 +32,15 @@ SERVICE_PREFIX='HSoThueDTu/HSoKhaiThue/TTinChung/TTinDVu/'
 CREATION='HSoThueDTu/'+PREFIX+'ngayLapTKhai'
 CODES=transport.CODES|frozenset(('PROVENANCE','COMPARE','FILES','NATIVE_IDENTITY','NATIVE_DATE'))
 def tax_leaf_count(case_id):
- return annex12.tax_leaves(case_id) if annex12.is_case(case_id) else 70
+ return annex12.tax_leaves(case_id) if annex12.is_case(case_id) else annex10.tax_leaves(case_id) if annex10.is_case(case_id) else 70
 def baseline_matches_input(case_id):
  # The UI-built baseline of the two-plant case is deliberately the proven
  # one-plant zero annex; only the imported web input carries two plants.
- return case_id!=annex12.TWO_PLANTS_CASE
+ # The 01-10/GTGT baseline is the main declaration alone: HTKK refuses to export an attached but
+ # empty 01-10 (Header!B104/B105 need a named sales row with a value).
+ return case_id!=annex12.TWO_PLANTS_CASE and not annex10.is_case(case_id)
 def signing_date(case_id):
- return annex12.FIXED_DATE if annex12.is_case(case_id) else '2026-10-25'
+ return annex12.FIXED_DATE if annex12.is_case(case_id) else annex10.FIXED_DATE if annex10.is_case(case_id) else '2026-10-25'
 
 class OutputError(ValueError):
  def __init__(self,code):
@@ -100,10 +103,15 @@ def validate_native(body,case_id,today=None,initial=False,aligned=False,version=
   # the exact imported case. Validate exactly, then project only IN MEMORY.
   try:annex12.validate_annex(root,annex12.ZERO_CASE if initial else case_id);annex12.strip_annex(root)
   except annex12.AnnexWebContractError:fail('XML_PRIVACY')
+ if annex10.is_case(case_id) and not initial:
+  # The reexport carries exactly the imported 01-10 annex; validate, then project IN MEMORY.
+  try:annex10.validate_annex(root,case_id);annex10.strip_annex(root)
+  except annex10.AnnexWebContractError:fail('XML_PRIVACY')
  checkbox=leaf(root,'HSoKhaiThue/CTieuTKhaiChinh/ct21')
  if checkbox.text!=reader.CASE_CHECKBOX[case_id]:fail('XML_PRIVACY')
  checkbox.text='0'
- expected=reader.CASE_MONEY[case_id]
+ # The 01-10 baseline is the zero main declaration exported before the import.
+ expected={} if initial and annex10.is_case(case_id) else reader.CASE_MONEY[case_id]
  for name in MONEY:
   values=root.findall('.//{'+privacy.NS+'}'+name)
   if len(values)!=1 or values[0].attrib or len(values[0]) or values[0].text!=expected.get(name,'0'):fail('XML_PRIVACY')

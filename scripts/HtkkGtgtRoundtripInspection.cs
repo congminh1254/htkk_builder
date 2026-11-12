@@ -69,7 +69,43 @@ public sealed partial class HtkkGuiReferenceAutomation {
   InspectMoneyZero(sheet);InspectCaseMoney(sheet);gtgtCt42AfterImportObserved=true;gtgtCt42LockedAfterImport=gtgtCt42Locked;roundtripImportCheckedMoneyCount=27-gtgtEmptyMoney;bool ct21Matched=InspectCt21Case(sheet);if(NoActivityCase())gtgtCt21AfterImportMatched=ct21Matched;
   // Fixed web annex cases also require the imported original annex groups, rows, values and locks.
   bool annexMatched=!Annex12WebCase()||InspectOriginalImportedAnnex12(grids[0]);
+  // 01-10: bounded observation of the imported original sheet only (the re-export comparison is the proof).
+  if(Annex10WebCase())ObserveOriginalImportedAnnex10(grids[0]);
   return gtgtCaseMoneyMatched&&roundtripImportCheckedMoneyCount==27&&ct21Matched&&annexMatched;
+ }
+ // 01-10/GTGT (sheet 01_10, PL_NQ142_GTGT) after the original import: observation only, never an edit and never a
+ // gate (the whole-tree re-export comparison decides). Bounded flags: the sheet is in the original grid and active in
+ // ToKhaiInfo.SheetInfos, the row counts of its two dynamic tables (I purchases, II sales), and how the original shows the
+ // negative row's G cell (II.2, G = ROUND(D*(E-F)/100,0) = -400002 with MinValue 0): mask bit 0 cell located, bit 1 Value
+ // is -400002, bit 2 Value is 0 (clamped), bit 3 the displayed Text carries a minus sign. Never values or text.
+ private bool annex10ImportSheetObserved=false,annex10ImportSheetActive=false;private int annex10ImportPurchaseRows=0,annex10ImportSaleRows=0,annex10NegativeDisplayMask=0;
+ private string Annex10Json(){
+  string q=((char)34).ToString();
+  return ","+q+"annex10ImportSheetObserved"+q+":"+Bool(annex10ImportSheetObserved)+","+q+"annex10ImportSheetActive"+q+":"+Bool(annex10ImportSheetActive)
+   +","+q+"annex10ImportPurchaseRows"+q+":"+annex10ImportPurchaseRows.ToString(CultureInfo.InvariantCulture)+","+q+"annex10ImportSaleRows"+q+":"+annex10ImportSaleRows.ToString(CultureInfo.InvariantCulture)
+   +","+q+"annex10NegativeDisplayMask"+q+":"+annex10NegativeDisplayMask.ToString(CultureInfo.InvariantCulture);
+ }
+ private void ObserveOriginalImportedAnnex10(Control grid){
+  if(!Annex10WebCase())throw new InvalidOperationException();
+  annex10ImportSheetObserved=false;annex10ImportSheetActive=false;annex10ImportPurchaseRows=0;annex10ImportSaleRows=0;annex10NegativeDisplayMask=0;
+  try{
+   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count<1||count>32)return;
+   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return;object annex=null;
+   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_10"||name=="PL 142/2024/QH15-174/2024/QH15-204/2025/QH15"){if(annex!=null)return;annex=candidate;}}
+   annex10ImportSheetObserved=annex!=null;
+   System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)return;object info=null;
+   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_10"){if(info!=null)return;info=candidate;}
+   if(info==null)return;annex10ImportSheetActive=Selected(Get(info,"Active"));
+   System.Collections.IList tables=Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count<1||tables.Count>4)return;
+   System.Collections.IList purchases=Get(tables[0],"RowsValues") as System.Collections.IList;if(purchases!=null)annex10ImportPurchaseRows=Math.Min(purchases.Count,10);
+   if(tables.Count<2)return;System.Collections.IList sales=Get(tables[1],"RowsValues") as System.Collections.IList;if(sales==null)return;annex10ImportSaleRows=Math.Min(sales.Count,10);
+   if(annex==null||sales.Count!=2)return;
+   int row=Convert.ToInt32(Get(Get(tables[1],"Location"),"DataLocationTemplateRowStart"))-1+1;if(row<1||row>=Convert.ToInt32(Get(annex,"RowCount"))||Convert.ToInt32(Get(annex,"ColumnCount"))<7)return;
+   annex10NegativeDisplayMask|=1;object raw=Get(Cell(annex,row,6),"Value");decimal number;
+   if(raw!=null&&raw!=DBNull.Value&&Decimal.TryParse(Convert.ToString(raw,CultureInfo.InvariantCulture),NumberStyles.Number,CultureInfo.InvariantCulture,out number)){if(number==-400002m)annex10NegativeDisplayMask|=2;if(number==Decimal.Zero)annex10NegativeDisplayMask|=4;}
+   if(CellText(annex,row,6).IndexOf('-')>=0)annex10NegativeDisplayMask|=8;
+  }catch(Exception){}
+  Record();
  }
  private static XmlDocument ReadBoundedOriginalXml(string path){
   FileInfo file=new FileInfo(path);if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length<1||file.Length>262144)throw new InvalidOperationException();

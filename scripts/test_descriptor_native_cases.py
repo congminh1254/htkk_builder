@@ -7,13 +7,13 @@ native=load('native_cases_for_descriptor_test','htkk_native_cases.py')
 RAW=json.loads((ROOT/'htkk-descriptor-native-cases.json').read_text())
 class DescriptorNativeCaseDesign(unittest.TestCase):
  def test_registry_has_zero_and_amount_cases_per_menu(self):
-  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025','01NTNN-zero-M09-2026','01NTNN-two-contractors-M09-2026','01NTNN-NCCNN-zero-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-zero-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-zero-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-zero-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-zero-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026'))
-  self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8','I9','Y8','J1','D6','Y1','X9','C9'})
+  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025','01NTNN-zero-M09-2026','01NTNN-two-contractors-M09-2026','01NTNN-NCCNN-zero-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-zero-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-zero-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-zero-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-zero-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','05KK-TT89-zero-Q4-2026','05KK-TT89-withheld-Q4-2026'))
+  self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8','I9','Y8','J1','D6','Y1','X9','C9','Z8'})
  def test_design_cannot_be_dispatched_or_gate_a_release(self):
   self.assertFalse(design.DESIGN['dispatchable'])
   # Only reviewed cases are promoted, through the declaration driver and never as a gate.
   promoted=set(design.CASE_IDS)&set(native.CASES)
-  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026'})
+  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','05KK-TT89-withheld-Q4-2026'})
   for case in promoted:self.assertEqual(native.driver(case),'declaration-web-import-inspect');self.assertIs(native.CASES[case]['releaseGate'],False)
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   for case in set(design.CASE_IDS)-promoted:self.assertNotIn(case,workflow)
@@ -34,6 +34,14 @@ class DescriptorNativeCaseDesign(unittest.TestCase):
    lambda v:v.__setitem__('producer','scripts/other.mjs'),
    lambda v:v['cases'].pop(0),
    lambda v:v['cases'][4].__setitem__('caseId',v['cases'][5]['caseId']),
+   # Z8 3.0.9 exists only in HTKK 5.8.2: its adapter and cases name that oracle, and no other adapter or case does.
+   lambda v:v['adapters'][-1].pop('htkkVersion'),
+   lambda v:v['adapters'][-1].__setitem__('htkkVersion','5.8.1'),
+   lambda v:v['cases'][-1].pop('htkkVersion'),
+   lambda v:v['cases'][-1].__setitem__('htkkVersion','5.8.3'),
+   lambda v:v['adapters'][0].__setitem__('htkkVersion','5.8.2'),
+   lambda v:v['cases'][0].__setitem__('htkkVersion','5.8.2'),
+   lambda v:v['cases'][-1]['unit'].__setitem__('periodType','month'),
   ]
   for mutate in mutations:
    value=copy.deepcopy(RAW);mutate(value)

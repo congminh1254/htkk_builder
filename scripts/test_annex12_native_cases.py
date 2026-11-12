@@ -27,7 +27,7 @@ def edited(body,edit,preamble=True):
 
 class RegistryContract(unittest.TestCase):
  def test_two_candidate_cases_use_the_annex_product_producer_and_own_status_contexts(self):
-  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES),ANNEX)
+  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES and c not in cases.ANNEX10_CASES),ANNEX)
   self.assertEqual(len(cases.GATE_CASES),13);self.assertTrue(set(cases.GATE_CASES).isdisjoint(ANNEX))
   for case,producer_case in ((ZERO,'annex12-zero'),(TWO,'annex12-two-plants')):
    c=cases.CASES[case];a=cases.ADAPTERS[c['adapterId']]
@@ -142,17 +142,19 @@ class NativeOutputContract(unittest.TestCase):
   with self.assertRaises(n.OutputError):n.validate_native(zero,TWO,native_fixture.TODAY,initial=True,aligned=True)
   with self.assertRaises(n.OutputError):n.validate_native(two,TWO,native_fixture.TODAY,initial=True,aligned=True)
  def test_only_the_two_plant_case_may_differ_from_its_baseline(self):
-  self.assertEqual([case for case in cases.CASES if not n.baseline_matches_input(case)],[TWO])
+  self.assertEqual([case for case in cases.CASES if not n.baseline_matches_input(case)],[TWO,*cases.ANNEX10_CASES])
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
-  self.assertIn("(-not $gui.roundtripXmlExactMatched -and $gui.webCaseId -cne '"+TWO+"')",probe)
+  # The 01-10 baseline is the zero main declaration without the annex (HTKK refuses an attached empty 01-10).
+  self.assertIn("(-not $gui.roundtripXmlExactMatched -and $gui.webCaseId -cne '"+TWO+"' -and $gui.webCaseId -cne '"+cases.ANNEX10_CASES[0]+"')",probe)
   self.assertIn("webTaxCheckedLeafCount=[int]$gui.webTaxLeafCount;",probe)
-  self.assertIn("$gui.webTaxLeafCount -ne $(if($gui.webCaseId -ceq '"+TWO+"'){159}elseif($gui.webCaseId -ceq '"+ZERO+"'){108}else{70})",probe)
+  self.assertIn("$gui.webTaxLeafCount -ne $(if($gui.webCaseId -ceq '"+cases.ANNEX10_CASES[0]+"'){88}elseif($gui.webCaseId -ceq '"+TWO+"'){159}elseif($gui.webCaseId -ceq '"+ZERO+"'){108}else{70})",probe)
   for line in probe.splitlines():
    if '$gui.webCaseId -cnotin @(' in line:
     for case in ANNEX:self.assertIn("'"+case+"'",line)
-   # Edit counts: the zero annex makes no main edit; the two-plant case one J48 sale edit.
+   # Edit counts: the zero annex and the 01-10 case (zero main baseline, data only from the import) make no main
+   # edit; the two-plant case one J48 sale edit.
    marker="elseif($env:EXPECTED_WEB_CASE_ID -cnotin @('01GTGT-zero-M10-2026','01GTGT-zero-Q4-2026',"
-   if marker in line:edits=line.split(marker)[1].split('){1}')[0];self.assertEqual(edits,"'"+ZERO+"')")
+   if marker in line:edits=line.split(marker)[1].split('){1}')[0];self.assertEqual(edits,"'"+ZERO+"','"+cases.ANNEX10_CASES[0]+"')")
 
 class NativeDriverContract(unittest.TestCase):
  def source(self,name):return (ROOT/name).read_text(encoding='utf-8')
@@ -170,9 +172,9 @@ class NativeDriverContract(unittest.TestCase):
   self.assertIn("FEDCBA9876543210FEDCBA9876543210')) $true",tests);self.assertIn('Assert-Comparison $changed $false',tests)
  def test_comparison_counts_and_dates_are_fixed_per_case(self):
   compare=self.source('HtkkWebTaxComparison.cs');reference=self.source('HtkkWebInputReference.cs');export=self.source('HtkkGtgtExportInspection.cs')
-  self.assertIn('if(expectedTaxLeaves!=70&&expectedTaxLeaves!=108&&expectedTaxLeaves!=159)return false;',compare)
+  self.assertIn('if(expectedTaxLeaves!=70&&expectedTaxLeaves!=88&&expectedTaxLeaves!=108&&expectedTaxLeaves!=159)return false;',compare)
   self.assertIn('public static bool Compare(XmlDocument input,XmlDocument baseline,XmlDocument output,out int taxLeaves){return Compare(input,baseline,output,70,out taxLeaves);}',compare)
-  self.assertIn('private int WebTaxLeafTarget(){return !Annex12WebCaseId()?70:webCaseId==Annex12WebTwoPlantsCaseId?159:108;}',reference)
+  self.assertIn('private int WebTaxLeafTarget(){return Annex10WebCaseId()?88:!Annex12WebCaseId()?70:webCaseId==Annex12WebTwoPlantsCaseId?159:108;}',reference)
   self.assertIn('HtkkWebTaxComparison.Compare(input,baseline,output,WebTaxLeafTarget(),out webTaxLeafCount)',export)
   # Only creation date and the four service identity leaves keep native rules.
   self.assertIn('return path==DatePath||input.InnerText==output.InnerText;',compare)
@@ -195,7 +197,7 @@ class NativeDriverContract(unittest.TestCase):
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
   line=next(x for x in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-web-import-inspect' -and $env:EXPECTED_WEB_CASE_ID -cin @('"+ZERO+"','"+TWO+"')){$matched=" in x)
   for term in ('annex12InputActionCount -eq 14','annex12WebBaselineSchemaVerified','annex12WebReexportSchemaVerified','annex12WebImportSheetMatched','annex12WebImportGroupCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq','annex12RowInsertActionCount -eq 1','annex12ExportMainZeroMatched'):self.assertIn(term,line)
-  self.assertIn("-and $lastGui.webTaxLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '"+TWO+"'){159}elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+ZERO+"'){108}else{70})",probe)
+  self.assertIn("-and $lastGui.webTaxLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '"+cases.ANNEX10_CASES[0]+"'){88}elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+TWO+"'){159}elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+ZERO+"'){108}else{70})",probe)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
   self.assertEqual(registry['webTaxLeafCount']['maximum'],159);values=registry['webCaseId']['values'];self.assertEqual(values[values.index(ANNEX[0]):values.index(ANNEX[0])+2],list(ANNEX))
   for key in ('annex12WebImportSheetMatched','annex12WebBaselineSchemaVerified','annex12WebReexportSchemaVerified','annex12WebImportGroupCount','annex12WebImportRowCount'):self.assertEqual(registry[key]['activeModes'],['gtgt-web-import-inspect'])

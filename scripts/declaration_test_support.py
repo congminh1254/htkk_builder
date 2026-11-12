@@ -156,4 +156,5 @@ def declaration_manifest(body, case_id, producer_sha=None, source='a' * 40):
             'menuId': spec['menuId'], 'engine': spec['family'], 'xmlVersion': spec['xmlVersion'], 'schemaId': spec['schemaId'], 'annexes': c['unit']['annexes'],
             'inputsSynthetic': True, 'exporter': 'lib/htkk-declaration-engines.ts', 'producer': 'scripts/generate-htkk-declaration-reference.mjs',
             'producerSha256': producer_sha or hashlib.sha256(PRODUCER).hexdigest(), 'xmlSha256': hashlib.sha256(body).hexdigest(), 'bytes': len(body),
-            'leafCount': spec['leafCount'], 'nativeQualified': False, 'filingEnabled': False}
+            'leafCount': spec['leafCount'], 'nativeQualified': False, 'filingEnabled': False,
+            **({'htkkVersion': registry.htkk_version(case_id)} if case_id in d.MANIFEST_HTKK_VERSION_CASES else {})}

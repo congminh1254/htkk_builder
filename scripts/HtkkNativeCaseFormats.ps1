@@ -18,6 +18,7 @@ $HtkkNativeCaseFormats=@{
  'BCTC133-B01a-basic-Y2025'='htkk-web-bctc133-basic-y2025-input-v1'
  'BCTC200-LT-basic-Y2025'='htkk-web-bctc200-lt-basic-y2025-input-v1'
  '05KK-withheld-Q3-2026'='htkk-web-tncn05kk-withheld-q3-2026-input-v1'
+ '05KK-TT89-withheld-Q4-2026'='htkk-web-tncn05kk-tt89-withheld-q4-2026-input-v1'
  '05QTT-two-employees-Y2025'='htkk-web-tncn05qtt-two-employees-y2025-input-v1'
  '01CNKD-TT50-revenue-two-groups-Q3-2026'='htkk-web-cnkd01-revenue-two-groups-q3-2026-input-v1'
  '02QTT-dependants-Y2025'='htkk-web-tncn02qtt-dependants-y2025-input-v1'
@@ -32,6 +33,7 @@ $HtkkNativeCaseFormats=@{
  '01NTNN-NCCNN-occurrence-D20-10-2026'='htkk-web-ntnn01-nccnn-occurrence-d20-10-2026-input-v1'
  '03NTNN-occurrence-D20-10-2026'='htkk-web-ntnn03-occurrence-d20-10-2026-input-v1'
  '01CNKD-TT50-310-pl01-three-groups-Q3-2026'='htkk-web-cnkd01-310-pl01-three-groups-q3-2026-input-v1'
+ '01GTGT-annex10-nq204-M10-2026'='htkk-web-annex10-nq204-input-v1'
 }
-$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','01CNKD-TT50-310-pl01-three-groups-Q3-2026')
+$HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05KK-TT89-withheld-Q4-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','01CNKD-TT50-310-pl01-three-groups-Q3-2026')
 $HtkkDeclarationEntryCases=@('01NTNN-NCCNN-entry-M10-2026','01NTNN-NCCNN-occurrence-D20-10-2026')

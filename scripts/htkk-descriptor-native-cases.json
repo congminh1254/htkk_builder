@@ -17,7 +17,8 @@
     {"adapterId": "04-ntnn-tt80-3.0.8", "menuId": "D6", "businessClass": "Ntnn04TT80", "xmlVersion": "3.0.8", "schemaId": "Validate/04_NTNN_TT80_308.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
     {"adapterId": "04-ntnn-tt89-3.0.9", "menuId": "Y1", "businessClass": "Ntnn04TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/04_NTNN_TT89_309.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
     {"adapterId": "02-ntnn-tt89-3.0.9", "menuId": "X9", "businessClass": "Ntnn02TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/02_NTNN_TT89_309.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"},
-    {"adapterId": "02-ntnn-tt80-2.5.1", "menuId": "C9", "businessClass": "Ntnn02TT80", "xmlVersion": "2.5.1", "schemaId": "Validate/02_NTNN_TT80_251.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"}
+    {"adapterId": "02-ntnn-tt80-2.5.1", "menuId": "C9", "businessClass": "Ntnn02TT80", "xmlVersion": "2.5.1", "schemaId": "Validate/02_NTNN_TT80_251.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"},
+    {"adapterId": "05-kk-tncn-tt89-3.0.9", "htkkVersion": "5.8.2", "menuId": "Z8", "businessClass": "TncnKk05TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/05_KK_TNCN_TT89_309.xsd", "annexes": [], "mode": "web-xml-import-reexport"}
   ],
   "cases": [
     {"caseId": "05KK-zero-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
@@ -115,6 +116,13 @@
     {"caseId": "03NTNN-occurrence-D20-10-2026", "adapterId": "03-ntnn-tt80-3.0.8", "releaseGate": false,
      "unit": {"menuId": "J1", "adapterVersion": "3.0.8", "periodType": "day", "periodValue": "20/10/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"tongct6": "1100000000", "tongct8": "1100000000", "tongct10": "0", "tongct11": "0"},
-     "question": "Kỳ lần phát sinh: BE (ct7) = ngày phát sinh, khóa; checkTKChinh ValidateFullDate(văn bản BE, \"ddMMyyyy\") có báo E_18 trên ô BE không rỗng không?"}
+     "question": "Kỳ lần phát sinh: BE (ct7) = ngày phát sinh, khóa; checkTKChinh ValidateFullDate(văn bản BE, \"ddMMyyyy\") có báo E_18 trên ô BE không rỗng không?"},
+    {"caseId": "05KK-TT89-zero-Q4-2026", "adapterId": "05-kk-tncn-tt89-3.0.9", "htkkVersion": "5.8.2", "releaseGate": false,
+     "unit": {"menuId": "Z8", "adapterVersion": "3.0.9", "periodType": "quarter", "periodValue": "4/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
+     "expectedLeaves": {"mst_cu": "9999999997", "ct17": "0", "ct20": "0", "ct24": "0", "ct29": "0", "ct32": "0", "ct35": "0", "ct36": "0", "ct42": "0"}},
+    {"caseId": "05KK-TT89-withheld-Q4-2026", "adapterId": "05-kk-tncn-tt89-3.0.9", "htkkVersion": "5.8.2", "releaseGate": false,
+     "unit": {"menuId": "Z8", "adapterVersion": "3.0.9", "periodType": "quarter", "periodValue": "4/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
+     "expectedLeaves": {"mst_cu": "9999999997", "ct14": "0", "ct15": "12", "ct16": "10", "ct17": "10", "ct18": "8", "ct19": "2", "ct20": "180000000", "ct21": "150000000", "ct22": "30000000", "ct23": "2000005", "ct24": "8000000", "ct25": "0", "ct27": "0", "ct29": "150000000", "ct32": "90000000", "ct35": "200001", "ct36": "5000000", "ct39": "0", "ct40": "0", "ct41": "1000000", "ct42": "12000000", "ct44": "6000000", "ct45": "200001"},
+     "question": "[35] = ROUND([23]*10/100,0) = ROUND(200000.5) (mẫu HTKK 5.8.2, ô khóa): kỳ vọng 200001; [36] = [38]+[40]+[41]; HTKK 5.8.2 nhận kỳ quý 4/2026 (CheckToKhaiBatDauCoHieuLuc)."}
   ]
 }
