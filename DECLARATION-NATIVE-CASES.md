@@ -41,6 +41,48 @@ PL 01 H = G×30% (H20 = `G20*30.0%`), [17] = CE − CD + CF (AE291 = `CE291-CD29
 2.100.000, [20] TNCN 6.150.000, [47] 22.150.000. Tổng PL 01 theo đúng ràng buộc của `01_43_1_CNKD_HKD_TT50_310.xml`: H_22 (Σ được
 giảm) → `tongSoThueTNCN_phaiNop` = 1.350.000, G_22 (Σ phải nộp) → `tongsoThueTNCN_duocGiam` = 4.500.000. Câu hỏi mở: AJ và CD không
 có trong XML; nếu "Nhập từ XML" để AE tính lại với CD = 0 thì ô kiểm AE291/AE293 thất bại và ca cần chế độ `original-entry-export`.
+Đã xác nhận (run 43127371885, 43130173107): nhập XML thành công, `declarationCellMismatchMask` 40 = AE291/AE293; PL 01 nhập đúng.
+Ca chuyển sang chế độ `web-xml-import-tick-reexport` (mục dưới).
+
+### Chế độ ca native `web-xml-import-tick-reexport` (U5 3.1.0, `01CNKD-TT50-310-pl01-three-groups-Q3-2026`, non-gating)
+
+Cùng driver/GUI mode `declaration-web-import-inspect`, cùng input web (không đổi: nhánh input, `web_artifact_commit`,
+`web_source_sha` như run 43130173107), cùng "Nhập từ XML" gốc; sau thông báo nhập thành công, kế hoạch cố định
+`HtkkDeclarationCasePlans.ImportTick(caseId)` (adapter `01-cnkd-hkd-3.1.0-pl01`, mode `IMPORT_TICK_MODE`) làm thêm các thao
+tác gốc cho phần lưới mà XML không mang được, rồi mới tới ô kiểm, Kết xuất, XSD và so toàn cây như mọi ca import.
+Nguồn (đọc tĩnh TAX.HTKK.Business.dll / HTKK.exe 5.8.2, ghim `u5-310-tick-*` trong `htkk-oracle-baselines.json`, trạng thái
+`added-reviewed`: phương thức chỉ có từ 5.8.2, 5.8.1 không có lớp `CnkdHkd01TT50Nckt310` nên `TickMethodPins()` từ chối):
+
+- XML không có `chonGiamThue` (AJ) / `ct17_soThueGiam` (CD); sau nhập AJ trống, CD = 0, AE = CE. `AutoBindData_0` →
+  `lockUnLockA_TK` để AJ mở ở dòng có CE > 0.
+- Cột khóa dòng con (BN/BK/CA/BS/BO/BP, không có đường dẫn XML) chỉ được `SetCacDongCon` ghi (cho mọi dòng của bảng, qua
+  `GeneralFunctions.SetLaiDongConBangF5`), và `SetCacDongCon` chỉ chạy từ `CellChange_0`, tức một lần sửa ô gốc. Nếu không,
+  `daySangPLGiamThue` chép BN/BK/CA rỗng sang PL 01 (C/D/N) và so cây lệch ở `ma_diaDiemKD`/`ten_diaDiemKD`/`mst_diaDiemKD`.
+- `CopyTableToTable5(deleteDataOld = true, colCompare AJ, valueCompare "true")` xóa các dòng PL 01 đã nhập và dựng lại từ
+  các dòng đã tích; CD dòng tích := H của dòng PL 01 khớp C/I/K (H = G × 30%, XLS H20), dòng không tích CD := 0; `capNhatToKhai`
+  (CF = 0 khi không có PL 03). AE = CE − CD + CF là kết quả của chính HTKK.
+- `ButtonClick_0` nhận `idxRow`/`idxCol` 0-based (WinDoWorkEvent.ButtonClick truyền `e.Row`/`e.Column`) nhưng đọc CE/ghi AJ ở
+  `idxRow − 1`, tức dòng ngay trên ô bấm (dòng tiêu đề 290 trống hoặc dòng 292 chưa tích): chỉ đổi khóa/giá trị AJ của dòng
+  đó, rồi `DetectIndexOfTable(idxRow + 1)` đúng dòng bấm → `daySangPLGiamThue`, `capNhatToKhai`. AJ292 vẫn trống (kiểm lại).
+
+Thứ tự, mỗi lượt timer một thao tác: `tick-pins` (13 thân phương thức, cùng cách ghim với Y8) → `tick-edits`: L291 qua editor
+gốc (`^a`, giá trị, `{TAB}` như Y8) hai lần, `0` rồi `300000000` (giá trị web), để chắc chắn có thay đổi thật nên
+FpSpread.Change → `winFpSpread_CellChange` → `WinDoWorkEvent.CellChange` → `CellChange_0` chạy (cột L cũng chép L → U) →
+`tick-ticks`: SPACE trên AJ291 rồi AJ293 (ô `CheckBoxCellType` mở, chưa tích, hiện) → ButtonClicked → `ButtonClick_0` →
+`tick-inspect`: AJ291/AJ293 còn tích, AJ292 trống (bắt buộc); đọc lại BN291..293 = `00001`, CA291..293 = MST hồ sơ (chỉ chẩn
+đoán, mask) → ô kiểm chung (thêm CD291 = 450.000, CD292 = 0, CD293 = 900.000; AE291/AE293 giữ nguyên, không nới) → Kết xuất.
+Stage thành công `declaration-import-tick-exported`; thất bại thao tác `declaration-import-tick-not-matched`. Trường chẩn đoán
+(không giá trị): `declarationTickMethodPinsMatched`, `…EditsMatched`, `…TicksMatched`, `…ReadbackMatched`, `…PlannedCount`,
+`…ActionCount`, `…FailureCode` (1 pin, 3 ô tích không phải checkbox mở chưa tích, 4 tích không ăn, 5 ô tích/ô trống đổi sau đó,
+6 metadata, 8 ô sửa khóa, 9 kiểu ô, 10 foreground/focus, 11 editor, 13 đọc lại ô sửa, 17 thông báo gốc), `…MethodPinMask`,
+`…MismatchMask` (bit = chỉ số thao tác), `…ReadbackMask` (bit 0–7 đọc lại, 8–11 ô tích, 12–15 ô phải trống). Provenance:
+`inputMode` = `web-xml-import-tick-reexport`, `originalImportSucceeded` = true.
+
+Vì sao không gõ lại cả tờ khai (`original-entry-export` như Y8): nhập XML giữ đúng mọi ô khác (ca 2.9.8 khớp toàn bộ; ca 3.1.0
+chỉ lệch AE291/AE293), phần thiếu chỉ là ô tích AJ; nhập tay đầy đủ cần thêm ba loại danh mục thả xuống chưa từng chạy
+(tỉnh control 100, xã control 101 phụ thuộc tỉnh, nhóm ngành DC_185), F5 trong bảng địa điểm lồng nhau và ô (1) B_26, mỗi thứ
+một ẩn số Windows không liên quan tới NQ 43, trong khi phép tính giảm thuế (ButtonClick_0 → daySangPLGiamThue →
+capNhatToKhai, công thức XLS) là cùng một đường trong cả hai chế độ.
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 

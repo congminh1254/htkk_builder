@@ -1380,6 +1380,41 @@
       "id": "declaration-original-entry-exported",
       "enumName": "DeclarationOriginalEntryExported",
       "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-ready-waiting",
+      "enumName": "DeclarationImportTickReadyWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-pins-checking",
+      "enumName": "DeclarationImportTickPinsChecking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-editing",
+      "enumName": "DeclarationImportTickEditing",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-invoking",
+      "enumName": "DeclarationImportTickInvoking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-readback-checking",
+      "enumName": "DeclarationImportTickReadbackChecking",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-not-matched",
+      "enumName": "DeclarationImportTickNotMatched",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-import-tick-exported",
+      "enumName": "DeclarationImportTickExported",
+      "category": "declaration"
     }
   ],
   "dynamicStageMappings": {
@@ -1663,6 +1698,16 @@
     "declarationEntryCombo1Mask",
     "declarationEntryCombo2Mask",
     "declarationEntryDateTextMask",
+    "declarationTickMethodPinsMatched",
+    "declarationTickEditsMatched",
+    "declarationTickTicksMatched",
+    "declarationTickReadbackMatched",
+    "declarationTickPlannedCount",
+    "declarationTickActionCount",
+    "declarationTickFailureCode",
+    "declarationTickMethodPinMask",
+    "declarationTickMismatchMask",
+    "declarationTickReadbackMask",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -3398,6 +3443,88 @@
       "default": 0,
       "minimum": 0,
       "maximum": 1073741823,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickMethodPinsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickEditsMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickTicksMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickReadbackMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickPlannedCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 8,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickActionCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 8,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickFailureCode": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 31,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickMethodPinMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1073741823,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickMismatchMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickReadbackMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

@@ -36,6 +36,22 @@ internal sealed class HtkkDeclarationEntryPlan {
  }
 }
 
+// Native-case mode web-xml-import-tick-reexport: after the original "Nhập từ XML", fixed original keyboard actions on
+// sheet 01 for inputs the XML cannot carry (grid-only cells). Edits: kind|cell|value through the original editor,
+// one per UI turn. Ticks: checkbox cells ticked with SPACE (ButtonClicked), in order. Unticked: checkboxes that must
+// stay clear. Readbacks: cell|text of HTKK-written cells, a value-free diagnostic mask only (the sheet checks and the
+// whole-tree comparison decide). Method pins: HtkkOracleBaseline.TickMethodPins() of the selected oracle.
+internal sealed class HtkkDeclarationTickPlan {
+ internal readonly string[] Edits,Ticks,Unticked,Readbacks,MethodPins;
+ internal HtkkDeclarationTickPlan(string[] edits,string[] ticks,string[] unticked,string[] readbacks,string[] methodPins){
+  Edits=edits;Ticks=ticks;Unticked=unticked;Readbacks=readbacks;MethodPins=methodPins;
+  if(edits.Length<1||edits.Length>4||ticks.Length<1||ticks.Length>4||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
+  foreach(string edit in edits){string[] parts=edit.Split('|');if(parts.Length!=3||parts[0]!="number")throw new InvalidOperationException();}
+  foreach(string readback in readbacks)if(readback.Split('|').Length!=2)throw new InvalidOperationException();
+  foreach(string pin in methodPins){string[] parts=pin.Split('|');if(parts.Length!=6||(parts[0]!="B"&&parts[0]!="H")||parts[5].Length!=64)throw new InvalidOperationException();}
+ }
+}
+
 internal static class HtkkDeclarationCasePlans {
  internal const string XmldsigSha256="c3b5160be1852606d10f6928e0b214d418f8dd418667cb2fb88fec31e4e6f56d";
  private const string TKhaiThue="TKhaiThue.xsd",TKhaiThueSha256="8f451719355b5a6247f65a34a37584b4a0c7f7cc81a568e1033d08b8fe9b8c1d";
@@ -140,13 +156,15 @@ internal static class HtkkDeclarationCasePlans {
    // U5 01/CNKD TT50 3.1.0 (non-gating, HTKK 5.8.2 oracle only): Menu.xml 5.8.2 VersionXML 3.1.0, class
    // CnkdHkd01TT50Nckt310. The period dialog ticks "PL 01 43/2026/QH16" (sheet 01-4; frmHTKKPeriod.LoadPhuLucSpread locks
    // PL 01/PL 03 outside kỳ quý, btnDongY_Click refuses both with 0709). Three groups (rows 291-293), PL 01 rows 20-21.
-   // chonGiamThue (AJ) and soThueGiam (CD) are not in the XML: the AE checks show whether the import keeps the reduced
-   // [17] (AE = CE - CD + CF); if HTKK recomputes AE with CD = 0 the case needs the original-entry mode instead.
+   // chonGiamThue (AJ) and soThueGiam (CD) are not in the XML: after "Nhập từ XML" AJ is clear, CD = 0 and AE = CE
+   // (runs 43127371885, 43130173107: cell mask 40 = AE291/AE293). The case therefore runs in mode
+   // web-xml-import-tick-reexport (HtkkDeclarationCasePlans.ImportTick): the sheet checks below (AE, CD, PL 01 G/H)
+   // are read AFTER the original ticks of AJ291/AJ293, when HTKK itself has rebuilt PL 01 and CD.
    case "01CNKD-TT50-310-pl01-three-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","3.1.0","1266","CnkdHkd01TT50Nckt310",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
     new string[]{"PL 01 43/2026/QH16"},new string[]{"01|Tờ khai","01-4|PL 01 43/2026/QH16"},
     "InterfaceTemplates/excel/01_CNKD_HKD_TT50_310.xls","864ef2c1c28f4f0c807265fa2497264ec72283912dda1f3f6294b6b9aa8a3c56","InterfaceTemplates/xml/01_CNKD_HKD_TT50_310.xml","30f4d3162d6179ce8c233c977898b86f63756e741bda1a423c15e45babea0d86",
     "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,299,
-    new string[]{"01|U291|300000000","01|U292|150000000","01|U293|200000000","01|AE291|1050000","01|AE292|3000000","01|AE293|2100000","01-4|G20|1500000","01-4|H20|450000","01-4|G21|3000000","01-4|H21|900000"},
+    new string[]{"01|U291|300000000","01|U292|150000000","01|U293|200000000","01|AE291|1050000","01|AE292|3000000","01|AE293|2100000","01-4|G20|1500000","01-4|H20|450000","01-4|G21|3000000","01-4|H21|900000","01|CD291|450000","01|CD292|0","01|CD293|900000"},
     new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|16000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|6150000",Main+"HoTroThongTinNopThue/tongTienCT47|22150000",
      "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongSoThueTNCN_phaiNop|1350000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongsoThueTNCN_duocGiam|4500000"});
    // I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh (frmHTKKPeriod_Load
@@ -294,6 +312,27 @@ internal static class HtkkDeclarationCasePlans {
  //    DM_NNKD_NTNN.xml names in file order (DMNnkdNtnn); frmWinToKhai.winFpSpread_CellChange writes the
  //    key of the chosen name into the SelectedValue column BX. Items 01 (index 0) and 05 (index 4).
  //  * Ntnn01TT89Nckt309.CellChange_0 is empty: AV/BN/BR and the row-80/88 totals are XLS formulas.
+ // U5 01/CNKD TT50 3.1.0 (mode web-xml-import-tick-reexport, HTKK 5.8.2 only). Source: TAX.HTKK.Business.dll 5.8.2
+ // CnkdHkd01TT50Nckt310 and HTKK.exe 5.8.2, read statically (pins: htkk-oracle-baselines.json u5-310-tick-*).
+ //  * The XML has no chonGiamThue (AJ) / ct17_soThueGiam (CD): the import leaves AJ clear and CD = 0. AutoBindData_0 ->
+ //    lockUnLockA_TK keeps AJ open on rows whose CE (XLS formula of U, Z and BM) is > 0.
+ //  * The import fills no child-row key column (BN/BK/CA/BS/BO/BP: no XML path). They are written for every row of the
+ //    table only by SetCacDongCon from CellChange_0, i.e. by an original cell edit. The plan therefore edits L291 (ct11)
+ //    through the original editor twice, 0 and then the web value 300000000 (a real change each time, so FpSpread.Change
+ //    -> winFpSpread_CellChange -> WinDoWorkEvent.CellChange -> CellChange_0 runs; column L also copies L into U).
+ //  * Then SPACE on AJ291 and AJ293 (CE > 0, open): ButtonClicked -> WinDoWorkEvent.ButtonClick -> ButtonClick_0
+ //    -> daySangPLGiamThue: CopyTableToTable5(deleteDataOld) rebuilds PL 01 from the ticked rows (the imported PL 01
+ //    rows are discarded), CD of each ticked row := PL 01 H (= G x 30%, XLS H20), then capNhatToKhai (CF = 0 without
+ //    PL 03), so AE = CE - CD is HTKK's own result. AJ292 (group 02, not reduced) stays clear.
+ //  * Readbacks (diagnostic): BN = ma_diaDiemKD 00001 and CA = the profile MST on the rows, written by SetCacDongCon.
+ internal static HtkkDeclarationTickPlan ImportTick(string caseId){
+  if(caseId!="01CNKD-TT50-310-pl01-three-groups-Q3-2026")return null;
+  return new HtkkDeclarationTickPlan(
+   new string[]{"number|L291|0","number|L291|300000000"},
+   new string[]{"AJ291","AJ293"},new string[]{"AJ292"},
+   new string[]{"BN291|00001","BN292|00001","BN293|00001","CA291|9999999997","CA292|9999999997","CA293|9999999997"},
+   HtkkOracleBaseline.TickMethodPins());
+ }
  internal static HtkkDeclarationEntryPlan Entry(string caseId){
   // The lần phát sinh case types the same rows with (6) AE = the period day (checkTKChinh E_27).
   bool occurrence=caseId=="01NTNN-NCCNN-occurrence-D20-10-2026";

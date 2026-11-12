@@ -317,7 +317,7 @@ class InputPrivacy(unittest.TestCase):
 class NativeOutput(unittest.TestCase):
     def provenance(self, web, native, case, matched=True, mask=0):
         return {'format': 'htkk-declaration-native-output-staging-v1', 'builderRepository': out.BUILDER, 'builderCommit': BUILDER_SHA, 'runId': '123', 'runAttempt': 1, 'sourceRepository': out.REPO, 'sourceCommit': SOURCE, 'sourceVersion': '5.8.1',
-                'runtimeHost': 'clr2-x86-reference', 'caseId': case, 'artifactCommit': ARTIFACT, 'inputsSynthetic': True, 'originalProcessStopped': True, 'originalSourcesUnmodified': True, 'inputMode': registry.input_mode(case), 'originalImportSucceeded': registry.input_mode(case) == registry.IMPORT_MODE, 'originalExportSucceeded': True,
+                'runtimeHost': 'clr2-x86-reference', 'caseId': case, 'artifactCommit': ARTIFACT, 'inputsSynthetic': True, 'originalProcessStopped': True, 'originalSourcesUnmodified': True, 'inputMode': registry.input_mode(case), 'originalImportSucceeded': registry.input_mode(case) in (registry.IMPORT_MODE, registry.IMPORT_TICK_MODE), 'originalExportSucceeded': True,
                 'originalExporterValidatedSchema': True, 'webImportInputSha256': hashlib.sha256(web).hexdigest(), 'originalOutputSha256': hashlib.sha256(native).hexdigest(), 'originalOutputBytes': len(native),
                 'harnessSchemaValid': True, 'harnessTreeMatched': matched, 'harnessTreeMismatchMask': mask, 'harnessTreeLeafCount': d.tax_leaf_count(case), 'harnessXmlMismatchMask': 0, 'harnessCellMismatchMask': 0,
                 'creationDateRule': 'native-export-current-date', 'fullRoundTrip': False}

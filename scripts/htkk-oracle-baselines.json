@@ -4,7 +4,7 @@
  "notes": [
   "Reviewed pins of each official HTKK distribution the native harness may use as its oracle. Data only: no installer bytes, no extracted source.",
   "5.8.1 stays the default oracle. 5.8.2 is selectable (workflow input htkk_version) for a non-gating cohort; it never feeds release, Pages or scoped evidence.",
-  "Method status: reviewed = the body the driver was written against; token-renumbered = same instructions as the reviewed 5.8.1 body once metadata tokens are resolved to names (new token, new raw IL hash); changed = the body really differs and is NOT accepted as the reviewed body; changed-reviewed = the body really differs, its new body was reviewed against the driver plan ('review') and is accepted for that version only (the 5.8.1 pins are unchanged).",
+  "Method status: reviewed = the body the driver was written against; token-renumbered = same instructions as the reviewed 5.8.1 body once metadata tokens are resolved to names (new token, new raw IL hash); changed = the body really differs and is NOT accepted as the reviewed body; changed-reviewed = the body really differs, its new body was reviewed against the driver plan ('review') and is accepted for that version only (the 5.8.1 pins are unchanged). added-reviewed = a method of a later release only (absent from the default oracle, e.g. U5 3.1.0 CnkdHkd01TT50Nckt310 of 5.8.2), pinned as itself with its review for that version only.",
   "Generated consumers: HtkkOracleBaseline.ps1 and HtkkOracleBaseline.cs (python3 scripts/generate-htkk-oracle-baselines.py [--check])."
  ],
  "versions": {
@@ -437,6 +437,149 @@
      "ilSha256": "cba88b3cb7bb7cc504477eb823e31c800aa6874639c1971fd30e1bc288365285",
      "status": "token-renumbered",
      "reviewedToken581": "0x060003a2"
+    },
+    {
+     "id": "u5-310-tick-autobind",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "AutoBindData_0",
+     "token": "0x06000921",
+     "ilBytes": 192,
+     "ilSha256": "9e092e146b8311db4d5c54dae6f8a265b7f91757ccd847a375841ada9b950b6a",
+     "status": "added-reviewed",
+     "review": "Sheet 01 bind after the original import (ProcessSheet -> WinDoWorkEvent.AutoBindData): writes the period type cell BM58, header locks (lockUnLockHeaderCheck), then lockUnLockA_TK and ThayDoiTieuMucA. Leaves AJ (chonGiamThue, not in the XML) unticked and open when CE > 0. Reviewed against the U5 3.1.0 import-tick plan; 5.8.2 only (the class is absent from 5.8.1)."
+    },
+    {
+     "id": "u5-310-tick-locks",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "lockUnLockA_TK",
+     "token": "0x06000936",
+     "ilBytes": 2864,
+     "ilSha256": "0c87d1c617f4c3af75007ca7726a6843c9761697edb7c6e895e2fda123e26382",
+     "status": "added-reviewed",
+     "review": "For every table_1/table_2 row: AJ := (CE > 0 ? AJ : false) and AJ.Locked := !(CE > 0) (CE = ct17_soThueGoc, XLS formula of U, Z and BM). So AJ291/AJ293 are open after the import and after the L291 retype. Reviewed against the U5 3.1.0 import-tick plan; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-cellchange",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "CellChange_0",
+     "token": "0x06000926",
+     "ilBytes": 2816,
+     "ilSha256": "2d8a1b22805dc6b00f66de7b3ccaa831ac279351370b4fe828458593d534f796",
+     "status": "added-reviewed",
+     "review": "Edited cell of sheet 01 (1-based iRow/iCol from winFpSpread_CellChange): column L copies L into U; for any table row SetCacDongCon fills the child-row keys (BN, BK, CA, BS, BO, BP) of the whole table; on table_1/table_2 rows except column AJ it re-derives AJ from CE, then daySangPLGiamThue and capNhatToKhai, tinhCt14_tk, the [18]-[20] totals and section D. Reviewed against the plan's L291 edits; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-child-keys",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "SetCacDongCon",
+     "token": "0x0600094b",
+     "ilBytes": 2683,
+     "ilSha256": "1e3a5071e7eed2f7205e614a19d7fb092d161bebfc5557c08114a4c9253a6e93",
+     "status": "added-reviewed",
+     "review": "Copies the location header of the edited table (ma/ten dia diem, xa, tru so chinh) and the taxpayer MST into the hidden child-row columns BS/BN/BO/BP/BK/CA of every row of that table via GeneralFunctions.SetLaiDongConBangF5. The XML import does not fill them (no XML path), so the plan edits L291 once before the ticks. Reviewed; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-buttonclick",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "ButtonClick_0",
+     "token": "0x0600092b",
+     "ilBytes": 399,
+     "ilSha256": "cdcc0084cc4702ce6df3ebaa99b24583b3b77867cb7a33be3b5a3ef8e75b6ca8",
+     "status": "added-reviewed",
+     "review": "Checkbox click on sheet 01 (0-based idxRow/idxCol from WinDoWorkEvent.ButtonClick): lockUnLockA_TK; when idxCol + 1 = AJ it re-derives AJ/lock of the cell one row above (idxRow - 1, an HTKK off-by-one that only touches the row above the clicked one: header row 290 or the unticked row 292), then for a table_1/table_2 row (DetectIndexOfTable(idxRow + 1)) daySangPLGiamThue; always capNhatToKhai. Reviewed against the AJ291/AJ293 ticks; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-pl01",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "daySangPLGiamThue",
+     "token": "0x06000927",
+     "ilBytes": 1274,
+     "ilSha256": "cbc9edf6ff15ddbcd1c1a3c0152bcdd98e02f015465f2c267f2b460eca5d8d37",
+     "status": "added-reviewed",
+     "review": "PL 01 (sheet index 3) is rebuilt by CopyTableToTable5(deleteDataOld = true, colCompare AJ, valueCompare 'true') from the ticked table_1/table_2 rows (BK->D, BN->C, CB->E, CC->I, C->F, BM->K, CE->G, CA->N, BR->L, BY->M); then CD of a ticked row := H of the first unused PL 01 row with the same C/I/K (O := true), CD of an unticked row := 0. Reviewed; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-capnhat",
+     "assembly": "B",
+     "type": "CnkdHkd01TT50Nckt310",
+     "method": "capNhatToKhai",
+     "token": "0x0600092a",
+     "ilBytes": 1314,
+     "ilSha256": "c4f36b5de6505db04af9883971bd02ef847865ee740f30c54ec95949f937e0fd",
+     "status": "added-reviewed",
+     "review": "CF (thue bu) of table_1/table_2 rows from PL 03 (sheet index 4) only when PL 03 is present and header (1)/(2) applies; without PL 03 CF stays 0, so AE = CE - CD + CF = CE - CD. Reviewed against the PL 01-only plan; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-copy-table",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "CopyTableToTable5",
+     "token": "0x06002ba0",
+     "ilBytes": 1251,
+     "ilSha256": "e5171ad1b6d2143a904df7b342ce61229de4c3b1538d136d58ea218ab297aa00",
+     "status": "added-reviewed",
+     "review": "With deleteDataOld it first removes the extra data rows of the target table and resets its template row to the defaults, then inserts one target row per source row whose compare column text equals valueCompare, copying the mapped columns. So the PL 01 rows imported from the XML are replaced by rows derived from the ticks. Reviewed; added for 5.8.2 only (U5 3.1.0 plan)."
+    },
+    {
+     "id": "u5-310-tick-child-column",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "SetLaiDongConBangF5",
+     "token": "0x06002b28",
+     "ilBytes": 95,
+     "ilSha256": "b5d1883d9f56c09ee0bf27aa6d27ce073438cfb9b7c29065f000e44333f4bb05",
+     "status": "added-reviewed",
+     "review": "Writes one value into one column of every data row of a table (DataLocationTemplateRowStart .. + RowsValues.Count - 1). Used by SetCacDongCon for the child-row key columns. Reviewed; added for 5.8.2 only (U5 3.1.0 plan)."
+    },
+    {
+     "id": "u5-310-tick-grid-cellchange",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_CellChange",
+     "token": "0x060003b5",
+     "ilBytes": 25029,
+     "ilSha256": "11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d",
+     "status": "added-reviewed",
+     "review": "FpSpread.Change handler: after its menu-specific branches it calls WinDoWorkEvent.CellChange(spread, ActiveSheetIndex, e.Row + 1, e.Column + 1) (1-based). Same 5.8.2 body as y8-entry-grid-cellchange (changed-reviewed there: Z8 list entries and control 110 do not reach U5). Pinned again for the U5 3.1.0 plan; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-dowork-cellchange",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "CellChange",
+     "token": "0x06000063",
+     "ilBytes": 291,
+     "ilSha256": "45a40a1819c94b7ad5ad5a7153092d368b3884faf585325431ac7c59aefce33f",
+     "status": "added-reviewed",
+     "review": "Resolves CellChange_<sheet index> of the business instance by name and invokes it with winFpSpread, ToKhaiInfo, TTinChung, PeriodInfo, iRow, iCol bound by parameter name. Reviewed for the U5 3.1.0 plan (CellChange_0 for sheet 01); added for 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-grid-button",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_ButtonClicked",
+     "token": "0x060003bb",
+     "ilBytes": 178,
+     "ilSha256": "18521f8a3187960b2eb0ae6ec1af877e5108d891f101348d3e3e93aeb7bb5231",
+     "status": "added-reviewed",
+     "review": "FpSpread.ButtonClicked handler: for a ButtonCellType or CheckBoxCellType cell calls WinDoWorkEvent.ButtonClick(spread, e.Row, e.Column) (0-based). Same 5.8.2 body as y8-entry-grid-button (token-renumbered there). Pinned again for the U5 3.1.0 plan; 5.8.2 only."
+    },
+    {
+     "id": "u5-310-tick-dowork-button",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "ButtonClick",
+     "token": "0x06000062",
+     "ilBytes": 783,
+     "ilSha256": "dfb6dda582bc8a494d36cef81d88ed4ca5bd010ed93a86a8d1bbcdcb52c1bd33",
+     "status": "added-reviewed",
+     "review": "Resolves ButtonClick_<ActiveSheetIndex> by name and invokes it with idxRow/idxCol bound by parameter name; the MenuID 95 and 01/I5 branches do not apply to U5. Same 5.8.2 body as y8-entry-dowork-button. Pinned again for the U5 3.1.0 plan; 5.8.2 only."
     },
     {
      "id": "oracle-common-info-bind",

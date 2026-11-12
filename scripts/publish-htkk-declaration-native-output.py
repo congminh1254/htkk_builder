@@ -66,8 +66,9 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
  except reader.InputError:fail('PROVENANCE')
  expected={'format':'htkk-declaration-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'runAttempt':int(run_attempt),'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':oracle.baseline(version)['serviceVersion'],'runtimeHost':'clr2-x86-reference','caseId':case_id,'artifactCommit':artifact_commit,
   'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,
-  # Native-case input mode: the original import of the web XML, or the fixed plan typed into the original grid.
-  'inputMode':reader.case_registry.input_mode(case_id),'originalImportSucceeded':reader.case_registry.input_mode(case_id)==reader.case_registry.IMPORT_MODE,'originalExportSucceeded':True,'originalExporterValidatedSchema':True,
+  # Native-case input mode: the original import of the web XML, the import completed by fixed original edits/ticks,
+  # or the fixed plan typed into the original grid (no import).
+  'inputMode':reader.case_registry.input_mode(case_id),'originalImportSucceeded':reader.case_registry.input_mode(case_id) in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE),'originalExportSucceeded':True,'originalExporterValidatedSchema':True,
   'webImportInputSha256':observed.get('webImportInputSha256'),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'creationDateRule':'native-export-current-date','fullRoundTrip':False}
  exact_sha(expected['webImportInputSha256'],64)
  if set(observed)!=set(expected)|set(HARNESS) or any(type(observed[key]) is not type(value) or observed[key]!=value for key,value in expected.items()):fail('PROVENANCE')

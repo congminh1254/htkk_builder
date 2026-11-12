@@ -7,6 +7,8 @@ text='$HtkkNativeCaseFormats=@{\n'+''.join(" '"+id+"'='"+c['format']+"'\n"for id
 text+='$HtkkDeclarationCases=@('+','.join("'"+id+"'" for id in r.DECLARATION_CASES)+')\n'
 # Declaration cases of native-case mode original-entry-export (typed into the original grid, no import).
 text+='$HtkkDeclarationEntryCases=@('+','.join("'"+id+"'" for id in r.DECLARATION_ENTRY_CASES)+')\n'
+# Declaration cases of native-case mode web-xml-import-tick-reexport (original import, then fixed original edits/ticks).
+text+='$HtkkDeclarationTickCases=@('+','.join("'"+id+"'" for id in r.DECLARATION_TICK_CASES)+')\n'
 file=ROOT/'HtkkNativeCaseFormats.ps1';workflow=ROOT.parent/'.github/workflows/probe-htkk-windows.yml';body=workflow.read_text();updated=re.sub(r'(      web_case_id:\n.*?        options: )\[[^\n]*\]',lambda m:m[1]+'['+', '.join(r.CASES)+']',body,flags=re.S)
 if '--check'in sys.argv:
  if file.read_text()!=text or body!=updated:raise SystemExit('Native case metadata stale.')

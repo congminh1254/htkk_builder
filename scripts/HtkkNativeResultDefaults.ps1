@@ -258,6 +258,16 @@ function New-HtkkNativeResultDefaults {
   declarationEntryCombo1Mask=0
   declarationEntryCombo2Mask=0
   declarationEntryDateTextMask=0
+  declarationTickMethodPinsMatched=$false
+  declarationTickEditsMatched=$false
+  declarationTickTicksMatched=$false
+  declarationTickReadbackMatched=$false
+  declarationTickPlannedCount=0
+  declarationTickActionCount=0
+  declarationTickFailureCode=0
+  declarationTickMethodPinMask=0
+  declarationTickMismatchMask=0
+  declarationTickReadbackMask=0
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false

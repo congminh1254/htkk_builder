@@ -15,6 +15,9 @@ _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('
 # original import cannot keep the form's data. The web XML is the comparison reference in both.
 IMPORT_MODE='web-xml-import-reexport'
 ENTRY_MODE='original-entry-export'
+# The original import, then fixed original edits and checkbox ticks for grid-only inputs the XML cannot carry
+# (HtkkDeclarationCasePlans.ImportTick), then the original export. Used by U5 3.1.0 (NQ 43 reduction tick AJ).
+IMPORT_TICK_MODE='web-xml-import-tick-reexport'
 def _declaration(menu,version,periods,annexes,mode=IMPORT_MODE):return {'producer':DECLARATION_PRODUCER,'privacyValidator':'declaration-v1','annexes':annexes,'driver':DECLARATION_DRIVER,'menuId':menu,'xmlVersion':version,'periods':periods,'mode':mode}
 TRUSTED_ADAPTERS={
  '01-gtgt-2.8.3':{'producer':'scripts/generate-htkk-web-reference.mjs','privacyValidator':'gtgt-v1','annexes':[],**_d1},
@@ -39,7 +42,10 @@ TRUSTED_ADAPTERS={
  '01-cnkd-hkd-2.9.8':_declaration('U5','2.9.8',{'quarter':('3/2026',)},[]),
  # U5 3.1.0 exists only in HTKK 5.8.2 (Menu.xml VersionXML 3.1.0, CnkdHkd01TT50Nckt310): the adapter is pinned to that
  # oracle; the period dialog ticks sheet 01-4 "PL 01 43/2026/QH16" (NQ 43/2026/QH16, kỳ quý only: LoadPhuLucSpread).
- '01-cnkd-hkd-3.1.0-pl01':{**_declaration('U5','3.1.0',{'quarter':('3/2026',)},['01-4']),'htkkVersion':'5.8.2'},
+ # The XML carries no chonGiamThue (AJ) / ct17_soThueGiam (CD): after the import AJ is clear and [17] = CE (runs 43127371885,
+ # 43130173107, cell mask 40). Mode IMPORT_TICK_MODE: the original import, one original edit of L291 (fills the child-row keys
+ # through CellChange_0 -> SetCacDongCon) and SPACE on AJ291/AJ293 (ButtonClick_0 -> daySangPLGiamThue rebuilds PL 01 and CD).
+ '01-cnkd-hkd-3.1.0-pl01':{**_declaration('U5','3.1.0',{'quarter':('3/2026',)},['01-4'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
  # B8 02/QTT-TNCN (non-gating): KieuKy 12 like B9; the import adds every annex (AddFullPLImportXML).
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).
@@ -112,6 +118,9 @@ DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]
 check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))
 # Declaration cases typed into the original grid; never a release gate.
 DECLARATION_ENTRY_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==ENTRY_MODE)
+# Declaration cases imported and then completed by fixed original edits/ticks; never a release gate.
+DECLARATION_TICK_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==IMPORT_TICK_MODE)
+check(set(t['mode'] for t in TRUSTED_ADAPTERS.values() if 'mode' in t)<={IMPORT_MODE,ENTRY_MODE,IMPORT_TICK_MODE})
 def input_mode(case):check(case in DECLARATION_CASES);return TRUSTED_ADAPTERS[CASES[case]['adapterId']]['mode']
 DRIVERS=tuple(sorted({a['driver'] for a in ADAPTERS.values()}))
 def driver(case):check(case in CASES);return ADAPTERS[CASES[case]['adapterId']]['driver']

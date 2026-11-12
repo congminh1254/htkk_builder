@@ -230,8 +230,8 @@ class Driver(unittest.TestCase):
         self.assertIn('declarationPhase=declarationEntryPlan!=null?"entry-ready":"import-ready"', IMPORT)
         self.assertIn('if(declarationPhase.StartsWith("entry-",StringComparison.Ordinal)){ContinueDeclarationEntry();return;}', IMPORT)
         self.assertIn('if(exportFilenameEditing||declarationEntryBusy)return;', IMPORT)
-        self.assertIn('DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched)', IMPORT)
-        self.assertIn('return json.ToString()+DeclarationEntryJson();', IMPORT)
+        self.assertIn('DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:declarationTickPlan!=null?HtkkAutomationStage.DeclarationImportTickExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched)', IMPORT)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson();', IMPORT)
 
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']
@@ -254,11 +254,11 @@ class Driver(unittest.TestCase):
     def test_probe_success_and_raw_retention_name_the_entry_mode(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         self.assertIn("$declarationEntryCase=$env:EXPECTED_WEB_CASE_ID -cin $HtkkDeclarationEntryCases", probe)
-        self.assertIn("$lastGui.stage -eq $(if($declarationEntryCase){'declaration-original-entry-exported'}else{'declaration-web-import-inspected'})", probe)
+        self.assertIn("$lastGui.stage -eq $(if($declarationEntryCase){'declaration-original-entry-exported'}elseif($declarationTickCase){'declaration-import-tick-exported'}else{'declaration-web-import-inspected'})", probe)
         self.assertIn('-not $lastGui.roundtripImportCommandInvoked -and -not $lastGui.roundtripImportSucceeded', probe)
         self.assertIn('$lastGui.declarationEntryActionCount -eq $lastGui.declarationEntryPlannedCount', probe)
-        self.assertIn("@('declaration-web-import-inspected','declaration-original-entry-exported','declaration-export-not-matched')", probe)
-        self.assertIn("inputMode=$(if($declarationEntryCase){'original-entry-export'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
+        self.assertIn("@('declaration-web-import-inspected','declaration-original-entry-exported','declaration-import-tick-exported','declaration-export-not-matched')", probe)
+        self.assertIn("inputMode=$(if($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
         publisher = (ROOT / 'publish-htkk-declaration-native-output.py').read_text(encoding='utf-8')
         self.assertIn("'inputMode':reader.case_registry.input_mode(case_id)", publisher)
 

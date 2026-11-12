@@ -89,19 +89,24 @@ public sealed partial class HtkkGuiReferenceAutomation {
 
  // ---- Step 1: method-body and catalogue pins (read-only reflection over the loaded originals) ----
  private static string DeclarationEntrySha256(byte[] bytes){using(SHA256 hash=SHA256.Create()){StringBuilder value=new StringBuilder();foreach(byte b in hash.ComputeHash(bytes))value.Append(b.ToString("x2",CultureInfo.InvariantCulture));return value.ToString();}}
- private void VerifyDeclarationEntryPins(){
-  SetStage(HtkkAutomationStage.DeclarationEntryPinsChecking);declarationEntryPlannedCount=declarationEntryPlan.Entries.Length;Record();
+ // Bit i = pin i (asm|type|method|token|IL bytes|IL-code SHA-256) does not resolve to the reviewed loaded body.
+ private static int DeclarationMethodPinMask(string[] pins){
   object business=Global("InstanceClass");if(business==null)throw new InvalidOperationException();
-  Assembly businessAssembly=business.GetType().Assembly,exe=OriginalAssembly();declarationEntryMethodPinMask=0;
-  for(int index=0;index<declarationEntryPlan.MethodPins.Length;index++){
-   string[] pin=declarationEntryPlan.MethodPins[index].Split('|');bool matched=false;
+  Assembly businessAssembly=business.GetType().Assembly,exe=OriginalAssembly();int mask=0;
+  for(int index=0;index<pins.Length;index++){
+   string[] pin=pins[index].Split('|');bool matched=false;
    try{
     Module module=(pin[0]=="B"?businessAssembly:exe).ManifestModule;MethodBase method=module.ResolveMethod(Int32.Parse(pin[3].Substring(2),NumberStyles.HexNumber,CultureInfo.InvariantCulture));
     MethodBody body=method==null?null:method.GetMethodBody();byte[] il=body==null?null:body.GetILAsByteArray();
     matched=method!=null&&method.Name==pin[2]&&method.DeclaringType!=null&&method.DeclaringType.Name==pin[1]&&il!=null&&il.Length.ToString(CultureInfo.InvariantCulture)==pin[4]&&DeclarationEntrySha256(il)==pin[5];
    }catch(ArgumentException){matched=false;}
-   if(!matched)declarationEntryMethodPinMask|=1<<index;
+   if(!matched)mask|=1<<index;
   }
+  return mask;
+ }
+ private void VerifyDeclarationEntryPins(){
+  SetStage(HtkkAutomationStage.DeclarationEntryPinsChecking);declarationEntryPlannedCount=declarationEntryPlan.Entries.Length;Record();
+  declarationEntryMethodPinMask=DeclarationMethodPinMask(declarationEntryPlan.MethodPins);
   declarationEntryMethodPinsMatched=declarationEntryMethodPinMask==0;
   declarationEntryCatalogueMatched=Hash(Path.Combine(Path.GetDirectoryName(project),declarationEntryPlan.CatalogueFile))==declarationEntryPlan.CatalogueSha256;Record();
   if(!declarationEntryMethodPinsMatched){DeclarationEntryFail(1);return;}
@@ -311,6 +316,119 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(!matched&&declarationEntryClock.Elapsed.TotalSeconds<3)return;
     if(!matched){DeclarationEntryFail(20);return;}
     declarationPhase="export-start";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);Record();return;
+   }
+   throw new InvalidOperationException();
+  }finally{declarationEntryBusy=false;}
+ }
+
+ // ==== Native-case mode web-xml-import-tick-reexport (U5 3.1.0): original actions AFTER the original import ====
+ // The web XML is imported as in every import case; then HtkkDeclarationCasePlans.ImportTick types its fixed edits
+ // through the original editor and ticks its checkbox cells with SPACE (FpSpread.ButtonClicked -> ButtonClick_0),
+ // one action per UI turn, so HTKK itself rebuilds what the XML cannot carry (PL 01 and CD of the NQ 43 reduction).
+ // Then the shared sheet checks, original export, pinned XSD and whole-tree comparison run unchanged.
+ // Never: Cell.Value/Text assignment, business helper calls, authored totals. Diagnostics are flags, counts, masks.
+ private HtkkDeclarationTickPlan declarationTickPlan=null;
+ private Stopwatch declarationTickClock=null;
+ private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0;
+ // Failure codes (declarationTickFailureCode), value-free:
+ //  1 method pin   3 tick cell not an open unticked checkbox   4 tick not applied   5 ticks/clear cells changed afterwards
+ //  6 sheet metadata   8 edit cell locked   9 edit cell type   10 foreground/focus guard   11 editor   13 edit read-back
+ //  17 original message
+ // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
+ // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
+ private string DeclarationTickJson(){
+  string q=((char)34).ToString();StringBuilder json=new StringBuilder();
+  string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
+  bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
+  for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask};
+  for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
+  return json.ToString();
+ }
+ private void DeclarationTickFail(int code){if(declarationTickFailureCode==0)declarationTickFailureCode=code;DeclarationTerminal(HtkkAutomationStage.DeclarationImportTickNotMatched);}
+ private bool DeclarationTickSucceeded(){return declarationTickMethodPinsMatched&&declarationTickEditsMatched&&declarationTickTicksMatched&&declarationTickFailureCode==0&&declarationTickMismatchMask==0&&declarationTickPlannedCount>0&&declarationTickActionCount==declarationTickPlannedCount;}
+ private void VerifyDeclarationTickPins(){
+  SetStage(HtkkAutomationStage.DeclarationImportTickPinsChecking);declarationTickPlannedCount=declarationTickPlan.Edits.Length+declarationTickPlan.Ticks.Length;Record();
+  declarationTickMethodPinMask=DeclarationMethodPinMask(declarationTickPlan.MethodPins);declarationTickMethodPinsMatched=declarationTickMethodPinMask==0;Record();
+  if(!declarationTickMethodPinsMatched)DeclarationTickFail(1);
+ }
+ // One fixed number through the original editor ("^a", value, "{TAB}"), read back as Decimal.
+ private void EditDeclarationTick(int index){
+  if(index!=declarationTickActionCount||index<0||index>=declarationTickPlan.Edits.Length)throw new InvalidOperationException();
+  Control grid;object sheet=DeclarationEntrySheet(out grid);SetStage(HtkkAutomationStage.DeclarationImportTickEditing);Record();
+  string[] parts=declarationTickPlan.Edits[index].Split('|');int[] at=DeclarationEntryCell(parts[1]);int row=at[0],column=at[1];
+  if(row>=Convert.ToInt32(Get(sheet,"RowCount"))||column>=Convert.ToInt32(Get(sheet,"ColumnCount"))){DeclarationTickFail(6);return;}
+  object cell=Cell(sheet,row,column);string type=DeclarationEntryCellKind(cell);
+  if(Convert.ToBoolean(Get(cell,"Locked"))){declarationTickMismatchMask|=1<<index;DeclarationTickFail(8);return;}
+  if(type=="FarPoint.Win.Spread.CellType.ComboBoxCellType"||type=="FarPoint.Win.Spread.CellType.CheckBoxCellType"||type=="FarPoint.Win.Spread.CellType.ButtonCellType"||type=="FarPoint.Win.Spread.CellType.MaskCellType"){declarationTickMismatchMask|=1<<index;DeclarationTickFail(9);return;}
+  DeclarationEntrySelect(grid,sheet,row,column);
+  if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
+  if(editor==null||!editor.Visible||!editor.Enabled){DeclarationTickFail(11);return;}
+  editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  editorKind=editor is TextBoxBase?"text-box":"other-control";
+  SendKeys.SendWait("^a");SendKeys.SendWait(parts[2]);
+  if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationTickFail(10);return;}
+  // TAB ends the edit: FpSpread.Change -> winFpSpread_CellChange -> WinDoWorkEvent.CellChange -> CellChange_0.
+  SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+  if(OriginalMessageVisible()){DeclarationTickFail(17);return;}
+  if(!DeclarationEntryNumber(Cell(sheet,row,column),parts[2])){declarationTickMismatchMask|=1<<index;DeclarationTickFail(13);return;}
+  declarationTickActionCount++;Record();
+ }
+ // SPACE on an open, unticked original checkbox: FpSpread.ButtonClicked -> frmWinToKhai.winFpSpread_ButtonClicked
+ // -> WinDoWorkEvent.ButtonClick -> ButtonClick_0 (daySangPLGiamThue, capNhatToKhai).
+ private void TickDeclarationImport(int index){
+  int action=declarationTickPlan.Edits.Length+index;
+  if(action!=declarationTickActionCount||index<0||index>=declarationTickPlan.Ticks.Length)throw new InvalidOperationException();
+  Control grid;object sheet=DeclarationEntrySheet(out grid);SetStage(HtkkAutomationStage.DeclarationImportTickInvoking);Record();
+  int[] at=DeclarationEntryCell(declarationTickPlan.Ticks[index]);
+  if(at[0]>=Convert.ToInt32(Get(sheet,"RowCount"))||at[1]>=Convert.ToInt32(Get(sheet,"ColumnCount"))){DeclarationTickFail(6);return;}
+  object cell=Cell(sheet,at[0],at[1]);
+  if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(cell,"Locked"))||Selected(Get(cell,"Value"))||!RowVisible(sheet,at[0])){declarationTickMismatchMask|=1<<action;DeclarationTickFail(3);return;}
+  DeclarationEntrySelect(grid,sheet,at[0],at[1]);
+  if(!DeclarationEntryActive(sheet,at[0],at[1])||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  SendKeys.SendWait(" ");Stopwatch clock=Stopwatch.StartNew();bool ticked=false;
+  do{
+   if(OriginalMessageVisible()){DeclarationTickFail(17);return;}
+   ticked=Selected(Get(Cell(sheet,at[0],at[1]),"Value"));if(ticked)break;
+   Application.DoEvents();System.Threading.Thread.Sleep(10);
+  }while(clock.Elapsed.TotalSeconds<3);
+  if(!ticked){declarationTickMismatchMask|=1<<action;DeclarationTickFail(4);return;}
+  declarationTickActionCount++;Record();
+ }
+ // Ticks still ticked, clear cells still clear (gating); readbacks of HTKK-written cells (diagnostic mask only).
+ private bool InspectDeclarationTick(){
+  Control grid;object sheet=DeclarationEntrySheet(out grid);SetStage(HtkkAutomationStage.DeclarationImportTickReadbackChecking);int mask=0;
+  for(int index=0;index<declarationTickPlan.Readbacks.Length;index++){string[] parts=declarationTickPlan.Readbacks[index].Split('|');int[] at=DeclarationEntryCell(parts[0]);if(CellText(sheet,at[0],at[1])!=parts[1])mask|=1<<index;}
+  for(int index=0;index<declarationTickPlan.Ticks.Length;index++){int[] at=DeclarationEntryCell(declarationTickPlan.Ticks[index]);if(!Selected(Get(Cell(sheet,at[0],at[1]),"Value")))mask|=1<<(8+index);}
+  for(int index=0;index<declarationTickPlan.Unticked.Length;index++){int[] at=DeclarationEntryCell(declarationTickPlan.Unticked[index]);object cell=Cell(sheet,at[0],at[1]);if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Selected(Get(cell,"Value")))mask|=1<<(12+index);}
+  declarationTickReadbackMask=mask;declarationTickReadbackMatched=(mask&0xFF)==0;declarationTickTicksMatched=(mask&0xFF00)==0;Record();
+  return mask==0;
+ }
+ private void ContinueDeclarationTick(){
+  if(!OriginalRoundtripOwnerReady())return;
+  if(declarationTickPlan==null||declarationEntryPlan!=null||!roundtripImportSucceeded)throw new InvalidOperationException();
+  declarationEntryBusy=true;
+  try{
+   if(declarationPhase=="tick-pins"){VerifyDeclarationTickPins();if(!finished)declarationPhase="tick-edits";return;}
+   if(declarationPhase=="tick-edits"){
+    EditDeclarationTick(declarationTickActionCount);if(finished)return;
+    if(declarationTickActionCount==declarationTickPlan.Edits.Length){declarationTickEditsMatched=declarationTickMismatchMask==0;declarationPhase="tick-ticks";Record();}
+    return;
+   }
+   if(declarationPhase=="tick-ticks"){
+    TickDeclarationImport(declarationTickActionCount-declarationTickPlan.Edits.Length);if(finished)return;
+    if(declarationTickActionCount==declarationTickPlannedCount){declarationPhase="tick-inspect";declarationTickClock=Stopwatch.StartNew();Record();}
+    return;
+   }
+   if(declarationPhase=="tick-inspect"){
+    bool settled=InspectDeclarationTick();
+    // Original recalculation may settle on a later UI turn; bounded wait. Readbacks never stop the case.
+    if(!settled&&declarationTickClock.Elapsed.TotalSeconds<3)return;
+    if(!declarationTickTicksMatched){DeclarationTickFail(5);return;}
+    declarationPhase="import-inspect";declarationClock=Stopwatch.StartNew();SetStage(HtkkAutomationStage.DeclarationImportSheetChecking);Record();return;
    }
    throw new InvalidOperationException();
   }finally{declarationEntryBusy=false;}

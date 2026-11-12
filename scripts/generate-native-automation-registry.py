@@ -510,7 +510,9 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         'declaration-period-inputs-not-matched', 'declaration-period-original-message-rejected', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',
         'declaration-import-sheet-not-matched', 'declaration-export-original-message-rejected', 'declaration-export-not-matched',
         # Native-case mode original-entry-export of the same driver: entry failure and entry success.
-        'declaration-entry-not-matched', 'declaration-original-entry-exported'
+        'declaration-entry-not-matched', 'declaration-original-entry-exported',
+        # Native-case mode web-xml-import-tick-reexport: original edits/ticks after the import fail or export.
+        'declaration-import-tick-not-matched', 'declaration-import-tick-exported'
     ]
     terminal_stages = list(base_order)
     for mode_meta in modes.values():
