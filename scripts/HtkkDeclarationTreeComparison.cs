@@ -46,8 +46,21 @@ public static class HtkkDeclarationTreeComparison {
  // TextMismatches: leaves whose text differs (capped). FirstOrdinal: 1-based pre-order index, in the WEB INPUT, of the
  // first element where any difference was found (0 none); FirstKind: 1 name, 2 attribute, 3 child count, 4 mixed
  // content, 5 leaf text, 6 service leaf, 7 export date. The ordinal points into the synthetic web XML only.
- public sealed class Diagnostics {public int AttributeMask,TextMismatches,FirstOrdinal,FirstKind,Ordinal;}
- private static void Note(Diagnostics d,int kind){if(d!=null&&d.FirstOrdinal==0){d.FirstOrdinal=d.Ordinal;d.FirstKind=kind;}}
+ // Codes[0..3]: the first four differing elements (one per element), each ordinal*100 + kind*10 + native-text class
+ // (run 43144854648: one xsi:nil difference at the location mst_diaDiemKD and 3 text differences). Text class of the
+ // NATIVE element: 0 not a leaf, 1 empty, 2 the synthetic profile MST, 3 equal to the web text, 4 other text. No value.
+ public sealed class Diagnostics {public int AttributeMask,TextMismatches,FirstOrdinal,FirstKind,Ordinal,CodeCount;public int[] Codes=new int[4];}
+ public const string SyntheticMst="9999999997";
+ private static int TextClass(XmlElement a,XmlElement b){
+  foreach(XmlNode child in b.ChildNodes)if(child is XmlElement)return 0;
+  string text=b.InnerText;return text.Length==0?1:text==SyntheticMst?2:text==a.InnerText?3:4;
+ }
+ private static void Note(Diagnostics d,int kind,XmlElement a,XmlElement b){
+  if(d==null)return;
+  if(d.FirstOrdinal==0){d.FirstOrdinal=d.Ordinal;d.FirstKind=kind;}
+  if(d.CodeCount>0&&d.Codes[d.CodeCount-1]/100==d.Ordinal)return;
+  if(d.CodeCount<d.Codes.Length&&d.Ordinal<=65535){d.Codes[d.CodeCount]=d.Ordinal*100+kind*10+TextClass(a,b);d.CodeCount++;}
+ }
  public static bool Compare(XmlDocument input,XmlDocument output,int expectedLeaves,string[] exportDatePaths,out int leaves,out int mask,out Diagnostics diagnostics){
   leaves=0;mask=0;diagnostics=new Diagnostics();
   if(input==null||output==null||input.DocumentElement==null||output.DocumentElement==null||exportDatePaths==null||exportDatePaths.Length>4){mask=StructureBit;return false;}
@@ -62,23 +75,23 @@ public static class HtkkDeclarationTreeComparison {
  private static int AttributeClass(string key){return key=="http://www.w3.org/2001/XMLSchema-instance|nil"?1:key=="|id"?2:4;}
  private static void Walk(XmlElement a,XmlElement b,string path,string[] exportDatePaths,string inputDate,string outputDate,ref int leaves,ref int mask,Diagnostics d){
   d.Ordinal++;
-  if(a.NamespaceURI!=Ns||b.NamespaceURI!=Ns||a.LocalName!=b.LocalName){mask|=StructureBit|Section(path);Note(d,1);return;}
+  if(a.NamespaceURI!=Ns||b.NamespaceURI!=Ns||a.LocalName!=b.LocalName){mask|=StructureBit|Section(path);Note(d,1,a,b);return;}
   Dictionary<string,string> left=Attributes(a),right=Attributes(b);bool attributesEqual=left.Count==right.Count;
   if(attributesEqual)foreach(KeyValuePair<string,string> pair in left){string value;if(!right.TryGetValue(pair.Key,out value)||value!=pair.Value){attributesEqual=false;break;}}
   if(!attributesEqual){
-   mask|=StructureBit|Section(path);Note(d,2);
+   mask|=StructureBit|Section(path);Note(d,2,a,b);
    foreach(KeyValuePair<string,string> pair in left){string value;if(!right.TryGetValue(pair.Key,out value)||value!=pair.Value)d.AttributeMask|=AttributeClass(pair.Key);}
    foreach(KeyValuePair<string,string> pair in right)if(!left.ContainsKey(pair.Key))d.AttributeMask|=AttributeClass(pair.Key);
   }
   bool mixedA=false,mixedB=false;List<XmlElement> x=Children(a,ref mixedA),y=Children(b,ref mixedB);
-  if(x.Count!=y.Count){mask|=StructureBit|Section(path);Note(d,3);return;}
+  if(x.Count!=y.Count){mask|=StructureBit|Section(path);Note(d,3,a,b);return;}
   if(x.Count==0){
-   if(path.StartsWith(ServicePath,StringComparison.Ordinal)){string name=path.Substring(ServicePath.Length);if(name!="maDVu"&&name!="tenDVu"&&name!="pbanDVu"&&name!="ttinNhaCCapDVu"){mask|=StructureBit;Note(d,6);}return;}
+   if(path.StartsWith(ServicePath,StringComparison.Ordinal)){string name=path.Substring(ServicePath.Length);if(name!="maDVu"&&name!="tenDVu"&&name!="pbanDVu"&&name!="ttinNhaCCapDVu"){mask|=StructureBit;Note(d,6,a,b);}return;}
    leaves++;
-   if(Array.IndexOf(exportDatePaths,path)>=0){if(inputDate==null||outputDate==null||a.InnerText!=inputDate||b.InnerText!=outputDate){mask|=Section(path);Note(d,7);}return;}
-   if(path!=DatePath&&a.InnerText!=b.InnerText){mask|=Section(path);Note(d,5);if(d.TextMismatches<4096)d.TextMismatches++;}return;
+   if(Array.IndexOf(exportDatePaths,path)>=0){if(inputDate==null||outputDate==null||a.InnerText!=inputDate||b.InnerText!=outputDate){mask|=Section(path);Note(d,7,a,b);}return;}
+   if(path!=DatePath&&a.InnerText!=b.InnerText){mask|=Section(path);Note(d,5,a,b);if(d.TextMismatches<4096)d.TextMismatches++;}return;
   }
-  if(mixedA||mixedB){mask|=StructureBit|Section(path);Note(d,4);return;}
+  if(mixedA||mixedB){mask|=StructureBit|Section(path);Note(d,4,a,b);return;}
   for(int index=0;index<x.Count;index++)Walk(x[index],y[index],path+"/"+x[index].LocalName,exportDatePaths,inputDate,outputDate,ref leaves,ref mask,d);
  }
 }

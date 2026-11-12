@@ -272,6 +272,10 @@ function New-HtkkNativeResultDefaults {
   declarationTreeTextMismatchCount=0
   declarationTreeFirstMismatchOrdinal=0
   declarationTreeFirstMismatchKind=0
+  declarationTreeMismatch1=0
+  declarationTreeMismatch2=0
+  declarationTreeMismatch3=0
+  declarationTreeMismatch4=0
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false

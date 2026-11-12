@@ -1712,6 +1712,10 @@
     "declarationTreeTextMismatchCount",
     "declarationTreeFirstMismatchOrdinal",
     "declarationTreeFirstMismatchKind",
+    "declarationTreeMismatch1",
+    "declarationTreeMismatch2",
+    "declarationTreeMismatch3",
+    "declarationTreeMismatch4",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -3565,6 +3569,42 @@
       "default": 0,
       "minimum": 0,
       "maximum": 7,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeMismatch1": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 6553599,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeMismatch2": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 6553599,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeMismatch3": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 6553599,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeMismatch4": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 6553599,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

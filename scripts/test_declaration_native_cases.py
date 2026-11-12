@@ -216,7 +216,7 @@ class CompiledPlans(unittest.TestCase):
         # the number of text differences and the first differing element as a pre-order ordinal of the WEB input.
         program = ('using System;using System.Xml;class T{static XmlDocument L(string p){XmlReaderSettings s=new XmlReaderSettings();s.ProhibitDtd=true;s.XmlResolver=null;XmlDocument d=new XmlDocument();d.XmlResolver=null;using(XmlReader r=XmlReader.Create(p,s))d.Load(r);return d;}'
                    'static void Main(string[] a){int l,m;HtkkDeclarationTreeComparison.Diagnostics x;bool ok=HtkkDeclarationTreeComparison.Compare(L(a[0]),L(a[1]),int.Parse(a[2]),new string[0],out l,out m,out x);'
-                   'Console.Write(ok+" "+l+" "+m+" "+x.AttributeMask+" "+x.TextMismatches+" "+x.FirstOrdinal+" "+x.FirstKind);}}')
+                   'Console.Write(ok+" "+l+" "+m+" "+x.AttributeMask+" "+x.TextMismatches+" "+x.FirstOrdinal+" "+x.FirstKind+" "+x.Codes[0]+" "+x.Codes[1]+" "+x.Codes[2]+" "+x.Codes[3]);}}')
         case = '01CNKD-TT50-310-pl01-three-groups-Q3-2026'
         web = dfx.declaration_fixture(case); native = native_of(web, case)
         text = native.decode('utf-8')
@@ -239,12 +239,16 @@ class CompiledPlans(unittest.TestCase):
                 (folder / 'n.xml').write_text(body, encoding='utf-8')
                 return subprocess.run(['mono', str(folder / 't.exe'), str(folder / 'web.xml'), str(folder / 'n.xml'), str(d.tax_leaf_count(case))], check=True, capture_output=True, text=True).stdout.split()
             leaves = str(d.tax_leaf_count(case))
-            self.assertEqual(run(text), ['True', leaves, '0', '0', '0', '0', '0'])
-            self.assertEqual(run(nil), ['False', leaves, '40', '1', '0', str(ordinal(web, 'ct38_ma')), '2'])
-            self.assertEqual(run(moved), ['False', leaves, '8', '0', '1', str(ordinal(web, 'ct40')), '5'])
-            self.assertEqual(run(ident), ['False', leaves, '40', '2', '0', str(ordinal(web, 'ChiTietThongTinNopTHue')), '2'])
+            self.assertEqual(run(text), ['True', leaves, '0', '0', '0', '0', '0', '0', '0', '0', '0'])
+            self.assertEqual(run(nil), ['False', leaves, '40', '1', '0', str(ordinal(web, 'ct38_ma')), '2', str(ordinal(web, 'ct38_ma') * 100 + 23), '0', '0', '0'])
+            self.assertEqual(run(moved), ['False', leaves, '8', '0', '1', str(ordinal(web, 'ct40')), '5', str(ordinal(web, 'ct40') * 100 + 54), '0', '0', '0'])
+            self.assertEqual(run(ident), ['False', leaves, '40', '2', '0', str(ordinal(web, 'ChiTietThongTinNopTHue')), '2', str(ordinal(web, 'ChiTietThongTinNopTHue') * 100 + 20), '0', '0', '0'])
+            # The native text class names an empty leaf or the synthetic profile MST without any value; one code per element.
+            both = text.replace('<ct38_ma>00001</ct38_ma>', '<ct38_ma>9999999997</ct38_ma>', 1).replace('<ct40>16000000</ct40>', '<ct40></ct40>', 1)
+            self.assertEqual(run(both)[7:9], [str(ordinal(web, 'ct38_ma') * 100 + 52), str(ordinal(web, 'ct40') * 100 + 51)])
         fields = automation['resultFields']
-        for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7)):
+        for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7),
+                              ('declarationTreeMismatch1', 6553599), ('declarationTreeMismatch2', 6553599), ('declarationTreeMismatch3', 6553599), ('declarationTreeMismatch4', 6553599)):
             self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
         self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson();', DRIVER)
 

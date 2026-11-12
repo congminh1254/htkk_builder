@@ -110,6 +110,13 @@ khác văn bản. Mask theo mục không đủ để chỉ ra phần tử nào. 
 với input web) và `declarationTreeFirstMismatchKind` (1 tên, 2 thuộc tính, 3 số con, 4 nội dung trộn, 5 văn bản lá, 6 lá dịch
 vụ, 7 ngày kết xuất). Phép so không đổi (không nới).
 
+**Run 43144854648** (builder d170c71): `declarationTreeAttributeMask` 1 (`xsi:nil`), khác đầu tiên ở thứ tự 63 = `mst_diaDiemKD`
+của dòng địa điểm table_1 (web `xsi:nil`), loại 2 (thuộc tính), `declarationTreeTextMismatchCount` 3, đủ 295 lá. Trong nguồn
+5.8.2 không có lệnh nào của `CnkdHkd01TT50Nckt310` ghi ô đầu bảng này (`SetCacDongCon` chỉ đọc nó; `lockUnLockA_TK` chỉ xóa khối
+TMDT/LPS). Để biết phía HTKK là rỗng không nil, MST hồ sơ hay giá trị khác, so cây báo thêm `declarationTreeMismatch1..4`: bốn
+phần tử khác đầu tiên, mỗi số = thứ tự × 100 + loại × 10 + lớp văn bản phía native (0 không phải lá, 1 rỗng, 2 MST giả lập
+9999999997, 3 bằng văn bản web, 4 khác). Không giá trị, không đường dẫn.
+
 Vì sao không gõ lại cả tờ khai (`original-entry-export` như Y8): nhập XML giữ đúng mọi ô khác (ca 2.9.8 khớp toàn bộ; ca 3.1.0
 chỉ lệch AE291/AE293), phần thiếu chỉ là ô tích AJ; nhập tay đầy đủ cần thêm ba loại danh mục thả xuống chưa từng chạy
 (tỉnh control 100, xã control 101 phụ thuộc tỉnh, nhóm ngành DC_185), F5 trong bảng địa điểm lồng nhau và ô (1) B_26, mỗi thứ
