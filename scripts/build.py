@@ -16,7 +16,7 @@ def run(command):
  code=str(result.returncode) if result.returncode>=0 else 'signal%d'%(-result.returncode)
  if result.returncode:raise RuntimeError()
 def e2e_failure_locations():
- """Failing e2e specs as numbers only: index in the sorted list of spec files, and line. No names, titles or output."""
+ """Failing e2e specs as numbers only: index in the sorted list of spec files, test line, and @ the failing assertion lines. No names, titles or output."""
  try:
   report=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-e2e-report.json').read_text())
   files=sorted(p.name for p in (source/'tests/e2e').glob('*.spec.ts'))
@@ -24,11 +24,14 @@ def e2e_failure_locations():
   def walk(suite):
    for spec in suite.get('specs',[]):
     name=pathlib.PurePosixPath(str(spec.get('file',''))).name
-    if spec.get('ok') is False and name in files and isinstance(spec.get('line'),int):found.append('%d:%d'%(files.index(name),spec['line']))
+    if spec.get('ok') is False and name in files and isinstance(spec.get('line'),int):
+     # Line of the failing assertion inside the same spec file (numbers only), e.g. 6:117@140.
+     lines=sorted({e['location']['line'] for t in spec.get('tests',[]) for r in t.get('results',[]) for e in r.get('errors',[]) if isinstance(e,dict) and isinstance(e.get('location'),dict) and isinstance(e['location'].get('line'),int) and pathlib.PurePosixPath(str(e['location'].get('file',''))).name==name})
+     found.append('%d:%d'%(files.index(name),spec['line'])+''.join('@%d'%l for l in lines[:3]))
    for child in suite.get('suites',[]):walk(child)
   for suite in report.get('suites',[]):walk(suite)
   text=','.join(sorted(set(found))[:20])
-  return text if re.fullmatch('[0-9:,]{0,400}',text) else ''
+  return text if re.fullmatch('[0-9:,@]{0,400}',text) else ''
  except Exception:return ''
 try:
  for command in (['npm','ci'],['npm','run','typecheck'],['npm','test'],['npm','run','test:schemas'],['npm','audit','--omit=dev','--audit-level=high'],['npm','run','build']):run(command)
