@@ -210,6 +210,44 @@ class CompiledPlans(unittest.TestCase):
                 # The case's own rule accepts exactly the export-day shape of the original.
                 self.assertTrue(d.compare_tree(web, exported, dates)['allTaxValuesMatched'], case)
 
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR comparison smoke test needs mono')
+    def test_tree_diagnostics_classify_the_first_difference_without_values(self):
+        # Run 43143244393 (U5 3.1.0) ended with mask 40 and the full leaf count: the detail names the attribute class,
+        # the number of text differences and the first differing element as a pre-order ordinal of the WEB input.
+        program = ('using System;using System.Xml;class T{static XmlDocument L(string p){XmlReaderSettings s=new XmlReaderSettings();s.ProhibitDtd=true;s.XmlResolver=null;XmlDocument d=new XmlDocument();d.XmlResolver=null;using(XmlReader r=XmlReader.Create(p,s))d.Load(r);return d;}'
+                   'static void Main(string[] a){int l,m;HtkkDeclarationTreeComparison.Diagnostics x;bool ok=HtkkDeclarationTreeComparison.Compare(L(a[0]),L(a[1]),int.Parse(a[2]),new string[0],out l,out m,out x);'
+                   'Console.Write(ok+" "+l+" "+m+" "+x.AttributeMask+" "+x.TextMismatches+" "+x.FirstOrdinal+" "+x.FirstKind);}}')
+        case = '01CNKD-TT50-310-pl01-three-groups-Q3-2026'
+        web = dfx.declaration_fixture(case); native = native_of(web, case)
+        text = native.decode('utf-8')
+        def ordinal(body, local):
+            import xml.etree.ElementTree as ET
+            for index, node in enumerate(ET.fromstring(body).iter(), 1):
+                if node.tag.endswith('}' + local):
+                    return index
+        # The builder fixture is a reduced tree: mutate a native-shaped copy in the three ways the detail must tell apart.
+        nil = text.replace('<ct38_ma>', '<ct38_ma xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true">', 1)
+        moved = text.replace('<ct40>16000000</ct40>', '<ct40>16000001</ct40>', 1)
+        ident = text.replace('<ChiTietThongTinNopTHue>', '<ChiTietThongTinNopTHue id="ID_1">', 1)
+        for body in (nil, moved, ident):
+            self.assertNotEqual(body, text)
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory); (folder / 'T.cs').write_text(program)
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-r:System.Xml.dll', '-out:' + str(folder / 't.exe'), str(folder / 'T.cs'), str(ROOT / 'HtkkDeclarationTreeComparison.cs')], check=True, capture_output=True)
+            (folder / 'web.xml').write_bytes(web)
+            def run(body):
+                (folder / 'n.xml').write_text(body, encoding='utf-8')
+                return subprocess.run(['mono', str(folder / 't.exe'), str(folder / 'web.xml'), str(folder / 'n.xml'), str(d.tax_leaf_count(case))], check=True, capture_output=True, text=True).stdout.split()
+            leaves = str(d.tax_leaf_count(case))
+            self.assertEqual(run(text), ['True', leaves, '0', '0', '0', '0', '0'])
+            self.assertEqual(run(nil), ['False', leaves, '40', '1', '0', str(ordinal(web, 'ct38_ma')), '2'])
+            self.assertEqual(run(moved), ['False', leaves, '8', '0', '1', str(ordinal(web, 'ct40')), '5'])
+            self.assertEqual(run(ident), ['False', leaves, '40', '2', '0', str(ordinal(web, 'ChiTietThongTinNopTHue')), '2'])
+        fields = automation['resultFields']
+        for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7)):
+            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson();', DRIVER)
+
 
 class InputPrivacy(unittest.TestCase):
     def test_every_case_fixture_and_manifest_accepted(self):

@@ -29,6 +29,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
  private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
  private int declarationInvalidSheetMask=0,declarationInvalidCellCount=0,declarationInvalidCell1=0,declarationInvalidCell2=0,declarationInvalidCell3=0,declarationInvalidCell4=0;
+ // Whole-tree comparison detail (HtkkDeclarationTreeComparison.Diagnostics): value-free, path-free classes and counts;
+ // the ordinal indexes the synthetic web input only.
+ private int declarationTreeAttributeMask=0,declarationTreeTextMismatchCount=0,declarationTreeFirstMismatchOrdinal=0,declarationTreeFirstMismatchKind=0;
+ private string DeclarationTreeJson(){
+  string q=((char)34).ToString();StringBuilder json=new StringBuilder();
+  string[] names=new string[]{"declarationTreeAttributeMask","declarationTreeTextMismatchCount","declarationTreeFirstMismatchOrdinal","declarationTreeFirstMismatchKind"};
+  int[] counts=new int[]{declarationTreeAttributeMask,declarationTreeTextMismatchCount,declarationTreeFirstMismatchOrdinal,declarationTreeFirstMismatchKind};
+  for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
+  return json.ToString();
+ }
  private bool DeclarationMode(){return modeEnum==HtkkAutomationMode.DeclarationWebImportInspect;}
  private string DeclarationJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
@@ -38,7 +48,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
   int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
-  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson();
+  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson();
  }
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
@@ -356,7 +366,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
    declarationXmlCheckCount++;if(DeclarationLeaf(output,parts[0])!=parts[1])declarationXmlMismatchMask|=1<<index;
   }
   declarationServiceIdentityMatched=HtkkDeclarationTreeComparison.NativeIdentity(output);declarationCreationDateValid=HtkkDeclarationTreeComparison.CreationDateValid(output);
-  int leaves,mask;declarationTreeMatched=HtkkDeclarationTreeComparison.Compare(input,output,declarationPlan.LeafCount-4,HtkkDeclarationCasePlans.ExportDatePaths(declarationPlan),out leaves,out mask);declarationTreeLeafCount=leaves;declarationTreeMismatchMask=mask;
+  int leaves,mask;HtkkDeclarationTreeComparison.Diagnostics detail;declarationTreeMatched=HtkkDeclarationTreeComparison.Compare(input,output,declarationPlan.LeafCount-4,HtkkDeclarationCasePlans.ExportDatePaths(declarationPlan),out leaves,out mask,out detail);declarationTreeLeafCount=leaves;declarationTreeMismatchMask=mask;
+  declarationTreeAttributeMask=detail.AttributeMask;declarationTreeTextMismatchCount=detail.TextMismatches;declarationTreeFirstMismatchOrdinal=Math.Min(detail.FirstOrdinal,65535);declarationTreeFirstMismatchKind=detail.FirstKind;
   webServiceIdentityMatched=declarationServiceIdentityMatched;webTaxValuesMatched=declarationTreeMatched;
  }
 

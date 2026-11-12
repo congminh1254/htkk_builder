@@ -1708,6 +1708,10 @@
     "declarationTickMethodPinMask",
     "declarationTickMismatchMask",
     "declarationTickReadbackMask",
+    "declarationTreeAttributeMask",
+    "declarationTreeTextMismatchCount",
+    "declarationTreeFirstMismatchOrdinal",
+    "declarationTreeFirstMismatchKind",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -3525,6 +3529,42 @@
       "default": 0,
       "minimum": 0,
       "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeAttributeMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 7,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeTextMismatchCount": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4096,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeFirstMismatchOrdinal": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTreeFirstMismatchKind": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 7,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

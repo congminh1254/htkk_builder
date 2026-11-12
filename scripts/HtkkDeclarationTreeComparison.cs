@@ -39,30 +39,46 @@ public static class HtkkDeclarationTreeComparison {
  // source). Each must equal its own document's creation date (web: draft date; native: export day);
  // a value that is not exactly that date is a mismatch, never ignored.
  public static bool Compare(XmlDocument input,XmlDocument output,int expectedLeaves,string[] exportDatePaths,out int leaves,out int mask){
-  leaves=0;mask=0;
+  Diagnostics diagnostics;return Compare(input,output,expectedLeaves,exportDatePaths,out leaves,out mask,out diagnostics);
+ }
+ // Value-free and path-free detail of the first differences (run 43143244393: mask 40 with the full leaf count).
+ // AttributeMask: 1 an xsi:nil attribute differs, 2 an id attribute differs, 4 another attribute differs.
+ // TextMismatches: leaves whose text differs (capped). FirstOrdinal: 1-based pre-order index, in the WEB INPUT, of the
+ // first element where any difference was found (0 none); FirstKind: 1 name, 2 attribute, 3 child count, 4 mixed
+ // content, 5 leaf text, 6 service leaf, 7 export date. The ordinal points into the synthetic web XML only.
+ public sealed class Diagnostics {public int AttributeMask,TextMismatches,FirstOrdinal,FirstKind,Ordinal;}
+ private static void Note(Diagnostics d,int kind){if(d!=null&&d.FirstOrdinal==0){d.FirstOrdinal=d.Ordinal;d.FirstKind=kind;}}
+ public static bool Compare(XmlDocument input,XmlDocument output,int expectedLeaves,string[] exportDatePaths,out int leaves,out int mask,out Diagnostics diagnostics){
+  leaves=0;mask=0;diagnostics=new Diagnostics();
   if(input==null||output==null||input.DocumentElement==null||output.DocumentElement==null||exportDatePaths==null||exportDatePaths.Length>4){mask=StructureBit;return false;}
   string inputDate=LeafText(input,DatePath),outputDate=LeafText(output,DatePath);
-  Walk(input.DocumentElement,output.DocumentElement,"HSoThueDTu",exportDatePaths,inputDate,outputDate,ref leaves,ref mask);
+  Walk(input.DocumentElement,output.DocumentElement,"HSoThueDTu",exportDatePaths,inputDate,outputDate,ref leaves,ref mask,diagnostics);
   if(!NativeIdentity(output))mask|=1;
   if(!CreationDateValid(output))mask|=2;
   return mask==0&&leaves==expectedLeaves;
  }
  private static List<XmlElement> Children(XmlElement element,ref bool mixed){List<XmlElement> values=new List<XmlElement>();foreach(XmlNode child in element.ChildNodes){if(child is XmlElement)values.Add((XmlElement)child);else if(child.NodeType==XmlNodeType.Text){if(child.Value.Trim().Length>0)mixed=true;}else if(child.NodeType!=XmlNodeType.Whitespace&&child.NodeType!=XmlNodeType.SignificantWhitespace)mixed=true;}return values;}
  private static Dictionary<string,string> Attributes(XmlElement element){Dictionary<string,string> values=new Dictionary<string,string>();foreach(XmlAttribute attribute in element.Attributes){if(attribute.NamespaceURI=="http://www.w3.org/2000/xmlns/")continue;values[attribute.NamespaceURI+"|"+attribute.LocalName]=attribute.Value;}return values;}
- private static void Walk(XmlElement a,XmlElement b,string path,string[] exportDatePaths,string inputDate,string outputDate,ref int leaves,ref int mask){
-  if(a.NamespaceURI!=Ns||b.NamespaceURI!=Ns||a.LocalName!=b.LocalName){mask|=StructureBit|Section(path);return;}
+ private static int AttributeClass(string key){return key=="http://www.w3.org/2001/XMLSchema-instance|nil"?1:key=="|id"?2:4;}
+ private static void Walk(XmlElement a,XmlElement b,string path,string[] exportDatePaths,string inputDate,string outputDate,ref int leaves,ref int mask,Diagnostics d){
+  d.Ordinal++;
+  if(a.NamespaceURI!=Ns||b.NamespaceURI!=Ns||a.LocalName!=b.LocalName){mask|=StructureBit|Section(path);Note(d,1);return;}
   Dictionary<string,string> left=Attributes(a),right=Attributes(b);bool attributesEqual=left.Count==right.Count;
   if(attributesEqual)foreach(KeyValuePair<string,string> pair in left){string value;if(!right.TryGetValue(pair.Key,out value)||value!=pair.Value){attributesEqual=false;break;}}
-  if(!attributesEqual)mask|=StructureBit|Section(path);
-  bool mixedA=false,mixedB=false;List<XmlElement> x=Children(a,ref mixedA),y=Children(b,ref mixedB);
-  if(x.Count!=y.Count){mask|=StructureBit|Section(path);return;}
-  if(x.Count==0){
-   if(path.StartsWith(ServicePath,StringComparison.Ordinal)){string name=path.Substring(ServicePath.Length);if(name!="maDVu"&&name!="tenDVu"&&name!="pbanDVu"&&name!="ttinNhaCCapDVu")mask|=StructureBit;return;}
-   leaves++;
-   if(Array.IndexOf(exportDatePaths,path)>=0){if(inputDate==null||outputDate==null||a.InnerText!=inputDate||b.InnerText!=outputDate)mask|=Section(path);return;}
-   if(path!=DatePath&&a.InnerText!=b.InnerText)mask|=Section(path);return;
+  if(!attributesEqual){
+   mask|=StructureBit|Section(path);Note(d,2);
+   foreach(KeyValuePair<string,string> pair in left){string value;if(!right.TryGetValue(pair.Key,out value)||value!=pair.Value)d.AttributeMask|=AttributeClass(pair.Key);}
+   foreach(KeyValuePair<string,string> pair in right)if(!left.ContainsKey(pair.Key))d.AttributeMask|=AttributeClass(pair.Key);
   }
-  if(mixedA||mixedB){mask|=StructureBit|Section(path);return;}
-  for(int index=0;index<x.Count;index++)Walk(x[index],y[index],path+"/"+x[index].LocalName,exportDatePaths,inputDate,outputDate,ref leaves,ref mask);
+  bool mixedA=false,mixedB=false;List<XmlElement> x=Children(a,ref mixedA),y=Children(b,ref mixedB);
+  if(x.Count!=y.Count){mask|=StructureBit|Section(path);Note(d,3);return;}
+  if(x.Count==0){
+   if(path.StartsWith(ServicePath,StringComparison.Ordinal)){string name=path.Substring(ServicePath.Length);if(name!="maDVu"&&name!="tenDVu"&&name!="pbanDVu"&&name!="ttinNhaCCapDVu"){mask|=StructureBit;Note(d,6);}return;}
+   leaves++;
+   if(Array.IndexOf(exportDatePaths,path)>=0){if(inputDate==null||outputDate==null||a.InnerText!=inputDate||b.InnerText!=outputDate){mask|=Section(path);Note(d,7);}return;}
+   if(path!=DatePath&&a.InnerText!=b.InnerText){mask|=Section(path);Note(d,5);if(d.TextMismatches<4096)d.TextMismatches++;}return;
+  }
+  if(mixedA||mixedB){mask|=StructureBit|Section(path);Note(d,4);return;}
+  for(int index=0;index<x.Count;index++)Walk(x[index],y[index],path+"/"+x[index].LocalName,exportDatePaths,inputDate,outputDate,ref leaves,ref mask,d);
  }
 }

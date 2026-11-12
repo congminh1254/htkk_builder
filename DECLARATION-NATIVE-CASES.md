@@ -100,6 +100,16 @@ HTKK ([17] = CE − CD + CF, CD = H của dòng PL 01 tương ứng). Ca đổi 
 không chạm lỗi; tổng không đổi. Bản mô tả lỗi để chủ dự án gửi nếu muốn: htkk_web `docs/HTKK-582-LOI-GIAM-THUE-NQ43.md`.
 Ca thứ tự mới cần nhánh input mới (release web) rồi mới chạy được.
 
+**Run 43143244393** (builder d21e513, web 838ba882, thứ tự dòng mới): pha tích 6/6, 13/13 ô kiểm và 5/5 lá XML khớp, XSD hợp lệ,
+dừng ở `declaration-export-not-matched` với `declarationTreeMismatchMask` 40 (8 CTieuTKhaiChinh + 32 cấu trúc) và
+`declarationTreeLeafCount` 295 = đủ lá. Đủ lá nghĩa là không có khác tên phần tử hay số con (hai loại đó dừng đệ quy và làm
+thiếu lá), nên khác biệt cấu trúc là **thuộc tính** (ví dụ `xsi:nil` hay `id`) của một phần tử trong CTieuTKhaiChinh, có thể kèm
+khác văn bản. Mask theo mục không đủ để chỉ ra phần tử nào. So cây vì vậy báo thêm chi tiết không giá trị, không đường dẫn:
+`declarationTreeAttributeMask` (1 `xsi:nil`, 2 `id`, 4 thuộc tính khác), `declarationTreeTextMismatchCount`,
+`declarationTreeFirstMismatchOrdinal` (thứ tự tiền tự 1-based của phần tử khác đầu tiên **trong XML web tổng hợp**, để đối chiếu
+với input web) và `declarationTreeFirstMismatchKind` (1 tên, 2 thuộc tính, 3 số con, 4 nội dung trộn, 5 văn bản lá, 6 lá dịch
+vụ, 7 ngày kết xuất). Phép so không đổi (không nới).
+
 Vì sao không gõ lại cả tờ khai (`original-entry-export` như Y8): nhập XML giữ đúng mọi ô khác (ca 2.9.8 khớp toàn bộ; ca 3.1.0
 chỉ lệch AE291/AE293), phần thiếu chỉ là ô tích AJ; nhập tay đầy đủ cần thêm ba loại danh mục thả xuống chưa từng chạy
 (tỉnh control 100, xã control 101 phụ thuộc tỉnh, nhóm ngành DC_185), F5 trong bảng địa điểm lồng nhau và ô (1) B_26, mỗi thứ

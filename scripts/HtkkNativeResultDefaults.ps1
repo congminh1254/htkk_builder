@@ -268,6 +268,10 @@ function New-HtkkNativeResultDefaults {
   declarationTickMethodPinMask=0
   declarationTickMismatchMask=0
   declarationTickReadbackMask=0
+  declarationTreeAttributeMask=0
+  declarationTreeTextMismatchCount=0
+  declarationTreeFirstMismatchOrdinal=0
+  declarationTreeFirstMismatchKind=0
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false
