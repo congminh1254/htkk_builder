@@ -24,7 +24,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `02NTNN-TT89-two-annexes-2026` | `101 → 101_8 → X9` (02/NTNN TT89 3.0.9) | 22 | từ 01/07/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài, nước cư trú JP), 02-2/NTNN (1 nhà thầu phụ) | 108 |
 | `02NTNN-TT80-two-annexes-2026` | `101 → 101_8 → C9` (02/NTNN TT80 2.5.1) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài: JP, địa điểm 101), 02-2/NTNN (1 nhà thầu phụ, địa điểm 103) | 111 |
 | `01CNKD-TT50-310-pl01-three-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-4 "PL 01 43/2026/QH16" (`PLuc_01_GiamTNCN_NQ43`, 2 dòng) | 295 |
-| `01CNKD-TT50-310-pl03-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-5 "PL 03 43/2026/QH16" (`PLuc_03_PhaiNop_NQ43`, mục A 2 dòng, mục B dòng mặc định) | 292 |
+| `01CNKD-TT50-310-pl03-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-5 "PL 03 43/2026/QH16" (`PLuc_03_PhaiNop_NQ43`, mục A 1 dòng nhóm 04, mục B dòng mặc định) | 281 |
 | `05KK-TT89-withheld-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 **3.0.9**, chỉ oracle **HTKK 5.8.2**) | 14 | quý 4/2026 | — | 69 |
 
 Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
@@ -126,18 +126,32 @@ capNhatToKhai, công thức XLS) là cùng một đường trong cả hai chế 
 
 U5 3.1.0 với PL 03 (`01CNKD-TT50-310-pl03-two-groups-Q3-2026`, non-gating, `htkkVersion` 5.8.2; adapter `01-cnkd-hkd-3.1.0-pl03`,
 mode `web-xml-import-tick-reexport`): Mẫu 03 của NQ 43/2026/QH16 (thuế phải nộp bù khi doanh thu vượt 10 tỷ). Header (1); địa điểm
-00001 (trụ sở chính) dòng 291 nhóm 01 (300tr, CE 1,5tr) và dòng 292 nhóm 04 (200tr, CE 3tr); PL 03 mục A (tự kê khai) 600.000 và
-300.000 cùng địa điểm và nhóm, mục B (khai thay) dòng mặc định. Dòng PL 03 có trong XML; thuế bù CF (`ct17_soThueBu`) của dòng ngành
+00001 (trụ sở chính) dòng 291 nhóm 01 (300tr, CE 1,5tr) và dòng 292 nhóm 04 (200tr, CE 3tr); PL 03 mục A (tự kê khai) **một**
+dòng 300.000 cùng địa điểm, nhóm 04 (để capNhatToKhai phải khớp theo nhóm, không theo vị trí), mục B (khai thay) dòng mặc định. Dòng PL 03 có trong XML; thuế bù CF (`ct17_soThueBu`) của dòng ngành
 nghề thì không: chỉ `CnkdHkd01TT50Nckt310.capNhatToKhai` (0x0600092a, ghim `u5-310-tick-capnhat`) ghi nó, được gọi từ `CellChange_0`,
 `CellChange_4`, `ButtonClick_0`, và đọc khóa dòng con BN mà chỉ `SetCacDongCon` ghi. Kế hoạch ImportTick vì vậy chỉ có thao tác sửa
 L291 (0 rồi 300.000.000), không tích ô nào (`HtkkDeclarationTickPlan` cho phép 0 ô tích, luôn có ít nhất một thao tác sửa; không có
 ô tích thì sang thẳng bước đọc lại). capNhatToKhai với (1), không (2): CF = H của dòng mục A **đầu tiên** có D = BN và K = BM (so
 chuỗi `op_Equality`, 0x0400/0x040b, rồi `leave` khỏi bảng mục A); mục B chỉ cho trụ sở chính, khớp theo nhóm (dòng mặc định không có
 nhóm). Dòng thiếu BN/BM bị bỏ qua mà không tăng chỉ số dòng (0x02fd, lỗi tương tự daySangPLGiamThue) — ca không chạm vì mọi dòng có
-mã địa điểm và nhóm. Oracle Decimal (`htkk_hkd_web_cases.py` `pl03_cf`): CF 600.000 / 300.000, [17] = CE − CD + CF = 2.100.000 /
-3.300.000, [20] TNCN 5.400.000, [14] 9.000.000, [47] 14.400.000; tổng PL 03 (H_28 → `tongSoThueTNCN_phaiNop`, G_28 →
-`tongsoThueTNCN_duocGiam`) 900.000. Ô kiểm: U, CF, CD (= 0), AE của 291–292 và G/H của PL 03 dòng 22–23 (dòng tổng dịch theo số
-dòng nên kiểm qua XML). Web giữ cổng `CNKD_310_PL03_RELEASED = false` cho tới khi ca này khớp.
+mã địa điểm và nhóm. Oracle Decimal (`htkk_hkd_web_cases.py` `pl03_cf`): CF 0 / 300.000, [17] = CE − CD + CF = 1.500.000 /
+3.300.000, [20] TNCN 4.800.000, [14] 9.000.000, [47] 13.800.000; tổng PL 03 (H_28 → `tongSoThueTNCN_phaiNop`, G_28 →
+`tongsoThueTNCN_duocGiam`) 300.000. Ô kiểm: U, CF, CD (= 0), AE của 291–292 và G/H của PL 03 dòng 22 (dòng tổng kiểm qua XML).
+Web giữ cổng `CNKD_310_PL03_RELEASED = false` cho tới khi ca này khớp.
+
+Lần chạy 43162952097 (bản trước của ca: mục A **hai** dòng 600.000 nhóm 01 và 300.000 nhóm 04) dừng ở
+`declaration-export-original-message-rejected`, `exportRejectedMessageId` 279 ("Có lỗi xảy ra khi kết xuất tờ khai xml."), sau khi
+2/2 thao tác sửa, 12/12 ô kiểm và các ghim đều khớp. 0279 là kiểm tra XSD của chính HTKK trên tệp nó vừa kết xuất
+(`WinDoWorkEvent.WinDoWorkExportXML` 0x6000045: `ValidateXmlAgainstXsd(xml, ToKhaiInfo.XsdFileName)` sai → 0279 ở 0x0b4c; ngoại lệ
+→ 0x0b57). **Lỗi HTKK 5.8.2** (đọc tĩnh): trong `01_CNKD_HKD_TT50_310.xls` (sha 864ef2c1…) sheet 01_5, `mst_diaDiemKD` của dòng PL 03
+(cột N, Controltype 0, `01_43_3_CNKD_HKD_TT50_310.xml`) là công thức tương đối `N22 = E8` / `N26 = E8` (E8 = 01!I92, MST người nộp
+thuế). Dòng thứ hai của một mục được thêm bằng `WinSpreadProcess.InsertTableRow` (0x60001fa: `Rows.Add` rồi `SheetView.CopyRange`
+từ dòng mẫu), nên công thức dịch thành `N23 = E9` — ô trống. Khi nhập XML, `fpSpBindDataCell` (0x60001aa) chỉ `ResetFormula` cho ô
+mở khóa; N bị khóa nên giữ công thức, giá trị nhập không thay được nó. `ExportDataTableToTableNode` (0x6000050) lấy `get_Text`
+(Controltype 0, `GetValueExport`), `Trim` → rỗng; `mst_diaDiemKD` là `TINType`, không nillable → XSD sai → 0279. Người dùng
+HTKK 5.8.2 có từ hai dòng trong cùng một mục PL 03 (tự gõ hay nhập XML) đều không kết xuất được. XML của web (MST trên mọi dòng)
+đúng XSD; ca chỉ đổi thiết kế sang một dòng mỗi mục để HTKK làm được oracle, không nới kiểm tra nào. Nếu bản một dòng vẫn 0279 thì
+giả thuyết này sai và phải chẩn đoán lại.
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 

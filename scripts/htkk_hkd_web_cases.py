@@ -78,12 +78,14 @@ CASES = {
         'annexSales': [], 'pl01': True,
     },
     # 3.1.0 with PL 03 of NQ 43/2026/QH16 (Mẫu 03, thuế phải nộp bù; HTKK 5.8.2, non-gating): header (1), rows 01 and 04,
-    # mục A (tự kê khai) one row per industry row of the same location, mục B (khai thay) its default row.
+    # mục A (tự kê khai) ONE row (group 04, so capNhatToKhai must match by group, not position), mục B (khai thay) its
+    # default row. One row per section: HTKK 5.8.2 cannot export a PL 03 section with two rows (run 43162952097, 0279; the
+    # template's N22 = E8 is relative, so the copied row 23 gets N23 = E9 = empty mst_diaDiemKD, which fails its own XSD).
     '01CNKD-TT50-310-pl03-two-groups-Q3-2026': {
         'xmlVersion': XML_VERSION_310, 'period': ('Q', 3, 2026), 'kyKKhai': '3/2026', 'due': '2026-10-30', 'header': {'c1': True, 'c2': False},
         'locations': [{'headOffice': True, 'code': '00001', 'ward': '10129087', 'rows': [row('01', '300000000'), row('04', '200000000')]}],
         'annexSales': [],
-        'pl03': {'self': [('00001', '01', '600000'), ('00001', '04', '300000')], 'agent': [('', '', '0')]},
+        'pl03': {'self': [('00001', '04', '300000')], 'agent': [('', '', '0')]},
     },
 }
 

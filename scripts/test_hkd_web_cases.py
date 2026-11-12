@@ -103,15 +103,17 @@ class HkdOracle(unittest.TestCase):
 
     def test_hand_computed_values_case_d_310_pl03(self):
         e = hkd.expected(D)
-        # Header (1); rows 01 (300tr) and 04 (200tr): CE 1,5tr / 3tr, [14] 3tr / 6tr. PL 03 mục A 600.000 / 300.000 on the same
-        # location and groups: capNhatToKhai CF = H of the first matching mục A row; mục B default row (no group) adds nothing.
-        self.assertEqual(e['ct17_soThue'], ['2100000', '3300000']); self.assertEqual(e['ct14_soThue'], ['3000000', '6000000'])
-        self.assertEqual(e['soThueTNCN_ct17'], ['5400000']); self.assertEqual(e['soThueGTGT_ct14'], ['9000000'])
-        self.assertEqual(e['ct40'], ['9000000', '5400000']); self.assertEqual(e['tongTienCT47'], ['14400000'])
-        self.assertEqual(e['soThueTNCN_duocGiam'], ['600000', '300000', '0']); self.assertEqual(e['soThueTNCN_phaiNop'], ['600000', '300000', '0'])
-        self.assertEqual(e['ma_nhomNNKD'], ['01', '04', ''])
+        # Header (1); rows 01 (300tr) and 04 (200tr): CE 1,5tr / 3tr, [14] 3tr / 6tr. PL 03 mục A one row, group 04, 300.000
+        # (one row per section: HTKK 5.8.2 cannot export two, run 43162952097): capNhatToKhai CF = H of the first mục A row
+        # with the same location and group, so row 01 gets 0 and row 04 300.000; mục B default row (no group) adds nothing.
+        self.assertEqual(e['ct17_soThue'], ['1500000', '3300000']); self.assertEqual(e['ct14_soThue'], ['3000000', '6000000'])
+        self.assertEqual(e['soThueTNCN_ct17'], ['4800000']); self.assertEqual(e['soThueGTGT_ct14'], ['9000000'])
+        self.assertEqual(e['ct40'], ['9000000', '4800000']); self.assertEqual(e['tongTienCT47'], ['13800000'])
+        self.assertEqual(e['soThueTNCN_duocGiam'], ['300000', '0']); self.assertEqual(e['soThueTNCN_phaiNop'], ['300000', '0'])
+        self.assertEqual(e['ma_nhomNNKD'], ['04', ''])
+        self.assertEqual([len(t) for t in (hkd.CASES[D]['pl03']['self'], hkd.CASES[D]['pl03']['agent'])], [1, 1])
         # 01_43_3_CNKD_HKD_TT50_310.xml: H_28 -> tongSoThueTNCN_phaiNop, G_28 -> tongsoThueTNCN_duocGiam (H = G).
-        self.assertEqual((e['tongSoThueTNCN_phaiNop'], e['tongsoThueTNCN_duocGiam']), (['900000'], ['900000']))
+        self.assertEqual((e['tongSoThueTNCN_phaiNop'], e['tongsoThueTNCN_duocGiam']), (['300000'], ['300000']))
         # The oracle refuses a layout the case does not cover (header (2), a row without group).
         broken = dict(hkd.CASES[D], header={'c1': True, 'c2': True})
         with self.assertRaises(hkd.HkdWebCaseError):

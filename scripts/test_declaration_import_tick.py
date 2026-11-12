@@ -135,9 +135,11 @@ class Pl03Plan(unittest.TestCase):
             self.assertEqual(checks['01|U%d' % (FIRST_ROW + i)], r['ct15'])
             self.assertEqual(checks['01|CF%d' % (FIRST_ROW + i)], hkd.display(cf)); self.assertEqual(checks['01|CD%d' % (FIRST_ROW + i)], '0')
             self.assertEqual(checks['01|AE%d' % (FIRST_ROW + i)], expected['ct17_soThue'][i]); self.assertEqual(hkd.display(ce + cf), expected['ct17_soThue'][i])
-        # PL 03 mục A rows 22-23 (G = H, XLS H22 = G22); the totals row moves with the rows and is checked in the XML instead.
-        self.assertEqual([checks['01-5|G22'], checks['01-5|G23']], expected['soThueTNCN_duocGiam'][:2]); self.assertEqual([checks['01-5|H22'], checks['01-5|H23']], expected['soThueTNCN_phaiNop'][:2])
-        self.assertEqual(len(checks), 12)
+        # PL 03 mục A row 22 only (G = H, XLS H22 = G22; one row per section, HTKK 5.8.2 cannot export two); the totals row
+        # is checked in the XML.
+        self.assertEqual(checks['01-5|G22'], expected['soThueTNCN_duocGiam'][0]); self.assertEqual(checks['01-5|H22'], expected['soThueTNCN_phaiNop'][0])
+        self.assertEqual([checks['01|CF%d' % FIRST_ROW], checks['01|CF%d' % (FIRST_ROW + 1)]], ['0', '300000'])
+        self.assertNotIn('01-5|G23', checks); self.assertEqual(len(checks), 10)
         self.assertIn('new string[]{"PL 03 43/2026/QH16"},new string[]{"01|Tờ khai","01-5|PL 03 43/2026/QH16"}', plan_block(PL03))
 
     @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')

@@ -173,20 +173,24 @@ internal static class HtkkDeclarationCasePlans {
      "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongSoThueTNCN_phaiNop|1350000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongsoThueTNCN_duocGiam|4500000"});
    // U5 3.1.0 with PL 03 of NQ 43/2026/QH16 (Mẫu 03, thuế phải nộp bù; non-gating, HTKK 5.8.2 only). The period dialog ticks
    // "PL 03 43/2026/QH16" (sheet 01-5). Two industry rows (291 group 01, 292 group 04, location 00001, header (1)); PL 03 mục A
-   // rows 22-23 (600.000 / 300.000, H = G by XLS H22), mục B its default row. The PL 03 rows are in the XML; the thuế bù CF
+   // ONE row 22 (group 04, 300.000, H = G by XLS H22), mục B its default row 26. One row per section on purpose: HTKK 5.8.2
+   // cannot export two (run 43162952097, 0279 = its own XSD check in WinDoWorkExportXML): the XLS mst_diaDiemKD formula
+   // N22 = E8 is relative, InsertTableRow copies row 22 by SheetView.CopyRange, so row 23 gets N23 = E9 (empty), and
+   // ExportDataTableToTableNode writes an empty TINType (not nillable). The PL 03 rows are in the XML; the thuế bù CF
    // (ct17_soThueBu) of the industry rows is grid-only: CnkdHkd01TT50Nckt310.capNhatToKhai (pinned u5-310-tick-capnhat)
    // writes it, called from CellChange_0 / CellChange_4 / ButtonClick_0 only, and reads the child-row key BN that only
    // SetCacDongCon fills. So the case runs in mode web-xml-import-tick-reexport with edits only (ImportTick): one original
-   // edit of L291 (0, then the web value). capNhatToKhai with (1): CF = H of the FIRST mục A row with D = BN and K = BM;
+   // edit of L291 (0, then the web value). capNhatToKhai with (1): CF = H of the FIRST mục A row with D = BN and K = BM
+   // (row 291 group 01 finds none: CF 0; row 292 group 04: CF 300.000);
    // mục B only on the head office by group (default row: no group). Its string compares (op_Equality, 0x0400/0x040b) and
    // the skip of a row without BN/BM (0x02fd, no index advance) are not reached: every row has code and group.
    case "01CNKD-TT50-310-pl03-two-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","3.1.0","1266","CnkdHkd01TT50Nckt310",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
     new string[]{"PL 03 43/2026/QH16"},new string[]{"01|Tờ khai","01-5|PL 03 43/2026/QH16"},
     "InterfaceTemplates/excel/01_CNKD_HKD_TT50_310.xls","864ef2c1c28f4f0c807265fa2497264ec72283912dda1f3f6294b6b9aa8a3c56","InterfaceTemplates/xml/01_CNKD_HKD_TT50_310.xml","30f4d3162d6179ce8c233c977898b86f63756e741bda1a423c15e45babea0d86",
-    "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,296,
-    new string[]{"01|U291|300000000","01|U292|200000000","01|CF291|600000","01|CF292|300000","01|CD291|0","01|CD292|0","01|AE291|2100000","01|AE292|3300000","01-5|G22|600000","01-5|H22|600000","01-5|G23|300000","01-5|H23|300000"},
-    new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|9000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|5400000",Main+"HoTroThongTinNopThue/tongTienCT47|14400000",
-     "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_PhaiNop_NQ43/TongCong/tongSoThueTNCN_phaiNop|900000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_PhaiNop_NQ43/TongCong/tongsoThueTNCN_duocGiam|900000"});
+    "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,285,
+    new string[]{"01|U291|300000000","01|U292|200000000","01|CF291|0","01|CF292|300000","01|CD291|0","01|CD292|0","01|AE291|1500000","01|AE292|3300000","01-5|G22|300000","01-5|H22|300000"},
+    new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|9000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|4800000",Main+"HoTroThongTinNopThue/tongTienCT47|13800000",
+     "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_PhaiNop_NQ43/TongCong/tongSoThueTNCN_phaiNop|300000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_PhaiNop_NQ43/TongCong/tongsoThueTNCN_duocGiam|300000"});
    // I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh (frmHTKKPeriod_Load
    // 0x6000484 -> index 21; chkTkhaiThang checked by default), month 09/2026; no annex. CheckPeriod ->
    // CheckHLToKhaiTT80 only refuses months before 01/2022 (0577). HTKK 5.8.2 adds I9 to
