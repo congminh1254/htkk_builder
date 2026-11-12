@@ -28,13 +28,19 @@ PROBE = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
 TICK = ENTRY[ENTRY.index(' // ==== Native-case mode web-xml-import-tick-reexport'):]
 CODE = re.sub(r'//[^\n]*', '', TICK)
 CASE = '01CNKD-TT50-310-pl01-three-groups-Q3-2026'
+# U5 3.1.0 with PL 03 (Mẫu 03): the same mode with edits only (capNhatToKhai writes the thuế bù CF; nothing is ticked).
+PL03 = '01CNKD-TT50-310-pl03-two-groups-Q3-2026'
 MODE = 'declaration-web-import-inspect'
 FIRST_ROW = 291  # 01_CNKD_HKD_TT50_310.xml table_1 DataLocationTemplateRowStart
 
 
-def tick_block():
+def tick_block(case_id=CASE):
     start = PLANS.index(' internal static HtkkDeclarationTickPlan ImportTick(string caseId){')
-    return PLANS[start:PLANS.index('\n }\n', start)]
+    body = PLANS[start:PLANS.index('\n }\n', start)]
+    if case_id == PL03:
+        head = '  if(caseId=="' + PL03 + '")return new HtkkDeclarationTickPlan('
+        return body[body.index(head):body.index('  if(caseId!="' + CASE + '")return null;')]
+    return body[body.index('  if(caseId!="' + CASE + '")return null;'):]
 
 
 def string_array(block, ordinal):
@@ -48,7 +54,9 @@ def plan_block(case_id):
 
 class Registration(unittest.TestCase):
     def test_u5_310_is_the_only_tick_case_non_gating_on_the_5_8_2_oracle(self):
-        self.assertEqual(registry.DECLARATION_TICK_CASES, (CASE,))
+        self.assertEqual(registry.DECLARATION_TICK_CASES, (CASE, PL03))
+        self.assertEqual(registry.input_mode(PL03), registry.IMPORT_TICK_MODE); self.assertEqual(registry.htkk_version(PL03), '5.8.2')
+        self.assertIs(registry.CASES[PL03]['releaseGate'], False); self.assertEqual(registry.CASES[PL03]['adapterId'], '01-cnkd-hkd-3.1.0-pl03')
         self.assertEqual(registry.input_mode(CASE), registry.IMPORT_TICK_MODE)
         self.assertEqual(registry.IMPORT_TICK_MODE, 'web-xml-import-tick-reexport')
         self.assertEqual(registry.driver(CASE), MODE)
@@ -56,7 +64,7 @@ class Registration(unittest.TestCase):
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.DECLARATION_ENTRY_CASES)
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationTickCases=@('" + CASE + "')", formats)
+        self.assertIn("$HtkkDeclarationTickCases=@('" + CASE + "','" + PL03 + "')", formats)
         # Same adapter, producer case and branches as before: the web input does not change.
         self.assertEqual(registry.CASES[CASE]['adapterId'], '01-cnkd-hkd-3.1.0-pl01')
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'cnkd01-310-pl01-three-groups-q3-2026')
@@ -103,6 +111,44 @@ class TickPlan(unittest.TestCase):
         self.assertEqual(expected['soThueTNCN_phaiNop'], [checks['01-4|G20'], checks['01-4|G21']])
         self.assertEqual(expected['soThueTNCN_duocGiam'], [checks['01-4|H20'], checks['01-4|H21']])
         self.assertEqual(len(checks), 13)
+
+
+class Pl03Plan(unittest.TestCase):
+    def test_pl03_edits_only_and_sheet_checks_are_the_decimal_oracle(self):
+        block = tick_block(PL03)
+        edits, ticks, unticked, readbacks = string_array(block, 0), [], [], string_array(block, 1)
+        self.assertIn('new string[0],new string[0]', block)
+        rows = hkd.CASES[PL03]['locations'][0]['rows']
+        self.assertEqual(edits, ['number|L%d|0' % FIRST_ROW, 'number|L%d|%s' % (FIRST_ROW, rows[0]['ct11'])])
+        self.assertTrue(all(not r.get('reduce') for r in rows))
+        code = hkd.CASES[PL03]['locations'][0]['code']
+        self.assertEqual(readbacks, ['BN%d|%s' % (FIRST_ROW + i, code) for i in range(2)] + ['CA%d|%s' % (FIRST_ROW + i, hkd.FAKE_MST) for i in range(2)])
+        self.assertIn('HtkkOracleBaseline.TickMethodPins()', block)
+        # The plan may carry no tick, never no edit; a plan without ticks goes straight to the read-back.
+        self.assertIn('if(edits.Length<1||edits.Length>4||ticks.Length>4||', PLANS)
+        self.assertIn('if(declarationTickPlan.Ticks.Length==0){declarationPhase="tick-inspect";declarationTickClock=Stopwatch.StartNew();}else declarationPhase="tick-ticks";', TICK)
+        expected = hkd.expected(PL03)
+        checks = {c.split('|')[0] + '|' + c.split('|')[1]: c.split('|')[2] for c in string_array(plan_block(PL03), 3)}
+        for i, r in enumerate(rows):
+            ce = (Decimal(r['ct15']) - Decimal(r['ct16'])) * Decimal(hkd.GROUPS[r['group']][1])
+            cf = hkd.pl03_cf(hkd.CASES[PL03], hkd.CASES[PL03]['locations'][0], r)
+            self.assertEqual(checks['01|U%d' % (FIRST_ROW + i)], r['ct15'])
+            self.assertEqual(checks['01|CF%d' % (FIRST_ROW + i)], hkd.display(cf)); self.assertEqual(checks['01|CD%d' % (FIRST_ROW + i)], '0')
+            self.assertEqual(checks['01|AE%d' % (FIRST_ROW + i)], expected['ct17_soThue'][i]); self.assertEqual(hkd.display(ce + cf), expected['ct17_soThue'][i])
+        # PL 03 mục A rows 22-23 (G = H, XLS H22 = G22); the totals row moves with the rows and is checked in the XML instead.
+        self.assertEqual([checks['01-5|G22'], checks['01-5|G23']], expected['soThueTNCN_duocGiam'][:2]); self.assertEqual([checks['01-5|H22'], checks['01-5|H23']], expected['soThueTNCN_phaiNop'][:2])
+        self.assertEqual(len(checks), 12)
+        self.assertIn('new string[]{"PL 03 43/2026/QH16"},new string[]{"01|Tờ khai","01-5|PL 03 43/2026/QH16"}', plan_block(PL03))
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_pl03_plan_has_no_tick(self):
+        program = ('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.2");HtkkDeclarationTickPlan t=HtkkDeclarationCasePlans.ImportTick("' + PL03 + '");'
+                   'Console.WriteLine(t.Edits.Length+" "+t.Ticks.Length+" "+t.Unticked.Length+" "+t.Readbacks.Length+" "+t.MethodPins.Length+" "+(HtkkDeclarationCasePlans.Find("' + PL03 + '")!=null));}}')
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory); (folder / 'P.cs').write_text(program)
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkOracleBaseline.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
+            out = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True, text=True).stdout.split('\n')
+        self.assertEqual(out[0], '2 0 0 4 13 True')
 
 
 class Pins(unittest.TestCase):

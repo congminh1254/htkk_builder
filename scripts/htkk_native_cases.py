@@ -46,6 +46,10 @@ TRUSTED_ADAPTERS={
  # 43130173107, cell mask 40). Mode IMPORT_TICK_MODE: the original import, one original edit of L291 (fills the child-row keys
  # through CellChange_0 -> SetCacDongCon) and SPACE on AJ291/AJ293 (ButtonClick_0 -> daySangPLGiamThue rebuilds PL 01 and CD).
  '01-cnkd-hkd-3.1.0-pl01':{**_declaration('U5','3.1.0',{'quarter':('3/2026',)},['01-4'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
+ # U5 3.1.0 with PL 03 (Mẫu 03, thuế phải nộp bù; sheet 01-5 "PL 03 43/2026/QH16"): the PL 03 rows are in the XML, the
+ # thuế bù CF of the industry rows is grid-only (capNhatToKhai, run only from CellChange_0/CellChange_4/ButtonClick_0).
+ # Mode IMPORT_TICK_MODE with edits only: one original edit of L291 runs CellChange_0 -> SetCacDongCon and capNhatToKhai.
+ '01-cnkd-hkd-3.1.0-pl03':{**_declaration('U5','3.1.0',{'quarter':('3/2026',)},['01-5'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
  # B8 02/QTT-TNCN (non-gating): KieuKy 12 like B9; the import adds every annex (AddFullPLImportXML).
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).

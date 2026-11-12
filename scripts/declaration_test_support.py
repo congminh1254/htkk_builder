@@ -113,7 +113,17 @@ def _tree(case_id, native=False, created=None):
             for name in ('ct38_ma', 'ct40', 'ct42_ma', 'ct46'):
                 _add(row, name, exp[name][i])
         _add(main, 'tongTienCT47', exp['tongTienCT47'][0])
-        if 'soThueTNCN_phaiNop' in exp:  # 3.1.0 PL 01 (NQ 43/2026/QH16) rows and totals of the Decimal oracle
+        pl03 = d.hkd_design.CASES[case_id].get('pl03')
+        if pl03:  # 3.1.0 PL 03 (NQ 43/2026/QH16): mục A then mục B rows, totals of the Decimal oracle
+            pl = _add(_add(hs, 'PLuc'), 'PLuc_03_PhaiNop_NQ43'); i = 0
+            for table, listed in (('CTiethoKD_tuKeKhai', pl03['self']), ('CTiethoKD_keKhaiThay', pl03['agent'])):
+                for _ in listed:
+                    r = _add(pl, table)
+                    for name in ('ma_nhomNNKD', 'soThueTNCN_duocGiam', 'soThueTNCN_phaiNop'):
+                        _add(r, name, exp[name][i])
+                    i += 1
+            total = _add(pl, 'TongCong'); _add(total, 'tongSoThueTNCN_phaiNop', exp['tongSoThueTNCN_phaiNop'][0]); _add(total, 'tongsoThueTNCN_duocGiam', exp['tongsoThueTNCN_duocGiam'][0])
+        elif 'soThueTNCN_phaiNop' in exp:  # 3.1.0 PL 01 (NQ 43/2026/QH16) rows and totals of the Decimal oracle
             pl = _add(_add(hs, 'PLuc'), 'PLuc_01_GiamTNCN_NQ43')
             for i in range(len(exp['soThueTNCN_phaiNop'])):
                 r = _add(pl, 'CTietGiamTNCN')

@@ -52,7 +52,7 @@ class Registry(unittest.TestCase):
     def test_committed_registry_keeps_every_case_on_the_default_oracle(self):
         # Only U5 3.1.0 and Z8 05/KK-TNCN TT89 (XML versions that exist only in HTKK 5.8.2) and the 01-10/GTGT candidate
         # (HTKK 5.8.2 accepts negative goods values there) name 5.8.2; every other case stays on the default oracle.
-        NEWER = {U5_310, ANNEX10, Z8_TT89}
+        NEWER = {U5_310, '01CNKD-TT50-310-pl03-two-groups-Q3-2026', ANNEX10, Z8_TT89}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
         self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER)
         self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER)

@@ -45,7 +45,8 @@ internal sealed class HtkkDeclarationTickPlan {
  internal readonly string[] Edits,Ticks,Unticked,Readbacks,MethodPins;
  internal HtkkDeclarationTickPlan(string[] edits,string[] ticks,string[] unticked,string[] readbacks,string[] methodPins){
   Edits=edits;Ticks=ticks;Unticked=unticked;Readbacks=readbacks;MethodPins=methodPins;
-  if(edits.Length<1||edits.Length>4||ticks.Length<1||ticks.Length>4||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
+  // A plan may have no tick (PL 03: the edit alone runs capNhatToKhai); it always has an edit.
+  if(edits.Length<1||edits.Length>4||ticks.Length>4||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
   foreach(string edit in edits){string[] parts=edit.Split('|');if(parts.Length!=3||parts[0]!="number")throw new InvalidOperationException();}
   foreach(string readback in readbacks)if(readback.Split('|').Length!=2)throw new InvalidOperationException();
   foreach(string pin in methodPins){string[] parts=pin.Split('|');if(parts.Length!=6||(parts[0]!="B"&&parts[0]!="H")||parts[5].Length!=64)throw new InvalidOperationException();}
@@ -59,7 +60,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -170,6 +171,22 @@ internal static class HtkkDeclarationCasePlans {
     new string[]{"01|U291|300000000","01|U292|200000000","01|U293|150000000","01|AE291|1050000","01|AE292|2100000","01|AE293|3000000","01-4|G20|1500000","01-4|H20|450000","01-4|G21|3000000","01-4|H21|900000","01|CD291|450000","01|CD292|900000","01|CD293|0"},
     new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|16000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|6150000",Main+"HoTroThongTinNopThue/tongTienCT47|22150000",
      "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongSoThueTNCN_phaiNop|1350000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_01_GiamTNCN_NQ43/TongCong/tongsoThueTNCN_duocGiam|4500000"});
+   // U5 3.1.0 with PL 03 of NQ 43/2026/QH16 (Mẫu 03, thuế phải nộp bù; non-gating, HTKK 5.8.2 only). The period dialog ticks
+   // "PL 03 43/2026/QH16" (sheet 01-5). Two industry rows (291 group 01, 292 group 04, location 00001, header (1)); PL 03 mục A
+   // rows 22-23 (600.000 / 300.000, H = G by XLS H22), mục B its default row. The PL 03 rows are in the XML; the thuế bù CF
+   // (ct17_soThueBu) of the industry rows is grid-only: CnkdHkd01TT50Nckt310.capNhatToKhai (pinned u5-310-tick-capnhat)
+   // writes it, called from CellChange_0 / CellChange_4 / ButtonClick_0 only, and reads the child-row key BN that only
+   // SetCacDongCon fills. So the case runs in mode web-xml-import-tick-reexport with edits only (ImportTick): one original
+   // edit of L291 (0, then the web value). capNhatToKhai with (1): CF = H of the FIRST mục A row with D = BN and K = BM;
+   // mục B only on the head office by group (default row: no group). Its string compares (op_Equality, 0x0400/0x040b) and
+   // the skip of a row without BN/BM (0x02fd, no index advance) are not reached: every row has code and group.
+   case "01CNKD-TT50-310-pl03-two-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","3.1.0","1266","CnkdHkd01TT50Nckt310",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
+    new string[]{"PL 03 43/2026/QH16"},new string[]{"01|Tờ khai","01-5|PL 03 43/2026/QH16"},
+    "InterfaceTemplates/excel/01_CNKD_HKD_TT50_310.xls","864ef2c1c28f4f0c807265fa2497264ec72283912dda1f3f6294b6b9aa8a3c56","InterfaceTemplates/xml/01_CNKD_HKD_TT50_310.xml","30f4d3162d6179ce8c233c977898b86f63756e741bda1a423c15e45babea0d86",
+    "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,296,
+    new string[]{"01|U291|300000000","01|U292|200000000","01|CF291|600000","01|CF292|300000","01|CD291|0","01|CD292|0","01|AE291|2100000","01|AE292|3300000","01-5|G22|600000","01-5|H22|600000","01-5|G23|300000","01-5|H23|300000"},
+    new string[]{Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueGTGT_ct14|9000000",Main+"KhaiThueGTGTTNCN/SoThueConPhaiNopCT20/soThueTNCN_ct17|5400000",Main+"HoTroThongTinNopThue/tongTienCT47|14400000",
+     "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_PhaiNop_NQ43/TongCong/tongSoThueTNCN_phaiNop|900000","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_PhaiNop_NQ43/TongCong/tongsoThueTNCN_duocGiam|900000"});
    // I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh (frmHTKKPeriod_Load
    // 0x6000484 -> index 21; chkTkhaiThang checked by default), month 09/2026; no annex. CheckPeriod ->
    // CheckHLToKhaiTT80 only refuses months before 01/2022 (0577). HTKK 5.8.2 adds I9 to
@@ -335,6 +352,12 @@ internal static class HtkkDeclarationCasePlans {
  //    PL 03), so AE = CE - CD is HTKK's own result. AJ293 (group 02, not reduced, last row) stays clear.
  //  * Readbacks (diagnostic): BN = ma_diaDiemKD 00001 and CA = the profile MST on the rows, written by SetCacDongCon.
  internal static HtkkDeclarationTickPlan ImportTick(string caseId){
+  // PL 03 (see its case plan): the original L291 edit fills BN/CA (SetCacDongCon) and runs capNhatToKhai (CF from PL 03);
+  // no checkbox is ticked. Same pinned methods (u5-310-tick-*: CellChange_0, SetCacDongCon, capNhatToKhai, ...).
+  if(caseId=="01CNKD-TT50-310-pl03-two-groups-Q3-2026")return new HtkkDeclarationTickPlan(
+   new string[]{"number|L291|0","number|L291|300000000"},new string[0],new string[0],
+   new string[]{"BN291|00001","BN292|00001","CA291|9999999997","CA292|9999999997"},
+   HtkkOracleBaseline.TickMethodPins());
   if(caseId!="01CNKD-TT50-310-pl01-three-groups-Q3-2026")return null;
   return new HtkkDeclarationTickPlan(
    new string[]{"number|L291|0","number|L291|300000000","number|L292|0","number|L292|200000000"},

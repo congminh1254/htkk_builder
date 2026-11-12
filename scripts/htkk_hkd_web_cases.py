@@ -77,7 +77,33 @@ CASES = {
         'locations': [{'headOffice': True, 'code': '00001', 'ward': '10129087', 'rows': [row('01', '300000000', reduce=True), row('04', '200000000', reduce=True), row('02', '150000000', ct12='10000000')]}],
         'annexSales': [], 'pl01': True,
     },
+    # 3.1.0 with PL 03 of NQ 43/2026/QH16 (Mẫu 03, thuế phải nộp bù; HTKK 5.8.2, non-gating): header (1), rows 01 and 04,
+    # mục A (tự kê khai) one row per industry row of the same location, mục B (khai thay) its default row.
+    '01CNKD-TT50-310-pl03-two-groups-Q3-2026': {
+        'xmlVersion': XML_VERSION_310, 'period': ('Q', 3, 2026), 'kyKKhai': '3/2026', 'due': '2026-10-30', 'header': {'c1': True, 'c2': False},
+        'locations': [{'headOffice': True, 'code': '00001', 'ward': '10129087', 'rows': [row('01', '300000000'), row('04', '200000000')]}],
+        'annexSales': [],
+        'pl03': {'self': [('00001', '01', '600000'), ('00001', '04', '300000')], 'agent': [('', '', '0')]},
+    },
 }
+
+
+def pl03_cf(case, loc, r):
+    """CF (thuế bù) of one industry row: CnkdHkd01TT50Nckt310.capNhatToKhai with header (1) only (the reviewed case).
+    Mục A (tự kê khai): H of the FIRST row with the same location code (D = BN) and group (K = BM); mục B (khai thay):
+    only on the head office, every row with the same group, summed. A row without code or group is never reached here."""
+    pl03 = case.get('pl03')
+    if not pl03:
+        return Decimal(0)
+    if case['header']['c2'] or not case['header']['c1'] or not loc['code'] or not r['group']:
+        raise HkdWebCaseError('CASE')
+    cf = Decimal(0)
+    for code, group, amount in pl03['self']:
+        if code == loc['code'] and group == r['group']:
+            cf += Decimal(amount); break
+    if loc['headOffice']:
+        cf += sum((Decimal(a) for _, g, a in pl03['agent'] if g == r['group']), Decimal(0))
+    return cf
 
 
 def display(value):
@@ -105,8 +131,9 @@ def expected(case_id):
             ce = (Decimal(r['ct15']) - Decimal(r['ct16'])) * Decimal(tn)
             # 3.1.0 PL 01: a ticked row with CE > 0 gets CD = H = CE x 30% (daySangPLGiamThue); CF = 0 without PL 03.
             cd = ce * PL01_RATE if case.get('pl01') and r.get('reduce') and ce > 0 else Decimal(0)
-            ct17 = ce - cd
-            rows.append({'loc': loc, 'ct10': letter, 'ct14': ct14, 'ct17': ct17, 'bt': ct17, 'ce': ce, 'cd': cd, 'reduced': bool(cd), 'group': r['group']})
+            cf = pl03_cf(case, loc, r)
+            ct17 = ce - cd + cf
+            rows.append({'loc': loc, 'ct10': letter, 'ct14': ct14, 'ct17': ct17, 'bt': ct17, 'ce': ce, 'cd': cd, 'cf': cf, 'reduced': bool(cd), 'group': r['group']})
     if case['header']['c2']:
         others = sum((r['bt'] for r in rows if not r['loc']['headOffice']), Decimal(0))
         if rows and rows[0]['loc']['headOffice']:
@@ -133,6 +160,13 @@ def expected(case_id):
         extra = {'soThueTNCN_phaiNop': [display(r['ce']) for r in pl01], 'soThueTNCN_duocGiam': [display(r['cd']) for r in pl01],
                  'ma_nhomNNKD': [r['group'] for r in pl01], 'ma_hoatDongSXKD': ['01' for _ in pl01],
                  'tongSoThueTNCN_phaiNop': [display(sum((r['cd'] for r in pl01), Decimal(0)))], 'tongsoThueTNCN_duocGiam': [display(sum((r['ce'] for r in pl01), Decimal(0)))]}
+    if case.get('pl03'):
+        # PL 03 rows as declared (H = G, XLS H22/H26); 01_43_3_CNKD_HKD_TT50_310.xml binds H_28 to tongSoThueTNCN_phaiNop and
+        # G_28 to tongsoThueTNCN_duocGiam.
+        listed = case['pl03']['self'] + case['pl03']['agent']
+        total = sum((Decimal(a) for _, _, a in listed), Decimal(0))
+        extra = {'soThueTNCN_duocGiam': [display(Decimal(a)) for _, _, a in listed], 'soThueTNCN_phaiNop': [display(Decimal(a)) for _, _, a in listed],
+                 'ma_nhomNNKD': [g for _, g, _ in listed], 'tongSoThueTNCN_phaiNop': [display(total)], 'tongsoThueTNCN_duocGiam': [display(total)]}
     return {**extra,
         'ct10': [r['ct10'] for r in rows], 'ct14_soThue': [display(r['ct14']) for r in rows], 'ct17_soThue': [display(r['ct17']) for r in rows],
         'soThueGTGT_ct14': [display(total14)], 'soThueTNCN_ct17': [display(total17)],

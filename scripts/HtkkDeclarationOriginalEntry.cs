@@ -418,7 +418,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(declarationPhase=="tick-pins"){VerifyDeclarationTickPins();if(!finished)declarationPhase="tick-edits";return;}
    if(declarationPhase=="tick-edits"){
     EditDeclarationTick(declarationTickActionCount);if(finished)return;
-    if(declarationTickActionCount==declarationTickPlan.Edits.Length){declarationTickEditsMatched=declarationTickMismatchMask==0;declarationPhase="tick-ticks";Record();}
+    // A plan without ticks (PL 03: the edit alone runs capNhatToKhai) goes straight to the read-back.
+    if(declarationTickActionCount==declarationTickPlan.Edits.Length){declarationTickEditsMatched=declarationTickMismatchMask==0;if(declarationTickPlan.Ticks.Length==0){declarationPhase="tick-inspect";declarationTickClock=Stopwatch.StartNew();}else declarationPhase="tick-ticks";Record();}
     return;
    }
    if(declarationPhase=="tick-ticks"){

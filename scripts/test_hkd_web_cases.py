@@ -18,6 +18,7 @@ NS = hkd.NS
 A = '01CNKD-TT50-revenue-two-groups-Q3-2026'
 B = '01CNKD-TT50-profit-two-locations-annex13-M10-2026'
 C = '01CNKD-TT50-310-pl01-three-groups-Q3-2026'
+D = '01CNKD-TT50-310-pl03-two-groups-Q3-2026'
 
 
 def synthetic(case_id, override=None):
@@ -48,7 +49,16 @@ def synthetic(case_id, override=None):
     add(main, 'tongTienCT47', exp['tongTienCT47'][0])
     for value in exp['thueGTGTDuocGiam']:
         add(add(main, 'BangKeTenHHDV'), 'thueGTGTDuocGiam', value)
-    if 'soThueTNCN_phaiNop' in exp:
+    if case.get('pl03'):
+        pl = add(add(hs, 'PLuc'), 'PLuc_03_PhaiNop_NQ43'); i = 0
+        for table, listed in (('CTiethoKD_tuKeKhai', case['pl03']['self']), ('CTiethoKD_keKhaiThay', case['pl03']['agent'])):
+            for _ in listed:
+                r = add(pl, table)
+                for name in ('ma_nhomNNKD', 'soThueTNCN_duocGiam', 'soThueTNCN_phaiNop'):
+                    add(r, name, exp[name][i])
+                i += 1
+        total = add(pl, 'TongCong'); add(total, 'tongSoThueTNCN_phaiNop', exp['tongSoThueTNCN_phaiNop'][0]); add(total, 'tongsoThueTNCN_duocGiam', exp['tongsoThueTNCN_duocGiam'][0])
+    elif 'soThueTNCN_phaiNop' in exp:
         pl = add(add(hs, 'PLuc'), 'PLuc_01_GiamTNCN_NQ43')
         for i in range(len(exp['soThueTNCN_phaiNop'])):
             r = add(pl, 'CTietGiamTNCN')
@@ -91,6 +101,22 @@ class HkdOracle(unittest.TestCase):
         # Totals as 01_43_1_CNKD_HKD_TT50_310.xml binds them: H_22 -> tongSoThueTNCN_phaiNop, G_22 -> tongsoThueTNCN_duocGiam.
         self.assertEqual(e['tongSoThueTNCN_phaiNop'], ['1350000']); self.assertEqual(e['tongsoThueTNCN_duocGiam'], ['4500000'])
 
+    def test_hand_computed_values_case_d_310_pl03(self):
+        e = hkd.expected(D)
+        # Header (1); rows 01 (300tr) and 04 (200tr): CE 1,5tr / 3tr, [14] 3tr / 6tr. PL 03 mục A 600.000 / 300.000 on the same
+        # location and groups: capNhatToKhai CF = H of the first matching mục A row; mục B default row (no group) adds nothing.
+        self.assertEqual(e['ct17_soThue'], ['2100000', '3300000']); self.assertEqual(e['ct14_soThue'], ['3000000', '6000000'])
+        self.assertEqual(e['soThueTNCN_ct17'], ['5400000']); self.assertEqual(e['soThueGTGT_ct14'], ['9000000'])
+        self.assertEqual(e['ct40'], ['9000000', '5400000']); self.assertEqual(e['tongTienCT47'], ['14400000'])
+        self.assertEqual(e['soThueTNCN_duocGiam'], ['600000', '300000', '0']); self.assertEqual(e['soThueTNCN_phaiNop'], ['600000', '300000', '0'])
+        self.assertEqual(e['ma_nhomNNKD'], ['01', '04', ''])
+        # 01_43_3_CNKD_HKD_TT50_310.xml: H_28 -> tongSoThueTNCN_phaiNop, G_28 -> tongsoThueTNCN_duocGiam (H = G).
+        self.assertEqual((e['tongSoThueTNCN_phaiNop'], e['tongsoThueTNCN_duocGiam']), (['900000'], ['900000']))
+        # The oracle refuses a layout the case does not cover (header (2), a row without group).
+        broken = dict(hkd.CASES[D], header={'c1': True, 'c2': True})
+        with self.assertRaises(hkd.HkdWebCaseError):
+            hkd.pl03_cf(broken, broken['locations'][0], broken['locations'][0]['rows'][0])
+
     def test_rates_cover_every_source_group(self):
         self.assertEqual(sorted(hkd.GROUPS), ['01', '02', '03', '04', '05', '06'])
         for code, (gtgt, _tncn, _letter) in hkd.GROUPS.items():
@@ -129,9 +155,10 @@ class HkdValidator(unittest.TestCase):
     def test_not_registered_as_native_or_gate_case(self):
         registry = json.loads((ROOT / 'htkk-native-cases.json').read_text())
         promoted = {c['caseId']: c for c in registry['cases'] if c['caseId'] in hkd.CASES}
-        # Cases A and C are promoted (declaration driver, never a release gate); B stays design-only.
-        # C (3.1.0) runs only on the HTKK 5.8.2 oracle.
-        self.assertEqual(set(promoted), {A, C})
+        # Cases A, C and D are promoted (declaration driver, never a release gate); B stays design-only.
+        # C and D (3.1.0) run only on the HTKK 5.8.2 oracle.
+        self.assertEqual(set(promoted), {A, C, D})
+        self.assertEqual((promoted[D]['adapterId'], promoted[D]['htkkVersion'], promoted[D]['unit']['annexes'], promoted[D]['releaseGate']), ('01-cnkd-hkd-3.1.0-pl03', '5.8.2', ['01-5'], False))
         self.assertIs(promoted[A]['releaseGate'], False)
         self.assertEqual(promoted[A]['adapterId'], '01-cnkd-hkd-2.9.8')
         self.assertIs(promoted[C]['releaseGate'], False)

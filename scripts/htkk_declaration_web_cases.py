@@ -376,6 +376,15 @@ CASES = {
                                                         'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
                                                         '10129 - Thuế cơ sở 16 Thành phố Hà Nội', '1140759 - Phường Sơn Tây - Thuế cơ sở 16 Thành phố Hà Nội',
                                                         'Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)', 'Thuế thu nhập từ hoạt động sản xuất, kinh doanh của cá nhân']),
+    # U5 3.1.0 with PL 03 of NQ 43/2026/QH16 (Mẫu 03, sheet 01-5, PLuc_03_PhaiNop_NQ43; HTKK 5.8.2, non-gating): groups 01
+    # and 04, mục A rows on both (thuế bù CF of capNhatToKhai); Decimal oracle in htkk_hkd_web_cases.py.
+    '01CNKD-TT50-310-pl03-two-groups-Q3-2026': _case('cnkd01-310-pl03-two-groups-q3-2026', 'U5', '1266', '3.1.0', 'Validate/01_CNKD_HKD_TT50_310.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 296, ['PLuc_03_PhaiNop_NQ43'], WORKBOOK_SERVICE,
+                                                       ['TỜ KHAI THUẾ ĐỐI VỚI HỘ KINH DOANH, CÁ NHÂN KINH DOANH', '(Kèm theo Thông tư số 50/2026/TT-BTC ngày 05/3/2026 của Bộ trưởng Bộ Tài chính)', '(a)', '(d)', 'CUA HANG GIA LAP', 'DIA CHI GIA LAP', ADDRESS,
+                                                        'Phân phối, cung cấp hàng hóa', 'Sản xuất, vận tải, dịch vụ có gắn với hàng hóa, xây dựng có bao thầu nguyên vật liệu',
+                                                        'Hoạt động sản xuất, kinh doanh hàng hóa, cung cấp dịch vụ có địa điểm kinh doanh cố định',
+                                                        'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
+                                                        '10129 - Thuế cơ sở 16 Thành phố Hà Nội', '1140759 - Phường Sơn Tây - Thuế cơ sở 16 Thành phố Hà Nội',
+                                                        'Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)', 'Thuế thu nhập từ hoạt động sản xuất, kinh doanh của cá nhân']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
