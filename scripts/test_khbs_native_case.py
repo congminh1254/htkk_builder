@@ -176,6 +176,11 @@ class Annex12Capture(unittest.TestCase):
   self.assertIn('bool two=Annex12WebTwoPlantsCase()||KhbsAnnexCase();',source('HtkkGtgtAnnex12ExportInspection.cs'))
   probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
   self.assertIn("{$lastGui.annexSelectedCount -eq 1 -and $lastGui.annex12WebImportSheetMatched -and $lastGui.annex12WebHeadAuthorityRestored}else{-not $lastGui.annex12WebHeadAuthorityRestored}",line)
+  # The common period predicate takes the annex period for this case only (run 43437157891 matched the whole tree but was
+  # refused on periodNoAnnexMatched); every other KHBS case still requires the no-annex period.
+  period=next(l for l in probe.splitlines() if "'gtgt-amendment-khbs-inspected'" in l and 'periodNoAnnexMatched' in l)
+  self.assertIn("elseif($GuiAutomation -eq 'gtgt-amendment-khbs-inspect' -and $env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){$lastGui.periodAnnex12Matched -and -not $lastGui.periodNoAnnexMatched}else{$lastGui.periodNoAnnexMatched})",period)
+  self.assertEqual(period.count('01GTGT-khbs-annex12-capture-M10-2026'),1)
  def test_capture_output_is_retained_with_catalogue_and_joined_key_texts_only(self):
   web=self.body;native=native_of(web)
   # HTKK's annex group texts: a stripped catalogue caption and a ' - ' joined row key of input values are retainable;

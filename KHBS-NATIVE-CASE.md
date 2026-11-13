@@ -195,6 +195,12 @@ HTKK wrote a second 01-1/KHBS hồ sơ group (`002601` "01-2/GTGT": one row per 
 504 compared leaves (89 annex + 70 main + 345 KHBS), `gtgt-amendment-khbs-inspected`. Still non-gating: the web keeps
 every bổ sung with an annex refused (`KHBS_01GTGT_ANNEX_RELEASED=false`) until a changed-allocation case exists.
 
+Run 43437157891 confirmed the port (stage `gtgt-amendment-khbs-inspected`, `khbsTreeMatched`, mask 0, 504 leaves, published
+with `allTaxValuesMatched` true, same native bytes) but the probe still refused it: its common period predicate required
+`periodNoAnnexMatched` for every KHBS case, while this case's B1 dialog selects 01-2 (`periodAnnex12Matched`). The predicate
+now takes `periodAnnex12Matched -and -not periodNoAnnexMatched` for this case only; the other KHBS cases are unchanged.
+Replaying that run's own result through the predicate region gives not-matched before and matched after the change.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe
