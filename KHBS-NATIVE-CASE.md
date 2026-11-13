@@ -201,6 +201,20 @@ with `allTaxValuesMatched` true, same native bytes) but the probe still refused 
 now takes `periodAnnex12Matched -and -not periodNoAnnexMatched` for this case only; the other KHBS cases are unchanged.
 Replaying that run's own result through the predicate region gives not-matched before and matched after the change.
 
+## Case 5: ORACLE CAPTURE of a changed allocation, bổ sung lần 2 (`01GTGT-khbs-annex12-lan2-changed-M10-2026`, adapter `01-gtgt-2.8.3-khbs-annex12-lan2`)
+
+Not a port check. It combines the two proven flows: C0 is case 1's zero declaration without annex; round 1 is case 4's B1
+(01-2 selected in the period dialog, the capture case's exact web file imported as the staged previous version, the annex
+checked read-only, head CQTs restored, Tổng hợp KHBS) saved with Ghi and closed exactly as case 3 does
+(`bs1_…_283.xml`); round 2 opens B2 with 01-2 selected again (if HTKK already keeps 01-2 selected from the saved B1 it is only
+observed, never clicked: `annex12SelectionActionCount` 0), imports the web B2 file, checks its annex (plant 1 at
+40,00/60,00, plant 2 unchanged), restores the head CQTs, summarises, exports and compares the whole tree (413 leaves:
+89 annex + 70 main + 254 KHBS). The B2 main sheet opens on the saved B1 vector (`khbsOpenMainState` 3) and raises [32] to
+1.500.000 as case 3. The changed annex is a contract **variant** (`htkk_annex12_web_cases.VARIANTS`), not a native annex
+case. The web file's annex hồ sơ group is the static reading of htkk_web (k-th row of a key against the k-th previous row;
+no Muc_I.2 row because plant 1's Σ[12] stays 7), so a mismatch (`gtgt-amendment-khbs-not-matched`) is possible and the raw
+export is retained to port HTKK's handling of changed rows. Automation limit 210 s.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

@@ -146,12 +146,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object annex=null;
   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(annex!=null)return false;annex=candidate;}}
   if(annex==null||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)return false;
-  // The KHBS capture case imports exactly the two-plant web annex.
+  // The KHBS annex cases import exactly the two-plant web annex (case 5's B2: plant 1 at 40/60).
   bool two=Annex12WebTwoPlantsCase()||KhbsAnnexCase();
   string[] names=two?new string[]{"NHA MAY GIA LAP - KHONG NOP","NHA MAY GIA LAP 2 - KHONG NOP"}:new string[]{"NHA MAY GIA LAP - KHONG NOP"};
   string[] codes=two?new string[]{"9999999997-001","99997"}:new string[]{"9999999997-001"};
   decimal[] parents=two?new decimal[]{7m,3m}:new decimal[]{0m};
-  decimal[][] percentages=two?new decimal[][]{new decimal[]{33.33m,66.67m},new decimal[]{50m,25m,25m}}:new decimal[][]{new decimal[]{50m,50m}};
+  decimal[][] percentages=two?new decimal[][]{KhbsAnnexCase()?KhbsAnnexFirstPlantPercentages():new decimal[]{33.33m,66.67m},new decimal[]{50m,25m,25m}}:new decimal[][]{new decimal[]{50m,50m}};
   string[][] types=two?new string[][]{new string[]{"01","02"},new string[]{"01","02","02"}}:new string[][]{new string[]{"01","02"}};
   System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)return false;object info=null;
   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)return false;info=candidate;}

@@ -15,7 +15,7 @@ def web_fixture():
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def annex_tree(root,case):
  """Synthetic PLuc built from the trusted contract (no application fixture is copied)."""
- ns='{'+w.privacy.NS+'}';spec=w.annex12.CASES[case];pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+ ns='{'+w.privacy.NS+'}';spec=w.annex12.CASES.get(case) or w.annex12.VARIANTS[case];pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
  for child in list(pluc):pluc.remove(child)
  pluc.text=None;annex=ET.SubElement(pluc,ns+'PLuc_01_2_GTGT')

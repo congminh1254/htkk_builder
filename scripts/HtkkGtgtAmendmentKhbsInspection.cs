@@ -44,9 +44,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // mismatch); the web producer now writes the annex group and Muc_I.2 as captured, so the whole tree (504 leaves) must match.
  private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";
  private const int KhbsAnnex12CaptureLeafTarget=504;
- private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsAnnex12CaptureCaseId;}
- private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId;}
- private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsLan2WebCaseId;}
+ // Case 5 (htkk_web producer khbs-annex12-lan2-changed): ORACLE CAPTURE of a CHANGED allocation, bổ sung lần 2. C0 is case 1's
+ // zero declaration without annex; round 1 is case 4's B1 (01-2 selected, the capture case's exact web file imported, head CQTs
+ // restored, Tổng hợp) saved with Ghi as case 3 does; round 2 opens B2 with 01-2 selected (or already selected by HTKK from the
+ // saved B1), imports the web B2 file whose annex moves plant 1's [11] to 40/60, restores, summarises, exports and compares
+ // (the annex rows of the web file are a static reading: a mismatch is possible and the raw export is retained).
+ private const string KhbsAnnex12Lan2CaseId="01GTGT-khbs-annex12-lan2-changed-M10-2026";
+ private const int KhbsAnnex12Lan2LeafTarget=413;
+ private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsAnnex12Lan2CaseId;}
+ private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId);}
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId;}
+ // The lần 2 flow (round 1 imports, summarises and saves the previous-version B1, round 2 opens B2): cases 3 and 5.
+ private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId);}
+ // The 01-2 percentages the imported annex must show: the proven two-plant annex, or in case 5's round 2 plant 1 at 40/60.
+ private decimal[] KhbsAnnexFirstPlantPercentages(){return KhbsAnnexLan2Case()&&khbsRound==2?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};}
  private string KhbsSoLan(){return KhbsLan2Case()?"2":"1";}
  private bool KhbsImportingPrior(){return KhbsLan2Case()&&khbsRound==1;}
  private string KhbsImportPath(){return KhbsImportingPrior()?webPriorPath:webInputPath;}
@@ -73,6 +84,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   exportWatcher.Stop();khbsRound=2;khbsPhase="not-started";khbsDateTyped=false;khbsPeriodMatched=false;khbsImportPathMatched=false;khbsDirtyAfterSave=false;khbsDiscardPromptAnswered=false;
   roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
   amendmentOpenConfirmInvoked=false;amendmentOpenPeriodMatched=false;amendmentOpenKhbsSheetsObserved=false;amendmentOpenPriorUnchanged=false;
+  // Case 5: round 2 selects (or finds selected) phụ lục 01-2 again and imports, checks and restores the changed B2 annex.
+  if(KhbsAnnexLan2Case()){annex12SelectionActionCount=0;annexSelected=0;periodAnnex12Matched=false;annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;annex12WebHeadAuthorityRepairCount=0;annex12WebHeadAuthorityFailureMask=0;annex12WebHeadAuthorityComboMask=0;annex12WebImportDisplayEmptyMask=0;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;}
   khbsRound2Opened=true;navigationPhase="waiting-main-menu";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsRound2Opening);Record();
  }
  private bool KhbsNonzeroOriginal(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsSale5WebCaseId;}
@@ -222,7 +235,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(!InspectOriginalImportedAnnex12(grids[0])){if(khbsPriorCloseClock==null)khbsPriorCloseClock=Stopwatch.StartNew();if(khbsPriorCloseClock.Elapsed.TotalSeconds>=10)throw new InvalidOperationException();return;}
     khbsPhase="annex-restoring";RestoreImportedAnnex12HeadAuthorities();
     if(!annex12WebHeadAuthorityRestored)throw new InvalidOperationException();
-    khbsPhase="summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();return;
+    khbsPriorCloseClock=null;khbsPhase="summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();return;
    }
    if(khbsPhase=="summary-ready"){
     if(!KhbsOwnerReady())return;
@@ -287,7 +300,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      SetStage(HtkkAutomationStage.GtgtAmendmentKhbsComparing);Record();
      if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),output=ReadBoundedOriginalXml(exportPath);
-     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:webCaseId==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
+     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:webCaseId==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:webCaseId==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
      if(Hash(exportPath)!=khbsExportSha256)throw new InvalidOperationException();
      finished=true;SetStage(khbsTreeMatched?HtkkAutomationStage.GtgtAmendmentKhbsInspected:HtkkAutomationStage.GtgtAmendmentKhbsNotMatched);Record();exportWatcher.Stop();CloseKhbsMessage(message);return;
     }

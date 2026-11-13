@@ -279,6 +279,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
 
  private static bool Annex12CaptionMatched(string typeName,string uncheckedText,string checkedText){return typeName=="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&uncheckedText=="01-2/GTGT"&&checkedText=="01-2/GTGT";}
+ private bool OriginalAnnex12RowSelected(object sheet){
+  int rowCount=Convert.ToInt32(Get(sheet,"RowCount")),target=-1;if(rowCount<1||rowCount>512)throw new InvalidOperationException();
+  for(int row=0;row<rowCount;row++){object selector=Get(Cell(sheet,row,0),"CellType");if(selector==null||selector.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")continue;if(Annex12CaptionMatched(selector.GetType().FullName,Convert.ToString(Get(selector,"TextFalse"),CultureInfo.InvariantCulture),Convert.ToString(Get(selector,"TextTrue"),CultureInfo.InvariantCulture))){if(target>=0)throw new InvalidOperationException();target=row;}}
+  return target>=0&&RowVisible(sheet,target)&&Selected(Get(Cell(sheet,target,0),"Value"));
+ }
  private void SelectOriginalAnnex12(Control grid,object sheet){
   if(!(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   string root=Path.GetDirectoryName(project);
@@ -465,7 +470,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Control annex=ReadableNamed(period,"axfpsPhuLuc");if(!IsSpread(annex))throw new InvalidOperationException();object annexSheet=Get(annex,"ActiveSheet");int annexRows=Convert.ToInt32(Get(annexSheet,"RowCount"));if(annexRows<0||annexRows>512)throw new InvalidOperationException();annexSelected=0;
   for(int row=0;row<annexRows;row++)if(Selected(Get(Cell(annexSheet,row,0),"Value")))annexSelected++;
   periodNoAnnexMatched=annexSelected==0&&!CheckValue(all);
-  if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);
+  // Case 5, round 2: HTKK may keep phụ lục 01-2 selected for B2 from the saved B1; then it is only observed, never clicked again.
+  if(KhbsAnnexLan2Case()&&AmendmentReopening()&&khbsRound==2&&annexSelected==1&&OriginalAnnex12RowSelected(annexSheet)){periodAnnex12Matched=true;periodNoAnnexMatched=false;Record();}
+  else if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);
   if(AmendmentReopening()){ConfigureOriginalAmendmentOpen(period);return;}
   if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(Annex12InspectionMode()?periodAnnex12Matched:periodNoAnnexMatched)){SetStage(HtkkAutomationStage.GtgtPeriodInputsNotMatched);finished=true;Record();return;}
   Button confirm=Named(period,"btnDongY") as Button;if(confirm==null||confirm.Text.Replace("&",String.Empty).Trim()!="Đồng ý")throw new InvalidOperationException();

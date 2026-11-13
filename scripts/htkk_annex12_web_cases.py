@@ -41,6 +41,15 @@ CASES={
    plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
   ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
 }
+# Annex VARIANTS that are not native annex cases of their own: only a KHBS case carries them (validate_annex accepts them,
+# is_case does not). Case 5 (htkk_khbs_web_cases ANNEX12_LAN2_CASE): the two-plant annex with plant 1 at 40/60.
+TWO_PLANTS_CHANGED_VARIANT='01GTGT-annex12-two-plants-changed-khbs-lan2'
+VARIANTS={
+ TWO_PLANTS_CHANGED_VARIANT:{'plants':[
+   plant(0,'ID_1','7',[location('1.1','01','40.00','3','ID_1'),location('1.2','02','60.00','4','ID_2')]),
+   plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
+  ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
+}
 def is_case(case_id):return case_id in CASES
 def tax_leaves(case_id):
  if case_id not in CASES:reject('CASE')
@@ -79,8 +88,8 @@ def validate_groups(annex,plants,totals,field_prefix=''):
 
 def validate_annex(root,case_id):
  """Validate the exact PLuc subtree of one fixed annex case. Returns counts."""
- if case_id not in CASES:reject('CASE')
- spec=CASES[case_id];ns='{'+NS+'}'
+ if case_id not in CASES and case_id not in VARIANTS:reject('CASE')
+ spec=CASES.get(case_id) or VARIANTS[case_id];ns='{'+NS+'}'
  plucs=root.findall('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  if len(plucs)!=1:reject('STRUCTURE','pluc')
  pluc=plucs[0];container(pluc,('PLuc_01_2_GTGT',),{},'pluc')
