@@ -159,7 +159,7 @@ class Annex12Capture(unittest.TestCase):
  def test_registry_input_and_exact_annex_contract(self):
   c=cases.CASES[CASE4];self.assertEqual((c['adapterId'],c['unit']['annexes'],c['unit']['amendmentOrder'],c['releaseGate']),('01-gtgt-2.8.3-khbs-annex12',['01-2/GTGT'],1,False))
   self.assertEqual(w.khbs.annex12_case(CASE4),'01GTGT-annex12-two-plants-nonzero-M10-2026');self.assertIsNone(w.khbs.annex12_case(CASE))
-  self.assertEqual(w.validate_web_xml(self.body,case_id=CASE4,manifest=self.manifest)['amendmentTaxLeafCount'],359)
+  self.assertEqual(w.validate_web_xml(self.body,case_id=CASE4,manifest=self.manifest)['amendmentTaxLeafCount'],504)
   text=self.body.decode();self.assertLess(text.index('<PLuc_01_2_GTGT>'),text.index('<PL01_KHBS>'))
   for before,after in (('NHA MAY GIA LAP 2 - KHONG NOP','PRIVATE PLANT'),('<ct11>66.67</ct11>','<ct11>66.68</ct11>'),('<ct3>100000</ct3>','<ct3>100001</ct3>')):
    self.assertIn(before,text,before)
@@ -169,7 +169,7 @@ class Annex12Capture(unittest.TestCase):
   with self.assertRaises(w.InputError):w.validate_web_xml(f.sale_fixture(CASE),case_id=CASE4)
  def test_driver_selects_the_annex_restores_the_head_cqt_then_summarises(self):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs')
-  for fragment in ('private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";','KhbsAnnex12CaptureLeafTarget=359','khbsPhase=KhbsAnnexCase()?"annex-restore":"summary-ready";',
+  for fragment in ('private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";','KhbsAnnex12CaptureLeafTarget=504','khbsPhase=KhbsAnnexCase()?"annex-restore":"summary-ready";',
                    'if(!InspectOriginalImportedAnnex12(grids[0]))','RestoreImportedAnnex12HeadAuthorities();\n    if(!annex12WebHeadAuthorityRestored)throw new InvalidOperationException();'.replace('\\n','\n')):self.assertIn(fragment,text)
   self.assertIn('if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);',source('HtkkGtgtPeriodAndSheet.cs'))
   self.assertIn('!(KhbsAnnexCase()?periodAnnex12Matched&&annexSelected==1:periodNoAnnexMatched&&annexSelected==0)',source('HtkkGtgtAmendmentOpenInspection.cs'))
@@ -188,7 +188,7 @@ class Annex12Capture(unittest.TestCase):
   with self.assertRaises(out.OutputError):out.validate_native(extra.replace('Phường Sơn Tây'.encode(),b'PRIVATE WARD',1),web,CASE4,TODAY,'5.8.2')
   # An expected mismatch is still published, with its bounded comparison.
   fetch,calls=self.fake_api(web,self.manifest) if False else NativeOutput.fake_api(NativeOutput(),web,self.manifest)
-  status=out.publish(extra,NativeOutput.provenance(NativeOutput(),web,extra,CASE4,False,32,359,1),'token',fetch,TODAY,version='5.8.2')
+  status=out.publish(extra,NativeOutput.provenance(NativeOutput(),web,extra,CASE4,False,32,504,1),'token',fetch,TODAY,version='5.8.2')
   self.assertEqual((status['status'],status['allTaxValuesMatched']),('published',False))
 
 class InputValidator(unittest.TestCase):
@@ -224,7 +224,7 @@ class Driver(unittest.TestCase):
  def test_probe_and_workflow_require_the_whole_tree_and_report_status(self):
   probe=source('probe-htkk-windows.ps1');workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
   line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
-  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){359}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
+  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){504}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
                '$lastGui.khbsOriginalMoneyMatched -and $lastGui.khbsSavedMoneyMatched -and -not $lastGui.amendmentPriorSavedMoneyZero -and $lastGui.khbsOpenMainState -in @(1,2) -and $lastGui.webCaseEditCount -eq 2',
                "$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-M10-2026'){3}else{1}) -and $lastGui.webCaseEditCount -eq 0"):self.assertIn(flag,line)
   self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-capture-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)

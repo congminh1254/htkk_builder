@@ -40,9 +40,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // proven two-plant 01-2 annex (annex12-two-plants) and only the main-sheet 01-1/KHBS group. After the original import the
  // head CQT display of every child row is restored through the original combos exactly as the proven annex web case does
  // (RestoreImportedAnnex12HeadAuthorities; HTKK 0016 otherwise), then Tổng hợp KHBS computes the annex hồ sơ group and the
- // Muc_I.2 phân bổ, the export is compared (an expected mismatch: gtgt-amendment-khbs-not-matched) and retained raw.
+ // Muc_I.2 phân bổ, the export is compared and retained raw. Run 43428877607 captured HTKK's output (then an expected
+ // mismatch); the web producer now writes the annex group and Muc_I.2 as captured, so the whole tree (504 leaves) must match.
  private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";
- private const int KhbsAnnex12CaptureLeafTarget=359;
+ private const int KhbsAnnex12CaptureLeafTarget=504;
  private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsAnnex12CaptureCaseId;}
  private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId;}
  private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsLan2WebCaseId;}

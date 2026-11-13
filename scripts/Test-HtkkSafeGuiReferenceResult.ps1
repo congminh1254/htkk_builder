@@ -103,7 +103,7 @@ try {
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS amendment accepted'};$cases++
  }
  # KHBS case 4 (annex 01-2 capture): the reused annex import/restoration fields are typed and bounded in this mode too.
- $fourth=[ordered]@{};foreach($key in $khbs.Keys){$fourth[$key]=$khbs[$key]};$fourth.webCaseId='01GTGT-khbs-annex12-capture-M10-2026';$fourth.khbsLeafCount=359;$fourth.khbsTreeMatched=$false;$fourth.khbsMismatchMask=32;$fourth.khbsFirstDifferenceOrdinal=120;$fourth.stage='gtgt-amendment-khbs-not-matched'
+ $fourth=[ordered]@{};foreach($key in $khbs.Keys){$fourth[$key]=$khbs[$key]};$fourth.webCaseId='01GTGT-khbs-annex12-capture-M10-2026';$fourth.khbsLeafCount=504;$fourth.khbsTreeMatched=$false;$fourth.khbsMismatchMask=32;$fourth.khbsFirstDifferenceOrdinal=120;$fourth.stage='gtgt-amendment-khbs-not-matched'
  $fourth.annex12WebImportSheetMatched=$true;$fourth.annex12WebImportGroupCount=2;$fourth.annex12WebImportRowCount=5;$fourth.annex12WebHeadAuthorityRestored=$true;$fourth.annex12WebHeadAuthorityRepairCount=10;$fourth.annex12WebImportDisplayEmptyMask=8659208
  $fourth | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS annex capture rejected'};$cases++
