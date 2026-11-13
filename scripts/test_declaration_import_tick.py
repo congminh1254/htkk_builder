@@ -320,6 +320,25 @@ class PbtPlans(unittest.TestCase):
             self.assertIn(required, body)
         self.assertIn('"declarationTickComboMask","declarationTickComboListCount"', ENTRY)
 
+    def test_combo_cell_is_entered_by_one_arrow_key_so_enter_cell_builds_its_list(self):
+        # Runs 43454666564 / 43454672384 (code 14, list 66, combo mask 1 on row 2): SetActiveCell does not raise EnterCell,
+        # so the cell kept the template list (every cục name, one of them twice). As EnterImportedAnnex12HeadByKey does, the
+        # cell is reached by one real arrow key from a visible neighbour of the same row.
+        combo = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private int DeclarationTickEnterByKey(')]
+        self.assertIn('int entry=DeclarationTickEnterByKey(grid,sheet,row,column);if(entry!=0)', combo)
+        self.assertNotIn('DeclarationEntrySelect(grid,sheet,row,column)', combo)
+        self.assertIn('int mask=4096;', combo)
+        self.assertIn('if(hits>1)mask|=8192;', combo)
+        body = CODE[CODE.index('private int DeclarationTickEnterByKey('):CODE.index('private void DeclarationTickCombo(')]
+        for required in ('DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";}', 'DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";}',
+                         'DeclarationEntrySelect(grid,sheet,row,from);', 'Get(grid,"EditingControl")!=null', 'SendKeys.SendWait(key);', 'return 17;', 'return 21;',
+                         'CellText(sheet,row,column)!=before'):
+            self.assertIn(required, body)
+        self.assertEqual(body.count('SendKeys.SendWait('), 1)
+        for forbidden in ('SetValue(', 'set_Value', '"Value",', '.Text=', 'BeginCellEdit', 'OnEnterCell', 'EnterCellEventArgs', 'InvokeMember', 'BindingFlags.NonPublic', 'GetMethod('):
+            self.assertNotIn(forbidden, body)
+        self.assertIn('private static bool DeclarationColumnVisible(object sheet,int column){', ENTRY[:ENTRY.index(' // ==== Native-case mode web-xml-import-tick-reexport')])
+
     def test_sheet_activation_clicks_the_original_tab_like_the_annex12_driver(self):
         # Runs 43443803833 / 43443808734: Ctrl+PageDown/PageUp did not change the FarPoint sheet (code 19). The sheet is now
         # reached by real mouse messages on FpSpread.GetSheetTabRectangle, as ClickOriginalAnnex12Tab does.

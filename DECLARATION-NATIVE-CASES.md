@@ -573,3 +573,15 @@ phím đầu không đổi, ENTER hiện danh sách một lần rồi bấm lạ
 danh sách của EnterCell, 16 phím đổi lựa chọn, 32 đúng mục trước TAB, 64 ENTER hiện danh sách, 128 ô hiện tên sau khi xác nhận,
 256 ô mã đúng, 512 ItemData của mục là mã kế hoạch, 1024 ô rỗng sau khi xác nhận, 2048 chữ trong editor là tên trước TAB) và
 `declarationTickComboListCount` (số mục). Mã lỗi: 14 danh sách không có đúng một mục, 15 phím không tới mục, 18 mất ô/editor.
+
+**Run 43454666564 (L7) / 43454672384 (Z8)** (sau a26a043): dòng 1 xong cả hai combo (`declarationTickActionCount` 2), dòng 2 dừng
+ở I45 mã 14 (`declarationTickMismatchMask` 4), `declarationTickComboListCount` 66, `declarationTickComboMask` 1 (có editor; ô không
+Editable, không ItemData). Đọc tĩnh: `winFpSpread_EnterCell` dựng danh sách của dòng (`GeneralFunctions.InsertCombobox`, có mã,
+Editable) nhưng FarPoint.Win.Spread (`2e7a0d4f…4c50`) chỉ phát `EnterCell` từ điều hướng của `SpreadView` (phím, chuột), không từ
+`SheetView.SetActiveCell`; nên ô giữ danh sách mẫu của `fpSpFormatTableCellTemplate` (`getAllTextCqtCucMoi`: rỗng + 65 tên cấp cục,
+không mã). Trong danh mục `Catalogue_CQT_Dia_Ban` có nhiều tên cấp cục trùng nhau (vd. 'Thuế Thành phố Hải Phòng' cho 10300 và
+10700), nên dòng 2 có hai mục cùng tên; dòng 1 qua chỉ vì tên Hà Nội là duy nhất. Sửa (nhánh `work/pbt-combo2`): như
+`EnterImportedAnnex12HeadByKey` (01-2/GTGT), đặt ô hiện hành ở ô hàng xóm hiện của cùng dòng (bên phải, nếu ẩn thì bên trái; không
+sửa, không ghi) rồi bấm một phím mũi tên thật (LEFT/RIGHT) để vào ô combo, nên FarPoint phát `EnterCell` và HTKK dựng danh sách của
+dòng. Không chọn theo vị trí trong danh sách mẫu. Chẩn đoán thêm: `declarationTickComboMask` 4096 = vào ô bằng phím, 8192 = tên có
+hơn một lần trong danh sách (bit 4/8 đọc sau khi vào ô); mã lỗi 21 = phím không đưa ô combo thành ô hiện hành (hoặc đổi chữ của ô).
