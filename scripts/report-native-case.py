@@ -3,9 +3,15 @@ import importlib.util,os,pathlib
 spec=importlib.util.spec_from_file_location('native_dispatch',pathlib.Path(__file__).with_name('dispatch-native-cases.py'));dispatch=importlib.util.module_from_spec(spec);spec.loader.exec_module(dispatch)
 oracle_spec=importlib.util.spec_from_file_location('native_case_oracle',pathlib.Path(__file__).with_name('htkk_oracle.py'));oracle=importlib.util.module_from_spec(oracle_spec);oracle_spec.loader.exec_module(oracle)
 guard_spec=importlib.util.spec_from_file_location('native_callback_guard',pathlib.Path(__file__).with_name('callback_guard.py'));guard=importlib.util.module_from_spec(guard_spec);guard_spec.loader.exec_module(guard)
-def publish_status(commit,value,environment):
- if not guard.allowed(commit,value['context'],environment.get('GITHUB_RUN_ID',''),environment.get('GITHUB_RUN_ATTEMPT',''),environment.get('SOURCE_READ_TOKEN')or environment.get('SOURCE_STATUS_TOKEN'),environment.get('GH_TOKEN'),input_commit=environment.get('WEB_ARTIFACT_COMMIT')):return False
- dispatch.post('https://api.github.com/repos/'+dispatch.REPO+'/statuses/'+commit,environment.get('SOURCE_STATUS_TOKEN'),value);return True
+def publish_status(commit,value,environment,budget=None):
+ # One shared wall-clock budget bounds every guard read plus the status POST. Re-posting the
+ # same commit status is idempotent (the latest status per context wins), so a POST whose
+ # response was lost may safely be retried; 401/404/422 and other non-transient errors are not.
+ budget=budget or guard.retry.Budget()
+ get=lambda repo,path,token:guard.read(repo,path,token,budget)
+ if not guard.allowed(commit,value['context'],environment.get('GITHUB_RUN_ID',''),environment.get('GITHUB_RUN_ATTEMPT',''),environment.get('SOURCE_READ_TOKEN')or environment.get('SOURCE_STATUS_TOKEN'),environment.get('GH_TOKEN'),get=get,input_commit=environment.get('WEB_ARTIFACT_COMMIT')):return False
+ url='https://api.github.com/repos/'+dispatch.REPO+'/statuses/'+commit;token=environment.get('SOURCE_STATUS_TOKEN')
+ guard.retry.call(lambda:dispatch.post(url,token,value),budget,'status post');return True
 
 def payload(case,result,server,run,artifact=None,version=oracle.DEFAULT):
  if case not in dispatch.CASES or result not in ('success','failure','cancelled','skipped') or server!='https://github.com' or not run.isdigit():raise ValueError('STATUS')
@@ -20,5 +26,12 @@ def main():
   value=payload(os.environ.get('WEB_CASE_ID'),os.environ.get('PROBE_RESULT'),os.environ.get('GITHUB_SERVER_URL'),os.environ.get('GITHUB_RUN_ID'),os.environ.get('WEB_ARTIFACT_COMMIT')or None,oracle.version(os.environ))
   if not publish_status(commit,value,os.environ):print('Superseded native callback ignored.');return
   print('Fixed native-case status reported privately.')
- except Exception:raise SystemExit('Native-case callback failed; no raw response or credential published.')
+ except Exception as error:
+  print('Native-case callback error class: '+failure_class(error)+'.',flush=True)
+  raise SystemExit('Native-case callback failed; no raw response or credential published.')
+def failure_class(error):
+ # Value-free: an exception type and HTTP status code only, never a message, URL or body.
+ if isinstance(error,guard.retry.Exhausted):return 'retry budget exhausted'
+ code=getattr(error,'code',None)
+ return type(error).__name__+(' '+str(code) if isinstance(code,int) else '')
 if __name__=='__main__':main()
