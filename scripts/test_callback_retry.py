@@ -87,7 +87,7 @@ class CallbackRetry(unittest.TestCase):
   self.assertEqual(retry.server_wait(http_error(403,X_RateLimit_Remaining=0,X_RateLimit_Reset=110),now=lambda:100),11.0)
   self.assertIsNone(retry.server_wait(http_error(502)))
  def test_failure_callback_shares_the_retrying_publish(self):
-  self.assertIs(failure.callback.publish_status.__code__.co_filename,report.publish_status.__code__.co_filename)
+  self.assertEqual(os.path.normcase(os.path.realpath(failure.callback.publish_status.__code__.co_filename)),os.path.normcase(os.path.realpath(report.publish_status.__code__.co_filename)))
   self.assertIn('guard.retry.call(lambda:dispatch.post(',(ROOT/'report-native-case.py').read_text())
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   job=workflow[workflow.index('  report_failure:'):]
