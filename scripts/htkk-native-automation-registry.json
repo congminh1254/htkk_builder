@@ -1864,6 +1864,7 @@
     "declarationTickReadbackMask",
     "declarationTickComboMask",
     "declarationTickComboListCount",
+    "declarationTickEntryMask",
     "declarationTreeAttributeMask",
     "declarationTreeTextMismatchCount",
     "declarationTreeFirstMismatchOrdinal",
@@ -3784,6 +3785,15 @@
       "default": 0,
       "minimum": 0,
       "maximum": 4096,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickEntryMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

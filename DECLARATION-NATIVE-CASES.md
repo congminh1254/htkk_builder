@@ -585,3 +585,13 @@ không mã). Trong danh mục `Catalogue_CQT_Dia_Ban` có nhiều tên cấp c�
 sửa, không ghi) rồi bấm một phím mũi tên thật (LEFT/RIGHT) để vào ô combo, nên FarPoint phát `EnterCell` và HTKK dựng danh sách của
 dòng. Không chọn theo vị trí trong danh sách mẫu. Chẩn đoán thêm: `declarationTickComboMask` 4096 = vào ô bằng phím, 8192 = tên có
 hơn một lần trong danh sách (bit 4/8 đọc sau khi vào ô); mã lỗi 21 = phím không đưa ô combo thành ô hiện hành (hoặc đổi chữ của ô).
+
+**Run 43458934594 (L7) / 43458941619 (Z8)** (sau 0d29253): cả hai dừng ngay combo đầu (I44) ở mã 21, 0 thao tác, combo mask 0,
+số mục 0. Đọc tĩnh: `WinSpreadProcess.WinSetupSpread` đặt `FpSpread.EditModePermanent` = true (và `EditModeReplace`), nên khi
+phím mũi tên đưa ô hiện hành vào ô combo, FarPoint mở luôn editor của ô (như với người dùng) — điều kiện "không có editor sau
+phím" của 0d29253 sai. Sửa (nhánh `work/pbt-combo3`): chấp nhận editor mà EditModePermanent mở trên ô đích; nếu danh sách của
+editor khác danh sách của ô (ô đã được EnterCell dựng lại) thì đóng editor không đổi gì (`StopCellEditing`) rồi mở lại trên ô.
+Chẩn đoán mới `declarationTickEntryMask` (không giá trị): 1/2 dùng ô bên phải/trái, 4 ô hàng xóm là ô hiện hành trước phím, 8 lưới
+có focus, 16/32 ô đích/hàng xóm khóa, 64 dòng hiện hành không đổi sau phím, 128/256/512 cột hiện hành = đích / = hàng xóm (phím
+không di chuyển) / nơi khác, 1024 editor mở sau phím, 2048 chữ ô đích đổi, 4096 thông báo gốc, 8192 editor mở lại vì danh sách
+khác, 16384 danh sách của ô có mã sau phím (EnterCell đã dựng).

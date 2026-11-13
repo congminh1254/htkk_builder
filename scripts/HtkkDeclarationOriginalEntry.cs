@@ -340,6 +340,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object columns=Get(sheet,"Columns");PropertyInfo item=columns.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();
   object entry=item.GetValue(columns,new object[]{column});return Convert.ToBoolean(Get(entry,"Visible"))&&Convert.ToSingle(Get(entry,"Width"),CultureInfo.InvariantCulture)>0;
  }
+ // Locked state of one cell (read only; 05-1/PBT key-entry diagnostics).
+ private static bool DeclarationCellLocked(object sheet,int row,int column){return Convert.ToBoolean(Get(Cell(sheet,row,column),"Locked"));}
+ private static bool DeclarationSameItems(string[] left,string[] right){
+  if(left==null||right==null||left.Length!=right.Length)return false;for(int i=0;i<left.Length;i++)if(left[i]!=right[i])return false;return true;
+ }
  // The item texts of the original FpCombo editor list (read only), as the original-entry combo reads them.
  private static string[] DeclarationComboEditorItems(Control vendor){
   object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
@@ -358,7 +363,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -375,6 +380,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // was entered by one real arrow key from its neighbour, 8192 the planned name is in the editor list more than once.
  // Bits 4 and 8 are read after the key entry.
  // declarationTickComboListCount: items in the editor list of the last combo edit.
+ // declarationTickEntryMask (key entry of the last combo edit, value-free): 1 right neighbour used, 2 left neighbour used,
+ // 4 neighbour active before the key, 8 grid had the focus before the key, 16 target cell locked, 32 neighbour cell locked,
+ // 64 active row unchanged after the key, 128 active column = target, 256 active column = neighbour (key did not move),
+ // 512 active column elsewhere, 1024 editor open after the key (FpSpread.EditModePermanent, set by
+ // WinSpreadProcess.WinSetupSpread), 2048 target text changed, 4096 original message, 8192 editor list differs from the
+ // cell's list (edit restarted), 16384 target cell list has item codes after the key (built by winFpSpread_EnterCell).
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -382,8 +393,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -470,7 +481,17 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int entry=DeclarationTickEnterByKey(grid,sheet,row,column);if(entry!=0){declarationTickMismatchMask|=1<<index;DeclarationTickCombo(0,0);DeclarationTickFail(entry);return;}
   if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
   int mask=4096;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
-  Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
+  if((mask&8)!=0){declarationTickEntryMask|=16384;Record();}
+  // The editor EditModePermanent opened on entry is used; if its list is not the cell's (rebuilt) list, it is closed
+  // unchanged and opened again on the cell, as a user leaving and re-entering edit mode.
+  Control editor=Get(grid,"EditingControl") as Control;
+  if(editor!=null){
+   Control open=FindVendorCombo(editor,0);string[] shown=open==null?null:DeclarationComboEditorItems(open);
+   if(open==null||items==null||!DeclarationSameItems(shown,items)){declarationTickEntryMask|=8192;Record();HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();editor=null;
+    if(OriginalMessageVisible()){DeclarationTickFail(17);return;}
+    if(!DeclarationEntryActive(sheet,row,column)){DeclarationTickFail(21);return;}}
+  }
+  if(editor==null)editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
   if(editor==null||!editor.Visible||!editor.Enabled){DeclarationTickFail(11);return;}
   editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
   editorKind="combo";
@@ -526,16 +547,26 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // the combo cell, so the vendor raises EnterCell and winFpSpread_EnterCell builds the row's own list
  // (GeneralFunctions.InsertCombobox with item codes, Editable). Returns 0, 10 (guard), 17 (original message) or 21.
  private int DeclarationTickEnterByKey(Control grid,object sheet,int row,int column){
-  int count=Convert.ToInt32(Get(sheet,"ColumnCount")),from=-1;string key=null;
-  if(column+1<count&&DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";}
-  else if(column>0&&DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";}
+  int count=Convert.ToInt32(Get(sheet,"ColumnCount")),from=-1,entry=0;string key=null;
+  if(column+1<count&&DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";entry|=1;}
+  else if(column>0&&DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";entry|=2;}
+  declarationTickEntryMask=entry;Record();
   if(from<0||!RowVisible(sheet,row)||!DeclarationColumnVisible(sheet,column))return 21;
+  if(DeclarationCellLocked(sheet,row,column))entry|=16;if(DeclarationCellLocked(sheet,row,from))entry|=32;
   DeclarationEntrySelect(grid,sheet,row,from);
+  if(DeclarationEntryActive(sheet,row,from))entry|=4;if(grid.ContainsFocus)entry|=8;declarationTickEntryMask=entry;Record();
   if(!DeclarationEntryActive(sheet,row,from)||Get(grid,"EditingControl")!=null||!DeclarationEntryGuard(grid))return 10;
   string before=CellText(sheet,row,column);
   SendKeys.SendWait(key);Application.DoEvents();
-  if(OriginalMessageVisible())return 17;
-  if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")!=null||CellText(sheet,row,column)!=before)return 21;
+  int activeRow=Convert.ToInt32(Get(sheet,"ActiveRowIndex")),activeColumn=Convert.ToInt32(Get(sheet,"ActiveColumnIndex"));
+  if(activeRow==row)entry|=64;entry|=activeColumn==column?128:activeColumn==from?256:512;
+  if(Get(grid,"EditingControl")!=null)entry|=1024;if(CellText(sheet,row,column)!=before)entry|=2048;
+  bool message=OriginalMessageVisible();if(message)entry|=4096;
+  declarationTickEntryMask=entry;Record();
+  if(message)return 17;
+  // Run 43458934594 / 43458941619 (code 21): HTKK runs the grid with EditModePermanent, so entering a cell opens its
+  // editor as it does for a user; an open editor on the target cell is accepted.
+  if(!DeclarationEntryActive(sheet,row,column)||CellText(sheet,row,column)!=before)return 21;
   return 0;
  }
  private void DeclarationTickCombo(int mask,int count){declarationTickComboMask=mask;declarationTickComboListCount=Math.Min(count,4096);Record();}

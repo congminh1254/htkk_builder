@@ -270,6 +270,7 @@ function New-HtkkNativeResultDefaults {
   declarationTickReadbackMask=0
   declarationTickComboMask=0
   declarationTickComboListCount=0
+  declarationTickEntryMask=0
   declarationTreeAttributeMask=0
   declarationTreeTextMismatchCount=0
   declarationTreeFirstMismatchOrdinal=0

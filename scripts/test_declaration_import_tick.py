@@ -241,8 +241,9 @@ class Driver(unittest.TestCase):
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']
         names = re.findall(r'"(declarationTick[A-Za-z0-9]+)"', TICK[TICK.index('private string DeclarationTickJson(){'):TICK.index('private void DeclarationTickFail(')])
-        # 10 tick fields plus the two 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount).
-        self.assertEqual(len(names), 12)
+        # 10 tick fields plus the three 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount,
+        # declarationTickEntryMask).
+        self.assertEqual(len(names), 13)
         for name in names:
             self.assertIn(name, automation['keys'])
             self.assertEqual(fields[name]['activeModes'], [MODE])
@@ -330,7 +331,7 @@ class PbtPlans(unittest.TestCase):
         self.assertIn('int mask=4096;', combo)
         self.assertIn('if(hits>1)mask|=8192;', combo)
         body = CODE[CODE.index('private int DeclarationTickEnterByKey('):CODE.index('private void DeclarationTickCombo(')]
-        for required in ('DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";}', 'DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";}',
+        for required in ('DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";entry|=1;}', 'DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";entry|=2;}',
                          'DeclarationEntrySelect(grid,sheet,row,from);', 'Get(grid,"EditingControl")!=null', 'SendKeys.SendWait(key);', 'return 17;', 'return 21;',
                          'CellText(sheet,row,column)!=before'):
             self.assertIn(required, body)
@@ -338,6 +339,22 @@ class PbtPlans(unittest.TestCase):
         for forbidden in ('SetValue(', 'set_Value', '"Value",', '.Text=', 'BeginCellEdit', 'OnEnterCell', 'EnterCellEventArgs', 'InvokeMember', 'BindingFlags.NonPublic', 'GetMethod('):
             self.assertNotIn(forbidden, body)
         self.assertIn('private static bool DeclarationColumnVisible(object sheet,int column){', ENTRY[:ENTRY.index(' // ==== Native-case mode web-xml-import-tick-reexport')])
+
+    def test_key_entry_accepts_the_edit_mode_permanent_editor_and_reports_where_the_key_went(self):
+        # Runs 43458934594 / 43458941619 (code 21): HTKK sets FpSpread.EditModePermanent (WinSpreadProcess.WinSetupSpread), so
+        # the arrow key that enters the cell also opens its editor. That editor is accepted; its list must be the cell's list,
+        # otherwise it is closed unchanged and opened again. declarationTickEntryMask says where the key went.
+        body = CODE[CODE.index('private int DeclarationTickEnterByKey('):CODE.index('private void DeclarationTickCombo(')]
+        self.assertNotIn('Get(grid,"EditingControl")!=null)return 21', body)
+        self.assertIn('if(!DeclarationEntryActive(sheet,row,column)||CellText(sheet,row,column)!=before)return 21;', body)
+        for bit in ('entry|=1;', 'entry|=2;', 'entry|=16;', 'entry|=32;', 'entry|=4;', 'entry|=8;', 'entry|=64;', '?128:activeColumn==from?256:512;', 'entry|=1024;', 'entry|=2048;', 'entry|=4096;'):
+            self.assertIn(bit, body)
+        combo = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private int DeclarationTickEnterByKey(')]
+        self.assertIn('Control editor=Get(grid,"EditingControl") as Control;', combo)
+        self.assertIn('!DeclarationSameItems(shown,items)){declarationTickEntryMask|=8192;Record();HtkkNativeUiHarness.CommitCellEdit(grid);', combo)
+        self.assertIn('if(editor==null)editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);', combo)
+        self.assertIn('declarationTickEntryMask|=16384;', combo)
+        self.assertEqual(automation['resultFields']['declarationTickEntryMask']['maximum'], 65535)
 
     def test_sheet_activation_clicks_the_original_tab_like_the_annex12_driver(self):
         # Runs 43443803833 / 43443808734: Ctrl+PageDown/PageUp did not change the FarPoint sheet (code 19). The sheet is now
