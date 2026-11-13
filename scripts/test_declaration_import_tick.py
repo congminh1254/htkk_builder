@@ -241,9 +241,9 @@ class Driver(unittest.TestCase):
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']
         names = re.findall(r'"(declarationTick[A-Za-z0-9]+)"', TICK[TICK.index('private string DeclarationTickJson(){'):TICK.index('private void DeclarationTickFail(')])
-        # 10 tick fields plus the three 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount,
-        # declarationTickEntryMask).
-        self.assertEqual(len(names), 13)
+        # 10 tick fields plus the five 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount,
+        # declarationTickEntryMask, declarationTickEntryStartOffset, declarationTickEntryKeyOffset).
+        self.assertEqual(len(names), 15)
         for name in names:
             self.assertIn(name, automation['keys'])
             self.assertEqual(fields[name]['activeModes'], [MODE])
@@ -328,7 +328,7 @@ class PbtPlans(unittest.TestCase):
         combo = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private int DeclarationTickEnterByKey(')]
         self.assertIn('int entry=DeclarationTickEnterByKey(grid,sheet,row,column);if(entry!=0)', combo)
         self.assertNotIn('DeclarationEntrySelect(grid,sheet,row,column)', combo)
-        self.assertIn('int mask=4096;', combo)
+        self.assertIn('int mask=(declarationTickEntryMask&32768)!=0?0:4096;', combo)
         self.assertIn('if(hits>1)mask|=8192;', combo)
         body = CODE[CODE.index('private int DeclarationTickEnterByKey('):CODE.index('private void DeclarationTickCombo(')]
         for required in ('DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";entry|=1;}', 'DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";entry|=2;}',
@@ -355,6 +355,21 @@ class PbtPlans(unittest.TestCase):
         self.assertIn('if(editor==null)editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);', combo)
         self.assertIn('declarationTickEntryMask|=16384;', combo)
         self.assertEqual(automation['resultFields']['declarationTickEntryMask']['maximum'], 65535)
+
+    def test_key_entry_keeps_a_target_the_previous_tab_reached_with_its_row_list(self):
+        # Runs 43467508100 / 43467516282 (code 21 on J44, entry mask 1613): the I44 edit's TAB had already moved the active
+        # cell on. A target that is active with an EnterCell list (item codes) is used without a key; otherwise one key enters.
+        body = CODE[CODE.index('private int DeclarationTickEnterByKey('):CODE.index('private void DeclarationTickCombo(')]
+        skip = 'if(DeclarationEntryActive(sheet,row,column)&&DeclarationCellListHasCodes(sheet,row,column)){declarationTickEntryMask=32768;Record();return 0;}'
+        self.assertIn(skip, body)
+        self.assertLess(body.index(skip), body.index('SendKeys.SendWait(key);'))
+        self.assertLess(body.index('declarationTickEntryStartOffset=DeclarationColumnOffset('), body.index(skip))
+        self.assertIn('declarationTickEntryKeyOffset=DeclarationColumnOffset(activeColumn,column);', body)
+        self.assertIn('private static int DeclarationColumnOffset(int active,int column){return Math.Max(1,Math.Min(255,128+active-column));}', CODE)
+        helper = ENTRY[:ENTRY.index(' // ==== Native-case mode web-xml-import-tick-reexport')]
+        self.assertIn('private static bool DeclarationCellListHasCodes(object sheet,int row,int column){', helper)
+        for name in ('declarationTickEntryStartOffset', 'declarationTickEntryKeyOffset'):
+            self.assertEqual(automation['resultFields'][name]['maximum'], 255)
 
     def test_sheet_activation_clicks_the_original_tab_like_the_annex12_driver(self):
         # Runs 43443803833 / 43443808734: Ctrl+PageDown/PageUp did not change the FarPoint sheet (code 19). The sheet is now

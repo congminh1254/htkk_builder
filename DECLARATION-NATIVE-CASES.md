@@ -595,3 +595,12 @@ Chẩn đoán mới `declarationTickEntryMask` (không giá trị): 1/2 dùng ô
 có focus, 16/32 ô đích/hàng xóm khóa, 64 dòng hiện hành không đổi sau phím, 128/256/512 cột hiện hành = đích / = hàng xóm (phím
 không di chuyển) / nơi khác, 1024 editor mở sau phím, 2048 chữ ô đích đổi, 4096 thông báo gốc, 8192 editor mở lại vì danh sách
 khác, 16384 danh sách của ô có mã sau phím (EnterCell đã dựng).
+
+**Run 43467508100 (L7) / 43467516282 (Z8)** (sau ec6b9c8): I44 xong (vào ô bằng LEFT từ J44), thao tác 2 (J44) mã 21,
+`declarationTickEntryMask` 1613 (ô bên phải K44, K44 là ô hiện hành trước phím, lưới có focus, dòng không đổi, sau LEFT cột hiện
+hành ở nơi khác — không phải J44 cũng không phải K44 — editor mở). Đọc tĩnh: `ProcessCmdKey` và `frmWinToKhai_KeyDown` của HTKK
+không xử lý LEFT/RIGHT (chỉ phím F và UP/DOWN), nên phím do FarPoint xử lý; nguyên nhân cột lệch chưa xác định tĩnh được. Sau
+TAB của I44, ô hiện hành đã sang ô kế tiếp như với người dùng. Sửa (nhánh `work/pbt-combo4`): nếu ô đích đã là ô hiện hành và có
+danh sách của dòng (có mã; chỉ `winFpSpread_EnterCell`/`InsertCombobox` tạo) thì dùng luôn, không bấm phím (bit 32768); nếu không,
+vào ô bằng một phím như trước. Chẩn đoán mới: `declarationTickEntryStartOffset` / `declarationTickEntryKeyOffset` = 128 + (cột
+hiện hành − cột đích), kẹp 1..255, lúc bắt đầu thao tác combo / ngay sau phím (0 = chưa tới).

@@ -1865,6 +1865,8 @@
     "declarationTickComboMask",
     "declarationTickComboListCount",
     "declarationTickEntryMask",
+    "declarationTickEntryStartOffset",
+    "declarationTickEntryKeyOffset",
     "declarationTreeAttributeMask",
     "declarationTreeTextMismatchCount",
     "declarationTreeFirstMismatchOrdinal",
@@ -3794,6 +3796,24 @@
       "default": 0,
       "minimum": 0,
       "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickEntryStartOffset": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationTickEntryKeyOffset": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

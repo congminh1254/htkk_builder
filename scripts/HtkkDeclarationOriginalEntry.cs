@@ -342,6 +342,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  // Locked state of one cell (read only; 05-1/PBT key-entry diagnostics).
  private static bool DeclarationCellLocked(object sheet,int row,int column){return Convert.ToBoolean(Get(Cell(sheet,row,column),"Locked"));}
+ private static bool DeclarationCellListHasCodes(object sheet,int row,int column){
+  object cell=Cell(sheet,row,column);if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.ComboBoxCellType")return false;
+  int mask=0;string[] items,data;DeclarationComboCellItems(cell,out items,out data,ref mask);return (mask&8)!=0;
+ }
  private static bool DeclarationSameItems(string[] left,string[] right){
   if(left==null||right==null||left.Length!=right.Length)return false;for(int i=0;i<left.Length;i++)if(left[i]!=right[i])return false;return true;
  }
@@ -363,7 +367,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -377,7 +381,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // with codes; the template list of fpSpFormatTableCell has none), 16 keys moved the selection, 32 selection = item before
  // TAB, 64 ENTER dropped the list, 128 cell shows the name after commit, 256 code cell holds the code, 512 ItemData of the
  // item is the planned code, 1024 cell text empty after commit, 2048 editor text was the name before TAB, 4096 the cell
- // was entered by one real arrow key from its neighbour, 8192 the planned name is in the editor list more than once.
+ // was entered by one real arrow key from its neighbour (clear when the previous TAB left it active, entry bit 32768), 8192 the planned name is in the editor list more than once.
  // Bits 4 and 8 are read after the key entry.
  // declarationTickComboListCount: items in the editor list of the last combo edit.
  // declarationTickEntryMask (key entry of the last combo edit, value-free): 1 right neighbour used, 2 left neighbour used,
@@ -385,7 +389,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 64 active row unchanged after the key, 128 active column = target, 256 active column = neighbour (key did not move),
  // 512 active column elsewhere, 1024 editor open after the key (FpSpread.EditModePermanent, set by
  // WinSpreadProcess.WinSetupSpread), 2048 target text changed, 4096 original message, 8192 editor list differs from the
- // cell's list (edit restarted), 16384 target cell list has item codes after the key (built by winFpSpread_EnterCell).
+ // cell's list (edit restarted), 16384 target cell list has item codes after the key (built by winFpSpread_EnterCell),
+ // 32768 the target was already the active cell with its row list (reached by the previous edit's TAB): no key sent.
+ // declarationTickEntryStartOffset / declarationTickEntryKeyOffset: 128 + (active column - target column), clamped to 1..255,
+ // when the combo edit starts / right after the arrow key (0 = not reached); the active row is reported by bit 64.
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -393,8 +400,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -480,7 +487,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Entering the cell by a real arrow key raises winFpSpread_EnterCell, which rebuilds this cell's list from the row.
   int entry=DeclarationTickEnterByKey(grid,sheet,row,column);if(entry!=0){declarationTickMismatchMask|=1<<index;DeclarationTickCombo(0,0);DeclarationTickFail(entry);return;}
   if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
-  int mask=4096;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
+  int mask=(declarationTickEntryMask&32768)!=0?0:4096;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
   if((mask&8)!=0){declarationTickEntryMask|=16384;Record();}
   // The editor EditModePermanent opened on entry is used; if its list is not the cell's (rebuilt) list, it is closed
   // unchanged and opened again on the cell, as a user leaving and re-entering edit mode.
@@ -546,8 +553,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // cell is put on a visible neighbour in the same row (nothing is written, not editing) and one real arrow key moves it onto
  // the combo cell, so the vendor raises EnterCell and winFpSpread_EnterCell builds the row's own list
  // (GeneralFunctions.InsertCombobox with item codes, Editable). Returns 0, 10 (guard), 17 (original message) or 21.
+ private static int DeclarationColumnOffset(int active,int column){return Math.Max(1,Math.Min(255,128+active-column));}
  private int DeclarationTickEnterByKey(Control grid,object sheet,int row,int column){
   int count=Convert.ToInt32(Get(sheet,"ColumnCount")),from=-1,entry=0;string key=null;
+  declarationTickEntryStartOffset=DeclarationColumnOffset(Convert.ToInt32(Get(sheet,"ActiveColumnIndex")),column);declarationTickEntryKeyOffset=0;
+  // Run 43467508100 / 43467516282 (code 21 on J44, entry mask 1613): after the I44 edit its TAB had already moved the active
+  // cell on, as for a user; when that navigation left the target active with its own row list (item codes, which only
+  // winFpSpread_EnterCell/InsertCombobox give), it is used as it is and no key is sent.
+  if(DeclarationEntryActive(sheet,row,column)&&DeclarationCellListHasCodes(sheet,row,column)){declarationTickEntryMask=32768;Record();return 0;}
   if(column+1<count&&DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";entry|=1;}
   else if(column>0&&DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";entry|=2;}
   declarationTickEntryMask=entry;Record();
@@ -559,6 +572,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string before=CellText(sheet,row,column);
   SendKeys.SendWait(key);Application.DoEvents();
   int activeRow=Convert.ToInt32(Get(sheet,"ActiveRowIndex")),activeColumn=Convert.ToInt32(Get(sheet,"ActiveColumnIndex"));
+  declarationTickEntryKeyOffset=DeclarationColumnOffset(activeColumn,column);
   if(activeRow==row)entry|=64;entry|=activeColumn==column?128:activeColumn==from?256:512;
   if(Get(grid,"EditingControl")!=null)entry|=1024;if(CellText(sheet,row,column)!=before)entry|=2048;
   bool message=OriginalMessageVisible();if(message)entry|=4096;
