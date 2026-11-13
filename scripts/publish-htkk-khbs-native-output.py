@@ -36,7 +36,7 @@ SHAPES=tuple(re.compile(p) for p in (r'-?[0-9]{1,18}',r'-?[0-9]{1,3}(?:\.[0-9]{3
 # Whole-tree region bits, the same as HtkkWebTaxComparison.CompareKhbs.
 REGIONS=((HEAD[:-len('TTinTKhaiThue/')],4),('HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/',8),('HSoThueDTu/HSoKhaiThue/PLuc/PL01_KHBS/',16),('HSoThueDTu/HSoKhaiThue/PLuc/PL01_1_KHBS/',32))
 MISMATCH_ORDINALS=16
-HARNESS={'harnessTreeMatched':bool,'harnessMismatchMask':(0,255),'harnessLeafCount':(0,4096),'harnessFirstDifferenceOrdinal':(0,4096),'harnessOpenMainState':(0,2),'harnessIdentityMatched':bool,'harnessCreationDateValid':bool}
+HARNESS={'harnessTreeMatched':bool,'harnessMismatchMask':(0,255),'harnessLeafCount':(0,4096),'harnessFirstDifferenceOrdinal':(0,4096),'harnessOpenMainState':(0,3),'harnessIdentityMatched':bool,'harnessCreationDateValid':bool}
 
 class OutputError(ValueError):
  def __init__(self,code,context=None):
@@ -161,6 +161,8 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
   if rule is bool:
    if type(value) is not bool:fail('PROVENANCE')
   elif type(value) is not int or not rule[0]<=value<=rule[1]:fail('PROVENANCE')
+ # Per case, exactly the B1/B2 main-sheet states its driver accepts (run 43402236959: lần 2 opens B2 on the saved B1, 3).
+ if observed['harnessOpenMainState'] not in khbs.open_main_states(case_id):fail('PROVENANCE')
  return observed
 
 def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact_commit,run_attempt,version=oracle.DEFAULT):

@@ -210,12 +210,12 @@ def native_of(web,created='2026-11-20',provider='A'*32):
  return ('\ufeff'+text).encode('utf-8')
 
 class NativeOutput(unittest.TestCase):
- def provenance(self,web,native,case,matched=True,mask=0,leaves=270,first=0):
+ def provenance(self,web,native,case,matched=True,mask=0,leaves=270,first=0,state=1):
   return {'format':'htkk-khbs-native-output-staging-v1','builderRepository':out.BUILDER,'builderCommit':BUILDER_SHA,'runId':'123','runAttempt':1,'sourceRepository':out.REPO,'sourceCommit':SOURCE,'sourceVersion':'5.8.2','runtimeHost':'clr2-x86-reference','caseId':case,'artifactCommit':ARTIFACT,
           'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,'inputMode':'khbs-c0-save-b1-import-summary-reexport','originalImportSucceeded':True,'originalSummarySucceeded':True,'originalExportSucceeded':True,'originalExporterValidatedSchema':True,
-          'webImportInputSha256':hashlib.sha256(web).hexdigest(),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'harnessTreeMatched':matched,'harnessMismatchMask':mask,'harnessLeafCount':leaves,'harnessFirstDifferenceOrdinal':first,'harnessOpenMainState':1,'harnessIdentityMatched':True,'harnessCreationDateValid':True,
+          'webImportInputSha256':hashlib.sha256(web).hexdigest(),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'harnessTreeMatched':matched,'harnessMismatchMask':mask,'harnessLeafCount':leaves,'harnessFirstDifferenceOrdinal':first,'harnessOpenMainState':state,'harnessIdentityMatched':True,'harnessCreationDateValid':True,
           'creationDateRule':'native-export-current-date','fullRoundTrip':False}
- def fake_api(self,web,manifest):
+ def fake_api(self,web,manifest,prior=None):
   calls=[]
   def envelope(body,name):return {'type':'file','name':name,'path':name,'encoding':'base64','size':len(body),'content':base64.encodebytes(body).decode(),'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
   def fetch(path,token,payload=None,method=None):
@@ -224,6 +224,7 @@ class NativeOutput(unittest.TestCase):
    if path in ('/git/commits/'+SOURCE,'/git/commits/'+ARTIFACT):return {'sha':path.rsplit('/',1)[1]}
    if path=='/contents/manifest.json?ref='+ARTIFACT:return envelope(json.dumps(manifest,ensure_ascii=False).encode(),'manifest.json')
    if path=='/contents/01GTGT-web.xml?ref='+ARTIFACT:return envelope(web,'01GTGT-web.xml')
+   if prior is not None and path=='/contents/01GTGT-prior.xml?ref='+ARTIFACT:return envelope(prior,'01GTGT-prior.xml')
    if path=='/git/blobs':
     body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
    if path=='/git/trees':return {'sha':'d'*40}
@@ -242,6 +243,23 @@ class NativeOutput(unittest.TestCase):
    self.assertIs(stored['qualificationGranted'],False)
    ref=next(c for c in calls if c[0]=='/git/refs');self.assertEqual(ref[2]['ref'],'refs/heads/'+out.oracle.output_branch(out.BRANCHES[case],'5.8.2'))
    self.assertEqual(calls[0][0],'')  # the private input is downloaded before any upload
+ def test_lan2_provenance_carries_its_round_2_main_state_and_publishes_with_the_prior_file(self):
+  """Run 43402236959: the lần-2 export matched (270 leaves) but retention was refused as PROVENANCE, because the B2 sheet
+  opens on the saved B1 (khbsOpenMainState 3) and the publisher only accepted 0..2. Each case accepts exactly its own states."""
+  self.assertEqual({case:w.khbs.open_main_states(case) for case in w.khbs.CASES},{CASE:(1,),CASE2:(1,2),CASE3:(1,3)})
+  web=f.sale_fixture(CASE3);manifest=f.case_manifest(web,CASE3);prior=f.sale_fixture(CASE);native=native_of(web);fetch,calls=self.fake_api(web,manifest,prior)
+  status=out.publish(native,self.provenance(web,native,CASE3,state=3),'token',fetch,TODAY,version='5.8.2')
+  self.assertEqual((status['status'],status['allTaxValuesMatched'],status['harnessAgreement']),('published',True,True))
+  self.assertIn('/contents/01GTGT-prior.xml?ref='+ARTIFACT,[c[0] for c in calls])
+  ref=next(c for c in calls if c[0]=='/git/refs');self.assertEqual(ref[2]['ref'],'refs/heads/gtgt-web-native-khbs-lan2-sale10-output-htkk582')
+  for case,state in ((CASE,3),(CASE,2),(CASE2,3),(CASE3,2),(CASE3,0),(CASE3,4)):
+   body=f.sale_fixture(case);n=native_of(body)
+   with self.subTest(case=case,state=state),self.assertRaises(out.OutputError) as error:
+    out.validate_provenance(json.dumps(self.provenance(body,n,case,state=state)).encode(),n,'123',BUILDER_SHA,SOURCE,case,ARTIFACT,'1','5.8.2')
+   self.assertEqual(error.exception.code,'PROVENANCE')
+  for case,state in ((CASE,1),(CASE2,2),(CASE3,3),(CASE3,1)):
+   body=f.sale_fixture(case);n=native_of(body)
+   self.assertEqual(out.validate_provenance(json.dumps(self.provenance(body,n,case,state=state)).encode(),n,'123',BUILDER_SHA,SOURCE,case,ARTIFACT,'1','5.8.2')['harnessOpenMainState'],state)
  def test_mismatching_native_export_is_still_retained_and_the_disagreement_is_bounded(self):
   web=f.sale_fixture(CASE2);manifest=f.case_manifest(web,CASE2);native=native_of(web).replace(b'<ct3a_2>24</ct3a_2>',b'<ct3a_2>23</ct3a_2>',1).replace(b'<ct3b>1440</ct3b>',b'<ct3b>1380</ct3b>',1)
   fetch,calls=self.fake_api(web,manifest);comparison=out.compare_tree(web,native,CASE2)

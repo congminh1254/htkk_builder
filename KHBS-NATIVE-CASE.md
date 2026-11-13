@@ -153,6 +153,10 @@ lần N and refuses lần N without it (Message 0296). So the lần trước of 
 - Web side: `KHBS_01GTGT_LATER_RELEASED=false` until this case passes (bổ sung XML refused as the base; soLan > 1 labelled
   as a draft).
 
+Run 43402236959: the lần-2 HTKK part passed (round 2 opened, khbsOpenMainState 3, whole tree 270 leaves), but retention
+was refused as PROVENANCE: the KHBS publisher accepted `harnessOpenMainState` 0..2 only. Each case now accepts exactly its
+own states (`htkk_khbs_web_cases.OPEN_MAIN_STATES`: case 1 → 1, case 2 → 1/2, case 3 → 1/3); anything else stays refused.
+
 ## 01-2/GTGT and 01-10/GTGT annexes in KHBS (static reading, not yet a case)
 
 TongHopKhbsMoi inserts one `BKeHSo` per sheet listed by `GetDMToKhaiPhuLucKHBS` (MapMCT D1 nodes with ToSheetIndex 01-1)

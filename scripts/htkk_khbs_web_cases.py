@@ -792,6 +792,12 @@ CASES={ZERO_TO_SALE10_CASE:{'rows':ROWS,'money':SALE10,'mainTaxLeaves':70,'fragm
  SALE5_TO_SALE10_CASE:{'rows':ROWS_SALE5_TO_SALE10,'money':SALE10_AMENDED,'mainTaxLeaves':70,'fragmentLeaves':226,'taxLeaves':296,'period':M09_PERIOD,'soLan':'1','prior':None},
  LAN2_SALE10_CASE:{'rows':ROWS_LAN2_SALE10,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':270,'period':None,'soLan':'2','prior':ZERO_TO_SALE10_CASE}}
 PRIOR_NAME='01GTGT-prior.xml'
+# The B1/B2 main sheet states the driver accepts before the import (khbsOpenMainState): 1 zero, 2 the typed C0 vector
+# (case 2), 3 the saved B1 vector in round 2 (case 3). The probe and the private output publisher take exactly these.
+OPEN_MAIN_STATES={ZERO_TO_SALE10_CASE:(1,),SALE5_TO_SALE10_CASE:(1,2),LAN2_SALE10_CASE:(1,3)}
+def open_main_states(case_id):
+ if case_id not in OPEN_MAIN_STATES:reject('CASE')
+ return OPEN_MAIN_STATES[case_id]
 def prior_case(case_id):
  """The case whose exact web file is this case's previous version (imported, summarised and saved first), or None."""
  if case_id not in CASES:reject('CASE')
