@@ -25,6 +25,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `02NTNN-TT80-two-annexes-2026` | `101 → 101_8 → C9` (02/NTNN TT80 2.5.1) | 22 | từ 01/01/2026 đến 30/09/2026 (`D_D`) | 02-1/NTNN (1 nhà thầu nước ngoài: JP, địa điểm 101), 02-2/NTNN (1 nhà thầu phụ, địa điểm 103) | 111 |
 | `01CNKD-TT50-310-pl01-three-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-4 "PL 01 43/2026/QH16" (`PLuc_01_GiamTNCN_NQ43`, 2 dòng) | 295 |
 | `01CNKD-TT50-310-pl03-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-5 "PL 03 43/2026/QH16" (`PLuc_03_PhaiNop_NQ43`, mục A 1 dòng nhóm 04, mục B dòng mặc định) | 281 |
+| `03TNDN-rate15-Y2025`, `03TNDN-rate17-Y2025` | `101 → 101_2 → N8` (03/TNDN 2.9.4, oracle **HTKK 5.8.2**) | 11 | năm 2025, 01/01–31/12 | 03-1A | 143 |
 | `05KK-TT89-withheld-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 **3.0.9**, chỉ oracle **HTKK 5.8.2**) | 14 | quý 4/2026 | — | 69 |
 
 Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
@@ -34,6 +35,17 @@ quý trước 4/2026 bằng thông báo danh mục (driver chỉ báo ID). Kỳ 
 `docs/builder-patches/05KK-TT89-withheld-Q4-2026.md`): [35] = ROUND([23]×10/100,0) = 200001. Plan có 24 ô XML (giới hạn của plan):
 mọi chỉ tiêu tính và các ô nhập chúng dùng; so sánh cả cây vẫn phủ đủ 69 lá. Manifest web mang `htkkVersion` 5.8.2
 (`MANIFEST_HTKK_VERSION_CASES`), phải bằng `htkkVersion` của ca.
+
+N8 thuế suất C7 15% / 17% (`03TNDN-rate15-Y2025`, `03TNDN-rate17-Y2025`, non-gating, `htkkVersion` 5.8.2, adapter
+`03-tndn-2.9.4` như ca profit20; producer htkk_web `tndn03-rate15-y2025` / `tndn03-rate17-y2025`, plan
+`scripts/htkk-workbook-native-cases-582.json` = bản ghim của htkk_web `data/htkk-workbook-native-cases-582.json`). Đọc tĩnh
+HTKK 5.8.2 (gói chính thức đúng ghim, không chạy): Menu.xml N8, `03_TNDN_TT80_294.xls/.xml/.xsd` và `Tndn03TT80Nckt294` giống
+5.8.1; `DM_DUNG_CHUNG.xml` DC_184 = `15`, `17`, `20`. `AutoBindData_0` chỉ khóa combobox C_66 (`ctC7_tenThueSuat`, SelectedValue
+R_66 = `ctC7_thueSuat`) khi `PeriodInfo.Nam < 2025` (`GeneralFunctions.LockUnLockCol(…, true, false)`), nên năm 2025 giữ mục đã
+nhập từ XML; không có kiểm tra doanh thu. C9 (O70) = ROUND(O66×R66/100) + ROUND(O67×O68/100). Ô kiểm thêm R66 (mã đã nhập) và
+O70 (C9 của chính HTKK): 15% → R66 15, C9 39.000.000, I1 19.000.000; 17% → R66 17, C9 357.000.000, I1 57.000.000. Manifest web mang
+`htkkVersion` 5.8.2 (`MANIFEST_HTKK_VERSION_CASES`). Năm 2026 không dùng: hộp kỳ chỉ từ chối năm lớn hơn năm hiện tại (0063) nhưng
+chưa lần hết các nhánh khác; mẫu và lớp giống hệt cho năm 2026. Chưa chạy trên Windows.
 
 U5 3.1.0 (`01CNKD-TT50-310-pl01-three-groups-Q3-2026`, non-gating, `htkkVersion` 5.8.2; adapter `01-cnkd-hkd-3.1.0-pl01`
 ghim vào oracle 5.8.2 vì XML 3.1.0 chỉ có trong HTKK 5.8.2): ca doanh thu 2.9.8 thêm nhóm 04 (200tr); tích giảm thuế NQ 43/2026/QH16

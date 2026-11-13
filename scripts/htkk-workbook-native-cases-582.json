@@ -1,0 +1,64 @@
+{
+  "format": "htkk-workbook-native-case-plan-v1",
+  "htkkVersion": "5.8.2",
+  "nativeQualified": false,
+  "filingEnabled": false,
+  "driverImplemented": false,
+  "scope": "Synthetic web→HTKK cases for the 03/TNDN (N8) C7 rate choice (DC_184 15%/17%, Luật 67/2025/QH15 Điều 10) on the HTKK 5.8.2 oracle. Same form, template and class as 5.8.1; AutoBindData_0 unlocks the rate from year 2025. Only synthetic MST 9999999997. Expected values are the web engine result from source formulas; native evidence does not exist until the builder imports the draft XML into HTKK 5.8.2 and re-exports it.",
+  "header": {"taxId": "9999999997", "taxpayerName": "DỮ LIỆU GIẢ LẬP — KHÔNG NỘP THUẾ", "signer": "Người thử nghiệm", "signDate": "20/03/2026"},
+  "createdDate": "2026-03-20",
+  "cases": [
+    {
+      "caseId": "03TNDN-rate15-Y2025",
+      "menuId": "N8", "xmlVersion": "2.9.4", "period": {"year": 2025, "fromDate": "01/01/2025", "toDate": "31/12/2025"},
+      "selected": ["03-1A"],
+      "overrides": {
+        "03-1A": {"E23": "2400000000", "E29": "5000000", "E32": "1800000000", "E33": "200000000", "E34": "150000000", "E35": "5000000"},
+        "03": {"O38": "10000000", "O50": "260000000", "O66": "260000000", "O98": "20000000", "G14": "C10", "G16": "100", "C66": "15"}
+      },
+      "expected": {
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/kyTaiChinh_Tu": "01/01",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/kyTaiChinh_Den": "31/12",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct04_ma": "C10",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct05": "100.00",
+        "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22": "250000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctA1": "250000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctB13": "260000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC1": "260000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_thuNhap": "260000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_tenThueSuat": "+ Thu nhập tính thuế áp dụng thuế suất 15%",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_thueSuat": "15",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC9": "39000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC17": "39000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctE1": "39000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctI1": "19000000"
+      }
+    },
+    {
+      "caseId": "03TNDN-rate17-Y2025",
+      "menuId": "N8", "xmlVersion": "2.9.4", "period": {"year": 2025, "fromDate": "01/01/2025", "toDate": "31/12/2025"},
+      "selected": ["03-1A"],
+      "overrides": {
+        "03-1A": {"E23": "20000000000", "E26": "200000000", "E29": "50000000", "E32": "15000000000", "E33": "1500000000", "E34": "1200000000", "E35": "100000000", "E38": "30000000", "E39": "10000000"},
+        "03": {"O38": "30000000", "O50": "2100000000", "O66": "2100000000", "O98": "300000000", "G14": "C10", "G16": "100", "C66": "17"}
+      },
+      "expected": {
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/kyTaiChinh_Tu": "01/01",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/kyTaiChinh_Den": "31/12",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct04_ma": "C10",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/Header/ct05": "100.00",
+        "HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22": "2070000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctA1": "2070000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctB13": "2100000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC1": "2100000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_thuNhap": "2100000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_tenThueSuat": "+ Thu nhập tính thuế áp dụng thuế suất 17%",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_thueSuat": "17",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC9": "357000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC17": "357000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctE1": "357000000",
+        "HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctI1": "57000000"
+      }
+    }
+  ]
+}

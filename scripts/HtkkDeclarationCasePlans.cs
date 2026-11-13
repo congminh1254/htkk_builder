@@ -60,7 +60,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -87,6 +87,22 @@ internal static class HtkkDeclarationCasePlans {
     // "0,00" exports ct05 as 100.00, and the DC_184 rate code (R66 = ctC7_thueSuat) must be 20: an empty
     // imported rate made HTKK compute ctC9 = ctC17 = 0.
     new string[]{Main+"Header/kyTaiChinh_Tu|01/01",Main+"Header/kyTaiChinh_Den|31/12",Main+"Header/ct04_ma|C10",Main+"Header/ct05|100.00","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22|1175000000",Main+"ctA1|1175000000",Main+"ctB13|1200000000",Main+"ctC1|1200000000",Main+"ctC7_thueSuat|20",Main+"ctC9|240000000",Main+"ctC17|240000000",Main+"ctE1|240000000",Main+"ctI1|40000000"});
+   // N8 03/TNDN with the C7 rate chosen in the DC_184 combobox C66 (SelectedValue R66 = ctC7_thueSuat; HTKK 5.8.2 oracle,
+   // non-gating). Same menu, template, XSD and class as 5.8.1 (identical pins below). Tndn03TT80Nckt294.AutoBindData_0
+   // locks C66 only when PeriodInfo.Nam < 2025, so year 2025 keeps the imported item; ctC9 (O70) = ROUND(O66*R66/100).
+   // The cell checks read back the imported rate (R66) and HTKK's own C9 before the export.
+   case "03TNDN-rate15-Y2025":return new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,
+    new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},
+    "InterfaceTemplates/excel/03_TNDN_TT80_294.xls","f7482448c4628bb56120eaa0cda5c245474c45f770b1d9f1c1b4caf31c319476","InterfaceTemplates/xml/03_TNDN_TT80_294.xml","cc05576d5356323c4f76e486814b72a3d48dd597523c1a0c11fba956e18be568",
+    "Validate/03_TNDN_TT80_294.xsd","5961845ccec5ca08b681ecc7a5ab91e168974a738307293406bea58464af6981",TKhaiThue,TKhaiThueSha256,WorkbookService,147,
+    new string[]{"03-1A|E23|2400000000","03-1A|E29|5000000","03-1A|E32|1800000000","03-1A|E33|200000000","03-1A|E34|150000000","03-1A|E35|5000000","03|O38|10000000","03|O50|260000000","03|O66|260000000","03|O98|20000000","03|R66|15","03|O70|39000000"},
+    new string[]{Main+"Header/kyTaiChinh_Tu|01/01",Main+"Header/kyTaiChinh_Den|31/12",Main+"Header/ct04_ma|C10",Main+"Header/ct05|100.00","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22|250000000",Main+"ctA1|250000000",Main+"ctB13|260000000",Main+"ctC1|260000000",Main+"ctC7_thuNhap|260000000",Main+"ctC7_tenThueSuat|+ Thu nhập tính thuế áp dụng thuế suất 15%",Main+"ctC7_thueSuat|15",Main+"ctC9|39000000",Main+"ctC17|39000000",Main+"ctE1|39000000",Main+"ctI1|19000000"});
+   case "03TNDN-rate17-Y2025":return new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,
+    new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},
+    "InterfaceTemplates/excel/03_TNDN_TT80_294.xls","f7482448c4628bb56120eaa0cda5c245474c45f770b1d9f1c1b4caf31c319476","InterfaceTemplates/xml/03_TNDN_TT80_294.xml","cc05576d5356323c4f76e486814b72a3d48dd597523c1a0c11fba956e18be568",
+    "Validate/03_TNDN_TT80_294.xsd","5961845ccec5ca08b681ecc7a5ab91e168974a738307293406bea58464af6981",TKhaiThue,TKhaiThueSha256,WorkbookService,147,
+    new string[]{"03-1A|E23|20000000000","03-1A|E26|200000000","03-1A|E29|50000000","03-1A|E32|15000000000","03-1A|E33|1500000000","03-1A|E34|1200000000","03-1A|E35|100000000","03-1A|E38|30000000","03-1A|E39|10000000","03|O38|30000000","03|O50|2100000000","03|O66|2100000000","03|O98|300000000","03|R66|17","03|O70|357000000"},
+    new string[]{Main+"Header/kyTaiChinh_Tu|01/01",Main+"Header/kyTaiChinh_Den|31/12",Main+"Header/ct04_ma|C10",Main+"Header/ct05|100.00","HSoThueDTu/HSoKhaiThue/PLuc/PLuc_03_1A_TNDN/ct22|2070000000",Main+"ctA1|2070000000",Main+"ctB13|2100000000",Main+"ctC1|2100000000",Main+"ctC7_thuNhap|2100000000",Main+"ctC7_tenThueSuat|+ Thu nhập tính thuế áp dụng thuế suất 17%",Main+"ctC7_thueSuat|17",Main+"ctC9|357000000",Main+"ctC17|357000000",Main+"ctE1|357000000",Main+"ctI1|57000000"});
    // A2 B01a-DNN TT133: KieuKy 26 = SetLayoutToKhaiNamTuNgayDenNgayBCTC. BCKQHĐKD and BCĐTK are both
    // required (CheckChonPlBctc / Validate_0 0485; release 213 refused the set without BCĐTK).
    case "BCTC133-B01a-basic-Y2025":return new HtkkDeclarationCasePlan(caseId,"A2","2.3.2","683","BctcB01aTt133Nckt232",new string[]{"101","101_6","A2"},"year","26","2025","","01/01/2025","31/12/2025",false,
