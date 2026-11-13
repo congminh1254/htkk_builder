@@ -133,6 +133,40 @@ now returns once `amendmentPriorSaveInvoked` is set, before any C0 step. The wai
 is also bounded in KHBS mode (60 s, `khbsPostSaveWaitMask` bit 64, `gtgt-amendment-khbs-post-save-timeout`), and the
 post-save wait above stays bounded (30 s). The 0013 path stays as a fallback.
 
+## Case 3: bổ sung lần 2 (`01GTGT-khbs-lan2-sale10-M10-2026`, adapter `01-gtgt-2.8.3-khbs-lan2`, amendmentOrder 2)
+
+Static reading of 5.8.2: Tổng hợp KHBS (TongHopKhbsMoi) compares the sheet with `WinFnProcess.ReadSheet_LanTruoc`, which
+loads `GetFileNameLoadKhbs` of the previous version; CheckPeriodKhbs (0x060004F6) builds `bs<N-1>_<lần đầu file>` for
+lần N and refuses lần N without it (Message 0296). So the lần trước of lần 2 is the SAVED bổ sung lần 1 main sheet.
+
+- Inputs: the web B2 file (`01GTGT-web.xml`, soLan 2, [32] 1.500.000) and the previous version `01GTGT-prior.xml`
+  (exactly the case-1 web file, soLan 1, [32] 1.000.000; manifest `priorCaseId`, `priorBytes`, `priorXmlSha256`). Both are
+  validated, staged and published together (`fetch-htkk-web-input.py names()/validate_prior`); the host gets
+  `.web-prior.xml` + `.web-prior.sha256`.
+- Round 1 = case 1 up to Tổng hợp KHBS on B1, importing the prior file; then the original **Ghi** ("Đã ghi dữ liệu thành
+  công!", `khbsPriorSaveAcknowledged`), the file `bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml` (`khbsPriorFileSaved`, hash
+  re-checked before round 2) and the original **Đóng** (0013 answered Không only if the dirty flag stays set).
+- Round 2 (`khbsRound` 2, `khbsRound2Opened`): menu again, Bổ sung with `txtLan` 2 and the fixed ngày lập; TTPeriodInfo SoLan
+  2; the B2 main sheet must be the B1 vector or zero (`khbsOpenMainState` 3/1); import of the B2 file, Tổng hợp, export,
+  whole tree (270 leaves). Other failures: `gtgt-amendment-khbs-prior-save-rejected` (`khbsPriorSaveMessageId`) and the
+  bounded post-save timeout. Up to 9 menu clicks.
+- Web side: `KHBS_01GTGT_LATER_RELEASED=false` until this case passes (bổ sung XML refused as the base; soLan > 1 labelled
+  as a draft).
+
+## 01-2/GTGT and 01-10/GTGT annexes in KHBS (static reading, not yet a case)
+
+TongHopKhbsMoi inserts one `BKeHSo` per sheet listed by `GetDMToKhaiPhuLucKHBS` (MapMCT D1 nodes with ToSheetIndex 01-1)
+and fills it from MapMCT: 01-10 (SheetIndex 7) has five STATIC items ((3)/(4) mua vào, (3)/(6) bán ra, [09] ct9), the same
+path as the main sheet (CollectionStatic01_1_KHBS); 01-2 (SheetIndex 1) has three DYNAMIC items [10] [11] [12] per row of
+`PLuc_01_2_GTGT/TenNhaMay` (CollectionDynamicHeader01_1_KHBS + CollectionDynamic01_1_KHBS): rows are matched with the
+lần trước table by the composite key of TCTPath `path_20###ten_xa###ct08_tinh_ten###ct09_cqt_ten` (internal grid cells,
+not XML leaves), and UpdateCtForDoiTac (LoaiChiTieu 4) writes ct3_ma = MCT, ct3_ten = Caption without its "[nn] - "
+prefix and ct3_2_ten = FormatKey2(prefix, key). The 01-2 node [12] with ToSheetIndex 01 (TenTinhPath ct08_tinh_ten) drives
+Muc_I.2 phân bổ (CollectionDetailSoThuePhaiNopTungTinh_01_KHBS, ~1.000 IL lines with CheckTruongHopDacBietPhanBo). Porting
+these from the decompiled IL alone is not reliable (the key cells and the phân bổ branches depend on the grid binding), so
+the next step is an oracle-capture case: C0 with one 01-2 plant imported from the web and saved, B1 with a changed
+allocation imported and summarised; the raw HTKK export (retained even on mismatch) then fixes the port.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

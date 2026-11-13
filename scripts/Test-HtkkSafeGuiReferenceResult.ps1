@@ -97,17 +97,32 @@ try {
  $khbs | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS amendment rejected'};$cases++
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'KHBS result accepted as B1 opening'};$cases++
- foreach($change in @(@{key='amendmentLifecycleVerified';value=$true},@{key='khbsLeafCount';value=4097},@{key='khbsMismatchMask';value=256},@{key='khbsFirstDifferenceOrdinal';value=-1},@{key='khbsSummaryMessageId';value=10000},@{key='khbsExportSha256';value='xyz'},@{key='khbsTreeMatched';value=1},@{key='menuClickCount';value=7})){
+ foreach($change in @(@{key='amendmentLifecycleVerified';value=$true},@{key='khbsLeafCount';value=4097},@{key='khbsMismatchMask';value=256},@{key='khbsFirstDifferenceOrdinal';value=-1},@{key='khbsSummaryMessageId';value=10000},@{key='khbsExportSha256';value='xyz'},@{key='khbsTreeMatched';value=1},@{key='menuClickCount';value=10})){
   $copy=[ordered]@{};foreach($key in $khbs.Keys){$copy[$key]=$khbs[$key]};$copy[$change.key]=$change.value
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS amendment accepted'};$cases++
+ }
+ # KHBS case 3 (bổ sung lần 2): two rounds, the saved B1 and the B2 main state 3 are typed and bounded.
+ $third=[ordered]@{};foreach($key in $khbs.Keys){$third[$key]=$khbs[$key]};$third.webCaseId='01GTGT-khbs-lan2-sale10-M10-2026';$third.khbsRound=2;$third.khbsOpenMainState=3;$third.menuClickCount=9
+ foreach($key in @('khbsPriorImportSucceeded','khbsPriorSummaryAcknowledged','khbsPriorSaveAcknowledged','khbsPriorFileSaved','khbsRound2Opened')){$third[$key]=$true}
+ $third | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+ if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS lan 2 rejected'};$cases++
+ foreach($change in @(@{key='khbsRound';value=3},@{key='khbsOpenMainState';value=4},@{key='khbsPriorSaveMessageId';value=10000},@{key='khbsPriorFileSaved';value='true'},@{key='menuClickCount';value=10})){
+  $copy=[ordered]@{};foreach($key in $third.Keys){$copy[$key]=$third[$key]};$copy[$change.key]=$change.value
+  $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS lan 2 accepted'};$cases++
+ }
+ foreach($change in @(@{key='khbsRound';value=1},@{key='khbsRound2Opened';value=$true})){
+  $copy=[ordered]@{};foreach($key in $open.Keys){$copy[$key]=$open[$key]};$copy[$change.key]=$change.value
+  $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'KHBS lan 2 field accepted outside its mode'};$cases++
  }
  # KHBS case 2 (non-zero C0, M09/2026): the fixed C0 vector flags and the B1 main-sheet state are typed and bounded.
  $second=[ordered]@{};foreach($key in $khbs.Keys){$second[$key]=$khbs[$key]};$second.webCaseId='01GTGT-khbs-sale5-to-sale10-M09-2026';$second.khbsLeafCount=296;$second.webCaseEditCount=2
  $second.khbsDirtyAfterSave=$true;$second.khbsDiscardPromptAnswered=$true;$second.khbsPostSaveWaitMask=32;$second.khbsOriginalMoneyMatched=$true;$second.khbsSavedMoneyMatched=$true;$second.khbsOpenMainState=2;$second.amendmentPriorMoneyZero=$false;$second.amendmentPriorSavedMoneyZero=$false
  $second | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS case 2 rejected'};$cases++
- foreach($change in @(@{key='khbsOpenMainState';value=3},@{key='khbsOpenMainState';value=-1},@{key='khbsOriginalMoneyMatched';value='true'},@{key='khbsSavedMoneyMatched';value=1},@{key='webCaseId';value='01GTGT-khbs-sale5-to-sale10-M10-2026'},@{key='khbsPostSaveWaitMask';value=128},@{key='khbsDirtyAfterSave';value='true'},@{key='khbsDiscardPromptAnswered';value=1})){
+ foreach($change in @(@{key='khbsOpenMainState';value=4},@{key='khbsOpenMainState';value=-1},@{key='khbsOriginalMoneyMatched';value='true'},@{key='khbsSavedMoneyMatched';value=1},@{key='webCaseId';value='01GTGT-khbs-sale5-to-sale10-M10-2026'},@{key='khbsPostSaveWaitMask';value=128},@{key='khbsDirtyAfterSave';value='true'},@{key='khbsDiscardPromptAnswered';value=1})){
   $copy=[ordered]@{};foreach($key in $second.Keys){$copy[$key]=$second[$key]};$copy[$change.key]=$change.value
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS case 2 accepted'};$cases++

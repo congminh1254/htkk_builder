@@ -7,7 +7,7 @@ spec=importlib.util.spec_from_file_location('web_publisher',ROOT/'publish-htkk-w
 spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 SHA='a'*40
 # One distinct fake orphan commit per registered case (21 = 15 GTGT + 6 declaration).
-COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a')
+COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b')
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
 ANNEX10_PRODUCER=b'// Fixed synthetic 01-10 annex test producer, never executed.\n'
@@ -21,6 +21,8 @@ def fixtures():
   body=f.web_fixture() if case=='01GTGT-zero-M10-2026' else f.sale_fixture(case)
   metadata=f.case_manifest(body,case,hashlib.sha256(PRODUCERS[p.CASE_PRODUCERS[case]]).hexdigest())
   files={p.reader.xml_name(case):body,'manifest.json':(json.dumps(metadata,ensure_ascii=False)+'\n').encode()}
+  if p.reader.khbs.is_case(case) and p.reader.khbs.prior_case(case):files[p.reader.khbs.PRIOR_NAME]=f.sale_fixture(p.reader.khbs.prior_case(case))
+  files={name:files[name] for name in p.reader.names(case)}
   result.append((case,branch,files,metadata))
  return result
 

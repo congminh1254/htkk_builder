@@ -39,6 +39,7 @@ $HtkkNativeCaseFormats=@{
  '03TNDN-rate17-Y2025'='htkk-web-tndn03-rate17-y2025-input-v1'
  '01GTGT-khbs-zero-to-sale10-M10-2026'='htkk-web-khbs-zero-to-sale10-input-v1'
  '01GTGT-khbs-sale5-to-sale10-M09-2026'='htkk-web-khbs-sale5-to-sale10-input-v1'
+ '01GTGT-khbs-lan2-sale10-M10-2026'='htkk-web-khbs-lan2-sale10-input-v1'
 }
 $HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05KK-TT89-withheld-Q4-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','01CNKD-TT50-310-pl01-three-groups-Q3-2026','01CNKD-TT50-310-pl03-two-groups-Q3-2026','03TNDN-rate15-Y2025','03TNDN-rate17-Y2025')
 $HtkkDeclarationEntryCases=@('01NTNN-NCCNN-entry-M10-2026','01NTNN-NCCNN-occurrence-D20-10-2026')

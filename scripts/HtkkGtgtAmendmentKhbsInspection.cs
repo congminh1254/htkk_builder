@@ -24,7 +24,47 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private const string KhbsFixedDate="13/11/2026";
  // 270 (case 1) / 296 (case 2) leaves of the fixed web B1 file without the four TTinDVu leaves.
  private const int KhbsLeafTarget=270,KhbsSale5LeafTarget=296;
- private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId;}
+ // Case 3 (htkk_web producer khbs-lan2-sale10): bổ sung LẦN 2 of M10/2026. Round 1 is case 1 (C0 zero, Ghi, Đóng, B1 with
+ // the fixed ngày lập) except that B1 imports the staged previous-version file (the exact case-1 web file, .web-prior.xml),
+ // runs Tổng hợp KHBS and is SAVED with the original Ghi (HTKK writes bs1_<C0 file name>, the file CheckPeriodKhbs 0x060004F6
+ // requires for lần 2, Message 0296) and closed with Đóng. Round 2 reopens D1 with Bổ sung lần 2, imports the web B2 file,
+ // summarises and exports; the whole tree is compared with the B2 file (270 leaves). HTKK's lần trước of round 2 is the saved
+ // B1 main sheet (ReadSheet_LanTruoc), so the B2 sheet opens with the B1 vector ([32] 1.000.000) or zero (khbsOpenMainState 3/1).
+ private const string KhbsLan2WebCaseId="01GTGT-khbs-lan2-sale10-M10-2026";
+ private const string KhbsPriorB1FileName="bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml";
+ private static readonly decimal[] KhbsSale10B1=new decimal[]{0,0,0,0,0,0,0,1000000,100000,0,0,0,1000000,100000,0,1000000,100000,100000,0,0,0,100000,0,100000,0,0,0};
+ private int khbsRound=0,khbsPriorSaveMessageId=0;private string webPriorPath="",webPriorSha256="",khbsPriorFileSha256="";
+ private bool khbsPriorImportSucceeded=false,khbsPriorSummaryAcknowledged=false,khbsPriorSaveAcknowledged=false,khbsPriorFileSaved=false,khbsRound2Opened=false;private Stopwatch khbsPriorCloseClock=null;
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId;}
+ private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsLan2WebCaseId;}
+ private string KhbsSoLan(){return KhbsLan2Case()?"2":"1";}
+ private bool KhbsImportingPrior(){return KhbsLan2Case()&&khbsRound==1;}
+ private string KhbsImportPath(){return KhbsImportingPrior()?webPriorPath:webInputPath;}
+ private string KhbsImportHash(){return KhbsImportingPrior()?webPriorSha256:webImportInputSha256;}
+ private bool KhbsB1Vector(object sheet){
+  int[,] coordinates=new int[,] {{36,11},{39,9},{39,11},{40,9},{40,11},{41,11},{43,9},{44,9},{44,11},{45,9},{46,9},{46,11},{47,9},{47,11},{48,9},{49,9},{49,11},{50,11},{52,11},{53,11},{54,11},{56,11},{57,11},{58,11},{59,11},{60,11},{61,11}};
+  for(int index=0;index<coordinates.GetLength(0);index++){decimal number;if(!KhbsAmount(Get(Cell(sheet,coordinates[index,0],coordinates[index,1]),"Value"),out number)||number!=KhbsSale10B1[index])return false;}
+  return true;
+ }
+ private void InspectKhbsPriorSavedFile(){
+  string directory=Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst));FileInfo file=new FileInfo(Path.Combine(directory,KhbsPriorB1FileName));
+  if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length<2||file.Length>262144||!String.Equals(Path.GetFullPath(file.DirectoryName),directory,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException();
+  khbsPriorFileSha256=Hash(file.FullName);khbsPriorFileSaved=true;
+ }
+ private void TypeOriginalKhbsRound2(Control period){
+  if(!KhbsLan2Case()||khbsRound!=2||!khbsRound2Opened||!amendmentOpenDefaultsMatched)throw new InvalidOperationException();
+  SetText(period,"txtLan","2");if(ReadableNamed(period,"txtLan").Text.Trim()!="2")throw new InvalidOperationException();
+ }
+ // Round 2 begins once the saved B1 form is closed: the reopen goes through the same menu and period steps as round 1.
+ private void BeginKhbsRound2(){
+  if(!KhbsLan2Case()||khbsRound!=1||!khbsPriorSaveAcknowledged||!khbsPriorFileSaved)throw new InvalidOperationException();
+  // The saved B1 must still be the bytes HTKK wrote at Ghi (the Đóng path never saves again).
+  string saved=khbsPriorFileSha256;InspectKhbsPriorSavedFile();if(khbsPriorFileSha256!=saved)throw new InvalidOperationException();
+  exportWatcher.Stop();khbsRound=2;khbsPhase="not-started";khbsDateTyped=false;khbsPeriodMatched=false;khbsImportPathMatched=false;khbsDirtyAfterSave=false;khbsDiscardPromptAnswered=false;
+  roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
+  amendmentOpenConfirmInvoked=false;amendmentOpenPeriodMatched=false;amendmentOpenKhbsSheetsObserved=false;amendmentOpenPriorUnchanged=false;
+  khbsRound2Opened=true;navigationPhase="waiting-main-menu";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsRound2Opening);Record();
+ }
  private bool KhbsNonzeroOriginal(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsSale5WebCaseId;}
  // The only period month of the D1 drivers: 10, or 09 for KHBS case 2 (GetPeriodInfo pads Thang to two digits, 0x0efc).
  private string PeriodMonth(){return KhbsNonzeroOriginal()?"09":"10";}
@@ -113,10 +153,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static bool KhbsDate(string text){DateTime parsed;return DateTime.TryParseExact(text,new string[]{"d/M/yyyy","dd/MM/yyyy"},CultureInfo.InvariantCulture,DateTimeStyles.None,out parsed)&&parsed.Date==new DateTime(2026,11,13);}
  private string KhbsJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
-  string[] names=new string[]{"khbsDateTyped","khbsPeriodMatched","khbsImportInvoked","khbsImportSucceeded","khbsImportPathMatched","khbsSummaryInvoked","khbsSummaryAcknowledged","khbsExportInvoked","khbsExportSchemaPinnedVerified","khbsExportSucceeded","khbsIdentityMatched","khbsCreationDateValid","khbsTreeMatched","khbsOriginalMoneyMatched","khbsSavedMoneyMatched","khbsDirtyAfterSave","khbsDiscardPromptAnswered"};
-  bool[] values=new bool[]{khbsDateTyped,khbsPeriodMatched,khbsImportInvoked,khbsImportSucceeded,khbsImportPathMatched,khbsSummaryInvoked,khbsSummaryAcknowledged,khbsExportInvoked,khbsExportSchemaPinnedVerified,khbsExportSucceeded,khbsIdentityMatched,khbsCreationDateValid,khbsTreeMatched,khbsOriginalMoneyMatched,khbsSavedMoneyMatched,khbsDirtyAfterSave,khbsDiscardPromptAnswered};
+  string[] names=new string[]{"khbsDateTyped","khbsPeriodMatched","khbsImportInvoked","khbsImportSucceeded","khbsImportPathMatched","khbsSummaryInvoked","khbsSummaryAcknowledged","khbsExportInvoked","khbsExportSchemaPinnedVerified","khbsExportSucceeded","khbsIdentityMatched","khbsCreationDateValid","khbsTreeMatched","khbsOriginalMoneyMatched","khbsSavedMoneyMatched","khbsDirtyAfterSave","khbsDiscardPromptAnswered","khbsPriorImportSucceeded","khbsPriorSummaryAcknowledged","khbsPriorSaveAcknowledged","khbsPriorFileSaved","khbsRound2Opened"};
+  bool[] values=new bool[]{khbsDateTyped,khbsPeriodMatched,khbsImportInvoked,khbsImportSucceeded,khbsImportPathMatched,khbsSummaryInvoked,khbsSummaryAcknowledged,khbsExportInvoked,khbsExportSchemaPinnedVerified,khbsExportSucceeded,khbsIdentityMatched,khbsCreationDateValid,khbsTreeMatched,khbsOriginalMoneyMatched,khbsSavedMoneyMatched,khbsDirtyAfterSave,khbsDiscardPromptAnswered,khbsPriorImportSucceeded,khbsPriorSummaryAcknowledged,khbsPriorSaveAcknowledged,khbsPriorFileSaved,khbsRound2Opened};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"khbsImportMessageId","khbsSummaryMessageId","khbsExportMessageId","khbsLeafCount","khbsMismatchMask","khbsFirstDifferenceOrdinal","khbsExportBytes","khbsOpenMainState","khbsPostSaveWaitMask"};int[] counts=new int[]{khbsImportMessageId,khbsSummaryMessageId,khbsExportMessageId,khbsLeafCount,khbsMismatchMask,khbsFirstDifferenceOrdinal,khbsExportBytes,khbsOpenMainState,khbsPostSaveWaitMask};
+  names=new string[]{"khbsImportMessageId","khbsSummaryMessageId","khbsExportMessageId","khbsLeafCount","khbsMismatchMask","khbsFirstDifferenceOrdinal","khbsExportBytes","khbsOpenMainState","khbsPostSaveWaitMask","khbsRound","khbsPriorSaveMessageId"};int[] counts=new int[]{khbsImportMessageId,khbsSummaryMessageId,khbsExportMessageId,khbsLeafCount,khbsMismatchMask,khbsFirstDifferenceOrdinal,khbsExportBytes,khbsOpenMainState,khbsPostSaveWaitMask,khbsRound,khbsPriorSaveMessageId};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString()+","+q+"khbsExportSha256"+q+":"+q+khbsExportSha256+q;
  }
@@ -129,7 +169,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Called once the B1 sheet, its two KHBS tabs, the unchanged C0 file and the fixed ngày lập are proven.
  private void StartOriginalKhbsImport(Form owner){
   if(!KhbsMode()||khbsPhase!="not-started"||!webInputVerified||!KhbsCaseId(webCaseId)||!khbsPeriodMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
-  if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
+  if(Hash(KhbsImportPath())!=KhbsImportHash())throw new InvalidOperationException();
   khbsOwner=owner;roundtripOwner=owner;khbsPhase="import-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsImportInvoking);Record();
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ContinueOriginalKhbs();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();
  }
@@ -156,14 +196,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
    }
    if(khbsPhase=="import-result"){
     message=KhbsMessage(out text);
-    if(message==null){if(!roundtripImportDialogSubmitted)TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",webInputPath,true);return;}
+    if(message==null){if(!roundtripImportDialogSubmitted)TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",KhbsImportPath(),true);return;}
     if(text!="Nhập dữ liệu từ XML thành công."){khbsImportMessageId=OriginalMessageCatalogueId(text);KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsImportRejected);return;}
     FieldInfo loading=OriginalAssembly().GetType("HTKK.frmWinToKhai",true).GetField("FileNameLoading",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);
     if(loading==null||loading.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)loading.GetValue(null);
-    khbsImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(webInputPath),StringComparison.OrdinalIgnoreCase);roundtripImportPathMatched=khbsImportPathMatched;
+    khbsImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(KhbsImportPath()),StringComparison.OrdinalIgnoreCase);roundtripImportPathMatched=khbsImportPathMatched;
     if(!roundtripImportDialogMatched||!roundtripImportKeyboardCommitted||!roundtripImportDialogSubmitted||!khbsImportPathMatched){Record();throw new InvalidOperationException();}
-    object period=Global("TTPeriodInfo");if(Convert.ToString(Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)!="B"||Convert.ToString(Get(period,"SoLan"),CultureInfo.InvariantCulture)!="1"||!KhbsDate(Convert.ToString(Get(period,"NgayLapKHBS"),CultureInfo.InvariantCulture)))throw new InvalidOperationException();
-    khbsImportSucceeded=true;roundtripImportSucceeded=true;khbsPhase="summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();CloseKhbsMessage(message);return;
+    object period=Global("TTPeriodInfo");if(Convert.ToString(Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)!="B"||Convert.ToString(Get(period,"SoLan"),CultureInfo.InvariantCulture)!=khbsRound.ToString(CultureInfo.InvariantCulture)||!KhbsDate(Convert.ToString(Get(period,"NgayLapKHBS"),CultureInfo.InvariantCulture)))throw new InvalidOperationException();
+    if(KhbsImportingPrior())khbsPriorImportSucceeded=true;else khbsImportSucceeded=true;roundtripImportSucceeded=true;khbsPhase="summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();CloseKhbsMessage(message);return;
    }
    if(khbsPhase=="summary-ready"){
     if(!KhbsOwnerReady())return;
@@ -174,7 +214,37 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(khbsPhase=="summary-result"){
     message=KhbsMessage(out text);if(message==null){SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryResultWaiting);Record();return;}
     if(text!="Tổng hợp dữ liệu lên KHBS thành công"){khbsSummaryMessageId=OriginalMessageCatalogueId(text);KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsSummaryRejected);return;}
+    if(KhbsImportingPrior()){khbsPriorSummaryAcknowledged=true;khbsPhase="prior-save-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPriorSaving);Record();CloseKhbsMessage(message);return;}
     khbsSummaryAcknowledged=true;khbsPhase="export-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsExportWaiting);Record();CloseKhbsMessage(message);return;
+   }
+   // Lần 2, round 1 only: save the summarised B1 with the original Ghi, verify the bs1_ file, close it with the original Đóng.
+   if(khbsPhase=="prior-save-ready"){
+    if(!KhbsOwnerReady())return;
+    if(File.Exists(Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),KhbsPriorB1FileName)))throw new InvalidOperationException();
+    Button save=Named(khbsOwner,"cmdSave") as Button;if(save==null||save.FindForm()!=khbsOwner||save.Text.Replace("&",String.Empty).Trim()!="Ghi")throw new InvalidOperationException();
+    khbsPhase="prior-save-result";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPriorSaving);Record();
+    khbsOwner.BeginInvoke(new MethodInvoker(delegate{try{save.PerformClick();}catch(Exception error){Failure(error);}}));return;
+   }
+   if(khbsPhase=="prior-save-result"){
+    message=KhbsMessage(out text);if(message==null){if(khbsPriorCloseClock==null)khbsPriorCloseClock=Stopwatch.StartNew();if(khbsPriorCloseClock.Elapsed.TotalSeconds>=60){khbsPostSaveWaitMask|=64;KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);}return;}
+    if(text!="Đã ghi dữ liệu thành công!"){khbsPriorSaveMessageId=OriginalMessageCatalogueId(text);KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsPriorSaveRejected);return;}
+    InspectKhbsPriorSavedFile();khbsPriorSaveAcknowledged=true;khbsPriorCloseClock=Stopwatch.StartNew();khbsPhase="prior-close-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPriorClosing);Record();CloseKhbsMessage(message);return;
+   }
+   if(khbsPhase=="prior-close-ready"){
+    FieldInfo dirtyField=khbsOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirtyField==null||dirtyField.FieldType!=typeof(bool))throw new InvalidOperationException();
+    bool ready=KhbsOwnerReady(),dirty=(bool)dirtyField.GetValue(khbsOwner);int mask=(ready?0:2)|(dirty?32:0);
+    if(mask!=khbsPostSaveWaitMask){khbsPostSaveWaitMask=mask;Record();}
+    if(!ready||dirty&&khbsPriorCloseClock.Elapsed.TotalSeconds<2){if(khbsPriorCloseClock.Elapsed.TotalSeconds>=30)KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);return;}
+    if(dirty)khbsDirtyAfterSave=true;
+    Button close=Named(khbsOwner,"cmdExit") as Button;if(close==null||close.FindForm()!=khbsOwner||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
+    khbsPhase="prior-closing";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPriorClosing);Record();
+    khbsOwner.BeginInvoke(new MethodInvoker(delegate{try{close.PerformClick();}catch(Exception error){Failure(error);}}));return;
+   }
+   if(khbsPhase=="prior-closing"){
+    message=KhbsMessage(out text);
+    if(message!=null){if(!khbsDirtyAfterSave||khbsDiscardPromptAnswered)throw new InvalidOperationException();AnswerKhbsDiscardPrompt();return;}
+    if(khbsOwner.IsDisposed||!khbsOwner.Visible){BeginKhbsRound2();return;}
+    if(khbsPriorCloseClock.Elapsed.TotalSeconds>=60)KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);return;
    }
    if(khbsPhase=="export-ready"){
     if(!KhbsOwnerReady())return;

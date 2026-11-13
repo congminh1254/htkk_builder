@@ -304,6 +304,11 @@ function New-HtkkNativeResultDefaults {
   khbsSavedMoneyMatched=$false
   khbsDirtyAfterSave=$false
   khbsDiscardPromptAnswered=$false
+  khbsPriorImportSucceeded=$false
+  khbsPriorSummaryAcknowledged=$false
+  khbsPriorSaveAcknowledged=$false
+  khbsPriorFileSaved=$false
+  khbsRound2Opened=$false
   khbsImportMessageId=0
   khbsSummaryMessageId=0
   khbsExportMessageId=0
@@ -313,6 +318,8 @@ function New-HtkkNativeResultDefaults {
   khbsExportBytes=0
   khbsOpenMainState=0
   khbsPostSaveWaitMask=0
+  khbsRound=0
+  khbsPriorSaveMessageId=0
   khbsExportSha256=''
  }
  return $result

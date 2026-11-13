@@ -1546,6 +1546,26 @@
       "category": "amendment"
     },
     {
+      "id": "gtgt-amendment-khbs-prior-saving",
+      "enumName": "GtgtAmendmentKhbsPriorSaving",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-khbs-prior-save-rejected",
+      "enumName": "GtgtAmendmentKhbsPriorSaveRejected",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-khbs-prior-closing",
+      "enumName": "GtgtAmendmentKhbsPriorClosing",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-khbs-round2-opening",
+      "enumName": "GtgtAmendmentKhbsRound2Opening",
+      "category": "amendment"
+    },
+    {
       "id": "gtgt-amendment-khbs-inspected",
       "enumName": "GtgtAmendmentKhbsInspected",
       "category": "amendment"
@@ -1878,6 +1898,11 @@
     "khbsSavedMoneyMatched",
     "khbsDirtyAfterSave",
     "khbsDiscardPromptAnswered",
+    "khbsPriorImportSucceeded",
+    "khbsPriorSummaryAcknowledged",
+    "khbsPriorSaveAcknowledged",
+    "khbsPriorFileSaved",
+    "khbsRound2Opened",
     "khbsImportMessageId",
     "khbsSummaryMessageId",
     "khbsExportMessageId",
@@ -1887,6 +1912,8 @@
     "khbsExportBytes",
     "khbsOpenMainState",
     "khbsPostSaveWaitMask",
+    "khbsRound",
+    "khbsPriorSaveMessageId",
     "khbsExportSha256"
   ],
   "controlKinds": [
@@ -2629,7 +2656,7 @@
       "maximum": 3,
       "modeMaximums": {
         "gtgt-amendment-open-inspect": 6,
-        "gtgt-amendment-khbs-inspect": 6
+        "gtgt-amendment-khbs-inspect": 9
       }
     },
     "periodControlCount": {
@@ -3184,7 +3211,8 @@
         "03TNDN-rate15-Y2025",
         "03TNDN-rate17-Y2025",
         "01GTGT-khbs-zero-to-sale10-M10-2026",
-        "01GTGT-khbs-sale5-to-sale10-M09-2026"
+        "01GTGT-khbs-sale5-to-sale10-M09-2026",
+        "01GTGT-khbs-lan2-sale10-M10-2026"
       ]
     },
     "webCaseEditCount": {
@@ -4005,6 +4033,41 @@
         "gtgt-amendment-khbs-inspect"
       ]
     },
+    "khbsPriorImportSucceeded": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsPriorSummaryAcknowledged": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsPriorSaveAcknowledged": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsPriorFileSaved": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsRound2Opened": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
     "khbsImportMessageId": {
       "kind": "integer",
       "default": 0,
@@ -4072,7 +4135,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 2,
+      "maximum": 3,
       "activeModes": [
         "gtgt-amendment-khbs-inspect"
       ]
@@ -4082,6 +4145,24 @@
       "default": 0,
       "minimum": 0,
       "maximum": 127,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsRound": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsPriorSaveMessageId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 9999,
       "activeModes": [
         "gtgt-amendment-khbs-inspect"
       ]

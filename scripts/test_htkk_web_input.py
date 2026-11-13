@@ -57,7 +57,7 @@ def khbs_fixture(case):
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  head=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue')
  for name in ('ngayLapTKhai','ngayKy'):head.find(ns+name).text=w.khbs.FIXED_DATE
- head.find(ns+'loaiTKhai').text='B';head.find(ns+'soLan').text='1'
+ head.find(ns+'loaiTKhai').text='B';head.find(ns+'soLan').text=w.khbs.CASES[case]['soLan']
  for name,(_,expected) in (w.khbs.CASES[case]['period'] or {}).items():head.find(ns+'KyKKhaiThue/'+ns+name).text=expected
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
@@ -76,7 +76,9 @@ def case_manifest(body,case,producer_sha='c'*64):
  """Exact manifest shape of the registered producer for one fixed case."""
  if w.declaration.is_case(case):return dfx.declaration_manifest(body,case,producer_sha)
  value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
- if w.khbs.is_case(case):value.update(w.khbs.manifest_fields(case))
+ if w.khbs.is_case(case):
+  value.update(w.khbs.manifest_fields(case))
+  if w.khbs.prior_case(case):prior=khbs_fixture(w.khbs.prior_case(case));value.update(priorBytes=len(prior),priorXmlSha256=hashlib.sha256(prior).hexdigest())
  if w.annex10.is_case(case):
   value.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=w.ANNEX10_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex10.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex12.is_case(case):

@@ -44,7 +44,9 @@ class AmendmentOpeningContract(unittest.TestCase):
   for resource in ('KHBS_01_TT80_DIA_BAN_283.xml','KHBS_01_DIA_BAN_xml.xml','KHBS_01_1_TT80_283.xml','KHBS_01_1_TT80_xml.xml','KHBS_01_GTGT_TT80_283.xsd'):self.assertIn(resource,source)
   self.assertIn('Get(info,"Active")',source);self.assertIn('GetSheetTabRectangle',source)
   self.assertIn('Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)=="B"',source)
-  self.assertIn('Get(period,"SoLan"),CultureInfo.InvariantCulture)=="1"',source)
+  # Lần 1 everywhere; the KHBS lần-2 case reopens a second round (khbsRound is 1 before it, set by VerifyOwnWebInput).
+  self.assertIn('Get(period,"SoLan"),CultureInfo.InvariantCulture)==khbsRound.ToString(CultureInfo.InvariantCulture)',source)
+  self.assertIn('if(KhbsMode())khbsRound=1;',(ROOT/'HtkkWebInputReference.cs').read_text(encoding='utf-8'))
   self.assertIn('parsed.Date==DateTime.Now.Date',source)
   self.assertIn('InspectOriginalPriorFile();ReadSavedHeader()',source)
   self.assertNotIn('Visible=',source);self.assertNotIn('ActiveSheetIndex',source)
@@ -69,7 +71,8 @@ class AmendmentReaderTypeBoundaryTests(unittest.TestCase):
  def test_second_menu_traversal_budget_is_restricted_to_the_new_b1_mode(self):
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
   self.assertEqual(field('menuClickCount')['maximum'],3)
-  self.assertEqual(field('menuClickCount')['modeMaximums'],{MODE:6,'gtgt-amendment-khbs-inspect':6})
+  # KHBS lần 2 traverses the menu three times (C0, B1, B2).
+  self.assertEqual(field('menuClickCount')['modeMaximums'],{MODE:6,'gtgt-amendment-khbs-inspect':9})
   self.assertIn('$open.menuClickCount=4',fixture)
   self.assertIn("@{key='menuClickCount';value=7}",fixture)
 

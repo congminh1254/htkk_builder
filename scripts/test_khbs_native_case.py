@@ -7,19 +7,21 @@ def load(name,file):
 cases=load('khbs_case_registry','htkk_native_cases.py')
 w=load('khbs_web_input','fetch-htkk-web-input.py')
 f=load('khbs_web_input_fixtures','test_htkk_web_input.py')
-CASE='01GTGT-khbs-zero-to-sale10-M10-2026';CASE2='01GTGT-khbs-sale5-to-sale10-M09-2026';MODE='gtgt-amendment-khbs-inspect'
+CASE='01GTGT-khbs-zero-to-sale10-M10-2026';CASE2='01GTGT-khbs-sale5-to-sale10-M09-2026';CASE3='01GTGT-khbs-lan2-sale10-M10-2026';MODE='gtgt-amendment-khbs-inspect'
 out=load('khbs_native_output_publisher','publish-htkk-khbs-native-output.py')
 TODAY=datetime.date(2026,11,20);SOURCE,ARTIFACT,BUILDER_SHA='a'*40,'b'*40,'c'*40
 def source(name):return (ROOT/name).read_text(encoding='utf-8')
 
 class Registry(unittest.TestCase):
  def test_one_non_gating_582_case_with_its_own_driver_and_amendment_order(self):
-  self.assertEqual(cases.KHBS_CASES,(CASE,CASE2));c=cases.CASES[CASE];a=cases.ADAPTERS[c['adapterId']]
+  self.assertEqual(cases.KHBS_CASES,(CASE,CASE2,CASE3));c=cases.CASES[CASE];a=cases.ADAPTERS[c['adapterId']]
   self.assertIs(c['releaseGate'],False);self.assertEqual(cases.htkk_version(CASE),'5.8.2');self.assertEqual(cases.driver(CASE),MODE)
   self.assertEqual((a['producer'],a['privacyValidator'],a['menuId'],a['xmlVersion']),('scripts/generate-htkk-web-khbs-reference.mjs','gtgt-khbs-v1','D1','2.8.3'))
   self.assertEqual(c['unit']['amendmentOrder'],1);self.assertEqual(c['unit']['annexes'],[])
   # amendmentOrder 1 is reserved to this adapter; every other case stays a first declaration.
-  self.assertTrue(all(x['unit']['amendmentOrder']==0 for id,x in cases.CASES.items() if id not in (CASE,CASE2)))
+  self.assertTrue(all(x['unit']['amendmentOrder']==0 for id,x in cases.CASES.items() if id not in (CASE,CASE2,CASE3)))
+  # Case 3: bổ sung lần 2 (amendmentOrder 2, its own adapter), non-gating, on the same driver.
+  c3=cases.CASES[CASE3];self.assertEqual((c3['adapterId'],c3['unit']['amendmentOrder'],c3['unit']['periodValue'],c3['releaseGate']),('01-gtgt-2.8.3-khbs-lan2',2,'10/2026',False));self.assertEqual(cases.driver(CASE3),MODE)
   self.assertEqual(cases.status_context(CASE),'htkk-native/khbs-zero-to-sale10@htkk582')
   # Case 2: non-gating too, M09/2026 (positive late days), same adapter and driver, its own branches and status.
   c2=cases.CASES[CASE2];self.assertIs(c2['releaseGate'],False);self.assertEqual(cases.htkk_version(CASE2),'5.8.2');self.assertEqual(cases.driver(CASE2),MODE)
@@ -33,10 +35,10 @@ class Registry(unittest.TestCase):
   for key,field in fields.items():
    if key.startswith('khbs'):self.assertEqual(field['activeModes'],[MODE])
   self.assertEqual(fields['amendmentLifecycleVerified']['activeModes'],[])
-  self.assertEqual(fields['khbsOpenMainState']['maximum'],2);self.assertIn(CASE2,fields['webCaseId']['values'])
+  self.assertEqual(fields['khbsOpenMainState']['maximum'],3);self.assertIn(CASE2,fields['webCaseId']['values'])
   # The D1 publisher never takes a KHBS case; only the KHBS publisher retains them, on their own output branches.
   output=load('khbs_native_output','publish-htkk-web-native-output.py');self.assertNotIn(CASE,output.BRANCHES);self.assertNotIn(CASE2,output.BRANCHES)
-  self.assertEqual(out.BRANCHES,{CASE:'gtgt-web-native-khbs-zero-to-sale10-output',CASE2:'gtgt-web-native-khbs-sale5-to-sale10-output'})
+  self.assertEqual(out.BRANCHES,{CASE:'gtgt-web-native-khbs-zero-to-sale10-output',CASE2:'gtgt-web-native-khbs-sale5-to-sale10-output',CASE3:'gtgt-web-native-khbs-lan2-sale10-output'})
 
 class SecondCase(unittest.TestCase):
  """Case 2: non-zero C0, a decrease at 5% (negative chênh lệch), M09/2026 with 24 late days."""
@@ -68,7 +70,7 @@ class SecondCase(unittest.TestCase):
   prior=source('HtkkGtgtAmendmentInspection.cs')
   self.assertIn('!(KhbsNonzeroOriginal()?khbsOriginalMoneyMatched:gtgtZero)',prior);self.assertIn('if(!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27)throw new InvalidOperationException();',prior)
   opened=source('HtkkGtgtAmendmentOpenInspection.cs')
-  self.assertIn('==PeriodMonth()&&',opened);self.assertIn('if(mainState==0||(!KhbsNonzeroOriginal()&&mainState!=1)',opened)
+  self.assertIn('==PeriodMonth()&&',opened);self.assertIn('if(mainState==0||(!KhbsNonzeroOriginal()&&!(KhbsLan2Case()&&khbsRound==2)&&mainState!=1)',opened)
   # The month and the saved-file name change only for case 2; every other driver keeps M10/2026.
   self.assertNotIn('"Thang"),CultureInfo.InvariantCulture)=="10"',opened+sheet)
 
@@ -116,6 +118,41 @@ class SheetWatcherAfterSave(unittest.TestCase):
   observe=prior.split('private void ObserveOriginalAmendmentPriorSave(){',1)[1]
   self.assertLess(observe.index('if(KhbsMode()&&!KhbsSaveWaitBounded())return;'),observe.index('foreach(Form form in Application.OpenForms)'))
 
+class Lan2(unittest.TestCase):
+ """Case 3: bổ sung lần 2 on the saved bổ sung lần 1 (previous-version web file staged as 01GTGT-prior.xml)."""
+ def setUp(self):self.body=f.sale_fixture(CASE3);self.manifest=f.case_manifest(self.body,CASE3);self.prior=f.sale_fixture(CASE)
+ def test_input_prior_and_manifest_are_exact(self):
+  self.assertEqual(w.names(CASE3),('01GTGT-web.xml','01GTGT-prior.xml','manifest.json'));self.assertEqual(w.names(CASE),('01GTGT-web.xml','manifest.json'))
+  self.assertEqual(w.validate_web_xml(self.body,case_id=CASE3,manifest=self.manifest)['amendmentTaxLeafCount'],270)
+  self.assertIn('<soLan>2</soLan>',self.body.decode());self.assertEqual(self.manifest['priorCaseId'],CASE)
+  files={'01GTGT-web.xml':self.body,'01GTGT-prior.xml':self.prior,'manifest.json':(json.dumps(self.manifest)+'\n').encode()}
+  self.assertIsNotNone(w.validate_prior(files,w.validate_manifest(files['manifest.json'])))
+  for broken in (self.prior+b' ',f.sale_fixture(CASE2)):
+   with self.subTest(size=len(broken)),self.assertRaises(w.InputError):w.validate_prior(dict(files,**{'01GTGT-prior.xml':broken}),self.manifest)
+  bad=copy.deepcopy(self.manifest);bad['priorCaseId']=CASE2
+  with self.assertRaises(w.InputError):w.validate_manifest(json.dumps(bad).encode())
+  # lần 1 files cannot claim soLan 2, and the lần 2 file cannot be relabelled as lần 1.
+  with self.assertRaises(w.InputError):w.validate_web_xml(self.body.replace(b'<soLan>2</soLan>',b'<soLan>1</soLan>'),case_id=CASE3,manifest=self.manifest)
+  with self.assertRaises(w.InputError):w.validate_web_xml(self.body,case_id=CASE)
+  with tempfile.TemporaryDirectory() as temp:
+   staged=w.stage(files,temp);self.assertEqual(sorted(p.name for p in staged.iterdir()),['01GTGT-prior.xml','01GTGT-web.xml','manifest.json'])
+  with tempfile.TemporaryDirectory() as temp,self.assertRaises(w.InputError):w.stage({k:v for k,v in files.items() if k!='01GTGT-prior.xml'},temp)
+ def test_driver_saves_b1_and_reopens_b2_through_original_controls(self):
+  text=source('HtkkGtgtAmendmentKhbsInspection.cs')
+  for fragment in ('private const string KhbsPriorB1FileName="bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml";','Button save=Named(khbsOwner,"cmdSave") as Button;','"Đã ghi dữ liệu thành công!"',
+                   'Button close=Named(khbsOwner,"cmdExit") as Button;','SetText(period,"txtLan","2")','private string KhbsImportPath(){return KhbsImportingPrior()?webPriorPath:webInputPath;}',
+                   'if(KhbsImportingPrior()){khbsPriorSummaryAcknowledged=true;khbsPhase="prior-save-ready";','navigationPhase="waiting-main-menu";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsRound2Opening);',
+                   'string saved=khbsPriorFileSha256;InspectKhbsPriorSavedFile();if(khbsPriorFileSha256!=saved)throw new InvalidOperationException();'):self.assertIn(fragment,text)
+  self.assertIn('new decimal[]{0,0,0,0,0,0,0,1000000,100000,0,0,0,1000000,100000,0,1000000,100000,100000,0,0,0,100000,0,100000,0,0,0}',text)
+  opened=source('HtkkGtgtAmendmentOpenInspection.cs');self.assertNotIn('SetText(',opened)
+  self.assertIn('==khbsRound.ToString(CultureInfo.InvariantCulture)&&(KhbsMode()',opened);self.assertIn('KhbsLan2Case()&&khbsRound==2&&KhbsB1Vector(sheet)?3:0',opened)
+  web=source('HtkkWebInputReference.cs');self.assertIn('webPriorPath=host+".web-prior.xml";webPriorSha256=ReadOwnHexSidecar(host+".web-prior.sha256",64);',web)
+  self.assertIn('private string RoundtripInputHash(){return KhbsMode()?KhbsImportHash():',web)
+  registry=json.loads(source('htkk-native-automation-registry.json'));self.assertEqual(registry['resultFields']['menuClickCount']['modeMaximums'][MODE],9)
+  probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
+  self.assertIn("{$lastGui.khbsRound -eq 2 -and $lastGui.khbsRound2Opened -and $lastGui.khbsPriorImportSucceeded -and $lastGui.khbsPriorSummaryAcknowledged -and $lastGui.khbsPriorSaveAcknowledged -and $lastGui.khbsPriorFileSaved",line)
+  self.assertIn("$priorPath=$hostFull+'.web-prior.xml'",probe);self.assertIn("$manifest.priorCaseId -cne '01GTGT-khbs-zero-to-sale10-M10-2026'",probe)
+
 class InputValidator(unittest.TestCase):
  def setUp(self):self.body=f.sale_fixture(CASE);self.manifest=f.case_manifest(self.body,CASE)
  def test_exact_fixed_input_and_manifest_accepted(self):
@@ -151,11 +188,12 @@ class Driver(unittest.TestCase):
   line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
   for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
                '$lastGui.khbsOriginalMoneyMatched -and $lastGui.khbsSavedMoneyMatched -and -not $lastGui.amendmentPriorSavedMoneyZero -and $lastGui.khbsOpenMainState -in @(1,2) -and $lastGui.webCaseEditCount -eq 2',
-               '$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq 1 -and $lastGui.webCaseEditCount -eq 0'):self.assertIn(flag,line)
-  self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
+               "$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-M10-2026'){3}else{1}) -and $lastGui.webCaseEditCount -eq 0"):self.assertIn(flag,line)
+  self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
   self.assertEqual(workflow.count("inputs.gui_automation == 'gtgt-amendment-khbs-inspect'"),4)
   self.assertIn("'01GTGT-khbs-zero-to-sale10-M10-2026'='htkk-web-khbs-zero-to-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
   self.assertIn("'01GTGT-khbs-sale5-to-sale10-M09-2026'='htkk-web-khbs-sale5-to-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
+  self.assertIn("'01GTGT-khbs-lan2-sale10-M10-2026'='htkk-web-khbs-lan2-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
  def test_raw_export_is_staged_on_match_and_mismatch_and_published_by_its_own_step(self):
   probe=source('probe-htkk-windows.ps1');workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
   self.assertIn("if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect' -and $null -ne $report.guiReferenceAutomation -and $report.guiReferenceAutomation.stage -cin @('gtgt-amendment-khbs-inspected','gtgt-amendment-khbs-not-matched')) {",probe)

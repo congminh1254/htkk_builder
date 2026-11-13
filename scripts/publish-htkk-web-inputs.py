@@ -126,6 +126,7 @@ def read_inputs(runner_temp,source_commit):
   body=files[reader.xml_name(case)]
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
   reader.validate_web_xml(body,case_id=case,manifest=manifest)
+  reader.validate_prior(files,manifest)
   result.append((case,branch,files,manifest))
  for producer in set(CASE_PRODUCERS.values()):
   if len({item[3]['producerSha256'] for item in result if CASE_PRODUCERS[item[0]]==producer})!=1:fail('SOURCE_PRODUCER')
@@ -148,6 +149,7 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
   body=item[2][reader.xml_name(case)]
   if len(body)!=manifest['bytes'] or hashlib.sha256(body).hexdigest()!=manifest['xmlSha256']:fail('HASH')
   reader.validate_web_xml(body,case_id=case,manifest=manifest)
+  reader.validate_prior(item[2],manifest)
  if request_id is not None and (not isinstance(request_id,str)or not re.fullmatch('[1-9][0-9]*',request_id)):fail('MANIFEST')
  if plan is not None:reader.case_registry.validate_plan(plan)
  fetch=fetch or api

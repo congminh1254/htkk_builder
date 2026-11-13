@@ -59,7 +59,16 @@ DECLARATION_PRODUCER='scripts/generate-htkk-declaration-reference.mjs'
 DECLARATION_ERRORS={'SIZE':'XML_SIZE','ENCODING':'XML_ENCODING','DECLARATION':'XML_DECLARATION','PARSE':'XML_PARSE','SERVICE':'XML_SERVICE','MANIFEST':'MANIFEST'}
 def names(case_id):
  if case_id not in CASES:raise InputError('MANIFEST')
- return DECLARATION_NAMES if declaration.is_case(case_id) else NAMES
+ if declaration.is_case(case_id):return DECLARATION_NAMES
+ # A KHBS case whose previous version must exist in HTKK first (bổ sung lần 2) also stages that exact prior web file.
+ return (NAMES[0],khbs.PRIOR_NAME,NAMES[1]) if khbs.is_case(case_id) and khbs.prior_case(case_id) else NAMES
+def validate_prior(files,manifest,today=None):
+ """The prior file of a KHBS case: exactly the manifest's hash and size, and the full contract of its own prior case."""
+ case=manifest['caseId']
+ if not (khbs.is_case(case) and khbs.prior_case(case)):return None
+ body=files.get(khbs.PRIOR_NAME)
+ if not isinstance(body,bytes) or manifest['priorBytes']!=len(body) or manifest['priorXmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
+ return validate_web_xml(body,today,khbs.prior_case(case))
 def xml_name(case_id):return names(case_id)[0]
 class InputError(ValueError):
  def __init__(self,code,**context):
@@ -136,12 +145,15 @@ def validate_manifest(body):
   variable=variable|{'expectedAnnexLeaves'}
  if khbs.is_case(case):
   fixed.update(khbs.manifest_fields(case));fixed['htkkVersion']=case_registry.htkk_version(case)
+  if khbs.prior_case(case):variable=variable|{'priorBytes','priorXmlSha256'}
  if set(manifest)!=set(fixed)|variable:raise InputError('MANIFEST')
  if any(type(manifest[key]) is not type(value) or manifest[key]!=value for key,value in fixed.items()):raise InputError('MANIFEST')
  git_sha(manifest['sourceCommit'],'MANIFEST')
  for key in ('producerSha256','xmlSha256'):
   if not isinstance(manifest[key],str) or not re.fullmatch('[0-9a-f]{64}',manifest[key]):raise InputError('MANIFEST')
  if type(manifest['bytes']) is not int or not 0<manifest['bytes']<=MAX_XML:raise InputError('MANIFEST')
+ if khbs.is_case(case) and khbs.prior_case(case):
+  if type(manifest['priorBytes']) is not int or not 0<manifest['priorBytes']<=MAX_XML or not isinstance(manifest['priorXmlSha256'],str) or not re.fullmatch('[0-9a-f]{64}',manifest['priorXmlSha256']):raise InputError('MANIFEST')
  if annex12.is_case(case) or annex10.is_case(case):
   rows=manifest['expectedAnnexLeaves']
   if type(rows) is not list or not 0<len(rows)<=256 or any(type(row) is not list or len(row)!=3 or any(type(item) is not str or len(item)>160 for item in row) for row in rows):raise InputError('MANIFEST')
@@ -260,13 +272,18 @@ def download(token,fetch=None,today=None,expected_source=None,expected_case=None
  body=content_file(fetch('/contents/'+name+query,token),name,MAX_XML)
  if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
  validate_web_xml(body,today,manifest['caseId'],manifest)
- return {name:body,'manifest.json':manifest_body}
+ files={name:body,'manifest.json':manifest_body}
+ if khbs.is_case(manifest['caseId']) and khbs.prior_case(manifest['caseId']):
+  files[khbs.PRIOR_NAME]=content_file(fetch('/contents/'+khbs.PRIOR_NAME+query,token),khbs.PRIOR_NAME,MAX_XML)
+  validate_prior(files,manifest,today)
+ return files
 def stage(files,runner_temp,today=None):
  if not isinstance(files,dict) or 'manifest.json' not in files or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
  manifest=validate_manifest(files['manifest.json']);xml=xml_name(manifest['caseId'])
  if set(files)!=set(names(manifest['caseId'])):raise InputError('STAGING')
  if manifest['bytes']!=len(files[xml]) or manifest['xmlSha256']!=hashlib.sha256(files[xml]).hexdigest():raise InputError('HASH')
  validate_web_xml(files[xml],today,manifest['caseId'],manifest)
+ validate_prior(files,manifest,today)
  parent=pathlib.Path(runner_temp);destination=parent/'htkk-web-reference-input'
  if parent.is_symlink() or not parent.is_dir() or destination.exists() or destination.is_symlink():raise InputError('STAGING')
  temporary=pathlib.Path(tempfile.mkdtemp(prefix='.htkk-web-reference-input-',dir=parent))
