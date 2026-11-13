@@ -219,9 +219,17 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
   # Exact fixed PL01_KHBS/PL01_1_KHBS subtree and B/1 header first; then an IN-MEMORY first-declaration
   # projection reuses the unchanged no-annex allowlist. Staged bytes are never changed.
   try:
+   if khbs.annex12_case(case_id):
+    # Capture case: PLuc is exactly the annex web case's 01-2 subtree, then the two KHBS fragments. The annex is checked
+    # by its own exact contract on an in-memory copy, then removed in memory before the KHBS checks.
+    pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+    if pluc is None or len(pluc)!=3 or pluc[0].tag!=ns+'PLuc_01_2_GTGT':raise InputError('XML_PRIVACY')
+    annex_only=ET.fromstring(ET.tostring(root));annex_pluc=annex_only.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+    for child in list(annex_pluc)[1:]:annex_pluc.remove(child)
+    annex12.validate_annex(annex_only,khbs.annex12_case(case_id));pluc.remove(pluc[0])
    khbs.validate_khbs(root,case_id)
    khbs.project_first_declaration(root,case_id)
-  except khbs.KhbsWebContractError:raise InputError('XML_PRIVACY') from None
+  except (khbs.KhbsWebContractError,annex12.AnnexWebContractError):raise InputError('XML_PRIVACY') from None
  # Verify the fixed checkbox before adapting only the in-memory privacy copy.
  nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'CTieuTKhaiChinh/'+ns+'ct21')
  if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=CASE_CHECKBOX[case_id]:raise InputError('XML_PRIVACY')

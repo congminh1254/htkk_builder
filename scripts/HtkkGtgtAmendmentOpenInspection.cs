@@ -39,7 +39,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private static bool CurrentOriginalAmendmentDate(string text){DateTime parsed;return DateTime.TryParseExact(text,new string[]{"d/M/yyyy","dd/MM/yyyy"},CultureInfo.InvariantCulture,DateTimeStyles.None,out parsed)&&parsed.Date==DateTime.Now.Date;}
  private void ConfigureOriginalAmendmentOpen(Control period){
-  if(!AmendmentReopening()||!amendmentOpenPriorClosed||amendmentOpenConfirmInvoked||(khbsRound==2&&!khbsRound2Opened)||!periodDateMatched||!periodGeographyMatched||!periodActivityMatched||!periodNoAnnexMatched||annexSelected!=0||OriginalMessageVisible())throw new InvalidOperationException();
+  if(!AmendmentReopening()||!amendmentOpenPriorClosed||amendmentOpenConfirmInvoked||(khbsRound==2&&!khbsRound2Opened)||!periodDateMatched||!periodGeographyMatched||!periodActivityMatched||!(KhbsAnnexCase()?periodAnnex12Matched&&annexSelected==1:periodNoAnnexMatched&&annexSelected==0)||OriginalMessageVisible())throw new InvalidOperationException();
   SetStage(HtkkAutomationStage.GtgtAmendmentDefaultsSelecting);Record();SetCheck(Named(period,"OptBosung"),true);
   Control number=ReadableNamed(period,"txtLan"),date=ReadableNamed(period,"mskNgayLapKHBS");
   amendmentOpenDefaultsMatched=CheckValue(Named(period,"OptBosung"))&&!CheckValue(ReadableNamed(period,"OptChinhthuc"))&&number.Visible&&date.Visible&&(number.Text.Trim()=="1"||khbsRound==2&&number.Text.Trim()=="2")&&CurrentOriginalAmendmentDate(date.Text);

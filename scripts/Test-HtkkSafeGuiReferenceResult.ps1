@@ -102,6 +102,16 @@ try {
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS amendment accepted'};$cases++
  }
+ # KHBS case 4 (annex 01-2 capture): the reused annex import/restoration fields are typed and bounded in this mode too.
+ $fourth=[ordered]@{};foreach($key in $khbs.Keys){$fourth[$key]=$khbs[$key]};$fourth.webCaseId='01GTGT-khbs-annex12-capture-M10-2026';$fourth.khbsLeafCount=504;$fourth.khbsTreeMatched=$false;$fourth.khbsMismatchMask=32;$fourth.khbsFirstDifferenceOrdinal=120;$fourth.stage='gtgt-amendment-khbs-not-matched'
+ $fourth.annex12WebImportSheetMatched=$true;$fourth.annex12WebImportGroupCount=2;$fourth.annex12WebImportRowCount=5;$fourth.annex12WebHeadAuthorityRestored=$true;$fourth.annex12WebHeadAuthorityRepairCount=10;$fourth.annex12WebImportDisplayEmptyMask=8659208
+ $fourth | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+ if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS annex capture rejected'};$cases++
+ foreach($change in @(@{key='annex12WebImportRowCount';value=11},@{key='annex12WebHeadAuthorityRestored';value=1},@{key='annex12WebHeadAuthorityFailureMask';value=4096})){
+  $copy=[ordered]@{};foreach($key in $fourth.Keys){$copy[$key]=$fourth[$key]};$copy[$change.key]=$change.value
+  $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS annex capture accepted'};$cases++
+ }
  # KHBS case 3 (bổ sung lần 2): two rounds, the saved B1 and the B2 main state 3 are typed and bounded.
  $third=[ordered]@{};foreach($key in $khbs.Keys){$third[$key]=$khbs[$key]};$third.webCaseId='01GTGT-khbs-lan2-sale10-M10-2026';$third.khbsRound=2;$third.khbsOpenMainState=3;$third.menuClickCount=9
  foreach($key in @('khbsPriorImportSucceeded','khbsPriorSummaryAcknowledged','khbsPriorSaveAcknowledged','khbsPriorFileSaved','khbsRound2Opened')){$third[$key]=$true}

@@ -40,6 +40,7 @@ $HtkkNativeCaseFormats=@{
  '01GTGT-khbs-zero-to-sale10-M10-2026'='htkk-web-khbs-zero-to-sale10-input-v1'
  '01GTGT-khbs-sale5-to-sale10-M09-2026'='htkk-web-khbs-sale5-to-sale10-input-v1'
  '01GTGT-khbs-lan2-sale10-M10-2026'='htkk-web-khbs-lan2-sale10-input-v1'
+ '01GTGT-khbs-annex12-capture-M10-2026'='htkk-web-khbs-annex12-capture-input-v1'
  '05KK-PBT-two-provinces-Q3-2026'='htkk-web-tncn05kk-pbt-two-provinces-q3-2026-input-v1'
  '05KK-TT89-PBT-two-provinces-Q4-2026'='htkk-web-tncn05kk-tt89-pbt-two-provinces-q4-2026-input-v1'
 }

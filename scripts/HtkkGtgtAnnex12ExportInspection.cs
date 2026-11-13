@@ -140,13 +140,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Read-only observation after the ORIGINAL import control loaded the web annex.
  // Values/locks are read from original cells and table metadata; nothing is written.
  private bool InspectOriginalImportedAnnex12(Control grid){
-  if(!Annex12WebCase())throw new InvalidOperationException();
+  if(!Annex12WebCase()&&!KhbsAnnexCase())throw new InvalidOperationException();
   SetStage(HtkkAutomationStage.GtgtAnnex12WebImportChecking);annex12WebImportSheetMatched=false;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;if(!annex12WebHeadAuthorityRestored)annex12WebImportDisplayEmptyMask=0;
   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));if(count!=11)return false;
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object annex=null;
   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(annex!=null)return false;annex=candidate;}}
   if(annex==null||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)return false;
-  bool two=Annex12WebTwoPlantsCase();
+  // The KHBS capture case imports exactly the two-plant web annex.
+  bool two=Annex12WebTwoPlantsCase()||KhbsAnnexCase();
   string[] names=two?new string[]{"NHA MAY GIA LAP - KHONG NOP","NHA MAY GIA LAP 2 - KHONG NOP"}:new string[]{"NHA MAY GIA LAP - KHONG NOP"};
   string[] codes=two?new string[]{"9999999997-001","99997"}:new string[]{"9999999997-001"};
   decimal[] parents=two?new decimal[]{7m,3m}:new decimal[]{0m};
@@ -187,7 +188,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // editor, as a user must, then the same local CQT if the original change handler
  // cleared it. Codes are re-read, never written; the XML comparison stays exact.
  private void RestoreImportedAnnex12HeadAuthorities(){
-  if(!Annex12WebCase()||annex12WebHeadAuthorityRestored||!roundtripImportSucceeded||!annex12WebImportSheetMatched)throw new InvalidOperationException();
+  if((!Annex12WebCase()&&!KhbsAnnexCase())||annex12WebHeadAuthorityRestored||!roundtripImportSucceeded||!annex12WebImportSheetMatched)throw new InvalidOperationException();
   List<Control> grids=new List<Control>();int visited=0;GatherSpreads(roundtripOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();Control grid=grids[0];
   object sheets=Get(grid,"Sheets");if(Convert.ToInt32(Get(sheets,"Count"))!=11)throw new InvalidOperationException();PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();
   object annex=null;int found=-1;

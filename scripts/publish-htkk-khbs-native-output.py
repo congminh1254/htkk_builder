@@ -92,6 +92,20 @@ def validate_native(body,web,case_id,today=None,version=oracle.DEFAULT):
  if case_id not in BRANCHES:fail('PROVENANCE')
  native=leaves(document(body));synthetic=leaves(document(web))
  known={text for _,_,text in synthetic if text}
+ # Capture case only: the public 01-2 catalogue texts, and texts HTKK joins with ' - ' (UpdateCtForDoiTac FormatKey2 of a
+ # dynamic row key) when every piece is itself a value of the input, a catalogue text or a bounded shape.
+ capture=bool(khbs.annex12_case(case_id))
+ if capture:known|=set(khbs.ANNEX12_CATALOGUE)
+ def allowed(text):
+  if text in known or any(shape.fullmatch(text) for shape in SHAPES):return True
+  if not capture or ' - ' not in text:return False
+  # Pieces may themselves contain ' - ' (e.g. a plant name): accept a segmentation into known texts or shapes, bounded.
+  parts=text.split(' - ')
+  if len(parts)>16:return False
+  atom=lambda piece:bool(piece) and (piece in known or any(shape.fullmatch(piece) for shape in SHAPES))
+  reach=[True]+[False]*len(parts)
+  for end in range(1,len(parts)+1):reach[end]=any(reach[start] and atom(' - '.join(parts[start:end])) for start in range(end))
+  return reach[-1]
  expected={path:text for path,_,text in synthetic if path in IDENTITY}
  service={**SERVICE,'pbanDVu':oracle.service_version(version)};seen=set();created=None;ordinal=0
  for path,_,text in native:
@@ -109,7 +123,7 @@ def validate_native(body,web,case_id,today=None,version=oracle.DEFAULT):
   if path in IDENTITY:
    if text!=expected.get(path):fail('XML_PRIVACY',{'nativeRule':'IDENTITY','leafOrdinal':ordinal})
    continue
-  if text and text not in known and not any(shape.fullmatch(text) for shape in SHAPES):fail('XML_PRIVACY',{'nativeRule':'PRIVACY','leafOrdinal':ordinal})
+  if text and not allowed(text):fail('XML_PRIVACY',{'nativeRule':'PRIVACY','leafOrdinal':ordinal})
  if seen!=set(service)|{'ttinNhaCCapDVu'}:fail('NATIVE_IDENTITY')
  today=today or datetime.datetime.now(datetime.timezone.utc).date()
  if created is None or abs((today-created).days)>1:fail('NATIVE_DATE')

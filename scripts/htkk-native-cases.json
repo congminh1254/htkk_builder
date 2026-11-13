@@ -52,6 +52,16 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12",
+      "htkkVersion": "5.8.1",
+      "menuId": "D1",
+      "xmlVersion": "2.8.3",
+      "producer": "scripts/generate-htkk-web-khbs-reference.mjs",
+      "driver": "gtgt-amendment-khbs-inspect",
+      "privacyValidator": "gtgt-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "03-tndn-2.9.4",
       "htkkVersion": "5.8.1",
       "menuId": "N8",
@@ -1087,6 +1097,27 @@
         "activityCode": "00",
         "annexes": [],
         "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-capture-M10-2026",
+      "producerCase": "khbs-annex12-capture",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12",
+      "format": "htkk-web-khbs-annex12-capture-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-capture-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-capture-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-capture-output",
+      "statusContext": "htkk-native/khbs-annex12-capture",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 1
       }
     },
     {

@@ -171,6 +171,30 @@ these from the decompiled IL alone is not reliable (the key cells and the phân 
 the next step is an oracle-capture case: C0 with one 01-2 plant imported from the web and saved, B1 with a changed
 allocation imported and summarised; the raw HTKK export (retained even on mismatch) then fixes the port.
 
+## Case 4: ORACLE CAPTURE with phụ lục 01-2/GTGT (`01GTGT-khbs-annex12-capture-M10-2026`, adapter `01-gtgt-2.8.3-khbs-annex12`)
+
+Not a port check: its purpose is HTKK's own output for the annex. C0 is case 1's zero declaration without annex (proven);
+the B1 period dialog selects phụ lục 01-2/GTGT (the original selector, `SelectOriginalAnnex12`) next to Bổ sung; the
+original import loads the web B1 file, whose PLuc is exactly the two-plant 01-2 annex of the proven web case
+`01GTGT-annex12-two-plants-nonzero-M10-2026` (validated by its own contract) followed by case 1's two KHBS fragments
+(at capture time: main-sheet group only). The imported annex is checked read-only
+(`InspectOriginalImportedAnnex12`) and its child head CQT displays are restored through the original combos exactly as the
+proven annex web case does (`RestoreImportedAnnex12HeadAuthorities`, export 0016 otherwise). Then Tổng hợp KHBS, export and
+the whole-tree comparison; the raw export is retained either way. The
+output publisher accepts, for this case only, the public MapMCT 01-2 catalogue texts (sheet name, captions with and without
+their "[nn] - " prefix) and ' - '-joined row keys whose every piece is a value of the input or a bounded shape; anything
+else is still refused with a bounded leaf ordinal.
+
+**Captured and ported.** Run 43428877607 retained HTKK's export (private branch
+`gtgt-web-native-khbs-annex12-capture-output-htkk582`, then a mismatch as expected: the web file had no annex group).
+HTKK wrote a second 01-1/KHBS hồ sơ group (`002601` "01-2/GTGT": one row per changed DiaBanPhanBo cell, items [11] then
+[12], keyed "plant - ward - province - CQT", [12] unrounded so `tongCong_7` adds the binary64 values) and Muc_I.2
+(`BKePLuc` `002601`, one row per plant/location with its Σ[12]). The web producer now writes exactly that (htkk_web
+`lib/htkk-gtgt01-khbs-annex12.ts`; the raw bytes are pinned byte-identical there and re-exported equal), so the contract
+`ROWS_ANNEX12_CAPTURE` is the full ported fragment (397 rows, 345 fragment leaves) and the whole tree must now MATCH:
+504 compared leaves (89 annex + 70 main + 345 KHBS), `gtgt-amendment-khbs-inspected`. Still non-gating: the web keeps
+every bổ sung with an annex refused (`KHBS_01GTGT_ANNEX_RELEASED=false`) until a changed-allocation case exists.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

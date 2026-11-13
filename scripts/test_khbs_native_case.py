@@ -7,19 +7,19 @@ def load(name,file):
 cases=load('khbs_case_registry','htkk_native_cases.py')
 w=load('khbs_web_input','fetch-htkk-web-input.py')
 f=load('khbs_web_input_fixtures','test_htkk_web_input.py')
-CASE='01GTGT-khbs-zero-to-sale10-M10-2026';CASE2='01GTGT-khbs-sale5-to-sale10-M09-2026';CASE3='01GTGT-khbs-lan2-sale10-M10-2026';MODE='gtgt-amendment-khbs-inspect'
+CASE='01GTGT-khbs-zero-to-sale10-M10-2026';CASE2='01GTGT-khbs-sale5-to-sale10-M09-2026';CASE3='01GTGT-khbs-lan2-sale10-M10-2026';CASE4='01GTGT-khbs-annex12-capture-M10-2026';MODE='gtgt-amendment-khbs-inspect'
 out=load('khbs_native_output_publisher','publish-htkk-khbs-native-output.py')
 TODAY=datetime.date(2026,11,20);SOURCE,ARTIFACT,BUILDER_SHA='a'*40,'b'*40,'c'*40
 def source(name):return (ROOT/name).read_text(encoding='utf-8')
 
 class Registry(unittest.TestCase):
  def test_one_non_gating_582_case_with_its_own_driver_and_amendment_order(self):
-  self.assertEqual(cases.KHBS_CASES,(CASE,CASE2,CASE3));c=cases.CASES[CASE];a=cases.ADAPTERS[c['adapterId']]
+  self.assertEqual(cases.KHBS_CASES,(CASE,CASE2,CASE3,CASE4));c=cases.CASES[CASE];a=cases.ADAPTERS[c['adapterId']]
   self.assertIs(c['releaseGate'],False);self.assertEqual(cases.htkk_version(CASE),'5.8.2');self.assertEqual(cases.driver(CASE),MODE)
   self.assertEqual((a['producer'],a['privacyValidator'],a['menuId'],a['xmlVersion']),('scripts/generate-htkk-web-khbs-reference.mjs','gtgt-khbs-v1','D1','2.8.3'))
   self.assertEqual(c['unit']['amendmentOrder'],1);self.assertEqual(c['unit']['annexes'],[])
   # amendmentOrder 1 is reserved to this adapter; every other case stays a first declaration.
-  self.assertTrue(all(x['unit']['amendmentOrder']==0 for id,x in cases.CASES.items() if id not in (CASE,CASE2,CASE3)))
+  self.assertTrue(all(x['unit']['amendmentOrder']==0 for id,x in cases.CASES.items() if id not in (CASE,CASE2,CASE3,CASE4)))
   # Case 3: bổ sung lần 2 (amendmentOrder 2, its own adapter), non-gating, on the same driver.
   c3=cases.CASES[CASE3];self.assertEqual((c3['adapterId'],c3['unit']['amendmentOrder'],c3['unit']['periodValue'],c3['releaseGate']),('01-gtgt-2.8.3-khbs-lan2',2,'10/2026',False));self.assertEqual(cases.driver(CASE3),MODE)
   self.assertEqual(cases.status_context(CASE),'htkk-native/khbs-zero-to-sale10@htkk582')
@@ -38,7 +38,7 @@ class Registry(unittest.TestCase):
   self.assertEqual(fields['khbsOpenMainState']['maximum'],3);self.assertIn(CASE2,fields['webCaseId']['values'])
   # The D1 publisher never takes a KHBS case; only the KHBS publisher retains them, on their own output branches.
   output=load('khbs_native_output','publish-htkk-web-native-output.py');self.assertNotIn(CASE,output.BRANCHES);self.assertNotIn(CASE2,output.BRANCHES)
-  self.assertEqual(out.BRANCHES,{CASE:'gtgt-web-native-khbs-zero-to-sale10-output',CASE2:'gtgt-web-native-khbs-sale5-to-sale10-output',CASE3:'gtgt-web-native-khbs-lan2-sale10-output'})
+  self.assertEqual(out.BRANCHES,{CASE:'gtgt-web-native-khbs-zero-to-sale10-output',CASE2:'gtgt-web-native-khbs-sale5-to-sale10-output',CASE3:'gtgt-web-native-khbs-lan2-sale10-output',CASE4:'gtgt-web-native-khbs-annex12-capture-output'})
 
 class SecondCase(unittest.TestCase):
  """Case 2: non-zero C0, a decrease at 5% (negative chênh lệch), M09/2026 with 24 late days."""
@@ -153,6 +153,44 @@ class Lan2(unittest.TestCase):
   self.assertIn("{$lastGui.khbsRound -eq 2 -and $lastGui.khbsRound2Opened -and $lastGui.khbsPriorImportSucceeded -and $lastGui.khbsPriorSummaryAcknowledged -and $lastGui.khbsPriorSaveAcknowledged -and $lastGui.khbsPriorFileSaved",line)
   self.assertIn("$priorPath=$hostFull+'.web-prior.xml'",probe);self.assertIn("$manifest.priorCaseId -cne '01GTGT-khbs-zero-to-sale10-M10-2026'",probe)
 
+class Annex12Capture(unittest.TestCase):
+ """Case 4: oracle capture of HTKK's KHBS annex handling (C0 without annex, B1 adds the proven two-plant 01-2 annex)."""
+ def setUp(self):self.body=f.sale_fixture(CASE4);self.manifest=f.case_manifest(self.body,CASE4)
+ def test_registry_input_and_exact_annex_contract(self):
+  c=cases.CASES[CASE4];self.assertEqual((c['adapterId'],c['unit']['annexes'],c['unit']['amendmentOrder'],c['releaseGate']),('01-gtgt-2.8.3-khbs-annex12',['01-2/GTGT'],1,False))
+  self.assertEqual(w.khbs.annex12_case(CASE4),'01GTGT-annex12-two-plants-nonzero-M10-2026');self.assertIsNone(w.khbs.annex12_case(CASE))
+  self.assertEqual(w.validate_web_xml(self.body,case_id=CASE4,manifest=self.manifest)['amendmentTaxLeafCount'],504)
+  text=self.body.decode();self.assertLess(text.index('<PLuc_01_2_GTGT>'),text.index('<PL01_KHBS>'))
+  for before,after in (('NHA MAY GIA LAP 2 - KHONG NOP','PRIVATE PLANT'),('<ct11>66.67</ct11>','<ct11>66.68</ct11>'),('<ct3>100000</ct3>','<ct3>100001</ct3>')):
+   self.assertIn(before,text,before)
+   with self.subTest(before=before),self.assertRaises(w.InputError):w.validate_web_xml(text.replace(before,after,1).encode(),case_id=CASE4,manifest=self.manifest)
+  # The KHBS-only cases never accept an annex, and the capture file is not case 1's.
+  with self.assertRaises(w.InputError):w.validate_web_xml(self.body,case_id=CASE)
+  with self.assertRaises(w.InputError):w.validate_web_xml(f.sale_fixture(CASE),case_id=CASE4)
+ def test_driver_selects_the_annex_restores_the_head_cqt_then_summarises(self):
+  text=source('HtkkGtgtAmendmentKhbsInspection.cs')
+  for fragment in ('private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";','KhbsAnnex12CaptureLeafTarget=504','khbsPhase=KhbsAnnexCase()?"annex-restore":"summary-ready";',
+                   'if(!InspectOriginalImportedAnnex12(grids[0]))','RestoreImportedAnnex12HeadAuthorities();\n    if(!annex12WebHeadAuthorityRestored)throw new InvalidOperationException();'.replace('\\n','\n')):self.assertIn(fragment,text)
+  self.assertIn('if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);',source('HtkkGtgtPeriodAndSheet.cs'))
+  self.assertIn('!(KhbsAnnexCase()?periodAnnex12Matched&&annexSelected==1:periodNoAnnexMatched&&annexSelected==0)',source('HtkkGtgtAmendmentOpenInspection.cs'))
+  self.assertIn('bool two=Annex12WebTwoPlantsCase()||KhbsAnnexCase();',source('HtkkGtgtAnnex12ExportInspection.cs'))
+  probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
+  self.assertIn("{$lastGui.annexSelectedCount -eq 1 -and $lastGui.annex12WebImportSheetMatched -and $lastGui.annex12WebHeadAuthorityRestored}else{-not $lastGui.annex12WebHeadAuthorityRestored}",line)
+ def test_capture_output_is_retained_with_catalogue_and_joined_key_texts_only(self):
+  web=self.body;native=native_of(web)
+  # HTKK's annex group texts: a stripped catalogue caption and a ' - ' joined row key of input values are retainable;
+  extra=native.replace(b'<ct3_ten>H\xc3\xa0ng h\xc3\xb3a, d\xe1\xbb\x8bch v\xe1\xbb\xa5 b\xc3\xa1n ra ch\xe1\xbb\x8bu thu\xe1\xba\xbf gi\xc3\xa1 tr\xe1\xbb\x8b gia t\xc4\x83ng - Gi\xc3\xa1 tr\xe1\xbb\x8b HHDV</ct3_ten>','<ct3_ten>Số thuế phải nộp [12]=[11]x [10]</ct3_ten>'.encode(),1)
+  extra=extra.replace(b'<ct3_2_ten />',('<ct3_2_ten>NHA MAY GIA LAP 2 - KHONG NOP - 99997 - Phường Sơn Tây - Thành phố Hà Nội</ct3_2_ten>').encode(),1)
+  self.assertNotEqual(extra,native)
+  self.assertTrue(out.validate_native(extra,web,CASE4,TODAY,'5.8.2')['privacyValuesVerified'])
+  # ... but not for another case, and never an unknown piece.
+  with self.assertRaises(out.OutputError):out.validate_native(extra,f.sale_fixture(CASE),CASE,TODAY,'5.8.2')
+  with self.assertRaises(out.OutputError):out.validate_native(extra.replace('Phường Sơn Tây'.encode(),b'PRIVATE WARD',1),web,CASE4,TODAY,'5.8.2')
+  # An expected mismatch is still published, with its bounded comparison.
+  fetch,calls=self.fake_api(web,self.manifest) if False else NativeOutput.fake_api(NativeOutput(),web,self.manifest)
+  status=out.publish(extra,NativeOutput.provenance(NativeOutput(),web,extra,CASE4,False,32,504,1),'token',fetch,TODAY,version='5.8.2')
+  self.assertEqual((status['status'],status['allTaxValuesMatched']),('published',False))
+
 class InputValidator(unittest.TestCase):
  def setUp(self):self.body=f.sale_fixture(CASE);self.manifest=f.case_manifest(self.body,CASE)
  def test_exact_fixed_input_and_manifest_accepted(self):
@@ -186,10 +224,10 @@ class Driver(unittest.TestCase):
  def test_probe_and_workflow_require_the_whole_tree_and_report_status(self):
   probe=source('probe-htkk-windows.ps1');workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
   line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
-  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
+  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){504}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
                '$lastGui.khbsOriginalMoneyMatched -and $lastGui.khbsSavedMoneyMatched -and -not $lastGui.amendmentPriorSavedMoneyZero -and $lastGui.khbsOpenMainState -in @(1,2) -and $lastGui.webCaseEditCount -eq 2',
                "$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-M10-2026'){3}else{1}) -and $lastGui.webCaseEditCount -eq 0"):self.assertIn(flag,line)
-  self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
+  self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-capture-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
   self.assertEqual(workflow.count("inputs.gui_automation == 'gtgt-amendment-khbs-inspect'"),4)
   self.assertIn("'01GTGT-khbs-zero-to-sale10-M10-2026'='htkk-web-khbs-zero-to-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
   self.assertIn("'01GTGT-khbs-sale5-to-sale10-M09-2026'='htkk-web-khbs-sale5-to-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
@@ -246,7 +284,7 @@ class NativeOutput(unittest.TestCase):
  def test_lan2_provenance_carries_its_round_2_main_state_and_publishes_with_the_prior_file(self):
   """Run 43402236959: the lần-2 export matched (270 leaves) but retention was refused as PROVENANCE, because the B2 sheet
   opens on the saved B1 (khbsOpenMainState 3) and the publisher only accepted 0..2. Each case accepts exactly its own states."""
-  self.assertEqual({case:w.khbs.open_main_states(case) for case in w.khbs.CASES},{CASE:(1,),CASE2:(1,2),CASE3:(1,3)})
+  self.assertEqual({case:w.khbs.open_main_states(case) for case in w.khbs.CASES},{CASE:(1,),CASE2:(1,2),CASE3:(1,3),CASE4:(1,)})
   web=f.sale_fixture(CASE3);manifest=f.case_manifest(web,CASE3);prior=f.sale_fixture(CASE);native=native_of(web);fetch,calls=self.fake_api(web,manifest,prior)
   status=out.publish(native,self.provenance(web,native,CASE3,state=3),'token',fetch,TODAY,version='5.8.2')
   self.assertEqual((status['status'],status['allTaxValuesMatched'],status['harnessAgreement']),('published',True,True))
