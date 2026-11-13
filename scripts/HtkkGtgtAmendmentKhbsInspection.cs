@@ -42,6 +42,40 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<coordinates.GetLength(0);index++){decimal number;if(!KhbsAmount(Get(Cell(sheet,coordinates[index,0],coordinates[index,1]),"Value"),out number)||number!=KhbsSale5Original[index])return false;}
   return true;
  }
+ // After the original Ghi success message: the bounded wait mask of the readiness conditions (1 owner hidden, 2 owner
+ // disabled, 4 grid hidden, 8 grid disabled, 16 original message visible, 32 isDataChanged still set). Run 43367487266
+ // (case 2) stayed here after a correct non-zero save. Case 2 only: when the dirty flag alone stays set for 2 s while the
+ // sheet still holds the exact C0 vector, the close continues through HTKK's own 0013 prompt (StartKhbsDiscardPromptWatcher).
+ // Anything else ends after 30 s with gtgt-amendment-khbs-post-save-timeout instead of the whole automation limit.
+ private bool khbsDirtyAfterSave=false,khbsDiscardPromptAnswered=false;private int khbsPostSaveWaitMask=0;private Stopwatch khbsPostSaveClock=null;
+ private bool KhbsPostSaveReady(){
+  if(!KhbsMode()||!amendmentPriorSaveSuccessAcknowledged||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed)throw new InvalidOperationException();
+  if(khbsPostSaveClock==null)khbsPostSaveClock=Stopwatch.StartNew();
+  FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool))throw new InvalidOperationException();
+  int mask=(amendmentPriorOwner.Visible?0:1)|(amendmentPriorOwner.Enabled?0:2)|(amendmentPriorGrid.Visible?0:4)|(amendmentPriorGrid.Enabled?0:8)|(OriginalMessageVisible()?16:0)|((bool)dirty.GetValue(amendmentPriorOwner)?32:0);
+  if(mask!=khbsPostSaveWaitMask){khbsPostSaveWaitMask=mask;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveWaiting);Record();}
+  if(mask==0)return true;
+  if(mask==32&&KhbsNonzeroOriginal()&&khbsPostSaveClock.Elapsed.TotalSeconds>=2){
+   InspectMoneyZero(amendmentPriorSheet);if(gtgtEmptyMoney!=0||!KhbsOriginalVector(amendmentPriorSheet))throw new InvalidOperationException();
+   khbsDirtyAfterSave=true;Record();return true;
+  }
+  if(khbsPostSaveClock.Elapsed.TotalSeconds>=30){finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);Record();amendmentPriorWatcher.Stop();}
+  return false;
+ }
+ private System.Windows.Forms.Timer StartKhbsDiscardPromptWatcher(){
+  if(!KhbsNonzeroOriginal()||!khbsDirtyAfterSave)throw new InvalidOperationException();
+  System.Windows.Forms.Timer watcher=new System.Windows.Forms.Timer();watcher.Interval=100;
+  watcher.Tick+=delegate(object sender,EventArgs args){try{AnswerKhbsDiscardPrompt();}catch(Exception error){watcher.Stop();Failure(error);}};watcher.Start();return watcher;
+ }
+ // Pinned frmMessage style 6 (TAX.HTKK.Utilities Message): btn_1 Có (cmd_OK), btn_2 Không (cmd_No), btn_3 Hủy bỏ.
+ private void AnswerKhbsDiscardPrompt(){
+  if(khbsDiscardPromptAnswered)return;string text;Form message=KhbsMessage(out text);if(message==null)return;
+  SetStage(HtkkAutomationStage.GtgtAmendmentKhbsDiscardPromptWaiting);Record();if(GetForegroundWindow()!=message.Handle)return;
+  Control[] buttons=message.Controls.Find("btn_2",true);
+  if(text!="Có muốn ghi lại thông tin thay đổi không?"||buttons.Length!=1||CountVisibleButtons(message)!=3)throw new InvalidOperationException();
+  Button no=buttons[0] as Button;if(no==null||!no.Visible||!no.Enabled||no.Text.Replace("&",String.Empty).Trim()!="Không")throw new InvalidOperationException();
+  khbsDiscardPromptAnswered=true;Record();no.PerformClick();
+ }
  private bool PriorSavedMoneyExpected(){return KhbsNonzeroOriginal()?khbsSavedMoneyMatched:amendmentPriorSavedMoneyZero;}
  // Case 2 only, on the proven zero C0 sheet: two fixed original edits, each committed through the original editor and
  // waited for the original auto-calculation; true once the whole fixed C0 vector is on the sheet (then Ghi).
@@ -70,10 +104,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static bool KhbsDate(string text){DateTime parsed;return DateTime.TryParseExact(text,new string[]{"d/M/yyyy","dd/MM/yyyy"},CultureInfo.InvariantCulture,DateTimeStyles.None,out parsed)&&parsed.Date==new DateTime(2026,11,13);}
  private string KhbsJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
-  string[] names=new string[]{"khbsDateTyped","khbsPeriodMatched","khbsImportInvoked","khbsImportSucceeded","khbsImportPathMatched","khbsSummaryInvoked","khbsSummaryAcknowledged","khbsExportInvoked","khbsExportSchemaPinnedVerified","khbsExportSucceeded","khbsIdentityMatched","khbsCreationDateValid","khbsTreeMatched","khbsOriginalMoneyMatched","khbsSavedMoneyMatched"};
-  bool[] values=new bool[]{khbsDateTyped,khbsPeriodMatched,khbsImportInvoked,khbsImportSucceeded,khbsImportPathMatched,khbsSummaryInvoked,khbsSummaryAcknowledged,khbsExportInvoked,khbsExportSchemaPinnedVerified,khbsExportSucceeded,khbsIdentityMatched,khbsCreationDateValid,khbsTreeMatched,khbsOriginalMoneyMatched,khbsSavedMoneyMatched};
+  string[] names=new string[]{"khbsDateTyped","khbsPeriodMatched","khbsImportInvoked","khbsImportSucceeded","khbsImportPathMatched","khbsSummaryInvoked","khbsSummaryAcknowledged","khbsExportInvoked","khbsExportSchemaPinnedVerified","khbsExportSucceeded","khbsIdentityMatched","khbsCreationDateValid","khbsTreeMatched","khbsOriginalMoneyMatched","khbsSavedMoneyMatched","khbsDirtyAfterSave","khbsDiscardPromptAnswered"};
+  bool[] values=new bool[]{khbsDateTyped,khbsPeriodMatched,khbsImportInvoked,khbsImportSucceeded,khbsImportPathMatched,khbsSummaryInvoked,khbsSummaryAcknowledged,khbsExportInvoked,khbsExportSchemaPinnedVerified,khbsExportSucceeded,khbsIdentityMatched,khbsCreationDateValid,khbsTreeMatched,khbsOriginalMoneyMatched,khbsSavedMoneyMatched,khbsDirtyAfterSave,khbsDiscardPromptAnswered};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"khbsImportMessageId","khbsSummaryMessageId","khbsExportMessageId","khbsLeafCount","khbsMismatchMask","khbsFirstDifferenceOrdinal","khbsExportBytes","khbsOpenMainState"};int[] counts=new int[]{khbsImportMessageId,khbsSummaryMessageId,khbsExportMessageId,khbsLeafCount,khbsMismatchMask,khbsFirstDifferenceOrdinal,khbsExportBytes,khbsOpenMainState};
+  names=new string[]{"khbsImportMessageId","khbsSummaryMessageId","khbsExportMessageId","khbsLeafCount","khbsMismatchMask","khbsFirstDifferenceOrdinal","khbsExportBytes","khbsOpenMainState","khbsPostSaveWaitMask"};int[] counts=new int[]{khbsImportMessageId,khbsSummaryMessageId,khbsExportMessageId,khbsLeafCount,khbsMismatchMask,khbsFirstDifferenceOrdinal,khbsExportBytes,khbsOpenMainState,khbsPostSaveWaitMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString()+","+q+"khbsExportSha256"+q+":"+q+khbsExportSha256+q;
  }

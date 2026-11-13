@@ -1531,6 +1531,21 @@
       "category": "amendment"
     },
     {
+      "id": "gtgt-amendment-khbs-post-save-waiting",
+      "enumName": "GtgtAmendmentKhbsPostSaveWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-khbs-discard-prompt-waiting",
+      "enumName": "GtgtAmendmentKhbsDiscardPromptWaiting",
+      "category": "amendment"
+    },
+    {
+      "id": "gtgt-amendment-khbs-post-save-timeout",
+      "enumName": "GtgtAmendmentKhbsPostSaveTimeout",
+      "category": "amendment"
+    },
+    {
       "id": "gtgt-amendment-khbs-inspected",
       "enumName": "GtgtAmendmentKhbsInspected",
       "category": "amendment"
@@ -1861,6 +1876,8 @@
     "khbsTreeMatched",
     "khbsOriginalMoneyMatched",
     "khbsSavedMoneyMatched",
+    "khbsDirtyAfterSave",
+    "khbsDiscardPromptAnswered",
     "khbsImportMessageId",
     "khbsSummaryMessageId",
     "khbsExportMessageId",
@@ -1869,6 +1886,7 @@
     "khbsFirstDifferenceOrdinal",
     "khbsExportBytes",
     "khbsOpenMainState",
+    "khbsPostSaveWaitMask",
     "khbsExportSha256"
   ],
   "controlKinds": [
@@ -3973,6 +3991,20 @@
         "gtgt-amendment-khbs-inspect"
       ]
     },
+    "khbsDirtyAfterSave": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsDiscardPromptAnswered": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
     "khbsImportMessageId": {
       "kind": "integer",
       "default": 0,
@@ -4041,6 +4073,15 @@
       "default": 0,
       "minimum": 0,
       "maximum": 2,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsPostSaveWaitMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 63,
       "activeModes": [
         "gtgt-amendment-khbs-inspect"
       ]

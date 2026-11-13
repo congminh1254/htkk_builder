@@ -72,6 +72,34 @@ class SecondCase(unittest.TestCase):
   # The month and the saved-file name change only for case 2; every other driver keeps M10/2026.
   self.assertNotIn('"Thang"),CultureInfo.InvariantCulture)=="10"',opened+sheet)
 
+class PostSave(unittest.TestCase):
+ """Run 43367487266: case 2 saved the exact non-zero C0 and then waited at gtgt-original-declaration-save-success."""
+ def test_post_save_wait_is_bounded_diagnosed_and_ends_with_its_own_terminal(self):
+  text=source('HtkkGtgtAmendmentKhbsInspection.cs');registry=json.loads(source('htkk-native-automation-registry.json'))
+  self.assertIn('int mask=(amendmentPriorOwner.Visible?0:1)|(amendmentPriorOwner.Enabled?0:2)|(amendmentPriorGrid.Visible?0:4)|(amendmentPriorGrid.Enabled?0:8)|(OriginalMessageVisible()?16:0)|((bool)dirty.GetValue(amendmentPriorOwner)?32:0);',text)
+  self.assertIn('if(khbsPostSaveClock.Elapsed.TotalSeconds>=30){finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);',text)
+  self.assertEqual(registry['resultFields']['khbsPostSaveWaitMask']['maximum'],63)
+  for key in ('khbsPostSaveWaitMask','khbsDirtyAfterSave','khbsDiscardPromptAnswered'):self.assertEqual(registry['resultFields'][key]['activeModes'],[MODE])
+  self.assertIn('gtgt-amendment-khbs-post-save-timeout',{s['id'] for s in registry['stages']})
+  self.assertIn("'gtgt-amendment-khbs-post-save-timeout'",source('generate-native-automation-registry.py'))
+  self.assertIn('if(KhbsMode()&&!KhbsPostSaveReady())return;',source('HtkkGtgtAmendmentInspection.cs'))
+ def test_only_case_two_may_close_through_the_original_discard_prompt(self):
+  text=source('HtkkGtgtAmendmentKhbsInspection.cs')
+  # Dirty alone (mask 32), stable for 2 s, the exact C0 vector still on the sheet, and only for the non-zero C0 case.
+  self.assertIn('if(mask==32&&KhbsNonzeroOriginal()&&khbsPostSaveClock.Elapsed.TotalSeconds>=2){',text)
+  self.assertIn('if(gtgtEmptyMoney!=0||!KhbsOriginalVector(amendmentPriorSheet))throw new InvalidOperationException();',text)
+  # Pinned 0013 text and the style-6 "Không" button (cmd_No); no other answer is possible.
+  self.assertIn('text!="Có muốn ghi lại thông tin thay đổi không?"||buttons.Length!=1||CountVisibleButtons(message)!=3',text)
+  self.assertIn('no.Text.Replace("&",String.Empty).Trim()!="Không"',text);self.assertNotIn('"btn_1"',text);self.assertNotIn('"btn_3"',text)
+  opened=source('HtkkGtgtAmendmentOpenInspection.cs')
+  self.assertIn('System.Windows.Forms.Timer prompt=khbsDirtyAfterSave?StartKhbsDiscardPromptWatcher():null;',opened)
+  self.assertIn('((bool)dirty.GetValue(amendmentPriorOwner)&&!khbsDirtyAfterSave)',opened)
+  # The probe accepts the path for case 2 only; case 1 still needs the cleared flag and no dirty path.
+  line=next(l for l in source('probe-htkk-windows.ps1').splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
+  self.assertIn("{$lastGui.amendmentPriorDirtyCleared -or ($lastGui.khbsDirtyAfterSave -and $lastGui.khbsPostSaveWaitMask -eq 32)}else{$lastGui.amendmentPriorDirtyCleared -and -not $lastGui.khbsDirtyAfterSave}",line)
+  # The reopened B1 still requires the C0 file unchanged (same hash as at the save).
+  self.assertIn('amendmentOpenPriorUnchanged=amendmentPriorFileFresh&&PriorSavedMoneyExpected()&&',opened)
+
 class InputValidator(unittest.TestCase):
  def setUp(self):self.body=f.sale_fixture(CASE);self.manifest=f.case_manifest(self.body,CASE)
  def test_exact_fixed_input_and_manifest_accepted(self):

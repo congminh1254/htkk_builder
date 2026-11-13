@@ -108,6 +108,20 @@ case is not added there.
   (case 1 must be 1). Input privacy: the same exact PLuc allowlist, the M09 main header projected in
   memory onto the M10 baseline (`M09_PERIOD`), then the unchanged no-annex allowlist.
 
+### Run 43367487266 (case 2): stopped after the non-zero Ghi
+
+The C0 was typed and saved exactly (`khbsOriginalMoneyMatched`, `khbsSavedMoneyMatched`), then the run waited
+at `gtgt-original-declaration-save-success` until the automation limit: `amendmentPriorDirtyCleared` false, so
+the observer never reached the original Đóng. cmdSave_Click clears `isDataChanged` right after the 0002
+message, and only Change/EditChange of the grid (or F5–F8 keys) set it again; the zero C0 of case 1 never hit
+this. The driver now records `khbsPostSaveWaitMask` (1 owner hidden, 2 owner disabled, 4 grid hidden, 8 grid
+disabled, 16 original message visible, 32 isDataChanged set) and stops after 30 s with
+`gtgt-amendment-khbs-post-save-timeout`. For case 2 only, when the flag alone (mask 32) stays set for 2 s and
+the sheet still holds the exact C0 vector, `khbsDirtyAfterSave` is recorded and the original Đóng is clicked:
+cmdExit_Click shows 0013 "Có muốn ghi lại thông tin thay đổi không?" (style 6: btn_1 Có, btn_2 Không, btn_3 Hủy
+bỏ) and the driver answers **Không** (cmd_No: close without saving again; `khbsDiscardPromptAnswered`). The
+reopened B1 still re-hashes the C0 file and requires the same bytes as at the save.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

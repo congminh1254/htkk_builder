@@ -66,9 +66,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
     InspectOriginalPriorFile();amendmentPriorSaveSuccessAcknowledged=true;SetStage(HtkkAutomationStage.GtgtOriginalDeclarationSaveSuccess);Record();close.PerformClick();return;
    }
    if(!amendmentPriorSaveSuccessAcknowledged)return;
+   if(KhbsMode()&&!KhbsPostSaveReady())return;
    if(!amendmentPriorOwner.Visible||!amendmentPriorOwner.Enabled||!amendmentPriorGrid.Visible||!amendmentPriorGrid.Enabled||OriginalMessageVisible())return;
    FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool))throw new InvalidOperationException();
-   amendmentPriorDirtyCleared=!(bool)dirty.GetValue(amendmentPriorOwner);if(!amendmentPriorDirtyCleared)return;
+   amendmentPriorDirtyCleared=!(bool)dirty.GetValue(amendmentPriorOwner);if(!amendmentPriorDirtyCleared&&!khbsDirtyAfterSave)return;
    InspectMoneyZero(amendmentPriorSheet);amendmentPriorMoneyZero=gtgtZero&&gtgtEmptyMoney==0;if(KhbsNonzeroOriginal())khbsOriginalMoneyMatched=gtgtEmptyMoney==0&&KhbsOriginalVector(amendmentPriorSheet);
    if(KhbsNonzeroOriginal()?!khbsOriginalMoneyMatched:!amendmentPriorMoneyZero)throw new InvalidOperationException();
    InspectOriginalPriorFile();ReadSavedHeader();if(!headerMatched||headerChecks!=8||headerMismatchMask!=0)throw new InvalidOperationException();

@@ -21,10 +21,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));return json.ToString()+","+q+"amendmentOpenLoadedSheets"+q+":"+amendmentOpenLoadedSheets.ToString(CultureInfo.InvariantCulture)+KhbsJson();
  }
  private void CloseOriginalPriorForAmendment(){
-  if((mode!="gtgt-amendment-open-inspect"&&!KhbsMode())||amendmentOpenCloseInvoked||!amendmentPriorDirtyCleared||!amendmentPriorSaveSuccessAcknowledged||!amendmentPriorFileFresh||!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||!amendmentPriorOwner.Visible||!amendmentPriorOwner.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
-  FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool)||(bool)dirty.GetValue(amendmentPriorOwner))throw new InvalidOperationException();
+  if((mode!="gtgt-amendment-open-inspect"&&!KhbsMode())||amendmentOpenCloseInvoked||(!amendmentPriorDirtyCleared&&!khbsDirtyAfterSave)||!amendmentPriorSaveSuccessAcknowledged||!amendmentPriorFileFresh||!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||!amendmentPriorOwner.Visible||!amendmentPriorOwner.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool)||((bool)dirty.GetValue(amendmentPriorOwner)&&!khbsDirtyAfterSave))throw new InvalidOperationException();
   Button close=Named(amendmentPriorOwner,"cmdExit") as Button;if(close==null||close.FindForm()!=amendmentPriorOwner||!close.Visible||!close.Enabled||!close.CanSelect||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
-  amendmentPriorWatcher.Stop();amendmentOpenCloseInvoked=true;navigationPhase="waiting-amendment-prior-close";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentPriorCloseInvoking);Record();close.PerformClick();
+  amendmentPriorWatcher.Stop();amendmentOpenCloseInvoked=true;navigationPhase="waiting-amendment-prior-close";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentPriorCloseInvoking);Record();
+  // KHBS case 2 only: the original cmdExit_Click asks 0013 while its dirty flag is still set; the watcher answers "Không"
+  // (cmd_No: close without saving again) because the saved C0 file was just verified and is re-hashed on reopening.
+  System.Windows.Forms.Timer prompt=khbsDirtyAfterSave?StartKhbsDiscardPromptWatcher():null;
+  try{close.PerformClick();}finally{if(prompt!=null)prompt.Stop();}
   ObserveOriginalAmendmentPriorClosed();
  }
  private void ObserveOriginalAmendmentPriorClosed(){

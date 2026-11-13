@@ -302,6 +302,8 @@ function New-HtkkNativeResultDefaults {
   khbsTreeMatched=$false
   khbsOriginalMoneyMatched=$false
   khbsSavedMoneyMatched=$false
+  khbsDirtyAfterSave=$false
+  khbsDiscardPromptAnswered=$false
   khbsImportMessageId=0
   khbsSummaryMessageId=0
   khbsExportMessageId=0
@@ -310,6 +312,7 @@ function New-HtkkNativeResultDefaults {
   khbsFirstDifferenceOrdinal=0
   khbsExportBytes=0
   khbsOpenMainState=0
+  khbsPostSaveWaitMask=0
   khbsExportSha256=''
  }
  return $result
