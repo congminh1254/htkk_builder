@@ -48,7 +48,7 @@ internal sealed class HtkkDeclarationTickPlan {
   // A plan may have no tick (PL 03: the edit alone runs capNhatToKhai); it always has an edit.
   if(edits.Length<1||edits.Length>4||ticks.Length>4||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
   // number|cell|value on sheet 01; combo|sheet|cell|item name|code cell|item code: an original combobox of another
-  // sheet (05-1/PBT Thuế tỉnh/CCT and CQT quản lý), the item name typed into the original editor, the code written by
+  // sheet (05-1/PBT Thuế tỉnh/CCT and CQT quản lý), the item chosen from the original list by keys, the code written by
   // frmWinToKhai.winFpSpread_CellChange (GetDMFromCombobox) read back.
   foreach(string edit in edits){string[] parts=edit.Split('|');if(!((parts.Length==3&&parts[0]=="number")||(parts.Length==6&&parts[0]=="combo"&&parts[1].Length>0&&parts[3].Length>0&&parts[5].Length>0)))throw new InvalidOperationException();}
   foreach(string readback in readbacks)if(readback.Split('|').Length!=2)throw new InvalidOperationException();

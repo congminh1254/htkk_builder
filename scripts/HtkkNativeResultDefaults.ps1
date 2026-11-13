@@ -268,6 +268,8 @@ function New-HtkkNativeResultDefaults {
   declarationTickMethodPinMask=0
   declarationTickMismatchMask=0
   declarationTickReadbackMask=0
+  declarationTickComboMask=0
+  declarationTickComboListCount=0
   declarationTreeAttributeMask=0
   declarationTreeTextMismatchCount=0
   declarationTreeFirstMismatchOrdinal=0

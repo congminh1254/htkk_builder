@@ -560,3 +560,16 @@ driver 01-2/GTGT (`ClickOriginalAnnex12Tab`): WM_LBUTTONDOWN/UP thật gửi và
 (`FpSpread.GetSheetTabRectangle(chỉ số sheet)`), để chính xử lý bấm thẻ của FarPoint và các sự kiện đổi sheet của HTKK chạy; chờ
 có giới hạn tới khi `ActiveSheet` là sheet 01-1. Thẻ không nằm trọn trong vùng client của lưới → mã 20; bấm mà không đổi sheet →
 19. Không gán ActiveSheet/ActiveSheetIndex, không gọi handler riêng; không báo tọa độ.
+
+**Run 43446837418 (L7) / 43446842273 (Z8)** (sau 41fd2a5): bấm thẻ đã bật sheet 01-1 (không còn mã 19/20), editor combo mở
+(`editorKind` combo), nhưng thao tác đầu (I44) dừng ở mã 13: sau TAB ô không giữ tên đã gõ (`declarationTickMismatchMask` 1,
+0/4 thao tác). Đọc tĩnh FarPoint.Win.dll (gói 5.8.2, `fae1320c…4d2a`): `FpCombo.OnKeyDown` ENTER → `ShowList`;
+`ProcessDialogKey` DOWN/UP → `SelectNext`/`SelectPrevious` khi danh sách hiện hoặc `AcceptsArrowKeys`; TAB đóng danh sách rồi
+chuyển ô. Ô I không khóa (mẫu XLS) và danh sách được `winFpSpread_EnterCell` dựng lại khi chọn ô từ mã xã của dòng
+(`timMaChildenFromRowCol_Dinamic` đọc ô Z, có sau khi nhập). Sửa (nhánh `work/pbt-combo`): bỏ gõ chữ; chọn mục như người dùng chọn
+trong danh sách: tìm đúng một mục trùng tên trong danh sách của editor gốc, DOWN/UP từng bước (mỗi phím phải đổi lựa chọn; nếu
+phím đầu không đổi, ENTER hiện danh sách một lần rồi bấm lại), TAB, đọc lại tên và mã. Chẩn đoán mới, không giá trị:
+`declarationTickComboMask` (1 có editor FpCombo, 2 tên có đúng một lần trong danh sách, 4 ô Editable, 8 ô có ItemData cho mọi mục =
+danh sách của EnterCell, 16 phím đổi lựa chọn, 32 đúng mục trước TAB, 64 ENTER hiện danh sách, 128 ô hiện tên sau khi xác nhận,
+256 ô mã đúng, 512 ItemData của mục là mã kế hoạch, 1024 ô rỗng sau khi xác nhận, 2048 chữ trong editor là tên trước TAB) và
+`declarationTickComboListCount` (số mục). Mã lỗi: 14 danh sách không có đúng một mục, 15 phím không tới mục, 18 mất ô/editor.

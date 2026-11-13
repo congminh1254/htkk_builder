@@ -328,6 +328,22 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return geometry.Invoke(grid,new object[]{index});
  }
 
+ // Items/ItemData/Editable of a ComboBoxCellType cell (read only; 05-1/PBT combo edits). ItemData present for every item
+ // marks the list winFpSpread_EnterCell builds with codes (GeneralFunctions.InsertCombobox, dictionary overload).
+ private static void DeclarationComboCellItems(object cell,out string[] items,out string[] data,ref int mask){
+  object type=Get(cell,"CellType");items=Get(type,"Items") as string[];data=Get(type,"ItemData") as string[];
+  if(Convert.ToBoolean(Get(type,"Editable")))mask|=4;
+  if(items!=null&&data!=null&&items.Length>0&&data.Length==items.Length)mask|=8;
+ }
+ // The item texts of the original FpCombo editor list (read only), as the original-entry combo reads them.
+ private static string[] DeclarationComboEditorItems(Control vendor){
+  object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
+  PropertyInfo item=list.GetType().GetProperty("Item",new Type[]{typeof(int)});if(count<0||count>4096||(item==null&&sequence==null))throw new InvalidOperationException();
+  string[] texts=new string[count];
+  for(int i=0;i<count;i++){object entry=sequence!=null?sequence[i]:item.GetValue(list,new object[]{i});texts[i]=entry==null?String.Empty:entry.ToString();}
+  return texts;
+ }
+
  // ==== Native-case mode web-xml-import-tick-reexport (U5 3.1.0): original actions AFTER the original import ====
  // The web XML is imported as in every import case; then HtkkDeclarationCasePlans.ImportTick types its fixed edits
  // through the original editor and ticks its checkbox cells with SPACE (FpSpread.ButtonClicked -> ButtonClick_0),
@@ -337,13 +353,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
  //  6 sheet metadata   8 edit cell locked   9 edit cell type   10 foreground/focus guard   11 editor   13 edit read-back
  //  16 combo code cell not written   17 original message   19 sheet of a combo edit not activated by its tab click
- //  20 sheet tab of a combo edit not inside the grid client area
+ //  20 sheet tab of a combo edit not inside the grid client area   14 combo list without the planned item
+ //  15 combo keyboard selection did not reach the item   18 cell/editor lost during the combo keys
+ // declarationTickComboMask (last combo edit, value-free): 1 FpCombo editor found, 2 planned name exactly once in the editor
+ // list, 4 cell ComboBoxCellType Editable, 8 cell ItemData present for every item (the list winFpSpread_EnterCell builds
+ // with codes; the template list of fpSpFormatTableCell has none), 16 keys moved the selection, 32 selection = item before
+ // TAB, 64 ENTER dropped the list, 128 cell shows the name after commit, 256 code cell holds the code, 512 ItemData of the
+ // item is the planned code, 1024 cell text empty after commit, 2048 editor text was the name before TAB.
+ // declarationTickComboListCount: items in the editor list of the last combo edit.
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -351,8 +374,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -428,28 +451,63 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void EditDeclarationTickCombo(int index){
   string[] parts=declarationTickPlan.Edits[index].Split('|');Control grid;object sheet=DeclarationTickSheet(parts[1],out grid);
   SetStage(HtkkAutomationStage.DeclarationImportTickEditing);Record();
-  int[] at=DeclarationEntryCell(parts[2]),code=DeclarationEntryCell(parts[4]);int row=at[0],column=at[1];
+  int[] at=DeclarationEntryCell(parts[2]),code=DeclarationEntryCell(parts[4]);int row=at[0],column=at[1];string name=parts[3];
   if(row>=Convert.ToInt32(Get(sheet,"RowCount"))||column>=Convert.ToInt32(Get(sheet,"ColumnCount"))||code[0]!=row){DeclarationTickFail(6);return;}
   object cell=Cell(sheet,row,column);
   if(Convert.ToBoolean(Get(cell,"Locked"))){declarationTickMismatchMask|=1<<index;DeclarationTickFail(8);return;}
   if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.ComboBoxCellType"){declarationTickMismatchMask|=1<<index;DeclarationTickFail(9);return;}
   int activation=DeclarationTickActivate(grid,sheet);if(activation!=0){DeclarationTickFail(activation);return;}
+  // Selecting the cell raises winFpSpread_EnterCell, which rebuilds this cell's list from the row (with item codes).
   DeclarationEntrySelect(grid,sheet,row,column);
   if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  int mask=0;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
   Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
   if(editor==null||!editor.Visible||!editor.Enabled){DeclarationTickFail(11);return;}
   editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
-  editorKind="combo";SendKeys.SendWait("^a");
-  if(!TypeDeclarationEntryUnicode(grid,editor,parts[3])){DeclarationTickFail(10);return;}
-  if(!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  editorKind="combo";
+  // Run 43446837418 / 43446842273: the typed name was not kept (code 13). The item is now chosen as a user picks from the
+  // list: ENTER shows it (FpCombo.OnKeyDown ShowList), DOWN/UP select the next/previous item (FpCombo.ProcessDialogKey
+  // SelectNext/SelectPrevious), TAB closes it and commits; winFpSpread_CellChange then writes the item code.
+  Control vendor=FindVendorCombo(editor,0);
+  if(vendor==null){DeclarationTickCombo(mask,0);DeclarationTickFail(14);return;}
+  mask|=1;string[] list=DeclarationComboEditorItems(vendor);int planned=-1,hits=0;
+  for(int i=0;i<list.Length;i++)if(list[i]==name){planned=i;hits++;}
+  if(hits!=1){DeclarationTickCombo(mask,list.Length);declarationTickMismatchMask|=1<<index;DeclarationTickFail(14);return;}
+  mask|=2;if(data!=null&&items!=null&&planned<items.Length&&items[planned]==name&&planned<data.Length&&data[planned]==parts[5])mask|=512;
+  int current=Convert.ToInt32(Get(vendor,"SelectedIndex"));
+  if(current!=planned){
+   // DOWN/UP first (FpCombo selects when AcceptsArrowKeys or its list is shown); if a key does not move the selection, ENTER
+   // shows the list once and the key is repeated. Every step must move the selection by itself.
+   bool shown=false;
+   for(int step=0;step<=list.Length+1&&Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned;step++){
+    int before=Convert.ToInt32(Get(vendor,"SelectedIndex"));
+    SendKeys.SendWait(before<planned?"{DOWN}":"{UP}");Stopwatch wait=Stopwatch.StartNew();
+    while(Convert.ToInt32(Get(vendor,"SelectedIndex"))==before&&wait.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+    if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    if(Convert.ToInt32(Get(vendor,"SelectedIndex"))==before){
+     if(shown){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(15);return;}
+     shown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();
+     if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+     if(Convert.ToBoolean(Get(vendor,"DroppedDown")))mask|=64;
+     continue;
+    }
+    mask|=16;
+   }
+   if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(15);return;}
+  }
+  mask|=32;if(String.Equals(editor.Text,name)||String.Equals(vendor.Text,name))mask|=2048;
+  if(!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(10);return;}
   SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
-  if(OriginalMessageVisible()){DeclarationTickFail(17);return;}
+  if(OriginalMessageVisible()){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(17);return;}
   Stopwatch clock=Stopwatch.StartNew();
   while(CellText(sheet,code[0],code[1])!=parts[5]&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-  if(CellText(sheet,row,column)!=parts[3]){declarationTickMismatchMask|=1<<index;DeclarationTickFail(13);return;}
-  if(CellText(sheet,code[0],code[1])!=parts[5]){declarationTickMismatchMask|=1<<index;DeclarationTickFail(16);return;}
+  string text=CellText(sheet,row,column);if(text==name)mask|=128;if(String.IsNullOrEmpty(text))mask|=1024;if(CellText(sheet,code[0],code[1])==parts[5])mask|=256;
+  DeclarationTickCombo(mask,list.Length);
+  if((mask&128)==0){declarationTickMismatchMask|=1<<index;DeclarationTickFail(13);return;}
+  if((mask&256)==0){declarationTickMismatchMask|=1<<index;DeclarationTickFail(16);return;}
   declarationTickActionCount++;Record();
  }
+ private void DeclarationTickCombo(int mask,int count){declarationTickComboMask=mask;declarationTickComboListCount=Math.Min(count,4096);Record();}
  // SPACE on an open, unticked original checkbox: FpSpread.ButtonClicked -> frmWinToKhai.winFpSpread_ButtonClicked
  // -> WinDoWorkEvent.ButtonClick -> ButtonClick_0 (daySangPLGiamThue, capNhatToKhai).
  private void TickDeclarationImport(int index){

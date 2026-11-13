@@ -241,7 +241,8 @@ class Driver(unittest.TestCase):
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']
         names = re.findall(r'"(declarationTick[A-Za-z0-9]+)"', TICK[TICK.index('private string DeclarationTickJson(){'):TICK.index('private void DeclarationTickFail(')])
-        self.assertEqual(len(names), 10)
+        # 10 tick fields plus the two 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount).
+        self.assertEqual(len(names), 12)
         for name in names:
             self.assertIn(name, automation['keys'])
             self.assertEqual(fields[name]['activeModes'], [MODE])
@@ -310,10 +311,14 @@ class PbtPlans(unittest.TestCase):
 
     def test_combo_edit_acts_only_through_original_keys(self):
         body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
-        for forbidden in ('SetPublic(', 'SetValue(', 'set_Value', '"Value",', '.Text=', 'PerformClick', 'InvokeMember', '"ActiveSheet",', 'ActiveSheetIndex', 'SelectedIndex"'):
+        for forbidden in ('SetPublic(', 'SetValue(', 'set_Value', '"Value",', '.Text=', 'PerformClick', 'InvokeMember', '"ActiveSheet",', 'ActiveSheetIndex', 'set_SelectedIndex', 'TypeDeclarationEntryUnicode(', '"DroppedDown",true'):
             self.assertNotIn(forbidden, body)
-        for required in ('TypeDeclarationEntryUnicode(', 'SendKeys.SendWait("{TAB}")', 'DeclarationTickFail(16)', 'DeclarationTickFail(activation)'):
+        # Runs 43446837418 / 43446842273 (code 13): typed text was not kept; the item is chosen from the original list by keys.
+        for required in ('FindVendorCombo(editor,0)', 'DeclarationComboEditorItems(vendor)', 'SendKeys.SendWait(before<planned?"{DOWN}":"{UP}")', 'SendKeys.SendWait("{ENTER}")',
+                         'SendKeys.SendWait("{TAB}")', 'DeclarationTickFail(13)', 'DeclarationTickFail(14)', 'DeclarationTickFail(15)', 'DeclarationTickFail(16)', 'DeclarationTickFail(18)',
+                         'DeclarationTickFail(activation)', 'DeclarationTickCombo(mask,list.Length)'):
             self.assertIn(required, body)
+        self.assertIn('"declarationTickComboMask","declarationTickComboListCount"', ENTRY)
 
     def test_sheet_activation_clicks_the_original_tab_like_the_annex12_driver(self):
         # Runs 43443803833 / 43443808734: Ctrl+PageDown/PageUp did not change the FarPoint sheet (code 19). The sheet is now
