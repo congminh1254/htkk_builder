@@ -208,12 +208,20 @@ Not a port check. It combines the two proven flows: C0 is case 1's zero declarat
 checked read-only, head CQTs restored, Tổng hợp KHBS) saved with Ghi and closed exactly as case 3 does
 (`bs1_…_283.xml`); round 2 opens B2 with 01-2 selected again (if HTKK already keeps 01-2 selected from the saved B1 it is only
 observed, never clicked: `annex12SelectionActionCount` 0), imports the web B2 file, checks its annex (plant 1 at
-40,00/60,00, plant 2 unchanged), restores the head CQTs, summarises, exports and compares the whole tree (413 leaves:
-89 annex + 70 main + 254 KHBS). The B2 main sheet opens on the saved B1 vector (`khbsOpenMainState` 3) and raises [32] to
+40,00/60,00, plant 2 unchanged), restores the head CQTs, summarises, exports and compares the whole tree (465 leaves:
+89 annex + 70 main + 306 KHBS). The B2 main sheet opens on the saved B1 vector (`khbsOpenMainState` 3) and raises [32] to
 1.500.000 as case 3. The changed annex is a contract **variant** (`htkk_annex12_web_cases.VARIANTS`), not a native annex
-case. The web file's annex hồ sơ group is the static reading of htkk_web (k-th row of a key against the k-th previous row;
-no Muc_I.2 row because plant 1's Σ[12] stays 7), so a mismatch (`gtgt-amendment-khbs-not-matched`) is possible and the raw
-export is retained to port HTKK's handling of changed rows. Automation limit 210 s.
+case. Automation limit 210 s.
+
+**Captured and ported.** Run 43454661870 (round 2 opened, 01-2 selected with one click: HTKK does not keep it selected for
+B2; head CQTs restored; export 23077 bytes) retained HTKK's output; it differed from the web's first static reading
+(k-th row of a key against the k-th previous row). HTKK compares every changed DiaBanPhanBo row with the FIRST previous row
+of the same key; all rows of a plant share the key here, so plant 1's 60,00 is against 33,33 and plant 2's two unchanged
+25,00 rows against its 50,00 row (four [11] and four [12] rows), `tongCong_7` 50.001 and Muc_I.2 stays the empty template
+because no plant's Σ[12] changes. The web producer now writes exactly that (htkk_web pins the raw bytes byte-identical and
+re-exports them equal), so `ROWS_ANNEX12_LAN2` is the ported fragment (355 rows, 306 fragment leaves) and the tree must
+match. `annex12InputPercentagesMatched` belongs to `gtgt-annex12-input-inspect` (typed 50/50/100 inputs) and is never set
+in this mode; the KHBS annex check is `annex12WebImportSheetMatched` (40/60 in round 2), which held.
 
 ## Raw native output retention
 

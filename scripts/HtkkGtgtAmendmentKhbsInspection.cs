@@ -47,10 +47,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Case 5 (htkk_web producer khbs-annex12-lan2-changed): ORACLE CAPTURE of a CHANGED allocation, bổ sung lần 2. C0 is case 1's
  // zero declaration without annex; round 1 is case 4's B1 (01-2 selected, the capture case's exact web file imported, head CQTs
  // restored, Tổng hợp) saved with Ghi as case 3 does; round 2 opens B2 with 01-2 selected (or already selected by HTKK from the
- // saved B1), imports the web B2 file whose annex moves plant 1's [11] to 40/60, restores, summarises, exports and compares
- // (the annex rows of the web file are a static reading: a mismatch is possible and the raw export is retained).
+ // saved B1), imports the web B2 file whose annex moves plant 1's [11] to 40/60, restores, summarises, exports and compares.
+ // Run 43454661870 captured HTKK's output (then a mismatch); the web now writes it as captured, so the tree must match.
  private const string KhbsAnnex12Lan2CaseId="01GTGT-khbs-annex12-lan2-changed-M10-2026";
- private const int KhbsAnnex12Lan2LeafTarget=413;
+ private const int KhbsAnnex12Lan2LeafTarget=465;
  private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsAnnex12Lan2CaseId;}
  private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId);}
  private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId;}

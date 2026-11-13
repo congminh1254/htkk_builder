@@ -202,10 +202,10 @@ class Annex12Lan2Changed(unittest.TestCase):
  def setUp(self):self.body=f.sale_fixture(CASE5);self.manifest=f.case_manifest(self.body,CASE5)
  def test_registry_prior_and_exact_variant_annex_contract(self):
   c=cases.CASES[CASE5];self.assertEqual((c['adapterId'],c['unit']['annexes'],c['unit']['amendmentOrder'],c['releaseGate'],cases.case_version(c)),('01-gtgt-2.8.3-khbs-annex12-lan2',['01-2/GTGT'],2,False,'5.8.2'))
-  self.assertEqual((w.khbs.prior_case(CASE5),w.khbs.annex12_case(CASE5),w.khbs.tax_leaves(CASE5)),(CASE4,'01GTGT-annex12-two-plants-changed-khbs-lan2',413))
+  self.assertEqual((w.khbs.prior_case(CASE5),w.khbs.annex12_case(CASE5),w.khbs.tax_leaves(CASE5)),(CASE4,'01GTGT-annex12-two-plants-changed-khbs-lan2',465))
   # The changed annex is a variant only a KHBS case carries, never a native annex case of its own.
   self.assertFalse(w.annex12.is_case('01GTGT-annex12-two-plants-changed-khbs-lan2'));self.assertNotIn('01GTGT-annex12-two-plants-changed-khbs-lan2',cases.ANNEX12_CASES)
-  self.assertEqual(w.validate_web_xml(self.body,case_id=CASE5,manifest=self.manifest)['amendmentTaxLeafCount'],413)
+  self.assertEqual(w.validate_web_xml(self.body,case_id=CASE5,manifest=self.manifest)['amendmentTaxLeafCount'],465)
   text=self.body.decode();self.assertIn('<soLan>2</soLan>',text);self.assertLess(text.index('<PLuc_01_2_GTGT>'),text.index('<PL01_KHBS>'))
   for before,after in (('<ct11>40.00</ct11>','<ct11>33.33</ct11>'),('<ct11>60.00</ct11>','<ct11>66.67</ct11>'),('<ct32>1500000</ct32>','<ct32>1000000</ct32>')):
    self.assertIn(before,text,before)
@@ -215,7 +215,7 @@ class Annex12Lan2Changed(unittest.TestCase):
   with self.assertRaises(w.InputError):w.validate_web_xml(self.body,case_id=CASE4)
  def test_driver_runs_the_lan2_flow_with_the_annex_in_both_rounds(self):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs')
-  for fragment in ('private const string KhbsAnnex12Lan2CaseId="01GTGT-khbs-annex12-lan2-changed-M10-2026";','private const int KhbsAnnex12Lan2LeafTarget=413;',
+  for fragment in ('private const string KhbsAnnex12Lan2CaseId="01GTGT-khbs-annex12-lan2-changed-M10-2026";','private const int KhbsAnnex12Lan2LeafTarget=465;',
                    'private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId);}',
                    'private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId);}',
                    'return KhbsAnnexLan2Case()&&khbsRound==2?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};',
@@ -226,7 +226,7 @@ class Annex12Lan2Changed(unittest.TestCase):
   self.assertIn('if(KhbsAnnexLan2Case()&&AmendmentReopening()&&khbsRound==2&&annexSelected==1&&OriginalAnnex12RowSelected(annexSheet)){periodAnnex12Matched=true;periodNoAnnexMatched=false;Record();}',period)
   web=source('HtkkWebInputReference.cs');self.assertIn('if(KhbsMode()&&(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId)){',web)
   probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
-  for fragment in ("elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){413}",
+  for fragment in ("elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){465}",
                    "$(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026')){$lastGui.khbsRound -eq 2",
                    "$(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026')){$lastGui.annexSelectedCount -eq 1"):self.assertIn(fragment,line)
   self.assertIn("if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){210}",probe)
@@ -264,7 +264,7 @@ class Driver(unittest.TestCase):
  def test_probe_and_workflow_require_the_whole_tree_and_report_status(self):
   probe=source('probe-htkk-windows.ps1');workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
   line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
-  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){504}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){413}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
+  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){504}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){465}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
                '$lastGui.khbsOriginalMoneyMatched -and $lastGui.khbsSavedMoneyMatched -and -not $lastGui.amendmentPriorSavedMoneyZero -and $lastGui.khbsOpenMainState -in @(1,2) -and $lastGui.webCaseEditCount -eq 2',
                "$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq $(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026')){3}else{1}) -and $lastGui.webCaseEditCount -eq 0"):self.assertIn(flag,line)
   self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
