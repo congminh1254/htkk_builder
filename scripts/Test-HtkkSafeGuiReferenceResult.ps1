@@ -102,6 +102,21 @@ try {
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS amendment accepted'};$cases++
  }
+ # KHBS case 2 (non-zero C0, M09/2026): the fixed C0 vector flags and the B1 main-sheet state are typed and bounded.
+ $second=[ordered]@{};foreach($key in $khbs.Keys){$second[$key]=$khbs[$key]};$second.webCaseId='01GTGT-khbs-sale5-to-sale10-M09-2026';$second.khbsLeafCount=296;$second.webCaseEditCount=2
+ $second.khbsOriginalMoneyMatched=$true;$second.khbsSavedMoneyMatched=$true;$second.khbsOpenMainState=2;$second.amendmentPriorMoneyZero=$false;$second.amendmentPriorSavedMoneyZero=$false
+ $second | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+ if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS case 2 rejected'};$cases++
+ foreach($change in @(@{key='khbsOpenMainState';value=3},@{key='khbsOpenMainState';value=-1},@{key='khbsOriginalMoneyMatched';value='true'},@{key='khbsSavedMoneyMatched';value=1},@{key='webCaseId';value='01GTGT-khbs-sale5-to-sale10-M10-2026'})){
+  $copy=[ordered]@{};foreach($key in $second.Keys){$copy[$key]=$second[$key]};$copy[$change.key]=$change.value
+  $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS case 2 accepted'};$cases++
+ }
+ foreach($change in @(@{key='khbsOpenMainState';value=1},@{key='khbsOriginalMoneyMatched';value=$true},@{key='khbsSavedMoneyMatched';value=$true})){
+  $copy=[ordered]@{};foreach($key in $open.Keys){$copy[$key]=$open[$key]};$copy[$change.key]=$change.value
+  $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'KHBS case 2 field accepted outside its mode'};$cases++
+ }
  $leak=[ordered]@{};foreach($key in $open.Keys){$leak[$key]=$open[$key]};$leak.khbsTreeMatched=$true
  $leak | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'KHBS metadata accepted in another mode'};$cases++

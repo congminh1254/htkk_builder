@@ -5,8 +5,9 @@ PLuc subtree (PL01_KHBS, PL01_1_KHBS) exactly, then project an IN-MEMORY copy ba
 shape (loaiTKhai B -> C, soLan 1 -> 0 after checking them, fragments removed) so the unchanged no-annex
 allowlist (fake NNT, M10/2026) plus the case's main-sheet money vector is reused. Raw bytes are never
 rewritten, staged or published here. Any other element, attribute, row, amount or string fails closed.
-Values: htkk_web scripts/generate-htkk-web-khbs-reference.mjs (khbs-zero-to-sale10): previous version the
+Values: htkk_web scripts/generate-htkk-web-khbs-reference.mjs. khbs-zero-to-sale10: previous version the
 all-zero C0, amendment a 10 percent sale of 1.000.000, ngày lập 13/11/2026 (before the 20/11/2026 deadline).
+khbs-sale5-to-sale10 (M09/2026): a non-zero C0 typed in HTKK, a decrease at 5% and 24 late days (below).
 """
 NS='http://kekhaithue.gdt.gov.vn/TKhaiThue'
 XSI='http://www.w3.org/2001/XMLSchema-instance'
@@ -16,6 +17,10 @@ FIXED_DATE='2026-11-13'
 CODES=frozenset(('NAMESPACE','STRUCTURE','ATTRIBUTES','CONTENT','VALUE','LEAF_COUNT','CASE','HEADER'))
 FIELDS=('pluc','fragment','header')
 SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
+SALE5_TO_SALE10_CASE='01GTGT-khbs-sale5-to-sale10-M09-2026'
+SALE10_AMENDED={'ct32':'4000000','ct33':'400000','ct27':'4000000','ct28':'400000','ct34':'4000000','ct35':'400000','ct36':'400000','ct40a':'400000','ct40':'400000'}
+# Main-header period of case 2 -> the M10/2026 baseline of the unchanged no-annex allowlist: (baseline, expected).
+M09_PERIOD={'kyKKhai':('10/2026','09/2026'),'kyKKhaiTuNgay':('01/10/2026','01/09/2026'),'kyKKhaiDenNgay':('31/10/2026','30/09/2026')}
 
 class KhbsWebContractError(ValueError):
  def __init__(self,code,field='pluc'):
@@ -266,7 +271,280 @@ ROWS=(
   ('PL01_1_KHBS/Muc_B/CTietTaiLieu/ma_TLieu', '', ''),
   ('PL01_1_KHBS/Muc_B/CTietTaiLieu/ten_TLieu', '', ''),
 )
-CASES={ZERO_TO_SALE10_CASE:{'rows':ROWS,'money':SALE10,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':270}}
+# Case 2 (khbs-sale5-to-sale10, M09/2026): the C0 typed in HTKK carries a 5% sale of 2.000.000 and a 10% sale of
+# 1.000.000; the amendment moves 5% to 0 and 10% to 4.000.000, so [30]/[31] are NEGATIVE chênh lệch rows, and ngày lập
+# 13/11/2026 is 24 days after the 20/10/2026 deadline (ct3a_2 24, ct3b 1.440). Rows generated from the htkk_web golden.
+ROWS_SALE5_TO_SALE10=(
+  ('PL01_KHBS', '', None),
+  ('PL01_KHBS/Header', '', None),
+  ('PL01_KHBS/Header/maTKhai', '', '842'),
+  ('PL01_KHBS/Header/tenTKhai', '', 'TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)'),
+  ('PL01_KHBS/Header/maGiaoDich', '', ''),
+  ('PL01_KHBS/Header/KyKKhaiThue', '', None),
+  ('PL01_KHBS/Header/KyKKhaiThue/kieuKy', '', 'M'),
+  ('PL01_KHBS/Header/KyKKhaiThue/kyKKhai', '', '09/2026'),
+  ('PL01_KHBS/Header/KyKKhaiThue/kyKKhaiTuNgay', '', '01/09/2026'),
+  ('PL01_KHBS/Header/KyKKhaiThue/kyKKhaiDenNgay', '', '30/09/2026'),
+  ('PL01_KHBS/Header/KyKKhaiThue/kyKKhaiTuThang', '', ''),
+  ('PL01_KHBS/Header/KyKKhaiThue/kyKKhaiDenThang', '', ''),
+  ('PL01_KHBS/Header/soLan', '', '1'),
+  ('PL01_KHBS/Header/mst', '', '9999999997'),
+  ('PL01_KHBS/Header/tenNNT', '', 'NNT KIEM THU GIA LAP - KHONG NOP'),
+  ('PL01_KHBS/Header/mstDLyThue', 'xsi:nil=true', ''),
+  ('PL01_KHBS/Header/tenDLyThue', '', ''),
+  ('PL01_KHBS/Header/soHDongDLyThue', '', ''),
+  ('PL01_KHBS/Header/ngayKyHDDLyThue', 'xsi:nil=true', ''),
+  ('PL01_KHBS/ma_DonViTien', '', 'VND'),
+  ('PL01_KHBS/ten_DonViTien', '', 'Đồng Việt Nam'),
+  ('PL01_KHBS/Muc_A', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_1', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_1/ChiTiet', 'id=ID_1', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_1/ChiTiet/ct2_ma', '', '1701'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_1/ChiTiet/ct2_ten', '', 'Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_1/ChiTiet/ct3', '', '200000'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_1/tongCong_ct10', '', '200000'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc', 'id=ID_1', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/ma_PLuc', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/ten_PLuc', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet', 'id=ID_1', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct2_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct2_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct3_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct3_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ma_Xa', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ten_Xa', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct04_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct04_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct05_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct05_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct06_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct06_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/BKePLuc/CTietPLuc/ChiTiet/ct7', '', '0'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_2/DSachPLuc/tongCong_ct11', '', '0'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_3', '', None),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3a_1', '', '2026-11-13'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3a_2', '', '24'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3b', '', '1440'),
+  ('PL01_KHBS/Muc_A/Muc_II', '', None),
+  ('PL01_KHBS/Muc_A/Muc_II/ChiTiet', 'id=ID_1', None),
+  ('PL01_KHBS/Muc_A/Muc_II/ChiTiet/ct2_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_II/ChiTiet/ct2_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_II/ChiTiet/ct3', '', '0'),
+  ('PL01_KHBS/Muc_A/Muc_II/tongCong_ct12', '', '0'),
+  ('PL01_KHBS/Muc_A/Muc_III', '', None),
+  ('PL01_KHBS/Muc_A/Muc_III/ChiTiet', 'id=ID_1', None),
+  ('PL01_KHBS/Muc_A/Muc_III/ChiTiet/ct2_ma', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_III/ChiTiet/ct2_ten', '', ''),
+  ('PL01_KHBS/Muc_A/Muc_III/ChiTiet/ct3', '', '0'),
+  ('PL01_KHBS/Muc_A/Muc_III/tongCong_ct13', '', '0'),
+  ('PL01_KHBS/Muc_B', '', None),
+  ('PL01_KHBS/Muc_B/Muc_I', '', None),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_1', '', '0'),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_2_so', '', ''),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_2_ngay', 'xsi:nil=true', ''),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_2_CQT_ma', '', ''),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_2_CQT_ten', '', ''),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_3_so', '', ''),
+  ('PL01_KHBS/Muc_B/Muc_I/ct_3_ngay', 'xsi:nil=true', ''),
+  ('PL01_KHBS/Muc_B/Muc_II', '', None),
+  ('PL01_KHBS/Muc_B/Muc_II/ct_1', '', '0'),
+  ('PL01_KHBS/Muc_B/Muc_II/ct_2', '', '0'),
+  ('PL01_1_KHBS', '', None),
+  ('PL01_1_KHBS/Header', '', None),
+  ('PL01_1_KHBS/Header/maTKhai', '', '842'),
+  ('PL01_1_KHBS/Header/tenTKhai', '', 'TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)'),
+  ('PL01_1_KHBS/Header/maGiaoDich', '', ''),
+  ('PL01_1_KHBS/Header/KyKKhaiThue', '', None),
+  ('PL01_1_KHBS/Header/KyKKhaiThue/kieuKy', '', 'M'),
+  ('PL01_1_KHBS/Header/KyKKhaiThue/kyKKhai', '', '09/2026'),
+  ('PL01_1_KHBS/Header/KyKKhaiThue/kyKKhaiTuNgay', '', '01/09/2026'),
+  ('PL01_1_KHBS/Header/KyKKhaiThue/kyKKhaiDenNgay', '', '30/09/2026'),
+  ('PL01_1_KHBS/Header/KyKKhaiThue/kyKKhaiTuThang', '', ''),
+  ('PL01_1_KHBS/Header/KyKKhaiThue/kyKKhaiDenThang', '', ''),
+  ('PL01_1_KHBS/Header/soLan', '', '1'),
+  ('PL01_1_KHBS/Header/mst', '', '9999999997'),
+  ('PL01_1_KHBS/Header/tenNNT', '', 'NNT KIEM THU GIA LAP - KHONG NOP'),
+  ('PL01_1_KHBS/Header/mstDLyThue', 'xsi:nil=true', ''),
+  ('PL01_1_KHBS/Header/tenDLyThue', '', ''),
+  ('PL01_1_KHBS/Header/soHDongDLyThue', '', ''),
+  ('PL01_1_KHBS/Header/ngayKyHDDLyThue', 'xsi:nil=true', ''),
+  ('PL01_1_KHBS/ma_DonViTien', '', 'VND'),
+  ('PL01_1_KHBS/ten_DonViTien', '', 'Đồng Việt Nam'),
+  ('PL01_1_KHBS/Muc_A', '', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo', '', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo', 'id=ID_1', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/ma_HSo', '', '0026'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/ten_HSo', '', '01/GTGT'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo', '', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_1', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[27]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Hàng hóa, dịch vụ bán ra chịu thuế giá trị gia tăng - Giá trị HHDV'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '3.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '4.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '1000000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_2', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[28]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Hàng hóa, dịch vụ bán ra chịu thuế giá trị gia tăng - Thuế GTGT'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '200.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '400.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_3', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[30]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Hàng hoá, dịch vụ bán ra chịu thuế suất 5% - Giá trị HHDV'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '2.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '-2000000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_4', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[31]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Hàng hoá, dịch vụ bán ra chịu thuế suất 5% - Thuế GTGT'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '100.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '-100000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_5', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[32]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Hàng hoá, dịch vụ bán ra chịu thuế suất 10% - Giá trị HHDV'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '1.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '4.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '3000000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_6', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[33]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Hàng hoá, dịch vụ bán ra chịu thuế suất 10% - Thuế GTGT'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '100.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '400.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '300000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_7', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[34]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Tổng doanh thu và thuế giá trị gia tăng của hàng hóa, dịch vụ bán ra - Giá trị HHDV'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '3.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '4.000.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '1000000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_8', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[35]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Tổng doanh thu và thuế giá trị gia tăng của hàng hóa, dịch vụ bán ra - Thuế GTGT'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '200.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '400.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_9', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[36]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Thuế giá trị gia tăng phát sinh trong kỳ'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '200.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '400.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_10', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[40a]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Thuế giá trị gia tăng phải nộp của hoạt động sản xuất kinh doanh trong kỳ'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '200.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '400.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_11', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[40]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Thuế giá trị gia tăng còn phải nộp trong kỳ ([40]=[40a]-[40b])'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '200.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '400.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/TongCong', '', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/TongCong/tongCong_7', '', '200000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/TongCong/tongCong_8', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/TongCong/tongCong_9', '', '0'),
+  ('PL01_1_KHBS/Muc_B', '', None),
+  ('PL01_1_KHBS/Muc_B/CTietTaiLieu', 'id=ID_1', None),
+  ('PL01_1_KHBS/Muc_B/CTietTaiLieu/ma_TLieu', '', ''),
+  ('PL01_1_KHBS/Muc_B/CTietTaiLieu/ten_TLieu', '', ''),
+)
+CASES={ZERO_TO_SALE10_CASE:{'rows':ROWS,'money':SALE10,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':270,'period':None},
+ SALE5_TO_SALE10_CASE:{'rows':ROWS_SALE5_TO_SALE10,'money':SALE10_AMENDED,'mainTaxLeaves':70,'fragmentLeaves':226,'taxLeaves':296,'period':M09_PERIOD}}
 def is_case(case_id):return case_id in CASES
 def tax_leaves(case_id):
  if case_id not in CASES:reject('CASE')
@@ -285,13 +563,13 @@ def _attributes(node):
   elif key.startswith('{'):reject('ATTRIBUTES','fragment')
   else:values.append(key+'='+value)
  return ';'.join(sorted(values))
-def _walk(node,path,out):
+def _walk(node,path,out,limit):
  here=path+'/'+_local(node) if path else _local(node);children=list(node)
  if (node.tail or '').strip():reject('CONTENT','fragment')
  if children and (node.text or '').strip():reject('CONTENT','fragment')
  out.append((here,_attributes(node),None if children else (node.text or '')))
- if len(out)>len(ROWS):reject('STRUCTURE','fragment')
- for child in children:_walk(child,here,out)
+ if len(out)>limit:reject('STRUCTURE','fragment')
+ for child in children:_walk(child,here,out,limit)
 
 def validate_khbs(root,case_id):
  """Validate the exact PLuc subtree and the B/1 main header of the fixed case. Returns counts."""
@@ -301,7 +579,7 @@ def validate_khbs(root,case_id):
  if len(plucs)!=1 or plucs[0].attrib or (plucs[0].text or '').strip():reject('STRUCTURE','pluc')
  if tuple(_local(child) for child in plucs[0])!=('PL01_KHBS','PL01_1_KHBS'):reject('STRUCTURE','pluc')
  found=[]
- for child in plucs[0]:_walk(child,'',found)
+ for child in plucs[0]:_walk(child,'',found,len(spec['rows']))
  if len(found)!=len(spec['rows']):reject('STRUCTURE','fragment')
  for actual,expected in zip(found,spec['rows']):
   if actual[0]!=expected[0] or (actual[2] is None)!=(expected[2] is None):reject('STRUCTURE','fragment')
@@ -314,9 +592,17 @@ def validate_khbs(root,case_id):
   if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=value:reject('HEADER','header')
  return {'caseId':case_id,'fragmentLeafCount':spec['fragmentLeaves'],'taxLeafCount':spec['taxLeaves']}
 
-def project_first_declaration(root):
- """IN-MEMORY copy only: drop the validated fragments, header B/1 -> C/0, for the unchanged no-annex allowlist."""
- ns='{'+NS+'}';pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+def project_first_declaration(root,case_id=ZERO_TO_SALE10_CASE):
+ """IN-MEMORY copy only: drop the validated fragments, header B/1 -> C/0 and (case 2) the exact M09/2026 main
+ period -> the M10/2026 baseline, for the unchanged no-annex allowlist."""
+ if case_id not in CASES:reject('CASE')
+ ns='{'+NS+'}';period=CASES[case_id]['period']
+ if period:
+  for name,(baseline,expected) in period.items():
+   nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+'KyKKhaiThue/'+ns+name)
+   if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=expected:reject('HEADER','header')
+   nodes[0].text=baseline
+ pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  if pluc is None or len(pluc)!=2:reject('STRUCTURE','pluc')
  for child in list(pluc):pluc.remove(child)
  pluc.text=None
@@ -325,7 +611,9 @@ def project_first_declaration(root):
  return root
 # The producer manifest's fixed fields for this case (htkk_web generate-htkk-web-khbs-reference.mjs).
 MANIFEST={ZERO_TO_SALE10_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,
- 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'100000','tongCong_ct10':'100000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1000000','ct33':'100000','ct40':'100000'}}}}
+ 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'100000','tongCong_ct10':'100000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1000000','ct33':'100000','ct40':'100000'}}},
+ SALE5_TO_SALE10_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,
+ 'expected':{'rows':['[27]','[28]','[30]','[31]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'200000','tongCong_ct10':'200000','ct3a_1':FIXED_DATE,'ct3a_2':'24','ct3b':'1440','main':{'ct30':'0','ct31':'0','ct32':'4000000','ct33':'400000','ct40':'400000'}}}}
 def manifest_fields(case_id):
  if case_id not in MANIFEST:reject('CASE')
  import copy;return copy.deepcopy(MANIFEST[case_id])

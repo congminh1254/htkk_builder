@@ -1,14 +1,14 @@
 # Native case design: 01/GTGT kê khai bổ sung lần 1 (D1, KHBS)
 
-Status: **wired, non-gating, not yet run on Windows.** Case `01GTGT-khbs-zero-to-sale10-M10-2026`,
-adapter `01-gtgt-2.8.3-khbs`, driver mode `gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2
-(`releaseGate=false`). The case status comes from the in-harness whole-tree comparison only: this
-first wiring retains **no raw native output** (registry `privateArtifactPolicy: none`; the case is not
-in `publish-htkk-web-native-output.py` BRANCHES), so a mismatch is diagnosed from the bounded fields
-below, not from the native bytes. The web side (htkk_web branch `work/khbs-01gtgt`) has the KHBS engine,
-the XML serializer, the producer `scripts/generate-htkk-web-khbs-reference.mjs --case
-khbs-zero-to-sale10` and keeps the feature hidden (`KHBS_01GTGT_RELEASED=false`) until this case
-passes. The oracle is **HTKK 5.8.2** (per-case `htkkVersion`, non-gating, `releaseGate=false`).
+Status: case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
+khbsTreeMatched, mask 0, 270 leaves, message ids 0). Case 2 `01GTGT-khbs-sale5-to-sale10-M09-2026` is
+**wired, non-gating, not yet run**. Both use adapter `01-gtgt-2.8.3-khbs`, driver mode
+`gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2 (per-case `htkkVersion`, `releaseGate=false`). The case
+status comes from the in-harness whole-tree comparison; since case 2 the raw ORIGINAL B1 export is also
+**retained privately** (registry `privateArtifactPolicy: raw-khbs-reexport`, see "Raw native output
+retention"), so a mismatch can be diagnosed from the bytes. The web side has the KHBS engine, the XML
+serializer, the producer `scripts/generate-htkk-web-khbs-reference.mjs --case khbs-zero-to-sale10 |
+khbs-sale5-to-sale10` and keeps the feature hidden (`KHBS_01GTGT_RELEASED=false`) until case 2 passes.
 
 Everything below was read statically from the pinned 5.8.2 payload (archive `51baf5c8…d424`,
 `HTKK.msi` `17c21f3c…fd73`, `Data1.cab` `5427c663…530c`, HTKK.exe `331ed84a…f98a`,
@@ -68,9 +68,9 @@ tokens; the web file `data/htkk-01-gtgt-khbs-rules.json` pins their IL body SHA-
 All active only in this mode (reader rejects them elsewhere): `khbsDateTyped`, `khbsPeriodMatched`,
 `khbsImportInvoked/Succeeded/PathMatched`, `khbsSummaryInvoked/Acknowledged`, `khbsExportInvoked`,
 `khbsExportSchemaPinnedVerified`, `khbsExportSucceeded`, `khbsIdentityMatched`, `khbsCreationDateValid`,
-`khbsTreeMatched`; message ids `khbsImportMessageId`, `khbsSummaryMessageId`, `khbsExportMessageId`
+`khbsTreeMatched`, `khbsOriginalMoneyMatched`, `khbsSavedMoneyMatched` (case 2); message ids `khbsImportMessageId`, `khbsSummaryMessageId`, `khbsExportMessageId`
 (pinned Message.xml id, 9999 = not catalogued); `khbsLeafCount` (expected 270 = 70 main + 200 KHBS
-leaves); `khbsMismatchMask` (1 structure, 2 attributes, 4 TTinChung, 8 CTieuTKhaiChinh, 16 PL01_KHBS,
+leaves; case 2: 296 = 70 + 226); `khbsOpenMainState` (0 not observed, 1 zero, 2 the C0 vector); `khbsMismatchMask` (1 structure, 2 attributes, 4 TTinChung, 8 CTieuTKhaiChinh, 16 PL01_KHBS,
 32 PL01_1_KHBS, 64 other value, 128 output identity/date); `khbsFirstDifferenceOrdinal` (1-based leaf
 ordinal in web order); `khbsExportBytes`, `khbsExportSha256`. Terminal failures:
 `gtgt-amendment-khbs-import-rejected`, `-summary-rejected`, `-export-rejected`, `-not-matched`. No values,
@@ -90,8 +90,36 @@ allowlists in `Get-HtkkSafeGuiReferenceResult.ps1`, and contract tests like
 (`data/htkk-case-plan.json`) lists only release-gate cases, as `validate_plan` requires, so a candidate
 case is not added there.
 
-## Second case (later)
+## Second case: non-zero C0, a decrease, positive late days
 
-A positive late-day count needs a period whose deadline is before the run date and a ngày lập
-after it (e.g. M09/2026, deadline 20/10/2026, ngày lập 13/11/2026: 24 days, ct3b =
-ROUND(0,0003 × 24 × amount)). The prior-save step is pinned to M10/2026 today.
+- `01GTGT-khbs-sale5-to-sale10-M09-2026`, month **09/2026** (GetHanNopToKhai D1: due 20/10/2026, a Tuesday),
+  the same fixed ngày lập 13/11/2026: **24** late days, ct3b = 0,03% × 24 × 200.000 = **1.440**.
+- C0, typed with two fixed original editor actions before Ghi (EditOriginalGtgtCase, the same keyboard path
+  as the web-import cases): [30] (row 46, col 9) 2.000.000 → HTKK computes [31] 100.000; then [32] (row 47,
+  col 9) 1.000.000 → [33] 100.000. The whole 27-cell vector ([27] 3.000.000, [28]/[35]/[36]/[40a]/[40]
+  200.000, [34] 3.000.000) must be on the sheet (`khbsOriginalMoneyMatched`) and in the saved file
+  `01_GTGT_TT80_CQTQL10129_00_092026_283.xml` (`khbsSavedMoneyMatched`; GetFileNameBySheet uses Thang,
+  padded to two digits by GetPeriodInfo 0x0efc). The period dialog gets month `09` (mskMonth) and the
+  TTPeriodInfo checks expect Thang `09` for this case only (`PeriodMonth()`); every other D1 driver keeps 10.
+- B1 web XML: [30] 0, [31] 0, [32] 4.000.000, [33] 400.000, [40] 400.000. PL01_1_KHBS rows [27] [28]
+  [30] [31] [32] [33] [34] [35] [36] [40a] [40], with **negative** chênh lệch on [30] (−2.000.000) and
+  [31] (−100.000); tongCong_7 = tongCong_ct10 = 200.000. 296 compared leaves (70 main + 226 KHBS).
+- B1 main sheet before the import: zero or the carried C0 vector, recorded as `khbsOpenMainState` 1/2
+  (case 1 must be 1). Input privacy: the same exact PLuc allowlist, the M09 main header projected in
+  memory onto the M10 baseline (`M09_PERIOD`), then the unchanged no-annex allowlist.
+
+## Raw native output retention
+
+After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe
+stages `RUNNER_TEMP/htkk-khbs-native-output/` (`khbs-native.xml`, byte-identical to HTKK's
+`DataFiles/9999999997/reference-khbs-output/01GTGT-khbs.xml`, plus `provenance.json`,
+format `htkk-khbs-native-output-staging-v1` with the bounded harness fields). The workflow step "Retain raw
+native KHBS export privately" runs `scripts/publish-htkk-khbs-native-output.py`: it downloads the case's own
+immutable private web input, validates the native file against it (HTKK service identity, fresh
+ngayLapTKhai, exact synthetic identity leaves, attributes `id`/`xsi:nil` only, and every other text either a
+value of that synthetic input or a bounded number/date/code shape), recomputes the whole-tree comparison
+(same region bits as CompareKhbs, up to 16 mismatching leaf ordinals, agreement with the harness), and
+publishes an orphan commit with `khbs-native.xml` + `manifest.json` (format
+`htkk-khbs-native-output-reference-v1`) to the case's private output branch (`…-output-htkk582`) and an
+immutable tag. It retains mismatches too; it never grants qualification. The web repository pins such bytes
+under `tests/fixtures/htkk-khbs-native-reexport/` (index-driven test `tests/htkk-khbs-web-native-reexport.test.ts`).

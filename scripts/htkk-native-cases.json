@@ -1016,6 +1016,27 @@
         "annexes": [],
         "amendmentOrder": 1
       }
+    },
+    {
+      "caseId": "01GTGT-khbs-sale5-to-sale10-M09-2026",
+      "producerCase": "khbs-sale5-to-sale10",
+      "adapterId": "01-gtgt-2.8.3-khbs",
+      "format": "htkk-web-khbs-sale5-to-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-sale5-to-sale10-input",
+      "inputBranch": "gtgt-web-reference-khbs-sale5-to-sale10-input",
+      "outputBranch": "gtgt-web-native-khbs-sale5-to-sale10-output",
+      "statusContext": "htkk-native/khbs-sale5-to-sale10",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "09/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
     }
   ]
 }

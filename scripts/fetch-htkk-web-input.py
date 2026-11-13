@@ -208,7 +208,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
   # projection reuses the unchanged no-annex allowlist. Staged bytes are never changed.
   try:
    khbs.validate_khbs(root,case_id)
-   khbs.project_first_declaration(root)
+   khbs.project_first_declaration(root,case_id)
   except khbs.KhbsWebContractError:raise InputError('XML_PRIVACY') from None
  # Verify the fixed checkbox before adapting only the in-memory privacy copy.
  nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'CTieuTKhaiChinh/'+ns+'ct21')

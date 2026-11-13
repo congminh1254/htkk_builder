@@ -58,6 +58,7 @@ def khbs_fixture(case):
  head=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue')
  for name in ('ngayLapTKhai','ngayKy'):head.find(ns+name).text=w.khbs.FIXED_DATE
  head.find(ns+'loaiTKhai').text='B';head.find(ns+'soLan').text='1'
+ for name,(_,expected) in (w.khbs.CASES[case]['period'] or {}).items():head.find(ns+'KyKKhaiThue/'+ns+name).text=expected
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')

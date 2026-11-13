@@ -1,5 +1,6 @@
 // Own bounded ORIGINAL amendment (kê khai bổ sung lần 1, KHBS) observation of D1 01/GTGT 2.8.3 on HTKK 5.8.2.
-// Flow (KHBS-NATIVE-CASE.md): C0 zero Ghi (HtkkGtgtAmendmentInspection.cs) -> original Đóng -> reopen D1 10/2026 with
+// Flow (KHBS-NATIVE-CASE.md): C0 Ghi (HtkkGtgtAmendmentInspection.cs; zero, or for case 2 two fixed original edits)
+// -> original Đóng -> reopen D1 10/2026 (case 2: 09/2026) with
 // OptBosung and the fixed ngày lập 13/11/2026 (HtkkGtgtAmendmentOpenInspection.cs) -> original "Nhập từ XML" of the
 // fixed web B1 file (cmdImportXML_Click 0x060003AC: LoaiToKhai B -> RevertFromXml, message 0291) -> original
 // "Tổng hợp KHBS" (btnTongHopKHBS_Click 0x060003C1, message 0222) -> original "Kết xuất" XML -> whole-tree comparison
@@ -7,6 +8,7 @@
 // differing leaf ordinal are recorded; never values, paths or text.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -15,9 +17,52 @@ using System.Windows.Forms;
 using System.Xml;
 public sealed partial class HtkkGuiReferenceAutomation {
  private const string KhbsWebCaseId="01GTGT-khbs-zero-to-sale10-M10-2026";
+ // Case 2 (htkk_web producer khbs-sale5-to-sale10): M09/2026, due 20/10/2026, so the same fixed ngày lập gives 24 late
+ // days. Its C0 is typed through the original grid before Ghi ([30] 2.000.000 at 5%, [32] 1.000.000 at 10%), and the web
+ // B1 file moves [30] to 0 and [32] to 4.000.000 (negative chênh lệch rows [30]/[31]).
+ private const string KhbsSale5WebCaseId="01GTGT-khbs-sale5-to-sale10-M09-2026";
  private const string KhbsFixedDate="13/11/2026";
- // 270 leaves of the fixed web B1 file without the four TTinDVu leaves (htkk_web producer khbs-zero-to-sale10).
- private const int KhbsLeafTarget=270;
+ // 270 (case 1) / 296 (case 2) leaves of the fixed web B1 file without the four TTinDVu leaves.
+ private const int KhbsLeafTarget=270,KhbsSale5LeafTarget=296;
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId;}
+ private bool KhbsNonzeroOriginal(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsSale5WebCaseId;}
+ // The only period month of the D1 drivers: 10, or 09 for KHBS case 2 (GetPeriodInfo pads Thang to two digits, 0x0efc).
+ private string PeriodMonth(){return KhbsNonzeroOriginal()?"09":"10";}
+ // Exact C0 money of case 2 in the fixed 27-indicator order of InspectMoneyZero / InspectOriginalPriorFile
+ // (ct22 ... ct43): [27] 3.000.000, [28] 200.000, [30] 2.000.000, [31] 100.000, [32] 1.000.000, [33] 100.000,
+ // [34] 3.000.000, [35] 200.000, [36] 200.000, [40a] 200.000, [40] 200.000.
+ private static readonly decimal[] KhbsSale5Original=new decimal[]{0,0,0,0,0,0,0,3000000,200000,0,2000000,100000,1000000,100000,0,3000000,200000,200000,0,0,0,200000,0,200000,0,0,0};
+ private bool khbsOriginalMoneyMatched=false,khbsSavedMoneyMatched=false;private int khbsOpenMainState=0;
+ private static bool KhbsAmount(object value,out decimal number){
+  number=Decimal.Zero;if(value==null||value==DBNull.Value)return false;string text=Convert.ToString(value,CultureInfo.InvariantCulture);
+  return Decimal.TryParse(text,NumberStyles.Number,CultureInfo.InvariantCulture,out number);
+ }
+ private bool KhbsOriginalVector(object sheet){
+  int[,] coordinates=new int[,] {{36,11},{39,9},{39,11},{40,9},{40,11},{41,11},{43,9},{44,9},{44,11},{45,9},{46,9},{46,11},{47,9},{47,11},{48,9},{49,9},{49,11},{50,11},{52,11},{53,11},{54,11},{56,11},{57,11},{58,11},{59,11},{60,11},{61,11}};
+  for(int index=0;index<coordinates.GetLength(0);index++){decimal number;if(!KhbsAmount(Get(Cell(sheet,coordinates[index,0],coordinates[index,1]),"Value"),out number)||number!=KhbsSale5Original[index])return false;}
+  return true;
+ }
+ private bool PriorSavedMoneyExpected(){return KhbsNonzeroOriginal()?khbsSavedMoneyMatched:amendmentPriorSavedMoneyZero;}
+ // Case 2 only, on the proven zero C0 sheet: two fixed original edits, each committed through the original editor and
+ // waited for the original auto-calculation; true once the whole fixed C0 vector is on the sheet (then Ghi).
+ private bool PrepareKhbsOriginal(Form owner,Control grid,object sheet){
+  gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
+  if(!KhbsNonzeroOriginal()||amendmentPriorSaveInvoked)throw new InvalidOperationException();
+  if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!owner.Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return false;}
+  if(webCaseEditCount==0){
+   if(!gtgtZero||gtgtEmptyMoney!=0||Convert.ToBoolean(Get(Cell(sheet,46,9),"Locked")))throw new InvalidOperationException();
+   webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();EditOriginalGtgtCase(grid,sheet,46,9,"2000000",HtkkAutomationStage.GtgtCaseEditing);return false;
+  }
+  if(webCaseEditCount==1){
+   decimal tax;if(!KhbsAmount(Get(Cell(sheet,46,11),"Value"),out tax)||tax!=100000){if(webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return false;}throw new InvalidOperationException();}
+   if(Convert.ToBoolean(Get(Cell(sheet,47,9),"Locked")))throw new InvalidOperationException();
+   webCaseEditClock=Stopwatch.StartNew();EditOriginalGtgtCase(grid,sheet,47,9,"1000000",HtkkAutomationStage.GtgtCaseEditing);return false;
+  }
+  if(webCaseEditCount!=2)throw new InvalidOperationException();
+  khbsOriginalMoneyMatched=gtgtEmptyMoney==0&&KhbsOriginalVector(sheet);
+  if(!khbsOriginalMoneyMatched){if(webCaseEditClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return false;}throw new InvalidOperationException();}
+  return true;
+ }
  private bool khbsDateTyped=false,khbsPeriodMatched=false,khbsImportInvoked=false,khbsImportSucceeded=false,khbsImportPathMatched=false,khbsSummaryInvoked=false,khbsSummaryAcknowledged=false,khbsExportInvoked=false,khbsExportSchemaPinnedVerified=false,khbsExportSucceeded=false,khbsIdentityMatched=false,khbsCreationDateValid=false,khbsTreeMatched=false;
  private int khbsImportMessageId=0,khbsSummaryMessageId=0,khbsExportMessageId=0,khbsLeafCount=0,khbsMismatchMask=0,khbsFirstDifferenceOrdinal=0,khbsExportBytes=0;
  private string khbsExportSha256="",khbsPhase="not-started";private Form khbsOwner=null;private bool khbsBusy=false;
@@ -25,10 +70,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static bool KhbsDate(string text){DateTime parsed;return DateTime.TryParseExact(text,new string[]{"d/M/yyyy","dd/MM/yyyy"},CultureInfo.InvariantCulture,DateTimeStyles.None,out parsed)&&parsed.Date==new DateTime(2026,11,13);}
  private string KhbsJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
-  string[] names=new string[]{"khbsDateTyped","khbsPeriodMatched","khbsImportInvoked","khbsImportSucceeded","khbsImportPathMatched","khbsSummaryInvoked","khbsSummaryAcknowledged","khbsExportInvoked","khbsExportSchemaPinnedVerified","khbsExportSucceeded","khbsIdentityMatched","khbsCreationDateValid","khbsTreeMatched"};
-  bool[] values=new bool[]{khbsDateTyped,khbsPeriodMatched,khbsImportInvoked,khbsImportSucceeded,khbsImportPathMatched,khbsSummaryInvoked,khbsSummaryAcknowledged,khbsExportInvoked,khbsExportSchemaPinnedVerified,khbsExportSucceeded,khbsIdentityMatched,khbsCreationDateValid,khbsTreeMatched};
+  string[] names=new string[]{"khbsDateTyped","khbsPeriodMatched","khbsImportInvoked","khbsImportSucceeded","khbsImportPathMatched","khbsSummaryInvoked","khbsSummaryAcknowledged","khbsExportInvoked","khbsExportSchemaPinnedVerified","khbsExportSucceeded","khbsIdentityMatched","khbsCreationDateValid","khbsTreeMatched","khbsOriginalMoneyMatched","khbsSavedMoneyMatched"};
+  bool[] values=new bool[]{khbsDateTyped,khbsPeriodMatched,khbsImportInvoked,khbsImportSucceeded,khbsImportPathMatched,khbsSummaryInvoked,khbsSummaryAcknowledged,khbsExportInvoked,khbsExportSchemaPinnedVerified,khbsExportSucceeded,khbsIdentityMatched,khbsCreationDateValid,khbsTreeMatched,khbsOriginalMoneyMatched,khbsSavedMoneyMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"khbsImportMessageId","khbsSummaryMessageId","khbsExportMessageId","khbsLeafCount","khbsMismatchMask","khbsFirstDifferenceOrdinal","khbsExportBytes"};int[] counts=new int[]{khbsImportMessageId,khbsSummaryMessageId,khbsExportMessageId,khbsLeafCount,khbsMismatchMask,khbsFirstDifferenceOrdinal,khbsExportBytes};
+  names=new string[]{"khbsImportMessageId","khbsSummaryMessageId","khbsExportMessageId","khbsLeafCount","khbsMismatchMask","khbsFirstDifferenceOrdinal","khbsExportBytes","khbsOpenMainState"};int[] counts=new int[]{khbsImportMessageId,khbsSummaryMessageId,khbsExportMessageId,khbsLeafCount,khbsMismatchMask,khbsFirstDifferenceOrdinal,khbsExportBytes,khbsOpenMainState};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString()+","+q+"khbsExportSha256"+q+":"+q+khbsExportSha256+q;
  }
@@ -40,7 +85,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  // Called once the B1 sheet, its two KHBS tabs, the unchanged C0 file and the fixed ngày lập are proven.
  private void StartOriginalKhbsImport(Form owner){
-  if(!KhbsMode()||khbsPhase!="not-started"||!webInputVerified||webCaseId!=KhbsWebCaseId||!khbsPeriodMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
+  if(!KhbsMode()||khbsPhase!="not-started"||!webInputVerified||!KhbsCaseId(webCaseId)||!khbsPeriodMatched||owner==null||owner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
   if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
   khbsOwner=owner;roundtripOwner=owner;khbsPhase="import-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsImportInvoking);Record();
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ContinueOriginalKhbs();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();
@@ -110,7 +155,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      SetStage(HtkkAutomationStage.GtgtAmendmentKhbsComparing);Record();
      if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),output=ReadBoundedOriginalXml(exportPath);
-     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
+     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
      if(Hash(exportPath)!=khbsExportSha256)throw new InvalidOperationException();
      finished=true;SetStage(khbsTreeMatched?HtkkAutomationStage.GtgtAmendmentKhbsInspected:HtkkAutomationStage.GtgtAmendmentKhbsNotMatched);Record();exportWatcher.Stop();CloseKhbsMessage(message);return;
     }

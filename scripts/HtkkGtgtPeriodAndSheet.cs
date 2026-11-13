@@ -17,6 +17,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
     bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";
     bool fixedInput=webInputVerified&&((CreditCt21Case()&&webCaseEditCount==0&&row==36&&column==11&&value=="7")||(!CreditCt21Case()&&row==(fivePercent?46:47)&&((webCaseEditCount==0&&column==9&&value==(webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000")&&webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026")||(webCaseEditCount==1&&column==11&&value=="7"&&(webCaseId=="01GTGT-sale10-manual-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026")))));
     if(mode=="gtgt-annex12-export-nonzero")fixedInput=webCaseEditCount==0&&row==47&&column==9&&value=="1000000";
+    // KHBS case 2: the two fixed C0 edits, in order ([30] then [32]); no other KHBS edit exists.
+    if(KhbsMode())fixedInput=KhbsNonzeroOriginal()&&column==9&&((webCaseEditCount==0&&row==46&&value=="2000000")||(webCaseEditCount==1&&row==47&&value=="1000000"));
     if(!fixedInput||spread.FindForm()==null||spread.FindForm().GetType().FullName!="HTKK.frmWinToKhai"||!spread.Visible||!spread.Enabled||!spread.FindForm().Enabled||OriginalMessageVisible()||!editor.Visible||!editor.Enabled)throw new InvalidOperationException();
     editor.Focus();if(!editor.ContainsFocus)throw new InvalidOperationException();
     foreach(string keys in new string[]{"^a",value,"{TAB}"}){uint foregroundPid;GetWindowThreadProcessId(GetForegroundWindow(),out foregroundPid);if(foregroundPid!=(uint)Process.GetCurrentProcess().Id||!editor.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();SendKeys.SendWait(keys);}
@@ -449,8 +451,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if((mode=="gtgt-web-import-inspect"||KhbsMode())&&!webInputVerified)VerifyOwnWebInput();
   SetCheck(Named(period,QuarterCase()?"chkTKQuy":"chkTkhaiThang"),true);SetCheck(Named(period,"OptChinhthuc"),true);
   periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&!CheckValue(ReadableNamed(period,"OptBosung"));
-  SetText(period,"mskYear","2026");if(QuarterCase()){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact("4");if(index<0)throw new InvalidOperationException();quarter.SelectedIndex=index;if(Convert.ToString(quarter.SelectedItem,CultureInfo.InvariantCulture)!="4")throw new InvalidOperationException();}else SetText(period,"mskMonth","10");
-  periodDateMatched=Named(period,"mskYear").Text=="2026"&&(QuarterCase()?CheckValue(Named(period,"chkTKQuy"))&&!CheckValue(ReadableNamed(period,"chkTkhaiThang")):Named(period,"mskMonth").Text=="10"&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy")));
+  SetText(period,"mskYear","2026");if(QuarterCase()){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact("4");if(index<0)throw new InvalidOperationException();quarter.SelectedIndex=index;if(Convert.ToString(quarter.SelectedItem,CultureInfo.InvariantCulture)!="4")throw new InvalidOperationException();}else SetText(period,"mskMonth",PeriodMonth());
+  periodDateMatched=Named(period,"mskYear").Text=="2026"&&(QuarterCase()?CheckValue(Named(period,"chkTKQuy"))&&!CheckValue(ReadableNamed(period,"chkTkhaiThang")):Named(period,"mskMonth").Text==PeriodMonth()&&CheckValue(Named(period,"chkTkhaiThang"))&&!CheckValue(ReadableNamed(period,"chkTKQuy")));
   periodDescriptions.Clear();periodControlCount=0;int currentControlCount=0;DescribePeriod(period,ref currentControlCount);
   SetStage(HtkkAutomationStage.GtgtPeriodProvinceSelecting);Record();bool provinceMatched=SelectGeography(period,"cboTinh","101","Thành phố Hà Nội","MaTinh","TenTinh");
   SetStage(HtkkAutomationStage.GtgtPeriodWardSelecting);Record();bool wardMatched=SelectGeography(period,"cboXa","10129087","Phường Sơn Tây","MaXa","TenXa");
@@ -492,7 +494,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string root=Path.GetDirectoryName(project);
   gtgtPins=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))==HtkkOracleBaseline.File("InterfaceTemplates/excel/01_GTGT_TT80_283.xls")&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_283.xml"))=="40f5d6f711f7acb69dcc4098e3e3bb0b1849224d1c185902a50b8cae6fc50aae"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_GTGT_TT80_xml_283.xml"))=="7ba334067c52ea22cd744dcf2c0ff444190d6661f6b3e9b3ea08e5ead574830c";
   gtgtVersion=Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)=="D1"&&Convert.ToString(Get(Global("ToKhaiInfo"),"VersionXML"),CultureInfo.InvariantCulture)=="2.8.3";
-  object currentPeriod=Global("TTPeriodInfo");gtgtPeriod=Convert.ToString(Get(currentPeriod,"KieuKy"),CultureInfo.InvariantCulture)==(QuarterCase()?"Q":"M")&&Convert.ToString(Get(currentPeriod,"Nam"),CultureInfo.InvariantCulture)=="2026"&&Convert.ToString(Get(currentPeriod,QuarterCase()?"Quy":"Thang"),CultureInfo.InvariantCulture)==(QuarterCase()?"4":"10")&&Convert.ToString(Get(currentPeriod,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C";
+  object currentPeriod=Global("TTPeriodInfo");gtgtPeriod=Convert.ToString(Get(currentPeriod,"KieuKy"),CultureInfo.InvariantCulture)==(QuarterCase()?"Q":"M")&&Convert.ToString(Get(currentPeriod,"Nam"),CultureInfo.InvariantCulture)=="2026"&&Convert.ToString(Get(currentPeriod,QuarterCase()?"Quy":"Thang"),CultureInfo.InvariantCulture)==(QuarterCase()?"4":PeriodMonth())&&Convert.ToString(Get(currentPeriod,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C";
   gtgtIdentity=CellText(sheet,9,3)==FakeName&&CellText(sheet,10,3).Replace("-",String.Empty)==Mst;gtgtSigner=CellText(sheet,63,10)==FakeSigner;
   object checkbox=Cell(sheet,35,8),cellType=Get(checkbox,"CellType");if(!noActivityCheckboxActivated)gtgtCt21=cellType!=null&&cellType.GetType().FullName=="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&!Convert.ToBoolean(Get(checkbox,"Locked"))&&!Selected(Get(checkbox,"Value"));
   InspectMoneyZero(sheet);
@@ -500,7 +502,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
-  if(matched&&AmendmentInspectionMode()){StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
+  if(matched&&AmendmentInspectionMode()){if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12WebCase()){
    // Fixed web annex case: align the original signing date on the main sheet,
    // then build the proven zero baseline annex through original controls only.

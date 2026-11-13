@@ -78,7 +78,10 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   # GetPeriodInfo060004E2 at1356-137C uses cboNganhKD.SelectedValue, not XML1701.
   expected='01_GTGT_TT80'+'_CQTQL'+'10129'+'_'+'00'+'_'+'10'+'2026'+'_'+'2.8.3'.replace('.','')+'.xml'
   self.assertEqual(actual,expected)
-  self.assertIn('String.Equals(file.Name,OriginalPriorFileName,StringComparison.Ordinal)',source)
+  # KHBS case 2 (M09/2026, non-zero C0) is the only other name: the same rule with month 09 (Thang padded to two digits).
+  self.assertEqual(re.search(r'OriginalPriorM09FileName="([^"]+)"',source).group(1),expected.replace('_102026_','_092026_'))
+  self.assertIn('private string PriorFileName(){return KhbsNonzeroOriginal()?OriginalPriorM09FileName:OriginalPriorFileName;}',source)
+  self.assertIn('String.Equals(file.Name,PriorFileName(),StringComparison.Ordinal)',source)
   self.assertNotIn('Regex.IsMatch(file.Name',source)
   for wrong in ('01_GTGT_TT80_1701_102026_283.xml',expected.replace('10129','10100'),expected.replace('_102026_','_092026_'),expected.replace('_00_','_1701_'),'bs1_'+expected,expected+'.bak'):
    self.assertNotEqual(actual,wrong)

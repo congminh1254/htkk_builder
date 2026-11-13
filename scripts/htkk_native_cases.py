@@ -29,7 +29,9 @@ TRUSTED_ADAPTERS={
  # Kê khai bổ sung lần 1 (KHBS, loaiTKhai B, PL01_KHBS + PL01_1_KHBS) on the HTKK 5.8.2 oracle, own driver
  # (KHBS-NATIVE-CASE.md): C0 zero Ghi, B1 reopen with a fixed ngày lập, original import of the web B1 file,
  # Tổng hợp KHBS, original export, whole tree. The only adapter whose unit has amendmentOrder 1.
- '01-gtgt-2.8.3-khbs':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1},
+ '01-gtgt-2.8.3-khbs':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1,
+  # Case 2 (non-zero C0, 24 late days) is M09/2026: due 20/10/2026, before the fixed ngày lập 13/11/2026.
+  'periods':{'month':('10/2026','09/2026')}},
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
  '03-tndn-2.9.4':_declaration('N8','2.9.4',{'year':('2025',)},['03-1A']),

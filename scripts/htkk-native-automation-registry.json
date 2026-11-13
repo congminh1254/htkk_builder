@@ -255,7 +255,7 @@
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "gtgt-amendment-khbs-inspected",
-      "privateArtifactPolicy": "none",
+      "privateArtifactPolicy": "raw-khbs-reexport",
       "contextPolicy": "htkk-native/case"
     },
     "gtgt-annex12-inspect": {
@@ -1859,6 +1859,8 @@
     "khbsIdentityMatched",
     "khbsCreationDateValid",
     "khbsTreeMatched",
+    "khbsOriginalMoneyMatched",
+    "khbsSavedMoneyMatched",
     "khbsImportMessageId",
     "khbsSummaryMessageId",
     "khbsExportMessageId",
@@ -1866,6 +1868,7 @@
     "khbsMismatchMask",
     "khbsFirstDifferenceOrdinal",
     "khbsExportBytes",
+    "khbsOpenMainState",
     "khbsExportSha256"
   ],
   "controlKinds": [
@@ -3162,7 +3165,8 @@
         "01GTGT-annex10-nq204-M10-2026",
         "03TNDN-rate15-Y2025",
         "03TNDN-rate17-Y2025",
-        "01GTGT-khbs-zero-to-sale10-M10-2026"
+        "01GTGT-khbs-zero-to-sale10-M10-2026",
+        "01GTGT-khbs-sale5-to-sale10-M09-2026"
       ]
     },
     "webCaseEditCount": {
@@ -3955,6 +3959,20 @@
         "gtgt-amendment-khbs-inspect"
       ]
     },
+    "khbsOriginalMoneyMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsSavedMoneyMatched": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
     "khbsImportMessageId": {
       "kind": "integer",
       "default": 0,
@@ -4014,6 +4032,15 @@
       "default": 0,
       "minimum": 0,
       "maximum": 262144,
+      "activeModes": [
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "khbsOpenMainState": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2,
       "activeModes": [
         "gtgt-amendment-khbs-inspect"
       ]

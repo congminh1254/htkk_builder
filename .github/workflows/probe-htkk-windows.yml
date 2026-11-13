@@ -18,7 +18,7 @@ on:
       web_case_id:
         description: Fixed synthetic declaration case (no user data)
         type: choice
-        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026, 01GTGT-sale10-half-M10-2026, 01GTGT-sale10-manual-M10-2026, 01GTGT-sale5-half-M10-2026, 01GTGT-sale5-manual-M10-2026, 01GTGT-noactivity-zero-M10-2026, 01GTGT-noactivity-reset-sale10-M10-2026, 01GTGT-noactivity-cancel-sale10-M10-2026, 01GTGT-noactivity-uncheck-sale10-M10-2026, 01GTGT-noactivity-keep-credit-M10-2026, 01GTGT-zero-Q4-2026, 01GTGT-native-import-sale10-M10-2026, 01GTGT-annex12-zero-two-locations-M10-2026, 01GTGT-annex12-two-plants-nonzero-M10-2026, 03TNDN-profit20-Y2025, BCTC133-B01a-basic-Y2025, BCTC200-LT-basic-Y2025, 05KK-withheld-Q3-2026, 05KK-TT89-withheld-Q4-2026, 05QTT-two-employees-Y2025, 01CNKD-TT50-revenue-two-groups-Q3-2026, 02QTT-dependants-Y2025, 01NTNN-two-contractors-M09-2026, 03NTNN-no-rate-M10-2026, 01NTNN-NCCNN-entry-M10-2026, 04NTNN-TT80-one-subcontractor-2026, 04NTNN-TT89-one-subcontractor-2026, 02NTNN-TT89-two-annexes-2026, 02NTNN-TT80-two-annexes-2026, 01NTNN-occurrence-D20-09-2026, 01NTNN-NCCNN-occurrence-D20-10-2026, 03NTNN-occurrence-D20-10-2026, 01CNKD-TT50-310-pl01-three-groups-Q3-2026, 01CNKD-TT50-310-pl03-two-groups-Q3-2026, 01GTGT-annex10-nq204-M10-2026, 03TNDN-rate15-Y2025, 03TNDN-rate17-Y2025, 01GTGT-khbs-zero-to-sale10-M10-2026]
+        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026, 01GTGT-sale10-half-M10-2026, 01GTGT-sale10-manual-M10-2026, 01GTGT-sale5-half-M10-2026, 01GTGT-sale5-manual-M10-2026, 01GTGT-noactivity-zero-M10-2026, 01GTGT-noactivity-reset-sale10-M10-2026, 01GTGT-noactivity-cancel-sale10-M10-2026, 01GTGT-noactivity-uncheck-sale10-M10-2026, 01GTGT-noactivity-keep-credit-M10-2026, 01GTGT-zero-Q4-2026, 01GTGT-native-import-sale10-M10-2026, 01GTGT-annex12-zero-two-locations-M10-2026, 01GTGT-annex12-two-plants-nonzero-M10-2026, 03TNDN-profit20-Y2025, BCTC133-B01a-basic-Y2025, BCTC200-LT-basic-Y2025, 05KK-withheld-Q3-2026, 05KK-TT89-withheld-Q4-2026, 05QTT-two-employees-Y2025, 01CNKD-TT50-revenue-two-groups-Q3-2026, 02QTT-dependants-Y2025, 01NTNN-two-contractors-M09-2026, 03NTNN-no-rate-M10-2026, 01NTNN-NCCNN-entry-M10-2026, 04NTNN-TT80-one-subcontractor-2026, 04NTNN-TT89-one-subcontractor-2026, 02NTNN-TT89-two-annexes-2026, 02NTNN-TT80-two-annexes-2026, 01NTNN-occurrence-D20-09-2026, 01NTNN-NCCNN-occurrence-D20-10-2026, 03NTNN-occurrence-D20-10-2026, 01CNKD-TT50-310-pl01-three-groups-Q3-2026, 01CNKD-TT50-310-pl03-two-groups-Q3-2026, 01GTGT-annex10-nq204-M10-2026, 03TNDN-rate15-Y2025, 03TNDN-rate17-Y2025, 01GTGT-khbs-zero-to-sale10-M10-2026, 01GTGT-khbs-sale5-to-sale10-M09-2026]
         default: 01GTGT-zero-M10-2026
         required: true
       web_artifact_commit:
@@ -220,6 +220,18 @@ jobs:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
           HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}
         run: python ./scripts/publish-htkk-declaration-native-output.py
+      # KHBS (kê khai bổ sung) cases: the raw original B1 export is retained even when the harness reported a
+      # whole-tree mismatch (status stays failure); the publisher re-validates privacy against the case input first.
+      - name: Retain raw native KHBS export privately
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && inputs.gui_automation == 'gtgt-amendment-khbs-inspect' && inputs.web_artifact_commit != ''
+        shell: pwsh
+        env:
+          EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
+          WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
+          SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
+          HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}
+        run: python ./scripts/publish-htkk-khbs-native-output.py
       - name: Retain native-first harness sample and report its separate status privately
         id: native_sample_publish
         if: always() && inputs.install_and_probe && steps.native_probe.outcome == 'success' && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && inputs.gui_automation == 'gtgt-roundtrip-inspect'

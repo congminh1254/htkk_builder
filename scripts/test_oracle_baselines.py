@@ -141,7 +141,8 @@ class Consumers(unittest.TestCase):
         for sha in list(V1['files'].values())[:4] + [V1['distribution'][k] for k in ('archiveSha256', 'setupSha256', 'msiSha256', 'cabSha256')]:
             self.assertNotIn(sha, probe)
         self.assertEqual(probe.count("$htkkOracle.files['Project/HTKK.exe']"), 2)
-        self.assertEqual(probe.count('sourceVersion=$htkkOracle.version'), 3)
+        # D1 web output, declaration output and KHBS output staging.
+        self.assertEqual(probe.count('sourceVersion=$htkkOracle.version'), 4)
         self.assertNotIn("'5.8.1'", probe.replace("[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1'", ''))
         for helper in ('Invoke-HtkkTaxIdOracle', 'Invoke-HtkkProfileAliasOracle', 'Invoke-HtkkCommonHeaderOracle', 'New-HtkkX86ReferenceHost', 'Invoke-HtkkSyntheticLogin'):
             call = next(line for line in probe.splitlines() if helper + ' -' in line)
@@ -159,8 +160,8 @@ class Consumers(unittest.TestCase):
         self.assertIn("        options: ['5.8.1', '5.8.2']\n        default: '5.8.1'\n", workflow)
         self.assertIn("if ($oracleVersion -cnotin @('5.8.1','5.8.2')) { throw 'Invalid HTKK oracle version.' }", workflow)
         self.assertIn('-GuiAutomation $guiAutomation -OracleVersion $oracleVersion\n', workflow)
-        self.assertEqual(workflow.count('HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}'), 4)
-        for script in ('publish-htkk-web-native-output.py', 'publish-htkk-declaration-native-output.py', 'report-native-case.py', 'report-native-failure.py'):
+        self.assertEqual(workflow.count('HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}'), 5)
+        for script in ('publish-htkk-web-native-output.py', 'publish-htkk-declaration-native-output.py', 'publish-htkk-khbs-native-output.py', 'report-native-case.py', 'report-native-failure.py'):
             step = workflow[:workflow.index(script)]
             self.assertIn('HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}\n        run: python', step[-200:], script)
         self.assertIn("${{ inputs.htkk_version == '5.8.2' && '-htkk582' || '' }}\n  cancel-in-progress: false", workflow)
