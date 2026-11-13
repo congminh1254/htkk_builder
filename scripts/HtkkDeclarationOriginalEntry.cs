@@ -335,7 +335,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
  //  6 sheet metadata   8 edit cell locked   9 edit cell type   10 foreground/focus guard   11 editor   13 edit read-back
- //  17 original message
+ //  16 combo code cell not written   17 original message   19 sheet of a combo edit not activated
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -358,6 +358,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // One fixed number through the original editor ("^a", value, "{TAB}"), read back as Decimal.
  private void EditDeclarationTick(int index){
   if(index!=declarationTickActionCount||index<0||index>=declarationTickPlan.Edits.Length)throw new InvalidOperationException();
+  if(declarationTickPlan.Edits[index].StartsWith("combo|",StringComparison.Ordinal)){EditDeclarationTickCombo(index);return;}
   Control grid;object sheet=DeclarationEntrySheet(out grid);SetStage(HtkkAutomationStage.DeclarationImportTickEditing);Record();
   string[] parts=declarationTickPlan.Edits[index].Split('|');int[] at=DeclarationEntryCell(parts[1]);int row=at[0],column=at[1];
   if(row>=Convert.ToInt32(Get(sheet,"RowCount"))||column>=Convert.ToInt32(Get(sheet,"ColumnCount"))){DeclarationTickFail(6);return;}
@@ -376,6 +377,56 @@ public sealed partial class HtkkGuiReferenceAutomation {
   SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
   if(OriginalMessageVisible()){DeclarationTickFail(17);return;}
   if(!DeclarationEntryNumber(Cell(sheet,row,column),parts[2])){declarationTickMismatchMask|=1<<index;DeclarationTickFail(13);return;}
+  declarationTickActionCount++;Record();
+ }
+ // The grid of the declaration window and one of its sheets, read only (no activation).
+ private object DeclarationTickSheet(string key,out Control grid){
+  List<Control> grids=new List<Control>();int visited=0;GatherSpreads(roundtripOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();
+  grid=grids[0];object sheet=DeclarationSheet(grid,key);if(sheet==null)throw new InvalidOperationException();
+  object business=Global("InstanceClass");if(business==null||business.GetType().FullName!="TAX.HTKK.Business."+declarationPlan.BusinessClass)throw new InvalidOperationException();
+  return sheet;
+ }
+ // The sheet of a combo edit made active by the original keyboard (Ctrl+PageDown / Ctrl+PageUp of the FarPoint input map),
+ // one key per step, bounded by the sheet count; never ActiveSheet / ActiveSheetIndex assignment.
+ private bool DeclarationTickActivate(Control grid,object sheet){
+  int count=Convert.ToInt32(Get(Get(grid,"Sheets"),"Count"));
+  for(int step=0;step<=2*count&&Get(grid,"ActiveSheet")!=sheet;step++){
+   grid.Focus();if(!DeclarationEntryGuard(grid))return false;
+   SendKeys.SendWait(step<count?"^{PGDN}":"^{PGUP}");Application.DoEvents();
+   if(OriginalMessageVisible())return false;
+  }
+  return Get(grid,"ActiveSheet")==sheet;
+ }
+ // 05-1/PBT combo edit (combo|sheet|cell|item name|code cell|item code): the original combobox cell of a table row is
+ // selected (winFpSpread_EnterCell rebuilds its list from the row: loadCqtCapCucTheoDiaBanXa(mã xã) for Thuế tỉnh/CCT,
+ // loadCqtCapChiCucTheoDiaBanXa(mã cấp cục, mã xã) for CQT quản lý), the item name is typed into the original editor as
+ // real keyboard input and committed with TAB; winFpSpread_CellChange maps it to its code (GetDMFromCombobox) and, for
+ // Thuế tỉnh/CCT, rebuilds and clears CQT quản lý (setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic), which the next edit
+ // chooses again. Read back: the cell shows the name and the code cell holds the code.
+ // Extra failure codes: 19 sheet activation, 16 code cell not written.
+ private void EditDeclarationTickCombo(int index){
+  string[] parts=declarationTickPlan.Edits[index].Split('|');Control grid;object sheet=DeclarationTickSheet(parts[1],out grid);
+  SetStage(HtkkAutomationStage.DeclarationImportTickEditing);Record();
+  int[] at=DeclarationEntryCell(parts[2]),code=DeclarationEntryCell(parts[4]);int row=at[0],column=at[1];
+  if(row>=Convert.ToInt32(Get(sheet,"RowCount"))||column>=Convert.ToInt32(Get(sheet,"ColumnCount"))||code[0]!=row){DeclarationTickFail(6);return;}
+  object cell=Cell(sheet,row,column);
+  if(Convert.ToBoolean(Get(cell,"Locked"))){declarationTickMismatchMask|=1<<index;DeclarationTickFail(8);return;}
+  if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.ComboBoxCellType"){declarationTickMismatchMask|=1<<index;DeclarationTickFail(9);return;}
+  if(!DeclarationTickActivate(grid,sheet)){DeclarationTickFail(19);return;}
+  DeclarationEntrySelect(grid,sheet,row,column);
+  if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
+  if(editor==null||!editor.Visible||!editor.Enabled){DeclarationTickFail(11);return;}
+  editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  editorKind="combo";SendKeys.SendWait("^a");
+  if(!TypeDeclarationEntryUnicode(grid,editor,parts[3])){DeclarationTickFail(10);return;}
+  if(!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+  if(OriginalMessageVisible()){DeclarationTickFail(17);return;}
+  Stopwatch clock=Stopwatch.StartNew();
+  while(CellText(sheet,code[0],code[1])!=parts[5]&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+  if(CellText(sheet,row,column)!=parts[3]){declarationTickMismatchMask|=1<<index;DeclarationTickFail(13);return;}
+  if(CellText(sheet,code[0],code[1])!=parts[5]){declarationTickMismatchMask|=1<<index;DeclarationTickFail(16);return;}
   declarationTickActionCount++;Record();
  }
  // SPACE on an open, unticked original checkbox: FpSpread.ButtonClicked -> frmWinToKhai.winFpSpread_ButtonClicked
@@ -403,7 +454,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  // Ticks still ticked, clear cells still clear (gating); readbacks of HTKK-written cells (diagnostic mask only).
  private bool InspectDeclarationTick(){
-  Control grid;object sheet=DeclarationEntrySheet(out grid);SetStage(HtkkAutomationStage.DeclarationImportTickReadbackChecking);int mask=0;
+  // Read only: a combo edit of another sheet may have left that sheet active.
+  Control grid;object sheet=DeclarationTickSheet("01",out grid);SetStage(HtkkAutomationStage.DeclarationImportTickReadbackChecking);int mask=0;
   for(int index=0;index<declarationTickPlan.Readbacks.Length;index++){string[] parts=declarationTickPlan.Readbacks[index].Split('|');int[] at=DeclarationEntryCell(parts[0]);if(CellText(sheet,at[0],at[1])!=parts[1])mask|=1<<index;}
   for(int index=0;index<declarationTickPlan.Ticks.Length;index++){int[] at=DeclarationEntryCell(declarationTickPlan.Ticks[index]);if(!Selected(Get(Cell(sheet,at[0],at[1]),"Value")))mask|=1<<(8+index);}
   for(int index=0;index<declarationTickPlan.Unticked.Length;index++){int[] at=DeclarationEntryCell(declarationTickPlan.Unticked[index]);object cell=Cell(sheet,at[0],at[1]);if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Selected(Get(cell,"Value")))mask|=1<<(12+index);}

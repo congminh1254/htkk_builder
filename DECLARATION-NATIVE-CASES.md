@@ -27,6 +27,8 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `01CNKD-TT50-310-pl03-two-groups-Q3-2026` | `101 → 101_37 → U5` (01/CNKD **3.1.0**, chỉ oracle **HTKK 5.8.2**) | 21 | quý 3/2026 | 01-5 "PL 03 43/2026/QH16" (`PLuc_03_PhaiNop_NQ43`, mục A 1 dòng nhóm 04, mục B dòng mặc định) | 281 |
 | `03TNDN-rate15-Y2025`, `03TNDN-rate17-Y2025` | `101 → 101_2 → N8` (03/TNDN 2.9.4, oracle **HTKK 5.8.2**) | 11 | năm 2025, 01/01–31/12 | 03-1A | 143 |
 | `05KK-TT89-withheld-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 **3.0.9**, chỉ oracle **HTKK 5.8.2**) | 14 | quý 4/2026 | — | 69 |
+| `05KK-PBT-two-provinces-Q3-2026` | `101 → 101_11 → L7` (05/KK 2.9.3, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 19 | quý 3/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 110 |
+| `05KK-TT89-PBT-two-provinces-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 3.0.9, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 14 | quý 4/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 117 |
 
 Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
 oracle 5.8.2 vì Z8 không có trong Menu.xml 5.8.1): KieuKy 14 = `SetLayoutToKhaiQuy` (chỉ kỳ quý). Driver chỉ tích `chkTKQuy` khi
@@ -528,3 +530,25 @@ trống (mask 4); `xsi:nil` của web (U5, B9) so với cách HTKK ghi ô rỗng
 
 Kiểm offline: `python3 -m unittest discover -s scripts -p 'test_*.py'`,
 `python3 scripts/generate-native-automation-registry.py --check`, `python3 scripts/generate-native-cases.py --check`.
+
+### Bảng phân bổ 05-1/PBT-KK-TNCN (L7, Z8; non-gating, oracle HTKK 5.8.2, chưa chạy Windows)
+
+`05KK-PBT-two-provinces-Q3-2026` (L7, tích [15]) và `05KK-TT89-PBT-two-provinces-Q4-2026` (Z8, tích [14]); producer htkk_web
+`tncn05kk-pbt-two-provinces-q3-2026` / `tncn05kk-tt89-pbt-two-provinces-q4-2026`, manifest mang `htkkVersion` 5.8.2. Hai dòng bảng
+tiền lương: trụ sở chính (loại 01, MST hồ sơ) ở Hà Nội, xã 10129087, Thuế tỉnh/CCT 10100, CQT quản lý 10129; chi nhánh (loại 02, mã
+địa điểm 5 số `00001`, `CheckMaSoThue5So`) ở Hải Phòng, xã 10309019, 10300, 10309. Tổng cột khớp tờ khai (Header B29, B31–B34).
+
+Đọc tĩnh HTKK 5.8.2 (gói chính thức đúng ghim, không chạy): Thuế tỉnh/CCT là control 8, Path `path_15`, **không có lá XML**.
+Sau "Nhập từ XML", `WinDoWorkEvent.ProcessSelectedCell` → `GetValueFromSelectedCell` (0x06000085) **không** ghi tên cho control 8/9
+với menu trong danh sách danh mục mới (L7, Z8), `ProcessParentCell` → `GetParentCodeFromChildCellInTable` (0x0600008a) chỉ ghi mã
+T = U[0..3]+"00". Ô I trống thì Header B37 (`TRIM(I44)=""`, cờ Y) chặn Kết xuất. Mode `web-xml-import-tick-reexport` vì vậy có
+thêm thao tác **combo**: `HtkkDeclarationCasePlans.ImportTick` = `combo|01-1|I44|Thuế Thành phố Hà Nội|T44|10100`, rồi J44 (CQT quản
+lý, bị `setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic` xóa khi chọn I), rồi I45/J45. Mỗi thao tác: sheet 01-1 được bật bằng phím gốc
+Ctrl+PageDown/PageUp (không gán ActiveSheet), chọn ô (`winFpSpread_EnterCell` dựng lại danh sách theo dòng:
+`loadCqtCapCucTheoDiaBanXa(mã xã)` / `loadCqtCapChiCucTheoDiaBanXa(mã cấp cục, mã xã)`), gõ tên mục bằng bàn phím Unicode vào editor
+gốc, TAB; `winFpSpread_CellChange` ghi mã (`GetDMFromCombobox`); đọc lại tên trong ô và mã ở T/U. Mã lỗi thêm: 16 (ô mã không
+được ghi), 19 (không bật được sheet). Ghim IL `pbt-582-*` (11 thân phương thức, `added-reviewed`, chỉ 5.8.2;
+`HtkkOracleBaseline.PbtMethodPins()`, 5.8.1 từ chối). Ô kiểm: tổng L47–P47 của 05-1, mã R/Z/T/U hai dòng, các chỉ tiêu tờ khai;
+so cả cây với XML web. Câu hỏi mở cho lần chạy đầu: phím Ctrl+PageDown của FarPoint có đổi sheet không (nếu không: mã 19), editor
+combo có nhận chuỗi gõ không (mã 13/16), dòng trúng thưởng mặc định xuất rỗng hay `xsi:nil`/'cbo' (so cây). Web giữ cổng
+`PBT_05KK_RELEASED = false` cho tới khi hai ca khớp.

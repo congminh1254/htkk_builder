@@ -18,7 +18,9 @@
     {"adapterId": "04-ntnn-tt89-3.0.9", "menuId": "Y1", "businessClass": "Ntnn04TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/04_NTNN_TT89_309.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
     {"adapterId": "02-ntnn-tt89-3.0.9", "menuId": "X9", "businessClass": "Ntnn02TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/02_NTNN_TT89_309.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"},
     {"adapterId": "02-ntnn-tt80-2.5.1", "menuId": "C9", "businessClass": "Ntnn02TT80", "xmlVersion": "2.5.1", "schemaId": "Validate/02_NTNN_TT80_251.xsd", "annexes": ["01-1", "01-2"], "mode": "web-xml-import-reexport"},
-    {"adapterId": "05-kk-tncn-tt89-3.0.9", "htkkVersion": "5.8.2", "menuId": "Z8", "businessClass": "TncnKk05TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/05_KK_TNCN_TT89_309.xsd", "annexes": [], "mode": "web-xml-import-reexport"}
+    {"adapterId": "05-kk-tncn-tt89-3.0.9", "htkkVersion": "5.8.2", "menuId": "Z8", "businessClass": "TncnKk05TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/05_KK_TNCN_TT89_309.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
+    {"adapterId": "05-kk-tncn-2.9.3-pbt", "htkkVersion": "5.8.2", "menuId": "L7", "businessClass": "TncnKk05TT80", "xmlVersion": "2.9.3", "schemaId": "Validate/05_KK_TNCN_TT80_293.xsd", "annexes": ["01-1"], "mode": "web-xml-import-tick-reexport"},
+    {"adapterId": "05-kk-tncn-tt89-3.0.9-pbt", "htkkVersion": "5.8.2", "menuId": "Z8", "businessClass": "TncnKk05TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/05_KK_TNCN_TT89_309.xsd", "annexes": ["01-1"], "mode": "web-xml-import-tick-reexport"}
   ],
   "cases": [
     {"caseId": "05KK-zero-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
@@ -123,6 +125,16 @@
     {"caseId": "05KK-TT89-withheld-Q4-2026", "adapterId": "05-kk-tncn-tt89-3.0.9", "htkkVersion": "5.8.2", "releaseGate": false,
      "unit": {"menuId": "Z8", "adapterVersion": "3.0.9", "periodType": "quarter", "periodValue": "4/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"mst_cu": "9999999997", "ct14": "0", "ct15": "12", "ct16": "10", "ct17": "10", "ct18": "8", "ct19": "2", "ct20": "180000000", "ct21": "150000000", "ct22": "30000000", "ct23": "2000005", "ct24": "8000000", "ct25": "0", "ct27": "0", "ct29": "150000000", "ct32": "90000000", "ct35": "200001", "ct36": "5000000", "ct39": "0", "ct40": "0", "ct41": "1000000", "ct42": "12000000", "ct44": "6000000", "ct45": "200001"},
-     "question": "[35] = ROUND([23]*10/100,0) = ROUND(200000.5) (mẫu HTKK 5.8.2, ô khóa): kỳ vọng 200001; [36] = [38]+[40]+[41]; HTKK 5.8.2 nhận kỳ quý 4/2026 (CheckToKhaiBatDauCoHieuLuc)."}
+     "question": "[35] = ROUND([23]*10/100,0) = ROUND(200000.5) (mẫu HTKK 5.8.2, ô khóa): kỳ vọng 200001; [36] = [38]+[40]+[41]; HTKK 5.8.2 nhận kỳ quý 4/2026 (CheckToKhaiBatDauCoHieuLuc)."},
+    {"caseId": "05KK-PBT-two-provinces-Q3-2026", "adapterId": "05-kk-tncn-2.9.3-pbt", "htkkVersion": "5.8.2", "releaseGate": false,
+     "unit": {"menuId": "L7", "adapterVersion": "2.9.3", "periodType": "quarter", "periodValue": "3/2026", "activityCode": "00", "annexes": ["01-1"], "amendmentOrder": 0},
+     "expectedLeaves": {"mst_cu": "9999999997", "ct15": "1", "ct16": "10", "ct17": "8", "ct18": "9", "ct19": "7", "ct20": "2", "ct21": "120000000", "ct22": "100000000", "ct23": "20000000", "ct24": "1000005", "ct25": "3000000", "ct26": "100000000", "ct27": "80000000", "ct28": "20000000", "ct29": "9000000", "ct30": "5000000", "ct31": "4000000", "ct32": "100001"},
+     "expectedRows": {"PLuc_05_1_PBT_KK_TNCN/PhanBoTuTienLuong/NDungPhanBoTuTienLuong": 2, "PLuc_05_1_PBT_KK_TNCN/PhanBoTuTrungThuong/NDungPhanBoTuTrungThuong": 1},
+     "question": "05-1/PBT: sau Nhập từ XML, ô Thuế tỉnh/CCT (control 8, path_15, không có trong XML) trống (GetValueFromSelectedCell không ghi tên cho L7/Z8); chọn lại Thuế tỉnh/CCT rồi CQT quản lý qua ô gốc thì kết xuất khớp toàn cây?"},
+    {"caseId": "05KK-TT89-PBT-two-provinces-Q4-2026", "adapterId": "05-kk-tncn-tt89-3.0.9-pbt", "htkkVersion": "5.8.2", "releaseGate": false,
+     "unit": {"menuId": "Z8", "adapterVersion": "3.0.9", "periodType": "quarter", "periodValue": "4/2026", "activityCode": "00", "annexes": ["01-1"], "amendmentOrder": 0},
+     "expectedLeaves": {"mst_cu": "9999999997", "ct14": "1", "ct15": "12", "ct16": "10", "ct17": "10", "ct18": "8", "ct19": "2", "ct20": "180000000", "ct21": "150000000", "ct22": "30000000", "ct23": "2000005", "ct24": "8000000", "ct25": "0", "ct27": "0", "ct29": "150000000", "ct32": "90000000", "ct35": "200001", "ct36": "5000000", "ct39": "0", "ct40": "0", "ct41": "1000000", "ct42": "12000000", "ct44": "6000000", "ct45": "200001"},
+     "expectedRows": {"PLuc_05_1_PBT_KK_TNCN/PhanBoTuTienLuong/NDungPhanBoTuTienLuong": 2, "PLuc_05_1_PBT_KK_TNCN/PhanBoTuTrungThuong/NDungPhanBoTuTrungThuong": 1},
+     "question": "05-1/PBT: sau Nhập từ XML, ô Thuế tỉnh/CCT (control 8, path_15, không có trong XML) trống (GetValueFromSelectedCell không ghi tên cho L7/Z8); chọn lại Thuế tỉnh/CCT rồi CQT quản lý qua ô gốc thì kết xuất khớp toàn cây?"}
   ]
 }

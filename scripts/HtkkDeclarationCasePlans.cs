@@ -47,7 +47,10 @@ internal sealed class HtkkDeclarationTickPlan {
   Edits=edits;Ticks=ticks;Unticked=unticked;Readbacks=readbacks;MethodPins=methodPins;
   // A plan may have no tick (PL 03: the edit alone runs capNhatToKhai); it always has an edit.
   if(edits.Length<1||edits.Length>4||ticks.Length>4||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
-  foreach(string edit in edits){string[] parts=edit.Split('|');if(parts.Length!=3||parts[0]!="number")throw new InvalidOperationException();}
+  // number|cell|value on sheet 01; combo|sheet|cell|item name|code cell|item code: an original combobox of another
+  // sheet (05-1/PBT Thuế tỉnh/CCT and CQT quản lý), the item name typed into the original editor, the code written by
+  // frmWinToKhai.winFpSpread_CellChange (GetDMFromCombobox) read back.
+  foreach(string edit in edits){string[] parts=edit.Split('|');if(!((parts.Length==3&&parts[0]=="number")||(parts.Length==6&&parts[0]=="combo"&&parts[1].Length>0&&parts[3].Length>0&&parts[5].Length>0)))throw new InvalidOperationException();}
   foreach(string readback in readbacks)if(readback.Split('|').Length!=2)throw new InvalidOperationException();
   foreach(string pin in methodPins){string[] parts=pin.Split('|');if(parts.Length!=6||(parts[0]!="B"&&parts[0]!="H")||parts[5].Length!=64)throw new InvalidOperationException();}
  }
@@ -60,7 +63,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -137,6 +140,24 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/05_KK_TNCN_TT89_309.xsd","f4ea48433b04be487587b38f10494ef4486656900faa01e595771110f43a2c9c",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,69,
     new string[]{"01|U63|10","01|U69|180000000","01|U76|8000000","01|U84|150000000","01|U90|90000000","01|U96|200001","01|U97|5000000","01|U106|12000000"},
     new string[]{Main+"mst_cu|9999999997",Main+"ct14|0",Main+"ct15|12",Main+"ct16|10",Main+"ct17|10",Main+"ct18|8",Main+"ct19|2",Main+"ct20|180000000",Main+"ct21|150000000",Main+"ct22|30000000",Main+"ct23|2000005",Main+"ct24|8000000",Main+"ct25|0",Main+"ct27|0",Main+"ct29|150000000",Main+"ct32|90000000",Main+"ct35|200001",Main+"ct36|5000000",Main+"ct39|0",Main+"ct40|0",Main+"ct41|1000000",Main+"ct42|12000000",Main+"ct44|6000000",Main+"ct45|200001"});
+   // 05/KK-TNCN with bảng 05-1/PBT-KK-TNCN (non-gating, HTKK 5.8.2 oracle, mode web-xml-import-tick-reexport with combo
+   // edits; htkk_web docs/NGHIEP-VU-TNCN.md "Bảng phân bổ 05-1/PBT-KK-TNCN"). [15] (L7) / [14] (Z8) ticked; two rows of the
+   // tiền lương table: trụ sở chính in Hà Nội (ward 10129087, Thuế tỉnh/CCT 10100, CQT quản lý 10129) and a branch (mã địa
+   // điểm 00001) in Hải Phòng (ward 10309019, 10300, 10309). Thuế tỉnh/CCT (control 8, Path path_15) has no XML leaf, so the
+   // import leaves it empty (GetValueFromSelectedCell returns for control 8 in these menus) and Header B37 would refuse
+   // the export: ImportTick chooses it again, then CQT quản lý (cleared by that choice). Rows 44-45; the total row is 47.
+   case "05KK-PBT-two-provinces-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"L7","2.9.3","864","TncnKk05TT80Nckt293",new string[]{"101","101_11","L7"},"quarter","19","2026","3","01/07/2026","30/09/2026",false,
+    new string[]{"05-1/PBT-KK-TNCN"},new string[]{"01|Tờ khai","01-1|05-1/PBT-KK-TNCN"},
+    "InterfaceTemplates/excel/05_KK_TNCN_TT80_293.xls","3ce979a51388f872d4e881ffef944961f18c86cdd3ac6f5f8c61b7f4b5897f8f","InterfaceTemplates/xml/05_KK_TNCN_TT80_293.xml","ac49d746988fa0e18fa4f41c839b02b87d2d612988a20fae93004c5a99ed1d6e",
+    "Validate/05_KK_TNCN_TT80_293.xsd","9cd4d367123ee0ac1f94fb043975738ac142420d558bb24969e4c0afe64ac846",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,110,
+    new string[]{"01|U40|9","01|U43|120000000","01|U49|100000000","01|U52|9000000","01|U55|100001","01-1|L47|120000000","01-1|M47|100000000","01-1|N47|10","01-1|O47|9","01-1|P47|9000000","01-1|R44|101","01-1|R45|103","01-1|Z44|10129087","01-1|Z45|10309019","01-1|T44|10100","01-1|T45|10300","01-1|U44|10129","01-1|U45|10309"},
+    new string[]{Main+"mst_cu|9999999997",Main+"ct15|1",Main+"ct16|10",Main+"ct17|8",Main+"ct18|9",Main+"ct19|7",Main+"ct20|2",Main+"ct21|120000000",Main+"ct22|100000000",Main+"ct23|20000000",Main+"ct24|1000005",Main+"ct25|3000000",Main+"ct26|100000000",Main+"ct27|80000000",Main+"ct28|20000000",Main+"ct29|9000000",Main+"ct30|5000000",Main+"ct31|4000000",Main+"ct32|100001"});
+   case "05KK-TT89-PBT-two-provinces-Q4-2026":return new HtkkDeclarationCasePlan(caseId,"Z8","3.0.9","2036","TncnKk05TT89Nckt309",new string[]{"101","101_11","Z8"},"quarter","14","2026","4","01/10/2026","31/12/2026",false,
+    new string[]{"05-1/PBT-KK-TNCN"},new string[]{"01|Tờ khai","01-1|05-1/PBT-KK-TNCN"},
+    "InterfaceTemplates/excel/05_KK_TNCN_TT89_309.xls","316a2c02e2d93ed254583775e5b8db2ab8909460b932a565f9a27c5d1a1b6c91","InterfaceTemplates/xml/05_KK_TNCN_TT89_309.xml","420921c52f38b929b432ca8fecc60fd6453b8b14702777612fd251cc2873fa2d",
+    "Validate/05_KK_TNCN_TT89_309.xsd","f4ea48433b04be487587b38f10494ef4486656900faa01e595771110f43a2c9c",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,117,
+    new string[]{"01|U63|10","01|U69|180000000","01|U84|150000000","01|U96|200001","01|U106|12000000","01-1|L47|180000000","01-1|M47|150000000","01-1|N47|12","01-1|O47|10","01-1|P47|12000000","01-1|R44|101","01-1|R45|103","01-1|Z44|10129087","01-1|Z45|10309019","01-1|T44|10100","01-1|T45|10300","01-1|U44|10129","01-1|U45|10309"},
+    new string[]{Main+"mst_cu|9999999997",Main+"ct14|1",Main+"ct15|12",Main+"ct16|10",Main+"ct17|10",Main+"ct18|8",Main+"ct19|2",Main+"ct20|180000000",Main+"ct21|150000000",Main+"ct22|30000000",Main+"ct23|2000005",Main+"ct24|8000000",Main+"ct25|0",Main+"ct27|0",Main+"ct29|150000000",Main+"ct32|90000000",Main+"ct35|200001",Main+"ct36|5000000",Main+"ct39|0",Main+"ct40|0",Main+"ct41|1000000",Main+"ct42|12000000",Main+"ct44|6000000",Main+"ct45|200001"});
    // B9 05/QTT-TNCN TT80: KieuKy 12 = SetLayoutToKhaiNamTuThangDenThang; annexes 05-1, 05-3.
    case "05QTT-two-employees-Y2025":return new HtkkDeclarationCasePlan(caseId,"B9","2.9.3","953","TncnQtt05TT80Nckt293",new string[]{"101","101_11","B9"},"year","12","2025","","01/2025","12/2025",false,
     new string[]{"05-1/BK-TNCN|05-1/BK-QTT-TNCN","05-3/BK-TNCN|05-3/BK-QTT-TNCN"},new string[]{"05|Tờ khai","05-1|05-1/BK-TNCN"},
@@ -372,6 +393,11 @@ internal static class HtkkDeclarationCasePlans {
  //    PL 03), so AE = CE - CD is HTKK's own result. AJ293 (group 02, not reduced, last row) stays clear.
  //  * Readbacks (diagnostic): BN = ma_diaDiemKD 00001 and CA = the profile MST on the rows, written by SetCacDongCon.
  internal static HtkkDeclarationTickPlan ImportTick(string caseId){
+  // 05-1/PBT (L7, Z8): Thuế tỉnh/CCT then CQT quản lý of each row through the original combobox editor (see the case plans).
+  if(caseId=="05KK-PBT-two-provinces-Q3-2026"||caseId=="05KK-TT89-PBT-two-provinces-Q4-2026")return new HtkkDeclarationTickPlan(
+   new string[]{"combo|01-1|I44|Thuế Thành phố Hà Nội|T44|10100","combo|01-1|J44|Thuế cơ sở 16 Thành phố Hà Nội|U44|10129",
+    "combo|01-1|I45|Thuế Thành phố Hải Phòng|T45|10300","combo|01-1|J45|Thuế cơ sở 6 Thành phố Hải Phòng|U45|10309"},
+   new string[0],new string[0],new string[0],HtkkOracleBaseline.PbtMethodPins());
   // PL 03 (see its case plan): the original L291 edit fills BN/CA (SetCacDongCon) and runs capNhatToKhai (CF from PL 03);
   // no checkbox is ticked. Same pinned methods (u5-310-tick-*: CellChange_0, SetCacDongCon, capNhatToKhai, ...).
   if(caseId=="01CNKD-TT50-310-pl03-two-groups-Q3-2026")return new HtkkDeclarationTickPlan(

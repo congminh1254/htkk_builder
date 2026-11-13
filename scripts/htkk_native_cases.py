@@ -48,6 +48,11 @@ TRUSTED_ADAPTERS={
  # the adapter is pinned to that oracle. KieuKy 14 = SetLayoutToKhaiQuy (quarter only); CheckToKhaiBatDauCoHieuLuc
  # refuses quarters before 4/2026.
  '05-kk-tncn-tt89-3.0.9':{**_declaration('Z8','3.0.9',{'quarter':('4/2026',)},[]),'htkkVersion':'5.8.2'},
+ # 05/KK-TNCN with bảng 05-1/PBT-KK-TNCN (Menu sheet 01-1, period dialog label 05-1/PBT-KK-TNCN) on the HTKK 5.8.2 oracle.
+ # Thuế tỉnh/CCT (control 8, Path path_15) has no XML leaf and the import leaves it empty (Header B37 would refuse the
+ # export): mode IMPORT_TICK_MODE with combo edits (HtkkDeclarationCasePlans.ImportTick) chooses it and then CQT quản lý.
+ '05-kk-tncn-2.9.3-pbt':{**_declaration('L7','2.9.3',{'quarter':('3/2026',)},['01-1'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
+ '05-kk-tncn-tt89-3.0.9-pbt':{**_declaration('Z8','3.0.9',{'quarter':('4/2026',)},['01-1'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
  '05-qtt-tncn-2.9.3':_declaration('B9','2.9.3',{'year':('2025',)},['05-1','05-3']),
  '01-cnkd-hkd-2.9.8':_declaration('U5','2.9.8',{'quarter':('3/2026',)},[]),
  # U5 3.1.0 exists only in HTKK 5.8.2 (Menu.xml VersionXML 3.1.0, CnkdHkd01TT50Nckt310): the adapter is pinned to that

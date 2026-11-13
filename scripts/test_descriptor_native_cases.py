@@ -7,13 +7,13 @@ native=load('native_cases_for_descriptor_test','htkk_native_cases.py')
 RAW=json.loads((ROOT/'htkk-descriptor-native-cases.json').read_text())
 class DescriptorNativeCaseDesign(unittest.TestCase):
  def test_registry_has_zero_and_amount_cases_per_menu(self):
-  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025','01NTNN-zero-M09-2026','01NTNN-two-contractors-M09-2026','01NTNN-NCCNN-zero-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-zero-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-zero-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-zero-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-zero-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','05KK-TT89-zero-Q4-2026','05KK-TT89-withheld-Q4-2026'))
+  self.assertEqual(design.CASE_IDS,('05KK-zero-Q3-2026','05KK-withheld-Q3-2026','05QTT-zero-Y2025','05QTT-two-employees-Y2025','02QTT-zero-Y2025','02QTT-dependants-Y2025','01NTNN-zero-M09-2026','01NTNN-two-contractors-M09-2026','01NTNN-NCCNN-zero-M10-2026','01NTNN-NCCNN-two-parts-M10-2026','03NTNN-zero-M10-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-zero-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-zero-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-zero-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','05KK-TT89-zero-Q4-2026','05KK-TT89-withheld-Q4-2026','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026'))
   self.assertEqual({c['unit']['menuId'] for c in design.DESIGN['cases']},{'L7','B9','B8','I9','Y8','J1','D6','Y1','X9','C9','Z8'})
  def test_design_cannot_be_dispatched_or_gate_a_release(self):
   self.assertFalse(design.DESIGN['dispatchable'])
   # Only reviewed cases are promoted, through the declaration driver and never as a gate.
   promoted=set(design.CASE_IDS)&set(native.CASES)
-  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','05KK-TT89-withheld-Q4-2026'})
+  self.assertEqual(promoted,{'05KK-withheld-Q3-2026','05QTT-two-employees-Y2025','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','05KK-TT89-withheld-Q4-2026','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026'})
   for case in promoted:self.assertEqual(native.driver(case),'declaration-web-import-inspect');self.assertIs(native.CASES[case]['releaseGate'],False)
   workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
   for case in set(design.CASE_IDS)-promoted:self.assertNotIn(case,workflow)
@@ -71,5 +71,6 @@ class DescriptorNativeCaseDesign(unittest.TestCase):
   for mutate in bad:
    value=copy.deepcopy(RAW);mutate(value)
    with self.assertRaises(ValueError):design.validate(value)
-  self.assertEqual(design.NO_ZERO_CASE,{'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9'})
+  # 05-1/PBT adapters: the annex needs at least one complete row (Header B35-B39), no zero declaration with it.
+  self.assertEqual(design.NO_ZERO_CASE,{'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt'})
 if __name__=='__main__':unittest.main()
