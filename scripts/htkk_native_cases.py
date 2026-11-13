@@ -34,6 +34,8 @@ TRUSTED_ADAPTERS={
   'periods':{'month':('10/2026','09/2026')}},
  # Bổ sung LẦN 2 (amendmentOrder 2) on the same driver: the previous version (bổ sung lần 1 of the case-1 web file) is
  # imported, summarised and saved in HTKK first (htkk_khbs_web_cases.prior_case), then B2 is opened, imported and summarised.
+ # KHBS ORACLE CAPTURE with phụ lục 01-2/GTGT (C0 without annex, B1 adds the proven two-plant annex): non-gating.
+ '01-gtgt-2.8.3-khbs-annex12':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':['01-2/GTGT'],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1,'periods':{'month':('10/2026',)}},
  '01-gtgt-2.8.3-khbs-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,'periods':{'month':('10/2026',)}},
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
@@ -127,7 +129,7 @@ CANDIDATE_CASES=tuple(id for id,c in CASES.items() if not c['releaseGate'])
 check(GATE_CASES and list(CASES)[:len(GATE_CASES)]==list(GATE_CASES))
 ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex12')
 ANNEX10_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex10')
-KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId'] in ('01-gtgt-2.8.3-khbs','01-gtgt-2.8.3-khbs-lan2'))
+KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId'] in ('01-gtgt-2.8.3-khbs','01-gtgt-2.8.3-khbs-lan2','01-gtgt-2.8.3-khbs-annex12'))
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in KHBS_CASES))
 # Declaration-family cases use their own input/output file names, privacy allowlist and driver.
 DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==DECLARATION_DRIVER)

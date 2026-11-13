@@ -200,7 +200,9 @@ class NativeDriverContract(unittest.TestCase):
   self.assertIn("-and $lastGui.webTaxLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '"+cases.ANNEX10_CASES[0]+"'){88}elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+TWO+"'){159}elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+ZERO+"'){108}else{70})",probe)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
   self.assertEqual(registry['webTaxLeafCount']['maximum'],159);values=registry['webCaseId']['values'];self.assertEqual(values[values.index(ANNEX[0]):values.index(ANNEX[0])+2],list(ANNEX))
-  for key in ('annex12WebImportSheetMatched','annex12WebBaselineSchemaVerified','annex12WebReexportSchemaVerified','annex12WebImportGroupCount','annex12WebImportRowCount'):self.assertEqual(registry[key]['activeModes'],['gtgt-web-import-inspect'])
+  # The KHBS annex capture case (gtgt-amendment-khbs-inspect) reuses the import check and the head-CQT restoration.
+  for key in ('annex12WebBaselineSchemaVerified','annex12WebReexportSchemaVerified'):self.assertEqual(registry[key]['activeModes'],['gtgt-web-import-inspect'])
+  for key in ('annex12WebImportSheetMatched','annex12WebImportGroupCount','annex12WebImportRowCount'):self.assertEqual(registry[key]['activeModes'],['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect'])
   csharp=(ROOT/'HtkkWebInputReference.cs').read_text(encoding='utf-8')
   for case in ANNEX:self.assertIn('"'+case+'"',csharp)
 
@@ -326,7 +328,7 @@ class OriginalMessageDiagnosticContract(unittest.TestCase):
   """Runs 42156474982/42156478348: import and annex checks passed, then the
   original reexport was rejected. Blank display cells are recorded, never typed."""
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']['annex12WebImportDisplayEmptyMask']
-  self.assertEqual((registry['maximum'],registry['activeModes']),(33554431,['gtgt-web-import-inspect']))
+  self.assertEqual((registry['maximum'],registry['activeModes']),(33554431,['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']))
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   block=annex[annex.index(' private bool InspectOriginalImportedAnnex12('):]
   self.assertIn('int[] display=new int[]{2,12,16,17,18};',block);self.assertIn('annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k)',block);self.assertIn('ordinal<5',block)
@@ -398,7 +400,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   # of R, S again; the driver bounds it at 4*seen). The zero case restored both children with 8
   # picks and matched every tax value but the gate allowed 2*rows (run 42302287921); the two-plants
   # case needs up to 20 and its 11th pick made the result unreadable at maximum 10 (run 42302292502).
-  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(20,['gtgt-web-import-inspect']))
+  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(20,['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']))
   # Five children at most (ordinal>4 throws), four picks each.
   self.assertIn('if(ordinal>4)throw new InvalidOperationException();',annex);self.assertEqual(registry['annex12WebHeadAuthorityRepairCount']['maximum'],4*5)
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
@@ -423,7 +425,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   for forbidden in ('SendKeys','SetPublic','set_Value','"Text",'):self.assertNotIn(forbidden,passing)
   self.assertIn('!=before',passing)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
-  self.assertEqual((registry['annex12WebHeadAuthorityFailureMask']['maximum'],registry['annex12WebHeadAuthorityFailureMask']['activeModes']),(4095,['gtgt-web-import-inspect']))
+  self.assertEqual((registry['annex12WebHeadAuthorityFailureMask']['maximum'],registry['annex12WebHeadAuthorityFailureMask']['activeModes']),(4095,['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']))
 
  def test_unmet_head_code_reconfirms_the_same_original_r_entry_once(self):
   """Release 213 (both annex cases, mask 2116): AJ stayed empty on the first child. Original
@@ -440,7 +442,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   for forbidden in ('SetPublic','set_','Invoke('):self.assertNotIn(forbidden,shape)
   self.assertIn('annex12WebHeadAuthorityRepairCount>4*seen',loop)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
-  self.assertEqual(registry['annex12WebHeadAuthorityComboMask'],{'kind':'integer','default':0,'minimum':0,'maximum':2047,'activeModes':['gtgt-web-import-inspect']})
+  self.assertEqual(registry['annex12WebHeadAuthorityComboMask'],{'kind':'integer','default':0,'minimum':0,'maximum':2047,'activeModes':['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']})
 
  def test_combo_shape_107_enters_r_by_a_real_key_before_the_single_reconfirm(self):
   """Release 216 r1371 (two plants): failure mask 2116 unchanged, combo mask 107 =

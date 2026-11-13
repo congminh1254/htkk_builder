@@ -35,7 +35,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private static readonly decimal[] KhbsSale10B1=new decimal[]{0,0,0,0,0,0,0,1000000,100000,0,0,0,1000000,100000,0,1000000,100000,100000,0,0,0,100000,0,100000,0,0,0};
  private int khbsRound=0,khbsPriorSaveMessageId=0;private string webPriorPath="",webPriorSha256="",khbsPriorFileSha256="";
  private bool khbsPriorImportSucceeded=false,khbsPriorSummaryAcknowledged=false,khbsPriorSaveAcknowledged=false,khbsPriorFileSaved=false,khbsRound2Opened=false;private Stopwatch khbsPriorCloseClock=null;
- private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId;}
+ // Case 4 (htkk_web producer khbs-annex12-capture): an ORACLE CAPTURE, not a port check. C0 is case 1's zero declaration
+ // without annex; B1 is opened with phụ lục 01-2/GTGT selected in the period dialog and imports the web B1 file carrying the
+ // proven two-plant 01-2 annex (annex12-two-plants) and only the main-sheet 01-1/KHBS group. After the original import the
+ // head CQT display of every child row is restored through the original combos exactly as the proven annex web case does
+ // (RestoreImportedAnnex12HeadAuthorities; HTKK 0016 otherwise), then Tổng hợp KHBS computes the annex hồ sơ group and the
+ // Muc_I.2 phân bổ, the export is compared (an expected mismatch: gtgt-amendment-khbs-not-matched) and retained raw.
+ private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";
+ private const int KhbsAnnex12CaptureLeafTarget=359;
+ private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsAnnex12CaptureCaseId;}
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId;}
  private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsLan2WebCaseId;}
  private string KhbsSoLan(){return KhbsLan2Case()?"2":"1";}
  private bool KhbsImportingPrior(){return KhbsLan2Case()&&khbsRound==1;}
@@ -203,7 +212,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
     khbsImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(KhbsImportPath()),StringComparison.OrdinalIgnoreCase);roundtripImportPathMatched=khbsImportPathMatched;
     if(!roundtripImportDialogMatched||!roundtripImportKeyboardCommitted||!roundtripImportDialogSubmitted||!khbsImportPathMatched){Record();throw new InvalidOperationException();}
     object period=Global("TTPeriodInfo");if(Convert.ToString(Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)!="B"||Convert.ToString(Get(period,"SoLan"),CultureInfo.InvariantCulture)!=khbsRound.ToString(CultureInfo.InvariantCulture)||!KhbsDate(Convert.ToString(Get(period,"NgayLapKHBS"),CultureInfo.InvariantCulture)))throw new InvalidOperationException();
-    if(KhbsImportingPrior())khbsPriorImportSucceeded=true;else khbsImportSucceeded=true;roundtripImportSucceeded=true;khbsPhase="summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();CloseKhbsMessage(message);return;
+    if(KhbsImportingPrior())khbsPriorImportSucceeded=true;else khbsImportSucceeded=true;roundtripImportSucceeded=true;khbsPhase=KhbsAnnexCase()?"annex-restore":"summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();CloseKhbsMessage(message);return;
+   }
+   // Capture case only: the imported 01-2 annex is checked read-only, then its head CQT displays are restored (bounded).
+   if(khbsPhase=="annex-restore"){
+    if(!KhbsOwnerReady())return;
+    List<Control> grids=new List<Control>();int visited=0;GatherSpreads(khbsOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();
+    if(!InspectOriginalImportedAnnex12(grids[0])){if(khbsPriorCloseClock==null)khbsPriorCloseClock=Stopwatch.StartNew();if(khbsPriorCloseClock.Elapsed.TotalSeconds>=10)throw new InvalidOperationException();return;}
+    khbsPhase="annex-restoring";RestoreImportedAnnex12HeadAuthorities();
+    if(!annex12WebHeadAuthorityRestored)throw new InvalidOperationException();
+    khbsPhase="summary-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();return;
    }
    if(khbsPhase=="summary-ready"){
     if(!KhbsOwnerReady())return;
@@ -268,7 +286,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      SetStage(HtkkAutomationStage.GtgtAmendmentKhbsComparing);Record();
      if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),output=ReadBoundedOriginalXml(exportPath);
-     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
+     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:webCaseId==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
      if(Hash(exportPath)!=khbsExportSha256)throw new InvalidOperationException();
      finished=true;SetStage(khbsTreeMatched?HtkkAutomationStage.GtgtAmendmentKhbsInspected:HtkkAutomationStage.GtgtAmendmentKhbsNotMatched);Record();exportWatcher.Stop();CloseKhbsMessage(message);return;
     }

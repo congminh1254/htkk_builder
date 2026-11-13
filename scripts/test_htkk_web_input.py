@@ -64,6 +64,8 @@ def khbs_fixture(case):
  if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
  for child in list(pluc):pluc.remove(child)
  pluc.text=None;nodes={}
+ # Capture case: the exact two-plant 01-2 annex of its annex web case first, then the two KHBS fragments.
+ if w.khbs.annex12_case(case):annex_tree(root,w.khbs.annex12_case(case));pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  for path,attributes,text in w.khbs.CASES[case]['rows']:
   parent=nodes[path.rsplit('/',1)[0]] if '/' in path else pluc
   attrib={}

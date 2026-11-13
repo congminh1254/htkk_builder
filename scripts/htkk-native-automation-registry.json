@@ -2181,7 +2181,8 @@
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebBaselineSchemaVerified": {
@@ -2204,7 +2205,8 @@
       "minimum": 0,
       "maximum": 3,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebImportRowCount": {
@@ -2213,7 +2215,8 @@
       "minimum": 0,
       "maximum": 10,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebImportDisplayEmptyMask": {
@@ -2222,14 +2225,16 @@
       "minimum": 0,
       "maximum": 33554431,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebHeadAuthorityRestored": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebHeadAuthorityRepairCount": {
@@ -2238,7 +2243,8 @@
       "minimum": 0,
       "maximum": 20,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebHeadAuthorityFailureMask": {
@@ -2247,7 +2253,8 @@
       "minimum": 0,
       "maximum": 4095,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex12WebHeadAuthorityComboMask": {
@@ -2256,7 +2263,8 @@
       "minimum": 0,
       "maximum": 2047,
       "activeModes": [
-        "gtgt-web-import-inspect"
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
       ]
     },
     "annex10ImportSheetObserved": {
@@ -3212,7 +3220,8 @@
         "03TNDN-rate17-Y2025",
         "01GTGT-khbs-zero-to-sale10-M10-2026",
         "01GTGT-khbs-sale5-to-sale10-M09-2026",
-        "01GTGT-khbs-lan2-sale10-M10-2026"
+        "01GTGT-khbs-lan2-sale10-M10-2026",
+        "01GTGT-khbs-annex12-capture-M10-2026"
       ]
     },
     "webCaseEditCount": {

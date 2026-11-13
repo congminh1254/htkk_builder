@@ -19,6 +19,11 @@ FIELDS=('pluc','fragment','header')
 SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
 SALE5_TO_SALE10_CASE='01GTGT-khbs-sale5-to-sale10-M09-2026'
 LAN2_SALE10_CASE='01GTGT-khbs-lan2-sale10-M10-2026'
+# Case 4: an ORACLE CAPTURE. B1 adds phụ lục 01-2/GTGT (exactly the two-plant annex of the proven annex web case, validated
+# by htkk_annex12_web_cases) to case 1's main sale; its KHBS fragments are case 1's (main-sheet group only), because the web
+# does not port the annex hồ sơ group and Muc_I.2 yet. HTKK's export is expected to differ and is retained raw.
+ANNEX12_CAPTURE_CASE='01GTGT-khbs-annex12-capture-M10-2026'
+ANNEX12_CAPTURE_SOURCE='01GTGT-annex12-two-plants-nonzero-M10-2026'
 SALE15={'ct32':'1500000','ct33':'150000','ct27':'1500000','ct28':'150000','ct34':'1500000','ct35':'150000','ct36':'150000','ct40a':'150000','ct40':'150000'}
 SALE10_AMENDED={'ct32':'4000000','ct33':'400000','ct27':'4000000','ct28':'400000','ct34':'4000000','ct35':'400000','ct36':'400000','ct40a':'400000','ct40':'400000'}
 # Main-header period of case 2 -> the M10/2026 baseline of the unchanged no-annex allowlist: (baseline, expected).
@@ -790,11 +795,23 @@ ROWS_LAN2_SALE10=(
 )
 CASES={ZERO_TO_SALE10_CASE:{'rows':ROWS,'money':SALE10,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':270,'period':None,'soLan':'1','prior':None},
  SALE5_TO_SALE10_CASE:{'rows':ROWS_SALE5_TO_SALE10,'money':SALE10_AMENDED,'mainTaxLeaves':70,'fragmentLeaves':226,'taxLeaves':296,'period':M09_PERIOD,'soLan':'1','prior':None},
- LAN2_SALE10_CASE:{'rows':ROWS_LAN2_SALE10,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':270,'period':None,'soLan':'2','prior':ZERO_TO_SALE10_CASE}}
+ LAN2_SALE10_CASE:{'rows':ROWS_LAN2_SALE10,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':270,'period':None,'soLan':'2','prior':ZERO_TO_SALE10_CASE},
+ ANNEX12_CAPTURE_CASE:{'rows':ROWS,'money':SALE10,'mainTaxLeaves':70,'fragmentLeaves':200,'taxLeaves':359,'period':None,'soLan':'1','prior':None,'annex12':ANNEX12_CAPTURE_SOURCE}}
+# Public HTKK 5.8.2 catalogue texts (Project/MapMCT.xml, Map D1, SheetIndex 1 = 01-2/GTGT) that HTKK may write into the
+# 01-1/KHBS annex hồ sơ group of the capture case: the sheet name and each item caption, with and without its "[nn] - "
+# prefix (frmWinToKhai.UpdateCtForDoiTac strips it for dynamic items). Only the output publisher of the capture case uses them.
+ANNEX12_CATALOGUE=('01-2/GTGT',
+ '[10] - Số thuế GTGT phải nộp của nhà máy thủy điện','Số thuế GTGT phải nộp của nhà máy thủy điện',
+ '[11] - Tỷ lệ phân bổ (%)','Tỷ lệ phân bổ (%)',
+ '[12] - Số thuế phải nộp [12]=[11]x [10]','Số thuế phải nộp [12]=[11]x [10]')
+def annex12_case(case_id):
+ """The annex web case whose exact 01-2 subtree this KHBS case carries before its two KHBS fragments, or None."""
+ if case_id not in CASES:reject('CASE')
+ return CASES[case_id].get('annex12')
 PRIOR_NAME='01GTGT-prior.xml'
 # The B1/B2 main sheet states the driver accepts before the import (khbsOpenMainState): 1 zero, 2 the typed C0 vector
 # (case 2), 3 the saved B1 vector in round 2 (case 3). The probe and the private output publisher take exactly these.
-OPEN_MAIN_STATES={ZERO_TO_SALE10_CASE:(1,),SALE5_TO_SALE10_CASE:(1,2),LAN2_SALE10_CASE:(1,3)}
+OPEN_MAIN_STATES={ZERO_TO_SALE10_CASE:(1,),SALE5_TO_SALE10_CASE:(1,2),LAN2_SALE10_CASE:(1,3),ANNEX12_CAPTURE_CASE:(1,)}
 def open_main_states(case_id):
  if case_id not in OPEN_MAIN_STATES:reject('CASE')
  return OPEN_MAIN_STATES[case_id]
@@ -872,7 +889,9 @@ MANIFEST={ZERO_TO_SALE10_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','produce
  SALE5_TO_SALE10_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,
  'expected':{'rows':['[27]','[28]','[30]','[31]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'200000','tongCong_ct10':'200000','ct3a_1':FIXED_DATE,'ct3a_2':'24','ct3b':'1440','main':{'ct30':'0','ct31':'0','ct32':'4000000','ct33':'400000','ct40':'400000'}}},
  LAN2_SALE10_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':2,'ngayLapKHBS':FIXED_DATE,'priorCaseId':ZERO_TO_SALE10_CASE,
- 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'50000','tongCong_ct10':'50000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1500000','ct33':'150000','ct40':'150000'}}}}
+ 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'50000','tongCong_ct10':'50000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1500000','ct33':'150000','ct40':'150000'}}},
+ ANNEX12_CAPTURE_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,
+ 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'100000','tongCong_ct10':'100000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1000000','ct33':'100000','ct40':'100000'}}}}
 def manifest_fields(case_id):
  if case_id not in MANIFEST:reject('CASE')
  import copy;return copy.deepcopy(MANIFEST[case_id])
