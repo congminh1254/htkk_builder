@@ -26,7 +26,7 @@ class WorkbookNativeCases(unittest.TestCase):
         for case in promoted: self.assertEqual(registry.driver(case), 'declaration-web-import-inspect'); self.assertIs(registry.CASES[case]['releaseGate'], False)
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
         self.assertNotIn('03TNDN-loss-c3b-Y2025', workflow)
-        self.assertTrue(all((a['menuId'] == 'D1') == (a['driver'] == 'gtgt-web-import-inspect') for a in registry.ADAPTERS.values()))
+        self.assertTrue(all((a['menuId'] == 'D1') == (a['driver'] in ('gtgt-web-import-inspect', 'gtgt-amendment-khbs-inspect')) for a in registry.ADAPTERS.values()))
     def test_gates_and_synthetic_identity(self):
         self.rejects(lambda v: v.update(driverImplemented=True), 'WORKBOOK_CASE_GATE')
         self.rejects(lambda v: v.update(nativeQualified=True), 'WORKBOOK_CASE_GATE')

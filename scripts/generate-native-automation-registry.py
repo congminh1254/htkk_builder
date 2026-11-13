@@ -505,6 +505,9 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         'gtgt-annex12-numeric-inspected', 'gtgt-annex12-export-inspected', 'gtgt-sheet-contract-not-matched',
         'gtgt-export-inspected', 'gtgt-export-original-message-rejected', 'gtgt-roundtrip-inspected',
         'gtgt-web-import-inspected', 'gtgt-import-original-message-rejected',
+        # Amendment (KHBS) driver gtgt-amendment-khbs-inspect: bounded failure terminals.
+        'gtgt-amendment-khbs-import-rejected', 'gtgt-amendment-khbs-summary-rejected', 'gtgt-amendment-khbs-export-rejected',
+        'gtgt-amendment-khbs-not-matched',
         # Declaration-family driver (declaration-web-import-inspect): bounded failure terminals.
         'declaration-profile-preconditions-not-matched', 'declaration-menu-id-not-unique', 'declaration-menu-target-hidden',
         'declaration-period-inputs-not-matched', 'declaration-period-original-message-rejected', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',

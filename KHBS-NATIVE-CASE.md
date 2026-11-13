@@ -1,7 +1,11 @@
 # Native case design: 01/GTGT kê khai bổ sung lần 1 (D1, KHBS)
 
-Status: **design only, not wired, not dispatched.** No mode, registry case, workflow option or
-reader change is made here. The web side (htkk_web branch `work/khbs-01gtgt`) has the KHBS engine,
+Status: **wired, non-gating, not yet run on Windows.** Case `01GTGT-khbs-zero-to-sale10-M10-2026`,
+adapter `01-gtgt-2.8.3-khbs`, driver mode `gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2
+(`releaseGate=false`). The case status comes from the in-harness whole-tree comparison only: this
+first wiring retains **no raw native output** (registry `privateArtifactPolicy: none`; the case is not
+in `publish-htkk-web-native-output.py` BRANCHES), so a mismatch is diagnosed from the bounded fields
+below, not from the native bytes. The web side (htkk_web branch `work/khbs-01gtgt`) has the KHBS engine,
 the XML serializer, the producer `scripts/generate-htkk-web-khbs-reference.mjs --case
 khbs-zero-to-sale10` and keeps the feature hidden (`KHBS_01GTGT_RELEASED=false`) until this case
 passes. The oracle is **HTKK 5.8.2** (per-case `htkkVersion`, non-gating, `releaseGate=false`).
@@ -59,7 +63,21 @@ tokens; the web file `data/htkk-01-gtgt-khbs-rules.json` pins their IL body SHA-
 - Header of both fragments from TTinChung (`xmlExportTTinChungKHBS` 0x0600004A), ma_DonViTien VND.
 - PLuc order PL01_KHBS then PL01_1_KHBS; BKeHSo ma_HSo 0026, ten_HSo 01/GTGT.
 
-## Files a wiring change touches
+## Bounded result fields
+
+All active only in this mode (reader rejects them elsewhere): `khbsDateTyped`, `khbsPeriodMatched`,
+`khbsImportInvoked/Succeeded/PathMatched`, `khbsSummaryInvoked/Acknowledged`, `khbsExportInvoked`,
+`khbsExportSchemaPinnedVerified`, `khbsExportSucceeded`, `khbsIdentityMatched`, `khbsCreationDateValid`,
+`khbsTreeMatched`; message ids `khbsImportMessageId`, `khbsSummaryMessageId`, `khbsExportMessageId`
+(pinned Message.xml id, 9999 = not catalogued); `khbsLeafCount` (expected 270 = 70 main + 200 KHBS
+leaves); `khbsMismatchMask` (1 structure, 2 attributes, 4 TTinChung, 8 CTieuTKhaiChinh, 16 PL01_KHBS,
+32 PL01_1_KHBS, 64 other value, 128 output identity/date); `khbsFirstDifferenceOrdinal` (1-based leaf
+ordinal in web order); `khbsExportBytes`, `khbsExportSha256`. Terminal failures:
+`gtgt-amendment-khbs-import-rejected`, `-summary-rejected`, `-export-rejected`, `-not-matched`. No values,
+paths or text are recorded. Input privacy: `htkk_khbs_web_cases.py` (exact PLuc subtree, B/1 header,
+then the unchanged no-annex allowlist on an in-memory C/0 projection).
+
+## Files the wiring touched
 
 `scripts/htkk-native-cases.json` (adapter + case, `amendmentOrder` 1 allowed only for this adapter),
 `scripts/htkk_native_cases.py` (trusted adapter, driver), a KHBS web-input validator next to
@@ -68,8 +86,9 @@ tokens; the web file `data/htkk-01-gtgt-khbs-rules.json` pins their IL body SHA-
 `htkk-native-automation-registry.json` + `generate-native-automation-registry.py` output
 (`HtkkNativeAutomationEnums.cs`), the workflow mode lists in `probe-htkk-windows.yml`, the reader
 allowlists in `Get-HtkkSafeGuiReferenceResult.ps1`, and contract tests like
-`test_amendment_open_contract.py`. On the web side: the case plan and
-`scripts/check-native-input-contract.mjs` (add the producer).
+`test_amendment_open_contract.py`. On the web side: `scripts/check-native-input-contract.mjs` (the producer). The web case plan
+(`data/htkk-case-plan.json`) lists only release-gate cases, as `validate_plan` requires, so a candidate
+case is not added there.
 
 ## Second case (later)
 

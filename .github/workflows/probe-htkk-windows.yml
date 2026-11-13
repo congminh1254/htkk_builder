@@ -12,13 +12,13 @@ on:
       gui_automation:
         description: 'Automation THAM CHIẾU riêng: chỉ custom CLR2/x86 + synthetic login'
         type: choice
-        options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-amendment-inspect, gtgt-amendment-open-inspect, gtgt-annex12-inspect, gtgt-annex12-row-inspect, gtgt-annex12-input-inspect, gtgt-annex12-numeric-inspect, gtgt-annex12-export-inspect, gtgt-annex12-export-nonzero, gtgt-export-inspect, gtgt-roundtrip-inspect, gtgt-web-import-inspect, declaration-web-import-inspect]
+        options: [none, inspect, profile-save, gtgt-inspect, gtgt-sheet-inspect, gtgt-amendment-inspect, gtgt-amendment-open-inspect, gtgt-amendment-khbs-inspect, gtgt-annex12-inspect, gtgt-annex12-row-inspect, gtgt-annex12-input-inspect, gtgt-annex12-numeric-inspect, gtgt-annex12-export-inspect, gtgt-annex12-export-nonzero, gtgt-export-inspect, gtgt-roundtrip-inspect, gtgt-web-import-inspect, declaration-web-import-inspect]
         default: none
         required: true
       web_case_id:
         description: Fixed synthetic declaration case (no user data)
         type: choice
-        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026, 01GTGT-sale10-half-M10-2026, 01GTGT-sale10-manual-M10-2026, 01GTGT-sale5-half-M10-2026, 01GTGT-sale5-manual-M10-2026, 01GTGT-noactivity-zero-M10-2026, 01GTGT-noactivity-reset-sale10-M10-2026, 01GTGT-noactivity-cancel-sale10-M10-2026, 01GTGT-noactivity-uncheck-sale10-M10-2026, 01GTGT-noactivity-keep-credit-M10-2026, 01GTGT-zero-Q4-2026, 01GTGT-native-import-sale10-M10-2026, 01GTGT-annex12-zero-two-locations-M10-2026, 01GTGT-annex12-two-plants-nonzero-M10-2026, 03TNDN-profit20-Y2025, BCTC133-B01a-basic-Y2025, BCTC200-LT-basic-Y2025, 05KK-withheld-Q3-2026, 05KK-TT89-withheld-Q4-2026, 05QTT-two-employees-Y2025, 01CNKD-TT50-revenue-two-groups-Q3-2026, 02QTT-dependants-Y2025, 01NTNN-two-contractors-M09-2026, 03NTNN-no-rate-M10-2026, 01NTNN-NCCNN-entry-M10-2026, 04NTNN-TT80-one-subcontractor-2026, 04NTNN-TT89-one-subcontractor-2026, 02NTNN-TT89-two-annexes-2026, 02NTNN-TT80-two-annexes-2026, 01NTNN-occurrence-D20-09-2026, 01NTNN-NCCNN-occurrence-D20-10-2026, 03NTNN-occurrence-D20-10-2026, 01CNKD-TT50-310-pl01-three-groups-Q3-2026, 01CNKD-TT50-310-pl03-two-groups-Q3-2026, 01GTGT-annex10-nq204-M10-2026, 03TNDN-rate15-Y2025, 03TNDN-rate17-Y2025]
+        options: [01GTGT-zero-M10-2026, 01GTGT-sale10-M10-2026, 01GTGT-sale10-half-M10-2026, 01GTGT-sale10-manual-M10-2026, 01GTGT-sale5-half-M10-2026, 01GTGT-sale5-manual-M10-2026, 01GTGT-noactivity-zero-M10-2026, 01GTGT-noactivity-reset-sale10-M10-2026, 01GTGT-noactivity-cancel-sale10-M10-2026, 01GTGT-noactivity-uncheck-sale10-M10-2026, 01GTGT-noactivity-keep-credit-M10-2026, 01GTGT-zero-Q4-2026, 01GTGT-native-import-sale10-M10-2026, 01GTGT-annex12-zero-two-locations-M10-2026, 01GTGT-annex12-two-plants-nonzero-M10-2026, 03TNDN-profit20-Y2025, BCTC133-B01a-basic-Y2025, BCTC200-LT-basic-Y2025, 05KK-withheld-Q3-2026, 05KK-TT89-withheld-Q4-2026, 05QTT-two-employees-Y2025, 01CNKD-TT50-revenue-two-groups-Q3-2026, 02QTT-dependants-Y2025, 01NTNN-two-contractors-M09-2026, 03NTNN-no-rate-M10-2026, 01NTNN-NCCNN-entry-M10-2026, 04NTNN-TT80-one-subcontractor-2026, 04NTNN-TT89-one-subcontractor-2026, 02NTNN-TT89-two-annexes-2026, 02NTNN-TT80-two-annexes-2026, 01NTNN-occurrence-D20-09-2026, 01NTNN-NCCNN-occurrence-D20-10-2026, 03NTNN-occurrence-D20-10-2026, 01CNKD-TT50-310-pl01-three-groups-Q3-2026, 01CNKD-TT50-310-pl03-two-groups-Q3-2026, 01GTGT-annex10-nq204-M10-2026, 03TNDN-rate15-Y2025, 03TNDN-rate17-Y2025, 01GTGT-khbs-zero-to-sale10-M10-2026]
         default: 01GTGT-zero-M10-2026
         required: true
       web_artifact_commit:
@@ -124,7 +124,7 @@ jobs:
         shell: pwsh
         run: python -m unittest discover -s scripts -p test_declaration_native_cases.py
       - name: Fetch fixed synthetic web XML privately
-        if: inputs.install_and_probe && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'declaration-web-import-inspect')
+        if: inputs.install_and_probe && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'gtgt-amendment-khbs-inspect' || inputs.gui_automation == 'declaration-web-import-inspect')
         shell: pwsh
         env:
           WEB_ARTIFACT_COMMIT: ${{ inputs.web_artifact_commit }}
@@ -160,7 +160,7 @@ jobs:
           $syntheticLogin = $env:PROBE_SYNTHETIC_LOGIN -eq 'true'
           $ackRegistration = $env:PROBE_ACK_REGISTRATION -eq 'true'
           $guiAutomation = if ([string]::IsNullOrEmpty($env:PROBE_GUI_AUTOMATION)) { 'none' } else { $env:PROBE_GUI_AUTOMATION }
-          if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')) { throw 'Invalid reference GUI automation mode.' }
+          if ($guiAutomation -notin @('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')) { throw 'Invalid reference GUI automation mode.' }
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           $oracleVersion = if ([string]::IsNullOrEmpty($env:PROBE_HTKK_VERSION)) { '5.8.1' } else { $env:PROBE_HTKK_VERSION }
@@ -169,13 +169,13 @@ jobs:
       # Native web regressions retain only their dedicated per-case output; shared
       # startup/common-header references remain available in manual reference modes.
       - name: Publish supplier startup window privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation != 'gtgt-web-import-inspect' && inputs.gui_automation != 'declaration-web-import-inspect'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation != 'gtgt-web-import-inspect' && inputs.gui_automation != 'gtgt-amendment-khbs-inspect' && inputs.gui_automation != 'declaration-web-import-inspect'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
         run: python ./scripts/publish-windows-diagnostic.py
       - name: Retain synthetic common-header reference privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation != 'gtgt-web-import-inspect' && inputs.gui_automation != 'declaration-web-import-inspect'
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && inputs.gui_automation != 'gtgt-web-import-inspect' && inputs.gui_automation != 'gtgt-amendment-khbs-inspect' && inputs.gui_automation != 'declaration-web-import-inspect'
         shell: pwsh
         env:
           SOURCE_PUBLISH_TOKEN: ${{ secrets.SOURCE_PUBLISH_TOKEN || secrets.SOURCE_READ_TOKEN }}
@@ -239,7 +239,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: python ./scripts/report-native-sample.py
       - name: Report fixed native-case status privately
-        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'declaration-web-import-inspect')
+        if: always() && inputs.install_and_probe && steps.native_probe.outputs.credentials_safe == 'true' && steps.native_probe.outputs.supplier_stopped == 'true' && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'gtgt-amendment-khbs-inspect' || inputs.gui_automation == 'declaration-web-import-inspect')
         shell: pwsh
         env:
           SOURCE_STATUS_TOKEN: ${{ secrets.SOURCE_STATUS_TOKEN || secrets.SOURCE_READ_TOKEN }}
@@ -257,7 +257,7 @@ jobs:
     # This fresh Linux job never runs the supplier, private source or its outputs.
     # It may only downgrade a fixed case to failure after preflight/body/post-step
     # failure; an early successful callback is not whole-workflow acceptance.
-    if: always() && github.ref == 'refs/heads/main' && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'declaration-web-import-inspect') && (needs.readiness.result == 'failure' || needs.readiness.result == 'cancelled')
+    if: always() && github.ref == 'refs/heads/main' && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'gtgt-amendment-khbs-inspect' || inputs.gui_automation == 'declaration-web-import-inspect') && (needs.readiness.result == 'failure' || needs.readiness.result == 'cancelled')
     needs: readiness
     runs-on: ubuntu-latest
     timeout-minutes: 3

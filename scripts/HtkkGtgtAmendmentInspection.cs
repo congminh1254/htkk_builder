@@ -69,7 +69,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    amendmentPriorDirtyCleared=!(bool)dirty.GetValue(amendmentPriorOwner);if(!amendmentPriorDirtyCleared)return;
    InspectMoneyZero(amendmentPriorSheet);amendmentPriorMoneyZero=gtgtZero&&gtgtEmptyMoney==0;if(!amendmentPriorMoneyZero)throw new InvalidOperationException();
    InspectOriginalPriorFile();ReadSavedHeader();if(!headerMatched||headerChecks!=8||headerMismatchMask!=0)throw new InvalidOperationException();
-   if(mode=="gtgt-amendment-open-inspect"){CloseOriginalPriorForAmendment();return;}
+   if(mode=="gtgt-amendment-open-inspect"||KhbsMode()){CloseOriginalPriorForAmendment();return;}
    finished=true;SetStage(HtkkAutomationStage.GtgtOriginalDeclarationSavedInspected);Record();amendmentPriorWatcher.Stop();
   }finally{amendmentPriorObservationBusy=false;}
  }

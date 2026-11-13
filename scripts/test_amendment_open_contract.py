@@ -8,7 +8,7 @@ COUNTS={'amendmentOpenKhbsRows':10000,'amendmentOpenKhbsColumns':512,'amendmentO
 class AmendmentOpeningContract(unittest.TestCase):
  def test_mode_routes_to_original_prior_save_then_clean_close_and_original_b1_controls(self):
   source=wire_source('HtkkGtgtAmendmentOpenInspection.cs');prior=wire_source('HtkkGtgtAmendmentInspection.cs');period=wire_source('HtkkGtgtPeriodAndSheet.cs');navigation=wire_source('HtkkGtgtReferenceNavigation.cs')
-  self.assertIn('mode=="'+MODE+'"',source);self.assertIn('if(mode=="'+MODE+'"){CloseOriginalPriorForAmendment();return;}',prior)
+  self.assertIn('mode=="'+MODE+'"',source);self.assertIn('if(mode=="'+MODE+'"||KhbsMode()){CloseOriginalPriorForAmendment();return;}',prior)
   self.assertIn('if(AmendmentReopening()){ConfigureOriginalAmendmentOpen(period);return;}',period)
   self.assertIn('navigationPhase=="waiting-amendment-sheet"',navigation)
   for name in ('"cmdExit"','"isDataChanged"','close.PerformClick()','SetCheck(Named(period,"OptBosung"),true)','"txtLan"','"mskNgayLapKHBS"','number.Text.Trim()=="1"','confirm.PerformClick()'):
@@ -28,7 +28,8 @@ class AmendmentOpeningContract(unittest.TestCase):
   keys=re.findall(r"'([^']+)'",re.search(r'\$keys=@\(([^\n]+)\)',reader).group(1));self.assertEqual(len(keys),len(set(keys)))
   for flag in FLAGS:self.assertIn(flag,keys);self.assertIn(flag+'=$false;',fixture)
   for key,maximum in COUNTS.items():self.assertIn(key,keys);self.assertEqual(field(key)['maximum'],maximum);self.assertIn(key+'=0;',fixture)
-  self.assertEqual(field('amendmentOpenCloseInvoked')['activeModes'],[MODE])
+  # The KHBS case mode (gtgt-amendment-khbs-inspect) reuses the B1 opening and its metadata.
+  self.assertEqual(field('amendmentOpenCloseInvoked')['activeModes'],[MODE,'gtgt-amendment-khbs-inspect'])
   self.assertIn("throw 'Unsafe B1 opening accepted'",fixture)
   self.assertEqual(field('amendmentLifecycleVerified')['activeModes'],[])
  def test_open_success_requires_every_original_stage_and_preserves_no_export_gate(self):
@@ -68,7 +69,7 @@ class AmendmentReaderTypeBoundaryTests(unittest.TestCase):
  def test_second_menu_traversal_budget_is_restricted_to_the_new_b1_mode(self):
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
   self.assertEqual(field('menuClickCount')['maximum'],3)
-  self.assertEqual(field('menuClickCount')['modeMaximums'],{MODE:6})
+  self.assertEqual(field('menuClickCount')['modeMaximums'],{MODE:6,'gtgt-amendment-khbs-inspect':6})
   self.assertIn('$open.menuClickCount=4',fixture)
   self.assertIn("@{key='menuClickCount';value=7}",fixture)
 

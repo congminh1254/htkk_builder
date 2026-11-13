@@ -48,4 +48,46 @@ public static class HtkkWebTaxComparison {
   foreach(XmlNode child in output.ChildNodes)if(child.NodeType==XmlNodeType.Text&&!String.IsNullOrEmpty(child.Value.Trim()))return false;
   for(int index=0;index<a.Count;index++)if(!Equal(a[index],b[index],path+"/"+a[index].LocalName,ref taxLeaves))return false;return true;
  }
+ // Amendment (KHBS) case: whole web B1 tree against the ORIGINAL export after Nhập từ XML and Tổng hợp KHBS. There is no
+ // native baseline export, so the service identity is checked on the output alone (HTKK, its release, a 32-hex key) and
+ // ngayLapTKhai is the original's export date (any valid date). Every other leaf, element order and attribute must be
+ // equal. Bounded diagnostics only: mask bits 1 structure (names/counts), 2 attributes, 4 TTinChung value, 8
+ // CTieuTKhaiChinh value, 16 PL01_KHBS value, 32 PL01_1_KHBS value, 64 other value, 128 output identity or date;
+ // firstDifference is the 1-based ordinal of the first differing leaf in input order (0 = none).
+ public static bool CompareKhbs(XmlDocument input,XmlDocument output,int expectedLeaves,out int leaves,out int mask,out int firstDifference,out bool identity,out bool dateValid){
+  leaves=0;mask=0;firstDifference=0;identity=false;dateValid=false;
+  try{
+   string provider=Leaf(output,ServicePath+"ttinNhaCCapDVu").InnerText;
+   identity=Leaf(output,ServicePath+"maDVu").InnerText=="HTKK"&&Leaf(output,ServicePath+"tenDVu").InnerText=="HỖ TRỢ KÊ KHAI THUẾ"&&Leaf(output,ServicePath+"pbanDVu").InnerText==NativeServiceVersion&&Regex.IsMatch(provider,"^[A-F0-9]{32}$");
+   DateTime parsed;dateValid=DateTime.TryParseExact(Leaf(output,DatePath).InnerText,"yyyy-MM-dd",System.Globalization.CultureInfo.InvariantCulture,System.Globalization.DateTimeStyles.None,out parsed);
+  }catch(InvalidOperationException){mask|=1;}
+  if(!identity||!dateValid)mask|=128;
+  KhbsEqual(input.DocumentElement,output.DocumentElement,"HSoThueDTu",ref leaves,ref mask,ref firstDifference);
+  if(leaves!=expectedLeaves)mask|=1;
+  return mask==0;
+ }
+ private static int KhbsRegion(string path){
+  if(path.StartsWith("HSoThueDTu/HSoKhaiThue/TTinChung/",StringComparison.Ordinal))return 4;
+  if(path.StartsWith("HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/",StringComparison.Ordinal))return 8;
+  if(path.StartsWith("HSoThueDTu/HSoKhaiThue/PLuc/PL01_KHBS/",StringComparison.Ordinal))return 16;
+  if(path.StartsWith("HSoThueDTu/HSoKhaiThue/PLuc/PL01_1_KHBS/",StringComparison.Ordinal))return 32;
+  return 64;
+ }
+ private static void KhbsDiffer(int bit,int ordinal,ref int mask,ref int first){mask|=bit;if(first==0)first=Math.Max(1,ordinal);}
+ private static void KhbsEqual(XmlElement input,XmlElement output,string path,ref int leaves,ref int mask,ref int first){
+  if(input.NamespaceURI!=Ns||output.NamespaceURI!=Ns||input.LocalName!=output.LocalName){KhbsDiffer(1,leaves+1,ref mask,ref first);return;}
+  Dictionary<string,string> left=Attributes(input),right=Attributes(output);bool same=left.Count==right.Count;
+  if(same)foreach(KeyValuePair<string,string> attribute in left){string value;if(!right.TryGetValue(attribute.Key,out value)||value!=attribute.Value){same=false;break;}}
+  if(!same)KhbsDiffer(2,leaves+1,ref mask,ref first);
+  List<XmlElement> a,b;
+  try{a=Children(input);b=Children(output);}catch(InvalidOperationException){KhbsDiffer(1,leaves+1,ref mask,ref first);return;}
+  if(a.Count==0&&b.Count==0){
+   if(path.StartsWith(ServicePath,StringComparison.Ordinal))return;
+   leaves++;if(path!=DatePath&&input.InnerText!=output.InnerText)KhbsDiffer(KhbsRegion(path),leaves,ref mask,ref first);return;
+  }
+  if(a.Count!=b.Count){KhbsDiffer(1,leaves+1,ref mask,ref first);return;}
+  foreach(XmlNode child in input.ChildNodes)if(child.NodeType==XmlNodeType.Text&&!String.IsNullOrEmpty(child.Value.Trim())){KhbsDiffer(1,leaves+1,ref mask,ref first);return;}
+  foreach(XmlNode child in output.ChildNodes)if(child.NodeType==XmlNodeType.Text&&!String.IsNullOrEmpty(child.Value.Trim())){KhbsDiffer(1,leaves+1,ref mask,ref first);return;}
+  for(int index=0;index<a.Count;index++)KhbsEqual(a[index],b[index],path+"/"+a[index].LocalName,ref leaves,ref mask,ref first);
+ }
 }

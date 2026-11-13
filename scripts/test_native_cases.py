@@ -202,4 +202,5 @@ class NativeImportDispatchIdentity(unittest.TestCase):
   cases={entry[0]:entry[1:] for entry in publisher.CASES}
   self.assertEqual(cases[case],('htkk-web-reference-native-import-sale10-input','gtgt-web-reference-native-import-sale10-input'))
   self.assertNotEqual(cases[case],cases[sale]);self.assertNotEqual(output.BRANCHES[case],output.BRANCHES[sale])
-  self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));self.assertEqual(set(output.BRANCHES),set(d.CASES)-set(reader.case_registry.DECLARATION_CASES))
+  self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));# The KHBS amendment driver retains no raw native output yet (case status from the in-harness comparison only).
+  self.assertEqual(set(output.BRANCHES),set(d.CASES)-set(reader.case_registry.DECLARATION_CASES)-set(reader.case_registry.KHBS_CASES))

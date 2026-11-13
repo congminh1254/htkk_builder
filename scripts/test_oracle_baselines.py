@@ -137,7 +137,7 @@ class Consumers(unittest.TestCase):
     def test_probe_selects_one_baseline_and_restricts_non_default_modes(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         self.assertIn("[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1'", probe)
-        self.assertIn("if($OracleVersion -cne $HtkkOracleDefaultVersion -and $InstallAndProbe -and $GuiAutomation -notin @('gtgt-web-import-inspect','declaration-web-import-inspect')) { throw 'ORACLE_VERSION_MODE_UNSUPPORTED' }", probe)
+        self.assertIn("if($OracleVersion -cne $HtkkOracleDefaultVersion -and $InstallAndProbe -and $GuiAutomation -notin @('gtgt-web-import-inspect','gtgt-amendment-khbs-inspect','declaration-web-import-inspect')) { throw 'ORACLE_VERSION_MODE_UNSUPPORTED' }", probe)
         for sha in list(V1['files'].values())[:4] + [V1['distribution'][k] for k in ('archiveSha256', 'setupSha256', 'msiSha256', 'cabSha256')]:
             self.assertNotIn(sha, probe)
         self.assertEqual(probe.count("$htkkOracle.files['Project/HTKK.exe']"), 2)

@@ -27,7 +27,7 @@ def edited(body,edit,preamble=True):
 
 class RegistryContract(unittest.TestCase):
  def test_two_candidate_cases_use_the_annex_product_producer_and_own_status_contexts(self):
-  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES and c not in cases.ANNEX10_CASES),ANNEX)
+  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES and c not in cases.ANNEX10_CASES and c not in cases.KHBS_CASES),ANNEX)
   self.assertEqual(len(cases.GATE_CASES),13);self.assertTrue(set(cases.GATE_CASES).isdisjoint(ANNEX))
   for case,producer_case in ((ZERO,'annex12-zero'),(TWO,'annex12-two-plants')):
    c=cases.CASES[case];a=cases.ADAPTERS[c['adapterId']]

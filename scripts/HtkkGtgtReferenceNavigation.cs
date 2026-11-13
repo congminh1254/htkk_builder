@@ -124,6 +124,7 @@ public sealed class HtkkGtgtAdapter : IHtkkNativeAutomationAdapter {
    || mode == HtkkAutomationMode.GtgtSheetInspect
    || mode == HtkkAutomationMode.GtgtAmendmentInspect
    || mode == HtkkAutomationMode.GtgtAmendmentOpenInspect
+   || mode == HtkkAutomationMode.GtgtAmendmentKhbsInspect
    || mode == HtkkAutomationMode.GtgtAnnex12Inspect
    || mode == HtkkAutomationMode.GtgtAnnex12RowInspect
    || mode == HtkkAutomationMode.GtgtAnnex12InputInspect

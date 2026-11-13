@@ -30,8 +30,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private int WebTaxLeafTarget(){return Annex10WebCaseId()?88:!Annex12WebCaseId()?70:webCaseId==Annex12WebTwoPlantsCaseId?159:108;}
  // The annex producers (01-2 and 01-10) pin both declaration dates to 2026-10-27.
  private DateTime WebFixedSigningDate(){return Annex12WebCaseId()||Annex10WebCaseId()?new DateTime(2026,10,27):new DateTime(2026,10,25);}
- private string RoundtripInputPath(){return mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webInputPath:firstExportPath;}
- private string RoundtripInputHash(){return mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webImportInputSha256:firstExportSha256;}
+ private string RoundtripInputPath(){return mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"||KhbsMode()?webInputPath:firstExportPath;}
+ private string RoundtripInputHash(){return mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"||KhbsMode()?webImportInputSha256:firstExportSha256;}
  private static string ReadOwnHexSidecar(string path,int count){
   FileInfo file=new FileInfo(path);if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length!=count)throw new InvalidOperationException();byte[] bytes=File.ReadAllBytes(path);foreach(byte value in bytes)if(!((value>=48&&value<=57)||(value>=97&&value<=102)))throw new InvalidOperationException();return Encoding.ASCII.GetString(bytes);
  }
@@ -42,12 +42,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private void VerifyOwnWebInput(){
   string host=Assembly.GetExecutingAssembly().Location;if(!String.Equals(Path.GetDirectoryName(host),project,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException();
-  FileInfo caseFile=new FileInfo(host+".web-case.id");if(!caseFile.Exists||(caseFile.Attributes&FileAttributes.ReparsePoint)!=0||caseFile.Length<1||caseFile.Length>64)throw new InvalidOperationException();webCaseId=File.ReadAllText(caseFile.FullName,Encoding.ASCII);if(webCaseId!="01GTGT-zero-M10-2026"&&webCaseId!="01GTGT-sale10-M10-2026"&&webCaseId!="01GTGT-sale10-half-M10-2026"&&webCaseId!="01GTGT-sale10-manual-M10-2026"&&webCaseId!="01GTGT-sale5-half-M10-2026"&&webCaseId!="01GTGT-sale5-manual-M10-2026"&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&webCaseId!="01GTGT-noactivity-reset-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-cancel-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-uncheck-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-keep-credit-M10-2026"&&webCaseId!="01GTGT-zero-Q4-2026"&&webCaseId!="01GTGT-native-import-sale10-M10-2026"&&webCaseId!=Annex12WebZeroCaseId&&webCaseId!=Annex12WebTwoPlantsCaseId&&webCaseId!=Annex10WebNq204CaseId)throw new InvalidOperationException();
+  FileInfo caseFile=new FileInfo(host+".web-case.id");if(!caseFile.Exists||(caseFile.Attributes&FileAttributes.ReparsePoint)!=0||caseFile.Length<1||caseFile.Length>64)throw new InvalidOperationException();webCaseId=File.ReadAllText(caseFile.FullName,Encoding.ASCII);if(webCaseId!="01GTGT-zero-M10-2026"&&webCaseId!="01GTGT-sale10-M10-2026"&&webCaseId!="01GTGT-sale10-half-M10-2026"&&webCaseId!="01GTGT-sale10-manual-M10-2026"&&webCaseId!="01GTGT-sale5-half-M10-2026"&&webCaseId!="01GTGT-sale5-manual-M10-2026"&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&webCaseId!="01GTGT-noactivity-reset-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-cancel-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-uncheck-sale10-M10-2026"&&webCaseId!="01GTGT-noactivity-keep-credit-M10-2026"&&webCaseId!="01GTGT-zero-Q4-2026"&&webCaseId!="01GTGT-native-import-sale10-M10-2026"&&webCaseId!=Annex12WebZeroCaseId&&webCaseId!=Annex12WebTwoPlantsCaseId&&webCaseId!=Annex10WebNq204CaseId&&webCaseId!=KhbsWebCaseId)throw new InvalidOperationException();
+  // The amendment case runs only in its own mode, and no other case runs there.
+  if((webCaseId==KhbsWebCaseId)!=KhbsMode())throw new InvalidOperationException();
   webInputPath=host+".web-input.xml";webImportInputSha256=ReadOwnHexSidecar(host+".web-input.sha256",64);webSourceSha=ReadOwnHexSidecar(host+".web-source.sha",40);
   XmlDocument document=ReadBoundedOriginalXml(webInputPath);if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/tenNNT")!=FakeName||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/nguoiKy")!=FakeSigner)throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinDVu/maDVu")!="CCKK"||FixedWebLeaf(document,"TTinChung/TTinDVu/tenDVu")!="Công cụ Kê khai"||FixedWebLeaf(document,"TTinChung/TTinDVu/ttinNhaCCapDVu")!="hotrokekhai.net — Công cụ Kê khai, công cụ độc lập"||!Regex.IsMatch(FixedWebLeaf(document,"TTinChung/TTinDVu/pbanDVu"),"^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"))throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/maTKhai")!="842"||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/pbanTKhaiXML")!="2.8.3")throw new InvalidOperationException();
+  if(KhbsMode()&&(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!="B"||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!="1"))throw new InvalidOperationException();
   webInputVerified=true;Record();
  }
 }

@@ -45,6 +45,11 @@ if set(annex10.CASES)!=set(case_registry.ANNEX10_CASES):raise ValueError('CASE_P
 ANNEX10_PRODUCER='scripts/generate-htkk-web-annex10-reference.mjs'
 ANNEX10_NATIVE_BASE='6956eea0fa865e98da71ad3ce23ed6a527e7a17761c6fb11032a11fc0a97b8cb'
 CASE_MONEY.update({case:annex10.money(case) for case in annex10.CASES})
+# Kê khai bổ sung lần 1 (KHBS, oracle HTKK 5.8.2): own producer, manifest keys and exact PLuc allowlist.
+_khbs_spec=importlib.util.spec_from_file_location('htkk_khbs_web_input_contract',pathlib.Path(__file__).with_name('htkk_khbs_web_cases.py'))
+khbs=importlib.util.module_from_spec(_khbs_spec);_khbs_spec.loader.exec_module(khbs)
+if set(khbs.CASES)!=set(case_registry.KHBS_CASES):raise ValueError('CASE_POLICY')
+CASE_MONEY.update({case:khbs.money(case) for case in khbs.CASES})
 # Declaration-family cases (03/TNDN, BCTC, TNCN, 01/CNKD): own producer, file names and allowlist.
 _declaration_spec=importlib.util.spec_from_file_location('htkk_declaration_web_input_contract',pathlib.Path(__file__).with_name('htkk_declaration_web_cases.py'))
 declaration=importlib.util.module_from_spec(_declaration_spec);_declaration_spec.loader.exec_module(declaration)
@@ -129,6 +134,8 @@ def validate_manifest(body):
  if annex10.is_case(case):
   fixed.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=ANNEX10_PRODUCER,htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex10.money(case))
   variable=variable|{'expectedAnnexLeaves'}
+ if khbs.is_case(case):
+  fixed.update(khbs.manifest_fields(case));fixed['htkkVersion']=case_registry.htkk_version(case)
  if set(manifest)!=set(fixed)|variable:raise InputError('MANIFEST')
  if any(type(manifest[key]) is not type(value) or manifest[key]!=value for key,value in fixed.items()):raise InputError('MANIFEST')
  git_sha(manifest['sourceCommit'],'MANIFEST')
@@ -156,7 +163,8 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  if declaration.is_case(case_id):
   try:return declaration.validate_web_input(body,case_id,manifest)
   except declaration.DeclarationWebCaseError as error:raise InputError(DECLARATION_ERRORS.get(error.code,'XML_PRIVACY')) from None
- annex=annex12 if annex12.is_case(case_id) else annex10 if annex10.is_case(case_id) else None;fixed_day=datetime.date.fromisoformat(annex.FIXED_DATE if annex else '2026-10-25')
+ annex=annex12 if annex12.is_case(case_id) else annex10 if annex10.is_case(case_id) else None;amendment=khbs.is_case(case_id)
+ fixed_day=datetime.date.fromisoformat(annex.FIXED_DATE if annex else khbs.FIXED_DATE if amendment else '2026-10-25')
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
  except UnicodeError:raise InputError('XML_ENCODING') from None
@@ -195,6 +203,13 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
    if manifest is not None and manifest.get('expectedAnnexLeaves')!=annex_manifest_leaves(root):raise InputError('MANIFEST')
    annex.strip_annex(root)
   except annex.AnnexWebContractError:raise InputError('XML_PRIVACY') from None
+ if amendment:
+  # Exact fixed PL01_KHBS/PL01_1_KHBS subtree and B/1 header first; then an IN-MEMORY first-declaration
+  # projection reuses the unchanged no-annex allowlist. Staged bytes are never changed.
+  try:
+   khbs.validate_khbs(root,case_id)
+   khbs.project_first_declaration(root)
+  except khbs.KhbsWebContractError:raise InputError('XML_PRIVACY') from None
  # Verify the fixed checkbox before adapting only the in-memory privacy copy.
  nodes=root.findall('./'+ns+'HSoKhaiThue/'+ns+'CTieuTKhaiChinh/'+ns+'ct21')
  if len(nodes)!=1 or nodes[0].attrib or len(nodes[0]) or nodes[0].text!=CASE_CHECKBOX[case_id]:raise InputError('XML_PRIVACY')
@@ -217,6 +232,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  except privacy.EvidenceError as error:raise InputError('XML_PRIVACY',**safe_context(error.context)) from None
  result={'privacyValuesVerified':True,'serviceIdentity':'web-tool','nativeProvenance':False}
  if annex:result['annexTaxLeafCount']=annex.tax_leaves(case_id)
+ if amendment:result['amendmentTaxLeafCount']=khbs.tax_leaves(case_id)
  return result
 def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None):
  if artifact_commit is not None:git_sha(artifact_commit,'SOURCE_COMMIT')

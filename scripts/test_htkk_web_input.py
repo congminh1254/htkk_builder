@@ -52,10 +52,30 @@ def annex10_fixture(case):
  ET.SubElement(ET.SubElement(annex,ns+'ChenhLech'),ns+'ct9').text=spec['ct9']
  ET.register_namespace('',w.privacy.NS)
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
+def khbs_fixture(case):
+ """Synthetic KHBS (bổ sung lần 1) web input built from the trusted contract (no application fixture is copied)."""
+ root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
+ head=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue')
+ for name in ('ngayLapTKhai','ngayKy'):head.find(ns+name).text=w.khbs.FIXED_DATE
+ head.find(ns+'loaiTKhai').text='B';head.find(ns+'soLan').text='1'
+ for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
+ pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+ if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
+ for child in list(pluc):pluc.remove(child)
+ pluc.text=None;nodes={}
+ for path,attributes,text in w.khbs.CASES[case]['rows']:
+  parent=nodes[path.rsplit('/',1)[0]] if '/' in path else pluc
+  attrib={}
+  for item in filter(None,attributes.split(';')):
+   key,value=item.split('=',1);attrib['{'+w.khbs.XSI+'}nil' if key=='xsi:nil' else key]=value
+  node=ET.SubElement(parent,ns+path.rsplit('/',1)[-1],attrib);node.text=text or None;nodes[path]=node
+ ET.register_namespace('',w.privacy.NS);ET.register_namespace('xsi',w.khbs.XSI)
+ return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def case_manifest(body,case,producer_sha='c'*64):
  """Exact manifest shape of the registered producer for one fixed case."""
  if w.declaration.is_case(case):return dfx.declaration_manifest(body,case,producer_sha)
  value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
+ if w.khbs.is_case(case):value.update(w.khbs.manifest_fields(case))
  if w.annex10.is_case(case):
   value.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=w.ANNEX10_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex10.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex12.is_case(case):
@@ -66,6 +86,7 @@ def sale_fixture(case="01GTGT-sale10-M10-2026"):
  if w.declaration.is_case(case):return dfx.declaration_fixture(case)
  if w.annex12.is_case(case):return annex_fixture(case)
  if w.annex10.is_case(case):return annex10_fixture(case)
+ if w.khbs.is_case(case):return khbs_fixture(case)
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
  root.find('.//'+ns+'ct21').text=w.CASE_CHECKBOX[case]

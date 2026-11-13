@@ -173,7 +173,7 @@ class CompiledPlans(unittest.TestCase):
         core = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
         self.assertIn('if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();', core)
         self.assertIn('+SheetJson()+ExportJson()+DeclarationJson();', (ROOT / 'HtkkGtgtReferenceNavigation.cs').read_text(encoding='utf-8'))
-        self.assertIn('mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webImportInputSha256', (ROOT / 'HtkkWebInputReference.cs').read_text(encoding='utf-8'))
+        self.assertIn('mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"||KhbsMode()?webImportInputSha256', (ROOT / 'HtkkWebInputReference.cs').read_text(encoding='utf-8'))
 
     def test_0016_refusal_names_pink_cells_by_coordinate_only(self):
         # Release 228 run 42310319856 (05QTT): import and all 11 sheet checks matched, the original
@@ -639,7 +639,7 @@ class WorkflowAndProbe(unittest.TestCase):
         self.assertIn("'DataFiles/9999999997/reference-declaration-output/declaration.xml'", probe)
         self.assertIn("format='htkk-declaration-native-output-staging-v1'", probe)
         self.assertIn("$HtkkDeclarationCases=@(" + ",".join("'" + c + "'" for c in CASES) + ")", (ROOT / 'HtkkNativeCaseFormats.ps1').read_text())
-        self.assertIn("inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'declaration-web-import-inspect'", workflow)
+        self.assertIn("inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'gtgt-amendment-khbs-inspect' || inputs.gui_automation == 'declaration-web-import-inspect'", workflow)
         self.assertIn('run: python ./scripts/publish-htkk-declaration-native-output.py', workflow)
         self.assertIn(MODE, re.search(r'gui_automation:\n.*?options: \[([^\]]+)\]', workflow, re.S).group(1))
         for case in CASES:

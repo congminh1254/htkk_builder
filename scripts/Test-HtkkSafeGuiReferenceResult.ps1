@@ -90,6 +90,21 @@ try {
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'Unsafe B1 opening accepted'};$cases++
  }
+ # KHBS amendment driver: the B1 metadata plus its own bounded fields; never in another mode.
+ $khbs=[ordered]@{};foreach($key in $open.Keys){$khbs[$key]=$open[$key]};$khbs.mode='gtgt-amendment-khbs-inspect';$khbs.stage='gtgt-amendment-khbs-inspected';$khbs.webCaseId='01GTGT-khbs-zero-to-sale10-M10-2026'
+ foreach($key in @('khbsDateTyped','khbsPeriodMatched','khbsImportInvoked','khbsImportSucceeded','khbsImportPathMatched','khbsSummaryInvoked','khbsSummaryAcknowledged','khbsExportInvoked','khbsExportSchemaPinnedVerified','khbsExportSucceeded','khbsIdentityMatched','khbsCreationDateValid','khbsTreeMatched')){$khbs[$key]=$true}
+ $khbs.khbsLeafCount=270;$khbs.khbsExportBytes=9000;$khbs.khbsExportSha256='a'*64
+ $khbs | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+ if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS amendment rejected'};$cases++
+ if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'KHBS result accepted as B1 opening'};$cases++
+ foreach($change in @(@{key='amendmentLifecycleVerified';value=$true},@{key='khbsLeafCount';value=4097},@{key='khbsMismatchMask';value=256},@{key='khbsFirstDifferenceOrdinal';value=-1},@{key='khbsSummaryMessageId';value=10000},@{key='khbsExportSha256';value='xyz'},@{key='khbsTreeMatched';value=1},@{key='menuClickCount';value=7})){
+  $copy=[ordered]@{};foreach($key in $khbs.Keys){$copy[$key]=$khbs[$key]};$copy[$change.key]=$change.value
+  $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS amendment accepted'};$cases++
+ }
+ $leak=[ordered]@{};foreach($key in $open.Keys){$leak[$key]=$open[$key]};$leak.khbsTreeMatched=$true
+ $leak | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
+ if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-open-inspect').status -ne 'invalid'){throw 'KHBS metadata accepted in another mode'};$cases++
  $annex=[ordered]@{};foreach($key in $base.Keys){$annex[$key]=$base[$key]};$annex.mode='gtgt-annex12-inspect';$annex.stage='gtgt-annex12-inspected';$annex.periodAnnex12Matched=$true;$annex.annex12SourcePinsMatched=$true;$annex.annex12SheetObserved=$true;$annex.annex12StructureMatched=$true;$annex.annex12GroupMetadataMatched=$true;$annex.annex12SttMatched=$true;$annex.annex12LocksMatched=$true;$annex.annex12GroupCount=1;$annex.annex12FirstGroupId=1;$annex.annex12FirstGroupRows=1;$annex.annex12SelectionActionCount=1;$annex.annex12SheetRows=64;$annex.annex12SheetColumns=43;$annex.annex12NumericCount=8
  $annex | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode gtgt-annex12-inspect).status -ne 'valid'){throw 'Bounded annex metadata rejected'};$cases++

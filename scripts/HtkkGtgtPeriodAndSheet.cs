@@ -446,7 +446,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void ConfigureOriginalGtgtPeriod(Control period){
   SetStage(HtkkAutomationStage.GtgtPeriodConfiguring);Record();
   if(Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)!="D1")throw new InvalidOperationException();
-  if(mode=="gtgt-web-import-inspect"&&!webInputVerified)VerifyOwnWebInput();
+  if((mode=="gtgt-web-import-inspect"||KhbsMode())&&!webInputVerified)VerifyOwnWebInput();
   SetCheck(Named(period,QuarterCase()?"chkTKQuy":"chkTkhaiThang"),true);SetCheck(Named(period,"OptChinhthuc"),true);
   periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&!CheckValue(ReadableNamed(period,"OptBosung"));
   SetText(period,"mskYear","2026");if(QuarterCase()){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact("4");if(index<0)throw new InvalidOperationException();quarter.SelectedIndex=index;if(Convert.ToString(quarter.SelectedItem,CultureInfo.InvariantCulture)!="4")throw new InvalidOperationException();}else SetText(period,"mskMonth","10");

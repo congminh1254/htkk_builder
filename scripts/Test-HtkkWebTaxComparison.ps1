@@ -34,4 +34,14 @@ Assert-Comparison $changed $false
 $savedBaseline=$baseline;$baseline=[xml]$baseline.OuterXml.Replace('0123456789ABCDEF0123456789ABCDEF','INVALID')
 Assert-Comparison ([xml]$changed.OuterXml.Replace('0123456789ABCDEF0123456789ABCDEF','FEDCBA9876543210FEDCBA9876543210')) $false
 $baseline=$savedBaseline
-Write-Output 'Synthetic C# web-tax comparison boundaries passed (15 cases).'
+# KHBS: whole tree, output identity and any valid creation date; bounded mask and first differing leaf ordinal.
+$khbsWeb=New-Fixture $true;$khbsOut=New-Fixture $false;$khbsCases=0
+function Assert-Khbs([xml]$Output,[bool]$Expected,[int]$Mask,[int]$First) { $leaves=0;$mask=0;$first=0;$identity=$false;$date=$false;$actual=[HtkkWebTaxComparison]::CompareKhbs($khbsWeb,$Output,70,[ref]$leaves,[ref]$mask,[ref]$first,[ref]$identity,[ref]$date);if($actual -ne $Expected -or $mask -ne $Mask -or $first -ne $First){throw 'Synthetic KHBS comparison boundary failed'};$script:khbsCases++ }
+Assert-Khbs $khbsOut $true 0 0
+Assert-Khbs ([xml]$khbsOut.OuterXml.Replace('<f3>0</f3>','<f3>1</f3>')) $false 8 6
+Assert-Khbs ([xml]$khbsOut.OuterXml.Replace('<ngayKy>2026-10-25</ngayKy>','<ngayKy>2026-10-26</ngayKy>')) $false 4 2
+Assert-Khbs ([xml]$khbsOut.OuterXml.Replace('<ngayLapTKhai>2026-10-26</ngayLapTKhai>','<ngayLapTKhai>bad</ngayLapTKhai>')) $false 128 0
+Assert-Khbs ([xml]$khbsOut.OuterXml.Replace('<f0>0</f0>','<f0 extra="x">0</f0>')) $false 2 3
+Assert-Khbs ([xml]$khbsOut.OuterXml.Replace('<f0>0</f0>','<f0>0</f0><extra>0</extra>')) $false 1 3
+Assert-Khbs ([xml]$khbsOut.OuterXml.Replace('<maDVu>HTKK</maDVu>','<maDVu>OTHER</maDVu>')) $false 128 0
+Write-Output ('Synthetic C# web-tax comparison boundaries passed (15 cases, '+$khbsCases+' KHBS cases).')

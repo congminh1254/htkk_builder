@@ -51,7 +51,7 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
    self.assertIn(key,keys);self.assertIn(key+'=$false;',fixture)
   self.assertEqual(field('amendmentPriorFileBytes')['maximum'],262144)
   self.assertEqual(field('amendmentLifecycleVerified')['activeModes'],[])
-  self.assertEqual(field('amendmentPriorSaveInvoked')['activeModes'],[MODE,'gtgt-amendment-open-inspect'])
+  self.assertEqual(field('amendmentPriorSaveInvoked')['activeModes'],[MODE,'gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect'])
  def test_original_save_uses_button_and_read_only_bounded_internal_file_observation(self):
   source=wire_source('HtkkGtgtAmendmentInspection.cs')
   # Loaded workbook sheets are not selected annexes: the real no-annex D1 has11.

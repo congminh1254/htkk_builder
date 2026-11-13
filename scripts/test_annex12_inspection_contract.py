@@ -2,7 +2,7 @@
 import ast,pathlib,re,unittest
 from native_contract_test_support import wire_source, field, registry, assert_compile_input
 ROOT=pathlib.Path(__file__).parent
-MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')
+MODES=('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')
 class AnnexInspectionContract(unittest.TestCase):
  def test_actual_csharp_start_rejects_unknown_modes_and_accepts_every_existing_mode(self):
   text=wire_source('HtkkGuiReferenceAutomation.cs')

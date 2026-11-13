@@ -7,6 +7,7 @@ def check(value):
 check(REGISTRY.get('format')=='htkk-native-case-registry-v1')
 # Reviewed adapter identities only. A private source cannot add a producer or driver.
 D1_DRIVER='gtgt-web-import-inspect'
+KHBS_DRIVER='gtgt-amendment-khbs-inspect'
 DECLARATION_DRIVER='declaration-web-import-inspect'
 DECLARATION_PRODUCER='scripts/generate-htkk-declaration-reference.mjs'
 _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('10/2026',),'quarter':('4/2026',)}}
@@ -25,6 +26,10 @@ TRUSTED_ADAPTERS={
  # 01-10/GTGT (giảm thuế GTGT NQ 204/2025/QH15, sheet 01_10, PL_NQ142_GTGT). Its only case runs on the HTKK 5.8.2
  # oracle (per-case htkkVersion): 5.8.2 accepts negative goods values there (htkk_web docs/PHU-LUC-01-10-GTGT.md).
  '01-gtgt-2.8.3-annex10':{'producer':'scripts/generate-htkk-web-annex10-reference.mjs','privacyValidator':'gtgt-annex10-v1','annexes':['01-10/GTGT'],**_d1},
+ # Kê khai bổ sung lần 1 (KHBS, loaiTKhai B, PL01_KHBS + PL01_1_KHBS) on the HTKK 5.8.2 oracle, own driver
+ # (KHBS-NATIVE-CASE.md): C0 zero Ghi, B1 reopen with a fixed ngày lập, original import of the web B1 file,
+ # Tổng hợp KHBS, original export, whole tree. The only adapter whose unit has amendmentOrder 1.
+ '01-gtgt-2.8.3-khbs':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1},
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
  '03-tndn-2.9.4':_declaration('N8','2.9.4',{'year':('2025',)},['03-1A']),
@@ -104,7 +109,7 @@ for c in CASES.values():
  a=ADAPTERS[c['adapterId']];u=c['unit']
  # An adapter of a later HTKK release (an XML version absent from 5.8.1) runs only on that oracle.
  check(a['htkkVersion']=='5.8.1' or case_version(c)==a['htkkVersion'])
- check(u['menuId']==a['menuId'] and u['adapterVersion']==a['xmlVersion'] and u['activityCode']=='00' and u['annexes']==TRUSTED_ADAPTERS[a['adapterId']]['annexes'] and type(u['amendmentOrder'])is int and u['amendmentOrder']==0)
+ check(u['menuId']==a['menuId'] and u['adapterVersion']==a['xmlVersion'] and u['activityCode']=='00' and u['annexes']==TRUSTED_ADAPTERS[a['adapterId']]['annexes'] and type(u['amendmentOrder'])is int and u['amendmentOrder']==TRUSTED_ADAPTERS[a['adapterId']].get('amendmentOrder',0))
  periods=TRUSTED_ADAPTERS[a['adapterId']]['periods'];check(u['periodType'] in periods and u['periodValue'] in periods[u['periodType']])
  for key in ('stagingDirectory','inputBranch','outputBranch'):check(re.fullmatch('[a-zA-Z0-9-]{1,120}',c[key]))
  check(c['statusContext']=='htkk-native/'+c['producerCase'] and re.fullmatch('htkk-web-[a-z0-9-]+-input-v1',c['format']))
@@ -117,6 +122,8 @@ CANDIDATE_CASES=tuple(id for id,c in CASES.items() if not c['releaseGate'])
 check(GATE_CASES and list(CASES)[:len(GATE_CASES)]==list(GATE_CASES))
 ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex12')
 ANNEX10_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex10')
+KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-khbs')
+check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in KHBS_CASES))
 # Declaration-family cases use their own input/output file names, privacy allowlist and driver.
 DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==DECLARATION_DRIVER)
 check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))
