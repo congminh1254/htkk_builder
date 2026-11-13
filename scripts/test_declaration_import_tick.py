@@ -312,8 +312,19 @@ class PbtPlans(unittest.TestCase):
         body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
         for forbidden in ('SetPublic(', 'SetValue(', 'set_Value', '"Value",', '.Text=', 'PerformClick', 'InvokeMember', '"ActiveSheet",', 'ActiveSheetIndex', 'SelectedIndex"'):
             self.assertNotIn(forbidden, body)
-        for required in ('TypeDeclarationEntryUnicode(', 'SendKeys.SendWait("{TAB}")', 'SendKeys.SendWait(step<count?"^{PGDN}":"^{PGUP}")', 'DeclarationTickFail(16)', 'DeclarationTickFail(19)'):
-            self.assertIn(required, body + CODE)
+        for required in ('TypeDeclarationEntryUnicode(', 'SendKeys.SendWait("{TAB}")', 'DeclarationTickFail(16)', 'DeclarationTickFail(activation)'):
+            self.assertIn(required, body)
+
+    def test_sheet_activation_clicks_the_original_tab_like_the_annex12_driver(self):
+        # Runs 43443803833 / 43443808734: Ctrl+PageDown/PageUp did not change the FarPoint sheet (code 19). The sheet is now
+        # reached by real mouse messages on FpSpread.GetSheetTabRectangle, as ClickOriginalAnnex12Tab does.
+        body = CODE[CODE.index('private int DeclarationTickActivate('):CODE.index('private void EditDeclarationTickCombo(')]
+        for required in ('DeclarationSheetTabRectangle(grid,index)', 'PostMessage(grid.Handle,0x0201', 'PostMessage(grid.Handle,0x0202', 'ClientRectangle', 'return 20;', '?0:19;'):
+            self.assertIn(required, body)
+        for forbidden in ('SetValue(', '.SetValue', 'CanWrite', 'Invoke(grid,new object[]{index})==', 'SendKeys', 'PGDN', 'PGUP', 'InvokeMember', 'BindingFlags.NonPublic'):
+            self.assertNotIn(forbidden, body)
+        self.assertNotIn('PGDN', CODE)
+        self.assertIn('GetMethod("GetSheetTabRectangle"', ENTRY[:ENTRY.index(' // ==== Native-case mode web-xml-import-tick-reexport')])
 
     @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
     def test_compiled_pbt_plans_need_the_5_8_2_pins(self):

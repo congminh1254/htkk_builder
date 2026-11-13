@@ -543,12 +543,20 @@ Sau "Nhập từ XML", `WinDoWorkEvent.ProcessSelectedCell` → `GetValueFromSel
 với menu trong danh sách danh mục mới (L7, Z8), `ProcessParentCell` → `GetParentCodeFromChildCellInTable` (0x0600008a) chỉ ghi mã
 T = U[0..3]+"00". Ô I trống thì Header B37 (`TRIM(I44)=""`, cờ Y) chặn Kết xuất. Mode `web-xml-import-tick-reexport` vì vậy có
 thêm thao tác **combo**: `HtkkDeclarationCasePlans.ImportTick` = `combo|01-1|I44|Thuế Thành phố Hà Nội|T44|10100`, rồi J44 (CQT quản
-lý, bị `setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic` xóa khi chọn I), rồi I45/J45. Mỗi thao tác: sheet 01-1 được bật bằng phím gốc
-Ctrl+PageDown/PageUp (không gán ActiveSheet), chọn ô (`winFpSpread_EnterCell` dựng lại danh sách theo dòng:
+lý, bị `setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic` xóa khi chọn I), rồi I45/J45. Mỗi thao tác: sheet 01-1 được bật bằng cú bấm chuột thật
+vào thẻ sheet (xem đoạn "Run 43443803833 / 43443808734" bên dưới; không gán ActiveSheet), chọn ô (`winFpSpread_EnterCell` dựng lại danh sách theo dòng:
 `loadCqtCapCucTheoDiaBanXa(mã xã)` / `loadCqtCapChiCucTheoDiaBanXa(mã cấp cục, mã xã)`), gõ tên mục bằng bàn phím Unicode vào editor
 gốc, TAB; `winFpSpread_CellChange` ghi mã (`GetDMFromCombobox`); đọc lại tên trong ô và mã ở T/U. Mã lỗi thêm: 16 (ô mã không
-được ghi), 19 (không bật được sheet). Ghim IL `pbt-582-*` (11 thân phương thức, `added-reviewed`, chỉ 5.8.2;
+được ghi), 19 (không bật được sheet), 20 (thẻ sheet không nằm trọn trong vùng lưới). Ghim IL `pbt-582-*` (11 thân phương thức, `added-reviewed`, chỉ 5.8.2;
 `HtkkOracleBaseline.PbtMethodPins()`, 5.8.1 từ chối). Ô kiểm: tổng L47–P47 của 05-1, mã R/Z/T/U hai dòng, các chỉ tiêu tờ khai;
 so cả cây với XML web. Câu hỏi mở cho lần chạy đầu: phím Ctrl+PageDown của FarPoint có đổi sheet không (nếu không: mã 19), editor
 combo có nhận chuỗi gõ không (mã 13/16), dòng trúng thưởng mặc định xuất rỗng hay `xsi:nil`/'cbo' (so cây). Web giữ cổng
 `PBT_05KK_RELEASED = false` cho tới khi hai ca khớp.
+
+**Run 43443803833 (L7) / 43443808734 (Z8)** (cohort sau khi merge 46b4440): nhập XML thành công (không thông báo từ chối), annex
+đúng (`declarationAnnexMatched`, 1 phụ lục chọn, 5 sheet), 11/11 ghim `pbt-582-*` khớp, kế hoạch 4 thao tác, 0 thao tác làm được,
+`declarationTickFailureCode` 19: Ctrl+PageDown/PageUp không đổi sheet của FarPoint. Sửa (nhánh `work/pbt-sheet`): bật sheet như
+driver 01-2/GTGT (`ClickOriginalAnnex12Tab`): WM_LBUTTONDOWN/UP thật gửi vào tâm hình chữ nhật thẻ công khai của nhà cung cấp
+(`FpSpread.GetSheetTabRectangle(chỉ số sheet)`), để chính xử lý bấm thẻ của FarPoint và các sự kiện đổi sheet của HTKK chạy; chờ
+có giới hạn tới khi `ActiveSheet` là sheet 01-1. Thẻ không nằm trọn trong vùng client của lưới → mã 20; bấm mà không đổi sheet →
+19. Không gán ActiveSheet/ActiveSheetIndex, không gọi handler riêng; không báo tọa độ.
