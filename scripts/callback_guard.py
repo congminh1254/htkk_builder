@@ -1,15 +1,20 @@
 """Ignore superseded status hints; immutable cohort proofs remain authoritative."""
-import json,re,urllib.request
+import importlib.util,json,pathlib,re,urllib.request
+_spec=importlib.util.spec_from_file_location('native_callback_retry',pathlib.Path(__file__).with_name('callback_retry.py'));retry=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(retry)
 SOURCE='htkk-net/htkk_web';BUILDER='congminh1254/htkk_builder'
 class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
-def read(repo,path,token):
+def read_once(repo,path,token):
  if repo not in (SOURCE,BUILDER)or not token or not re.fullmatch(r'[A-Za-z0-9_./?=&%-]+',path)or '..'in path:raise ValueError('CALLBACK_API')
  req=urllib.request.Request('https://api.github.com/repos/'+repo+'/'+path,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','User-Agent':'HTKK-Callback-Guard/1.0'})
  with urllib.request.build_opener(NoRedirect()).open(req,timeout=30)as response:
   body=response.read(1_000_001)
   if len(body)>1_000_000:raise ValueError('CALLBACK_SIZE')
   return json.loads(body)
+def read(repo,path,token,budget=None,once=None):
+ # Read-only GETs are idempotent; only transient API classes are retried (callback_retry.py).
+ once=once or read_once
+ return retry.call(lambda:once(repo,path,token),budget or retry.Budget(),'callback guard read')
 def allowed(source,context,run_id,attempt,source_token,actions_token,get=read,input_commit=None):
  if not re.fullmatch('[a-f0-9]{40}',source)or not re.fullmatch('[1-9][0-9]*',str(run_id))or not re.fullmatch('[1-9][0-9]*',str(attempt)):raise ValueError('CALLBACK_ID')
  if get(SOURCE,'git/ref/heads/main',source_token).get('object',{}).get('sha')!=source:return False

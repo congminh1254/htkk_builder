@@ -272,7 +272,7 @@ jobs:
     if: always() && github.ref == 'refs/heads/main' && (inputs.gui_automation == 'gtgt-web-import-inspect' || inputs.gui_automation == 'gtgt-amendment-khbs-inspect' || inputs.gui_automation == 'declaration-web-import-inspect') && (needs.readiness.result == 'failure' || needs.readiness.result == 'cancelled')
     needs: readiness
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     permissions:
       contents: read
       actions: read
