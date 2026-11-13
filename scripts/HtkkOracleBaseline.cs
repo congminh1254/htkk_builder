@@ -37,4 +37,10 @@ internal static class HtkkOracleBaseline {
  };
  // U5 3.1.0 import-tick method pins (later-release methods, added-reviewed); none for 5.8.1, which refuses the plan.
  internal static string[] TickMethodPins(){if(Tick[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_TICK_UNPINNED");return (string[])Tick[Current].Clone();}
+ private static readonly string[][] Pbt=new string[][]{
+  new string[0],
+  new string[]{"H|frmWinToKhai|winFpSpread_EnterCell|0x060003b9|6197|ef8bb59c9b33e7c672e2b5a0f2a0d42b7066fc46f10f31dbbdf044dc78dbcdc4","H|frmWinToKhai|winFpSpread_CellChange|0x060003b5|25029|11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d","H|WinDoWorkEvent|GetValueFromSelectedCell|0x06000085|5938|7a213d943a1ef33d6a8b21108d1fe7247c85bc26bc3ca9aaf67bd79af5258ece","H|WinDoWorkEvent|GetParentCodeFromChildCellInTable|0x0600008a|231|8064644a163dde4c4330b08b31ae9e87783111fc9c1da7e37cb8cdfed95fbd15","B|GeneralFunctions|loadCqtCapCucTheoDiaBanXa|0x06002b31|388|8b05e2a799facb64d1750e58fa153cf76833aff4be6dec4db59563b8fd188ada","B|GeneralFunctions|loadCqtCapChiCucTheoDiaBanXa|0x06002b33|331|c4bda1ab872811a8e9d3657f474d9cb569b8ca8abe1f99e86b0aaad6fcaa1927","B|GeneralFunctions|setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic|0x06002b35|208|d47985e799dface5352f2647a84551ab8f7e1a5b50e88bd8ecef40b8f940a3ec","B|GeneralFunctions|InsertCombobox|0x06002a9d|169|c38e70afdad9f1e6283846c3c7219a63e4a39266eb6a4d6fc5950236ac780a76","B|GeneralFunctions|GetDMFromCombobox|0x06002abe|301|d1286be3a96e2a07905fd84f6990a9b97d41da4214a99cb8e22eadaa80388bba","B|TncnKk05TT80Nckt293|Validate_1|0x06002313|1055|1be65142efa6783854fabf86f67347a002024f4f9d324c25876b642b5ab7d22f","B|TncnKk05TT89Nckt309|Validate_1|0x0600231c|1172|32084716eea4243954b60686caa618c390116577a95b9a786ea999644f7e9d7b"}
+ };
+ // 05-1/PBT-KK-TNCN import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.
+ internal static string[] PbtMethodPins(){if(Pbt[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_PBT_UNPINNED");return (string[])Pbt[Current].Clone();}
 }

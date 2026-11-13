@@ -29,6 +29,12 @@ ENTRY_PREFIX = 'y8-entry-'
 TICK_PREFIX = 'u5-310-tick-'
 TICK_IDS = ('u5-310-tick-autobind', 'u5-310-tick-locks', 'u5-310-tick-cellchange', 'u5-310-tick-child-keys', 'u5-310-tick-buttonclick', 'u5-310-tick-pl01', 'u5-310-tick-capnhat',
             'u5-310-tick-copy-table', 'u5-310-tick-child-column', 'u5-310-tick-grid-cellchange', 'u5-310-tick-dowork-cellchange', 'u5-310-tick-grid-button', 'u5-310-tick-dowork-button')
+# 05/KK-TNCN bảng 05-1/PBT-KK-TNCN import plan (L7/Z8 on the 5.8.2 oracle): Thuế tỉnh/CCT and CQT quản lý chosen again
+# through the original combobox editor after the import. Pinned for 5.8.2 only (the cases run on that oracle).
+PBT_PREFIX = 'pbt-582-'
+PBT_IDS = ('pbt-582-enter-cell', 'pbt-582-cell-change', 'pbt-582-import-selected', 'pbt-582-import-parent-code', 'pbt-582-cuc-items', 'pbt-582-office-items',
+           'pbt-582-office-reset', 'pbt-582-combo-items', 'pbt-582-combo-codes', 'pbt-582-validate-tt80', 'pbt-582-validate-tt89')
+LATER = (TICK_PREFIX, PBT_PREFIX)
 ADDED = 'added-reviewed'
 
 
@@ -92,18 +98,20 @@ def validate(data):
             require(TOKEN.fullmatch(x['token']) and type(x['ilBytes']) is int and 0 < x['ilBytes'] < 1 << 20 and SHA.fullmatch(x['ilSha256']) and x['status'] in STATUSES, version + ' method pin')
         if reviewed is None:
             require(all(x['status'] == 'reviewed' and set(x) == base for x in methods), 'default methods must all be reviewed')
-            require(not any(x['id'].startswith(TICK_PREFIX) for x in methods), 'default methods must not carry later-release pins')
+            require(not any(x['id'].startswith(LATER) for x in methods), 'default methods must not carry later-release pins')
             reviewed = {x['id']: x for x in methods}
             continue
         # A method of a later release only: absent from the default oracle, pinned as itself with its review,
         # never a substitute for a default-version body (own id prefix, no reviewedToken581).
         added = [x for x in methods if x['status'] == ADDED]
         for x in added:
-            require(x['id'].startswith(TICK_PREFIX) and x['id'] not in reviewed and set(x) == base | {'review'}, version + ' added method')
+            require(x['id'].startswith(LATER) and x['id'] not in reviewed and set(x) == base | {'review'}, version + ' added method')
             require(type(x['review']) is str and 20 <= len(x['review']) <= 1000, version + ' added review')
         require(all(x['status'] == ADDED for x in methods if x['id'].startswith(TICK_PREFIX)), version + ' tick pins must be added-reviewed')
         # The plan pins every method it relies on, in this order, or none (a version without the class).
         require(tuple(x['id'] for x in methods if x['id'].startswith(TICK_PREFIX)) in ((), TICK_IDS), version + ' tick pin set')
+        require(all(x['status'] == ADDED for x in methods if x['id'].startswith(PBT_PREFIX)), version + ' pbt pins must be added-reviewed')
+        require(tuple(x['id'] for x in methods if x['id'].startswith(PBT_PREFIX)) in ((), PBT_IDS), version + ' pbt pin set')
         require(set(ids) - {x['id'] for x in added} == set(reviewed), version + ' method set')
         for x in methods:
             if x['status'] == ADDED:
@@ -156,6 +164,11 @@ def tick_pins(value):
     """U5 3.1.0 import-tick pins (asm|type|method|token|ilBytes|ilSha256) of one version; empty when the
     version has none (5.8.1: the class does not exist, the C# accessor then refuses to run the plan)."""
     return ['|'.join((x['assembly'], x['type'], x['method'], x['token'], str(x['ilBytes']), x['ilSha256'])) for x in value['methods'] if x['id'].startswith(TICK_PREFIX)]
+
+
+def pbt_pins(value):
+    """05-1/PBT import-plan pins (asm|type|method|token|ilBytes|ilSha256) of one version; empty for 5.8.1."""
+    return ['|'.join((x['assembly'], x['type'], x['method'], x['token'], str(x['ilBytes']), x['ilSha256'])) for x in value['methods'] if x['id'].startswith(PBT_PREFIX)]
 
 
 def render(data):
@@ -216,6 +229,11 @@ def render(data):
     c += [' };',
           ' // U5 3.1.0 import-tick method pins (later-release methods, added-reviewed); none for 5.8.1, which refuses the plan.',
           ' internal static string[] TickMethodPins(){if(Tick[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_TICK_UNPINNED");return (string[])Tick[Current].Clone();}',
+          ' private static readonly string[][] Pbt=new string[][]{']
+    c.append(',\n'.join(('  new string[]{' + ','.join(cs(p) for p in pbt_pins(v)) + '}') if pbt_pins(v) else '  new string[0]' for v in data['versions'].values()))
+    c += [' };',
+          ' // 05-1/PBT-KK-TNCN import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.',
+          ' internal static string[] PbtMethodPins(){if(Pbt[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_PBT_UNPINNED");return (string[])Pbt[Current].Clone();}',
           '}']
     return ps_text, '\n'.join(c) + '\n'
 

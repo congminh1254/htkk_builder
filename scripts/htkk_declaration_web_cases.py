@@ -279,6 +279,7 @@ def _case(producer, menu, ma, version, schema, period, dates, sign, created, lea
 
 
 WORKBOOK_SERVICE = 'Công cụ Kê khai'
+PBT_TEXTS = ['TRU SO CHINH GIA LAP', 'CHI NHANH GIA LAP', 'Thành phố Hà Nội', 'Phường Sơn Tây', 'Thuế cơ sở 16 Thành phố Hà Nội', 'Thành phố Hải Phòng', 'Phường Đồ Sơn', 'Thuế cơ sở 6 Thành phố Hải Phòng']
 CASES = {
     '03TNDN-profit20-Y2025': _case('tndn03-profit20-y2025', 'N8', '892', '2.9.4', 'Validate/03_TNDN_TT80_294.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-03-20', '2026-03-20', 147, ['PLuc_03_1A_TNDN'], WORKBOOK_SERVICE,
                                    # Period default settlement case (AutoBindData_0) and the reviewed industry code (Header B25/B26).
@@ -298,6 +299,13 @@ CASES = {
     # Z8 05/KK-TNCN TT89 (HTKK 5.8.2 only): KieuKy 14 = SetLayoutToKhaiQuy, StartDate 01/10/2026.
     '05KK-TT89-withheld-Q4-2026': _case('tncn05kk-tt89-withheld-q4-2026', 'Z8', '2036', '3.0.9', 'Validate/05_KK_TNCN_TT89_309.xsd', ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 69, [], WORKBOOK_SERVICE,
                                          ['TK khấu trừ thuế thu nhập cá nhân Mẫu 05/KK-TNCN (TT89/2026)', TEMPLATE_TT89, ADDRESS]),
+    # 05/KK-TNCN with bảng 05-1/PBT-KK-TNCN (HTKK 5.8.2 oracle, mode web-xml-import-tick-reexport with combo edits): [15]
+    # (L7) / [14] (Z8) and two rows of the tiền lương table; texts = the synthetic unit names and the catalogue names
+    # (Catalogue_Dia_Ban_Tinh_Moi / _Xa_Moi / Catalogue_CQT_Dia_Ban) of the two wards.
+    '05KK-PBT-two-provinces-Q3-2026': _case('tncn05kk-pbt-two-provinces-q3-2026', 'L7', '864', '2.9.3', 'Validate/05_KK_TNCN_TT80_293.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 110, ['PLuc_05_1_PBT_KK_TNCN'], WORKBOOK_SERVICE,
+                                             ['TK khấu trừ thuế thu nhập cá nhân Mẫu 05/KK-TNCN (TT80/2021)', TEMPLATE_TT80, ADDRESS] + PBT_TEXTS),
+    '05KK-TT89-PBT-two-provinces-Q4-2026': _case('tncn05kk-tt89-pbt-two-provinces-q4-2026', 'Z8', '2036', '3.0.9', 'Validate/05_KK_TNCN_TT89_309.xsd', ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 117, ['PLuc_05_1_PBT_KK_TNCN'], WORKBOOK_SERVICE,
+                                                  ['TK khấu trừ thuế thu nhập cá nhân Mẫu 05/KK-TNCN (TT89/2026)', TEMPLATE_TT89, ADDRESS] + PBT_TEXTS),
     # KieuKy 12 (B9/B8): frmHTKKPeriod_Load → SetLayoutToKhaiNamTuThangDenThang hides pnTuNgay/pnDenNgay,
     # so GetPeriodInfo gives TTinChung kyKKhaiTuNgay = kyKKhaiDenNgay = '' and WinDoWorkImportFormXml
     # refuses a file with any other value (0437, releases 224/225). The months come from the driver plan.
@@ -407,7 +415,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026'})
 
 
 def is_case(case_id):

@@ -4,7 +4,7 @@
  "notes": [
   "Reviewed pins of each official HTKK distribution the native harness may use as its oracle. Data only: no installer bytes, no extracted source.",
   "5.8.1 stays the default oracle. 5.8.2 is selectable (workflow input htkk_version) for a non-gating cohort; it never feeds release, Pages or scoped evidence.",
-  "Method status: reviewed = the body the driver was written against; token-renumbered = same instructions as the reviewed 5.8.1 body once metadata tokens are resolved to names (new token, new raw IL hash); changed = the body really differs and is NOT accepted as the reviewed body; changed-reviewed = the body really differs, its new body was reviewed against the driver plan ('review') and is accepted for that version only (the 5.8.1 pins are unchanged). added-reviewed = a method of a later release only (absent from the default oracle, e.g. U5 3.1.0 CnkdHkd01TT50Nckt310 of 5.8.2), pinned as itself with its review for that version only.",
+  "Method status: reviewed = the body the driver was written against; token-renumbered = same instructions as the reviewed 5.8.1 body once metadata tokens are resolved to names (new token, new raw IL hash); changed = the body really differs and is NOT accepted as the reviewed body; changed-reviewed = the body really differs, its new body was reviewed against the driver plan ('review') and is accepted for that version only (the 5.8.1 pins are unchanged). added-reviewed = a method of a later release only (absent from the default oracle, e.g. U5 3.1.0 CnkdHkd01TT50Nckt310 of 5.8.2; the pbt-582-* pins of the 05-1/PBT-KK-TNCN import plan, cases run on 5.8.2 only), pinned as itself with its review for that version only.",
   "Generated consumers: HtkkOracleBaseline.ps1 and HtkkOracleBaseline.cs (python3 scripts/generate-htkk-oracle-baselines.py [--check])."
  ],
  "versions": {
@@ -624,6 +624,127 @@
      "ilSha256": "a7709578c97e1e4a3ccef4dcf99f284741405fa4e9ba7f3bf016c4ba6e2e4bd6",
      "status": "token-renumbered",
      "reviewedToken581": "0x060001fa"
+    },
+    {
+     "id": "pbt-582-enter-cell",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_EnterCell",
+     "token": "0x060003b9",
+     "ilBytes": 6197,
+     "ilSha256": "ef8bb59c9b33e7c672e2b5a0f2a0d42b7066fc46f10f31dbbdf044dc78dbcdc4",
+     "status": "added-reviewed",
+     "review": "Entering a table cell of control 8 (Thuế tỉnh/CCT) or 9 (CQT quản lý) in a menu of the new-catalogue list (L7, Z8) rebuilds its combobox from the row: loadCqtCapCucTheoDiaBanXa(mã xã of the 101 column) or loadCqtCapChiCucTheoDiaBanXa(mã cấp cục, mã xã), InsertCombobox without clearing the text. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-cell-change",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_CellChange",
+     "token": "0x060003b5",
+     "ilBytes": 25029,
+     "ilSha256": "11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d",
+     "status": "added-reviewed",
+     "review": "Table branch: control 8 maps the typed name to its combobox ItemData code (GetDMFromCombobox, First by value) into the SelectedValue column and resets the child CQT quản lý (setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic); control 9 writes its code the same way. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-import-selected",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "GetValueFromSelectedCell",
+     "token": "0x06000085",
+     "ilBytes": 5938,
+     "ilSha256": "7a213d943a1ef33d6a8b21108d1fe7247c85bc26bc3ca9aaf67bd79af5258ece",
+     "status": "added-reviewed",
+     "review": "Row-value overload used by ProcessSelectedCell after Nhập từ XML: for controls 8 and 9 a menu of the new-catalogue list returns without writing a name, so Thuế tỉnh/CCT (no XML leaf) stays empty after the import. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-import-parent-code",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "GetParentCodeFromChildCellInTable",
+     "token": "0x0600008a",
+     "ilBytes": 231,
+     "ilSha256": "8064644a163dde4c4330b08b31ae9e87783111fc9c1da7e37cb8cdfed95fbd15",
+     "status": "added-reviewed",
+     "review": "ProcessParentCell after the import: the empty parent code of a control 9 child becomes the first three digits of its code plus 00 (the cấp cục code); the parent name is not written. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-cuc-items",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "loadCqtCapCucTheoDiaBanXa",
+     "token": "0x06002b31",
+     "ilBytes": 388,
+     "ilSha256": "8b05e2a799facb64d1750e58fa153cf76833aff4be6dec4db59563b8fd188ada",
+     "status": "added-reviewed",
+     "review": "Thuế tỉnh/CCT list of a ward: an empty item, the cấp cục of the ward office (MaCQT[0..3] + 00), then 82500 and 82700; nothing for an empty ward. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-office-items",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "loadCqtCapChiCucTheoDiaBanXa",
+     "token": "0x06002b33",
+     "ilBytes": 331,
+     "ilSha256": "c4bda1ab872811a8e9d3657f474d9cb569b8ca8abe1f99e86b0aaad6fcaa1927",
+     "status": "added-reviewed",
+     "review": "CQT quản lý list of (mã cấp cục, mã xã): 82500 / 82700 alone, otherwise the cấp cục and the ward office of the ward; nothing without a ward. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-office-reset",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic",
+     "token": "0x06002b35",
+     "ilBytes": 208,
+     "ilSha256": "d47985e799dface5352f2647a84551ab8f7e1a5b50e88bd8ecef40b8f940a3ec",
+     "status": "added-reviewed",
+     "review": "After a Thuế tỉnh/CCT choice: the CQT quản lý (control 9) cell of the row gets the new list and its text is cleared (InsertCombobox with clearing), so the plan chooses it again. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-combo-items",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "InsertCombobox",
+     "token": "0x06002a9d",
+     "ilBytes": 169,
+     "ilSha256": "c38e70afdad9f1e6283846c3c7219a63e4a39266eb6a4d6fc5950236ac780a76",
+     "status": "added-reviewed",
+     "review": "Dictionary overload: ComboBoxCellType Items = names, ItemData = codes, Editable, AutoSearch; the last argument clears the cell text. Reviewed against the 05-1/PBT import plan (the typed name is an item name)."
+    },
+    {
+     "id": "pbt-582-combo-codes",
+     "assembly": "B",
+     "type": "GeneralFunctions",
+     "method": "GetDMFromCombobox",
+     "token": "0x06002abe",
+     "ilBytes": 301,
+     "ilSha256": "d1286be3a96e2a07905fd84f6990a9b97d41da4214a99cb8e22eadaa80388bba",
+     "status": "added-reviewed",
+     "review": "Code-to-name dictionary of a combobox cell from its ItemData and Items (first key kept), the source of the code CellChange writes. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-validate-tt80",
+     "assembly": "B",
+     "type": "TncnKk05TT80Nckt293",
+     "method": "Validate_1",
+     "token": "0x06002313",
+     "ilBytes": 1055,
+     "ilSha256": "1be65142efa6783854fabf86f67347a002024f4f9d324c25876b642b5ab7d22f",
+     "status": "added-reviewed",
+     "review": "L7 05-1/PBT row checks: E_13 MST (5 digits or MST/CCCD), E_28 duplicate ward, E_40 one head office, E_41 branch province equal to the head office province. The case rows pass them. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "pbt-582-validate-tt89",
+     "assembly": "B",
+     "type": "TncnKk05TT89Nckt309",
+     "method": "Validate_1",
+     "token": "0x0600231c",
+     "ilBytes": 1172,
+     "ilSha256": "32084716eea4243954b60686caa618c390116577a95b9a786ea999644f7e9d7b",
+     "status": "added-reviewed",
+     "review": "Z8 05-1/PBT row checks: as L7 plus E_43 (MST required) and a head office MST/CCCD only. The case rows pass them. Reviewed against the 05-1/PBT import plan."
     }
    ]
   }

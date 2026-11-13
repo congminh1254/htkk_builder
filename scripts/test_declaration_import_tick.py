@@ -54,7 +54,8 @@ def plan_block(case_id):
 
 class Registration(unittest.TestCase):
     def test_u5_310_is_the_only_tick_case_non_gating_on_the_5_8_2_oracle(self):
-        self.assertEqual(registry.DECLARATION_TICK_CASES, (CASE, PL03))
+        # U5 3.1.0 (ticks) and the 05-1/PBT cases of L7/Z8 (combo edits of Thuế tỉnh/CCT and CQT quản lý).
+        self.assertEqual(registry.DECLARATION_TICK_CASES, (CASE, PL03, '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026'))
         self.assertEqual(registry.input_mode(PL03), registry.IMPORT_TICK_MODE); self.assertEqual(registry.htkk_version(PL03), '5.8.2')
         self.assertIs(registry.CASES[PL03]['releaseGate'], False); self.assertEqual(registry.CASES[PL03]['adapterId'], '01-cnkd-hkd-3.1.0-pl03')
         self.assertEqual(registry.input_mode(CASE), registry.IMPORT_TICK_MODE)
@@ -64,7 +65,7 @@ class Registration(unittest.TestCase):
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.DECLARATION_ENTRY_CASES)
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationTickCases=@('" + CASE + "','" + PL03 + "')", formats)
+        self.assertIn("$HtkkDeclarationTickCases=@('" + CASE + "','" + PL03 + "','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026')", formats)
         # Same adapter, producer case and branches as before: the web input does not change.
         self.assertEqual(registry.CASES[CASE]['adapterId'], '01-cnkd-hkd-3.1.0-pl01')
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'cnkd01-310-pl01-three-groups-q3-2026')
@@ -263,3 +264,66 @@ class Driver(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+# 05/KK-TNCN with bảng 05-1/PBT-KK-TNCN (L7 TT80, Z8 TT89; HTKK 5.8.2 oracle). Thuế tỉnh/CCT (control 8, Path path_15) has no
+# XML leaf and the import leaves it empty (GetValueFromSelectedCell returns for control 8 in L7/Z8), so Header B37 would
+# refuse the export: the same mode chooses it again and then CQT quản lý (cleared by that choice) through the original
+# combobox editor. Passing these tests is never native evidence.
+PBT = ('05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026')
+PBT_EDITS = ['combo|01-1|I44|Thuế Thành phố Hà Nội|T44|10100', 'combo|01-1|J44|Thuế cơ sở 16 Thành phố Hà Nội|U44|10129',
+             'combo|01-1|I45|Thuế Thành phố Hải Phòng|T45|10300', 'combo|01-1|J45|Thuế cơ sở 6 Thành phố Hải Phòng|U45|10309']
+
+
+class PbtPlans(unittest.TestCase):
+    def test_registered_non_gating_on_the_5_8_2_oracle_with_the_annex(self):
+        for case, menu, adapter in ((PBT[0], 'L7', '05-kk-tncn-2.9.3-pbt'), (PBT[1], 'Z8', '05-kk-tncn-tt89-3.0.9-pbt')):
+            c = registry.CASES[case]
+            self.assertEqual((c['adapterId'], c['unit']['menuId'], c['unit']['annexes'], c['releaseGate']), (adapter, menu, ['01-1'], False))
+            self.assertEqual(registry.input_mode(case), registry.IMPORT_TICK_MODE); self.assertEqual(registry.htkk_version(case), '5.8.2')
+            self.assertEqual(registry.driver(case), MODE)
+
+    def test_combo_edits_follow_the_cascade_order_and_name_items_of_the_catalogues(self):
+        start = PLANS.index(' internal static HtkkDeclarationTickPlan ImportTick(string caseId){')
+        block = PLANS[start:PLANS.index('  if(caseId=="' + PL03 + '")', start)]
+        self.assertIn('"' + PBT[0] + '"', block); self.assertIn('"' + PBT[1] + '"', block)
+        self.assertEqual(string_array(block, 0), PBT_EDITS)
+        self.assertIn('HtkkOracleBaseline.PbtMethodPins()', block)
+        # Each Thuế tỉnh/CCT edit comes before the CQT quản lý edit of its row (the first clears the second).
+        cells = [e.split('|')[2] for e in PBT_EDITS]
+        self.assertEqual(cells, ['I44', 'J44', 'I45', 'J45'])
+
+    def test_case_plans_tick_the_annex_and_check_hTKK_written_codes(self):
+        for case in PBT:
+            block = plan_block(case)
+            self.assertIn('new string[]{"05-1/PBT-KK-TNCN"},new string[]{"01|Tờ khai","01-1|05-1/PBT-KK-TNCN"}', block)
+            for check in ('"01-1|T44|10100"', '"01-1|T45|10300"', '"01-1|U44|10129"', '"01-1|U45|10309"'):
+                self.assertIn(check, block)
+
+    def test_pbt_pins_are_5_8_2_only_added_reviewed_and_complete(self):
+        v1, v2 = BASELINES['versions']['5.8.1']['methods'], BASELINES['versions']['5.8.2']['methods']
+        self.assertFalse([m for m in v1 if m['id'].startswith('pbt-582-')])
+        pbt = [m for m in v2 if m['id'].startswith('pbt-582-')]
+        self.assertEqual(tuple(m['id'] for m in pbt), generator.PBT_IDS)
+        self.assertTrue(all(m['status'] == 'added-reviewed' and len(m['review']) >= 20 for m in pbt))
+        self.assertIn(('TncnKk05TT89Nckt309', 'Validate_1'), {(m['type'], m['method']) for m in pbt})
+
+    def test_combo_edit_acts_only_through_original_keys(self):
+        body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
+        for forbidden in ('SetPublic(', 'SetValue(', 'set_Value', '"Value",', '.Text=', 'PerformClick', 'InvokeMember', '"ActiveSheet",', 'ActiveSheetIndex', 'SelectedIndex"'):
+            self.assertNotIn(forbidden, body)
+        for required in ('TypeDeclarationEntryUnicode(', 'SendKeys.SendWait("{TAB}")', 'SendKeys.SendWait(step<count?"^{PGDN}":"^{PGUP}")', 'DeclarationTickFail(16)', 'DeclarationTickFail(19)'):
+            self.assertIn(required, body + CODE)
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_pbt_plans_need_the_5_8_2_pins(self):
+        program = ('using System;class P{static void Main(string[] a){HtkkOracleBaseline.Select(a[0]);'
+                   'foreach(string id in new string[]{"' + PBT[0] + '","' + PBT[1] + '"}){try{HtkkDeclarationTickPlan t=HtkkDeclarationCasePlans.ImportTick(id);'
+                   'Console.WriteLine(t.Edits.Length+" "+t.Ticks.Length+" "+t.MethodPins.Length+" "+(HtkkDeclarationCasePlans.Find(id)!=null));}catch(InvalidOperationException e){Console.WriteLine(e.Message);}}}}')
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory); (folder / 'P.cs').write_text(program)
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkOracleBaseline.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
+            new = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.2'], check=True, capture_output=True, text=True).stdout.split('\n')
+            old = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.1'], capture_output=True, text=True).stdout.split('\n')
+        self.assertEqual(new[:2], ['4 0 11 True', '4 0 11 True'])
+        self.assertEqual(old[:2], ['HTKK_ORACLE_PBT_UNPINNED', 'HTKK_ORACLE_PBT_UNPINNED'])

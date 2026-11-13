@@ -98,9 +98,12 @@ def _tree(case_id, native=False, created=None):
                         _add(node, leaf, value)
                 continue
             for key, count in rows.items():
-                if key.split('/')[0] == annex:
+                parts = key.split('/')
+                if parts[0] == annex:
+                    # 'Annex/row' rows directly under the annex; 'Annex/group/row' (05-1/PBT) rows under one group element.
+                    parent = node if len(parts) == 2 else (node.find('{%s}%s' % (NS, parts[1])) if node.find('{%s}%s' % (NS, parts[1])) is not None else _add(node, parts[1]))
                     for index in range(count):
-                        _add(_add(node, key.split('/')[1], attrib={'id': 'ID_%d' % (index + 1)}), 'ct08', '0')
+                        _add(_add(parent, parts[-1], attrib={'id': 'ID_%d' % (index + 1)}), 'ct08', '0')
     else:
         exp = d.hkd_design.expected(case_id)
         _add(main, 'mst_cu', d.MST)
