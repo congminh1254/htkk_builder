@@ -335,6 +335,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Convert.ToBoolean(Get(type,"Editable")))mask|=4;
   if(items!=null&&data!=null&&items.Length>0&&data.Length==items.Length)mask|=8;
  }
+ // Whether a sheet column is shown (read only); the 05-1/PBT key entry starts from a visible neighbour of the combo cell.
+ private static bool DeclarationColumnVisible(object sheet,int column){
+  object columns=Get(sheet,"Columns");PropertyInfo item=columns.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();
+  object entry=item.GetValue(columns,new object[]{column});return Convert.ToBoolean(Get(entry,"Visible"))&&Convert.ToSingle(Get(entry,"Width"),CultureInfo.InvariantCulture)>0;
+ }
  // The item texts of the original FpCombo editor list (read only), as the original-entry combo reads them.
  private static string[] DeclarationComboEditorItems(Control vendor){
   object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
@@ -361,11 +366,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
  //  16 combo code cell not written   17 original message   19 sheet of a combo edit not activated by its tab click
  //  20 sheet tab of a combo edit not inside the grid client area   14 combo list without the planned item
  //  15 combo keyboard selection did not reach the item   18 cell/editor lost during the combo keys
+ //  21 the arrow key from the neighbour cell did not make the combo cell active (or changed its text)
  // declarationTickComboMask (last combo edit, value-free): 1 FpCombo editor found, 2 planned name exactly once in the editor
  // list, 4 cell ComboBoxCellType Editable, 8 cell ItemData present for every item (the list winFpSpread_EnterCell builds
  // with codes; the template list of fpSpFormatTableCell has none), 16 keys moved the selection, 32 selection = item before
  // TAB, 64 ENTER dropped the list, 128 cell shows the name after commit, 256 code cell holds the code, 512 ItemData of the
- // item is the planned code, 1024 cell text empty after commit, 2048 editor text was the name before TAB.
+ // item is the planned code, 1024 cell text empty after commit, 2048 editor text was the name before TAB, 4096 the cell
+ // was entered by one real arrow key from its neighbour, 8192 the planned name is in the editor list more than once.
+ // Bits 4 and 8 are read after the key entry.
  // declarationTickComboListCount: items in the editor list of the last combo edit.
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
@@ -442,12 +450,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return Get(grid,"ActiveSheet")==sheet?0:19;
  }
  // 05-1/PBT combo edit (combo|sheet|cell|item name|code cell|item code): the original combobox cell of a table row is
- // selected (winFpSpread_EnterCell rebuilds its list from the row: loadCqtCapCucTheoDiaBanXa(mã xã) for Thuế tỉnh/CCT,
- // loadCqtCapChiCucTheoDiaBanXa(mã cấp cục, mã xã) for CQT quản lý), the item name is typed into the original editor as
- // real keyboard input and committed with TAB; winFpSpread_CellChange maps it to its code (GetDMFromCombobox) and, for
+ // entered by one arrow key (DeclarationTickEnterByKey; winFpSpread_EnterCell rebuilds its list from the row: loadCqtCapCucTheoDiaBanXa(mã xã) for Thuế tỉnh/CCT,
+ // loadCqtCapChiCucTheoDiaBanXa(mã cấp cục, mã xã) for CQT quản lý), the item is chosen in the original editor list by
+ // keys and committed with TAB; winFpSpread_CellChange maps it to its code (GetDMFromCombobox) and, for
  // Thuế tỉnh/CCT, rebuilds and clears CQT quản lý (setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic), which the next edit
  // chooses again. Read back: the cell shows the name and the code cell holds the code.
- // Extra failure codes: 19 sheet not activated by the tab click, 20 sheet tab not visible, 16 code cell not written.
+ // Extra failure codes: 19 sheet not activated by the tab click, 20 sheet tab not visible, 16 code cell not written,
+ // 21 key entry did not land on the cell.
  private void EditDeclarationTickCombo(int index){
   string[] parts=declarationTickPlan.Edits[index].Split('|');Control grid;object sheet=DeclarationTickSheet(parts[1],out grid);
   SetStage(HtkkAutomationStage.DeclarationImportTickEditing);Record();
@@ -457,10 +466,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Convert.ToBoolean(Get(cell,"Locked"))){declarationTickMismatchMask|=1<<index;DeclarationTickFail(8);return;}
   if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.ComboBoxCellType"){declarationTickMismatchMask|=1<<index;DeclarationTickFail(9);return;}
   int activation=DeclarationTickActivate(grid,sheet);if(activation!=0){DeclarationTickFail(activation);return;}
-  // Selecting the cell raises winFpSpread_EnterCell, which rebuilds this cell's list from the row (with item codes).
-  DeclarationEntrySelect(grid,sheet,row,column);
+  // Entering the cell by a real arrow key raises winFpSpread_EnterCell, which rebuilds this cell's list from the row.
+  int entry=DeclarationTickEnterByKey(grid,sheet,row,column);if(entry!=0){declarationTickMismatchMask|=1<<index;DeclarationTickCombo(0,0);DeclarationTickFail(entry);return;}
   if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
-  int mask=0;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
+  int mask=4096;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
   Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
   if(editor==null||!editor.Visible||!editor.Enabled){DeclarationTickFail(11);return;}
   editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
@@ -472,6 +481,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(vendor==null){DeclarationTickCombo(mask,0);DeclarationTickFail(14);return;}
   mask|=1;string[] list=DeclarationComboEditorItems(vendor);int planned=-1,hits=0;
   for(int i=0;i<list.Length;i++)if(list[i]==name){planned=i;hits++;}
+  if(hits>1)mask|=8192;
   if(hits!=1){DeclarationTickCombo(mask,list.Length);declarationTickMismatchMask|=1<<index;DeclarationTickFail(14);return;}
   mask|=2;if(data!=null&&items!=null&&planned<items.Length&&items[planned]==name&&planned<data.Length&&data[planned]==parts[5])mask|=512;
   int current=Convert.ToInt32(Get(vendor,"SelectedIndex"));
@@ -506,6 +516,27 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if((mask&128)==0){declarationTickMismatchMask|=1<<index;DeclarationTickFail(13);return;}
   if((mask&256)==0){declarationTickMismatchMask|=1<<index;DeclarationTickFail(16);return;}
   declarationTickActionCount++;Record();
+ }
+ // Release runs 43454666564 / 43454672384 (code 14, list 66, combo mask 1 on the second row): SheetView.SetActiveCell
+ // does not raise FpSpread.EnterCell (FarPoint raises it from SpreadView navigation: keys, mouse), so the row-2 cell kept
+ // the template list of WinSpreadProcess.fpSpFormatTableCellTemplate (getAllTextCqtCucMoi: '' and every cục name, no
+ // codes, not editable; 'Thuế Thành phố Hải Phòng' is in it twice, 10300 and 10700). Row 1 passed on that list only
+ // because its names are unique there. As EnterImportedAnnex12HeadByKey does for the 01-2/GTGT head authority, the active
+ // cell is put on a visible neighbour in the same row (nothing is written, not editing) and one real arrow key moves it onto
+ // the combo cell, so the vendor raises EnterCell and winFpSpread_EnterCell builds the row's own list
+ // (GeneralFunctions.InsertCombobox with item codes, Editable). Returns 0, 10 (guard), 17 (original message) or 21.
+ private int DeclarationTickEnterByKey(Control grid,object sheet,int row,int column){
+  int count=Convert.ToInt32(Get(sheet,"ColumnCount")),from=-1;string key=null;
+  if(column+1<count&&DeclarationColumnVisible(sheet,column+1)){from=column+1;key="{LEFT}";}
+  else if(column>0&&DeclarationColumnVisible(sheet,column-1)){from=column-1;key="{RIGHT}";}
+  if(from<0||!RowVisible(sheet,row)||!DeclarationColumnVisible(sheet,column))return 21;
+  DeclarationEntrySelect(grid,sheet,row,from);
+  if(!DeclarationEntryActive(sheet,row,from)||Get(grid,"EditingControl")!=null||!DeclarationEntryGuard(grid))return 10;
+  string before=CellText(sheet,row,column);
+  SendKeys.SendWait(key);Application.DoEvents();
+  if(OriginalMessageVisible())return 17;
+  if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")!=null||CellText(sheet,row,column)!=before)return 21;
+  return 0;
  }
  private void DeclarationTickCombo(int mask,int count){declarationTickComboMask=mask;declarationTickComboListCount=Math.Min(count,4096);Record();}
  // SPACE on an open, unticked original checkbox: FpSpread.ButtonClicked -> frmWinToKhai.winFpSpread_ButtonClicked
