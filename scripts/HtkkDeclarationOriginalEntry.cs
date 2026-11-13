@@ -321,6 +321,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }finally{declarationEntryBusy=false;}
  }
 
+ // The vendor's public tab rectangle of sheet `index` (FpSpread.GetSheetTabRectangle, read only; the 01-2/GTGT driver
+ // uses the same geometry). Used by the 05-1/PBT combo edits to click the original sheet tab.
+ private static object DeclarationSheetTabRectangle(Control grid,int index){
+  MethodInfo geometry=grid.GetType().GetMethod("GetSheetTabRectangle",new Type[]{typeof(int)});if(geometry==null||!geometry.IsPublic)throw new InvalidOperationException();
+  return geometry.Invoke(grid,new object[]{index});
+ }
+
  // ==== Native-case mode web-xml-import-tick-reexport (U5 3.1.0): original actions AFTER the original import ====
  // The web XML is imported as in every import case; then HtkkDeclarationCasePlans.ImportTick types its fixed edits
  // through the original editor and ticks its checkbox cells with SPACE (FpSpread.ButtonClicked -> ButtonClick_0),
@@ -335,7 +342,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
  //  6 sheet metadata   8 edit cell locked   9 edit cell type   10 foreground/focus guard   11 editor   13 edit read-back
- //  16 combo code cell not written   17 original message   19 sheet of a combo edit not activated
+ //  16 combo code cell not written   17 original message   19 sheet of a combo edit not activated by its tab click
+ //  20 sheet tab of a combo edit not inside the grid client area
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -386,16 +394,29 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object business=Global("InstanceClass");if(business==null||business.GetType().FullName!="TAX.HTKK.Business."+declarationPlan.BusinessClass)throw new InvalidOperationException();
   return sheet;
  }
- // The sheet of a combo edit made active by the original keyboard (Ctrl+PageDown / Ctrl+PageUp of the FarPoint input map),
- // one key per step, bounded by the sheet count; never ActiveSheet / ActiveSheetIndex assignment.
- private bool DeclarationTickActivate(Control grid,object sheet){
-  int count=Convert.ToInt32(Get(Get(grid,"Sheets"),"Count"));
-  for(int step=0;step<=2*count&&Get(grid,"ActiveSheet")!=sheet;step++){
-   grid.Focus();if(!DeclarationEntryGuard(grid))return false;
-   SendKeys.SendWait(step<count?"^{PGDN}":"^{PGUP}");Application.DoEvents();
-   if(OriginalMessageVisible())return false;
-  }
-  return Get(grid,"ActiveSheet")==sheet;
+ // The sheet of a combo edit made active the way a user does it and the way the 01-2/GTGT driver reaches its annex
+ // (ClickOriginalAnnex12Tab): real WM_LBUTTONDOWN/UP posted at the centre of the vendor's public tab rectangle
+ // (FpSpread.GetSheetTabRectangle), so FarPoint's own tab click runs HTKK's sheet-change handlers. Never ActiveSheet /
+ // ActiveSheetIndex assignment, never a private handler. Release runs 43443803833 / 43443808734: Ctrl+PageDown/PageUp did
+ // not change the sheet (failure 19). Geometry and coordinates are never reported. Returns 0, or 20 when the tab is not
+ // fully inside the grid's client area (tab strip hidden or scrolled), 19 when the click did not activate the sheet.
+ private int DeclarationTickActivate(Control grid,object sheet){
+  if(Get(grid,"ActiveSheet")==sheet)return 0;
+  object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});
+  if(item==null||count<2||count>64)throw new InvalidOperationException();
+  int index=-1;for(int i=0;i<count;i++)if(item.GetValue(sheets,new object[]{i})==sheet){if(index>=0)throw new InvalidOperationException();index=i;}
+  if(index<0)throw new InvalidOperationException();
+  object tab=DeclarationSheetTabRectangle(grid,index),client=Get(grid,"ClientRectangle");
+  if(tab==null||client==null||tab.GetType().FullName!="System.Drawing.Rectangle"||client.GetType().FullName!="System.Drawing.Rectangle")throw new InvalidOperationException();
+  int left=Convert.ToInt32(Get(tab,"X")),top=Convert.ToInt32(Get(tab,"Y")),width=Convert.ToInt32(Get(tab,"Width")),height=Convert.ToInt32(Get(tab,"Height")),clientWidth=Convert.ToInt32(Get(client,"Width")),clientHeight=Convert.ToInt32(Get(client,"Height"));
+  if(left<0||top<0||width<1||height<1||clientWidth<1||clientHeight<1||clientWidth>32767||clientHeight>32767||(long)left+width>clientWidth||(long)top+height>clientHeight)return 20;
+  grid.Focus();if(!DeclarationEntryGuard(grid))return 10;
+  int x=left+width/2,y=top+height/2;IntPtr point=new IntPtr((y<<16)|(x&65535));
+  if(!PostMessage(grid.Handle,0x0201,new IntPtr(1),point)||!PostMessage(grid.Handle,0x0202,IntPtr.Zero,point))throw new InvalidOperationException();
+  // Posted messages are handled by this UI thread's pump; bounded wait.
+  Stopwatch clock=Stopwatch.StartNew();
+  while(Get(grid,"ActiveSheet")!=sheet&&clock.Elapsed.TotalSeconds<3){Application.DoEvents();if(OriginalMessageVisible())return 17;System.Threading.Thread.Sleep(10);}
+  return Get(grid,"ActiveSheet")==sheet?0:19;
  }
  // 05-1/PBT combo edit (combo|sheet|cell|item name|code cell|item code): the original combobox cell of a table row is
  // selected (winFpSpread_EnterCell rebuilds its list from the row: loadCqtCapCucTheoDiaBanXa(mã xã) for Thuế tỉnh/CCT,
@@ -403,7 +424,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // real keyboard input and committed with TAB; winFpSpread_CellChange maps it to its code (GetDMFromCombobox) and, for
  // Thuế tỉnh/CCT, rebuilds and clears CQT quản lý (setSviewCqtCapChiCucTheoMaCqtCuc_Dinamic), which the next edit
  // chooses again. Read back: the cell shows the name and the code cell holds the code.
- // Extra failure codes: 19 sheet activation, 16 code cell not written.
+ // Extra failure codes: 19 sheet not activated by the tab click, 20 sheet tab not visible, 16 code cell not written.
  private void EditDeclarationTickCombo(int index){
   string[] parts=declarationTickPlan.Edits[index].Split('|');Control grid;object sheet=DeclarationTickSheet(parts[1],out grid);
   SetStage(HtkkAutomationStage.DeclarationImportTickEditing);Record();
@@ -412,7 +433,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object cell=Cell(sheet,row,column);
   if(Convert.ToBoolean(Get(cell,"Locked"))){declarationTickMismatchMask|=1<<index;DeclarationTickFail(8);return;}
   if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.ComboBoxCellType"){declarationTickMismatchMask|=1<<index;DeclarationTickFail(9);return;}
-  if(!DeclarationTickActivate(grid,sheet)){DeclarationTickFail(19);return;}
+  int activation=DeclarationTickActivate(grid,sheet);if(activation!=0){DeclarationTickFail(activation);return;}
   DeclarationEntrySelect(grid,sheet,row,column);
   if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
   Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
