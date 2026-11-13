@@ -9,6 +9,9 @@ leaves. It never executes application code and grants no coverage.
 import json, pathlib, re
 ROOT = pathlib.Path(__file__).parent
 PLAN_FILE = ROOT / 'htkk-workbook-native-cases.json'
+# Pinned copy of htkk_web data/htkk-workbook-native-cases-582.json: 03/TNDN with the C7 rate chosen in the
+# DC_184 combobox (15% / 17%), registered as non-gating cases on the HTKK 5.8.2 oracle (htkk-native-cases.json).
+PLAN_582_FILE = ROOT / 'htkk-workbook-native-cases-582.json'
 # Reviewed Menu.xml HTKK 5.8.1 identities (MaToKhai / VersionXML / KieuKy) for each menu.
 UNITS = {
     'N8': {'xmlVersion': '2.9.4', 'maTKhai': '892', 'kieuKy': '11', 'menuChain': ['101', '101_2', 'N8'],
@@ -20,6 +23,11 @@ UNITS = {
 }
 # Reviewed catalogue codes the plan may choose for 03/TNDN ct04 (G14).
 INDUSTRY_CODES = frozenset({('N8', '03', 'G14', '000'), ('N8', '03', 'G14', 'C10')})
+# Reviewed DC_184 codes (DM_DUNG_CHUNG.xml 5.8.2, unchanged from 5.8.1) the 5.8.2 plan may choose for the N8 C7
+# rate (C66, SelectedValue R66). Tndn03TT80Nckt294.AutoBindData_0 unlocks C66 only from PeriodInfo.Nam 2025.
+RATE_CODES = frozenset({('N8', '03', 'C66', '15'), ('N8', '03', 'C66', '17')})
+RATE_NAMES = {'15': '+ Thu nhập tính thuế áp dụng thuế suất 15%', '17': '+ Thu nhập tính thuế áp dụng thuế suất 17%'}
+RATE_PATH = 'HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/ctC7_'
 SYNTHETIC = {'taxId': '9999999997', 'taxpayerName': 'DỮ LIỆU GIẢ LẬP — KHÔNG NỘP THUẾ', 'signer': 'Người thử nghiệm', 'signDate': '20/03/2026'}
 
 def check(value, reason='WORKBOOK_CASE_POLICY'):
@@ -28,11 +36,13 @@ def check(value, reason='WORKBOOK_CASE_POLICY'):
 def no_duplicate_keys(pairs):
     keys = [k for k, _ in pairs]; check(len(keys) == len(set(keys)), 'WORKBOOK_CASE_DUPLICATE_KEY'); return dict(pairs)
 
-def validate(raw: bytes):
+def validate(raw: bytes, version='5.8.1'):
     check(len(raw) <= 65536, 'WORKBOOK_CASE_SIZE')
+    check(version in ('5.8.1', '5.8.2'))
+    rates = version == '5.8.2'
     plan = json.loads(raw.decode('utf-8'), object_pairs_hook=no_duplicate_keys)
     check(set(plan) == {'format', 'htkkVersion', 'nativeQualified', 'filingEnabled', 'driverImplemented', 'scope', 'header', 'createdDate', 'cases'})
-    check(plan['format'] == 'htkk-workbook-native-case-plan-v1' and plan['htkkVersion'] == '5.8.1')
+    check(plan['format'] == 'htkk-workbook-native-case-plan-v1' and plan['htkkVersion'] == version)
     check(plan['nativeQualified'] is False and plan['filingEnabled'] is False and plan['driverImplemented'] is False, 'WORKBOOK_CASE_GATE')
     check(plan['header'] == SYNTHETIC, 'WORKBOOK_CASE_PRIVACY')
     check(re.fullmatch(r'\d{4}-\d{2}-\d{2}', plan['createdDate']))
@@ -55,11 +65,19 @@ def validate(raw: bytes):
                 check(re.fullmatch(r'[A-Z]{1,3}[1-9][0-9]{0,4}', cell) and type(value) is str and len(value) <= 64)
                 # Money inputs are exact integers; text inputs must be marked synthetic; the N8 industry
                 # (Header ct04, control 91) is a reviewed DM_NganhCoDoanhThuCao code only.
-                check(re.fullmatch(r'(0|[1-9][0-9]{0,15})', value) or 'giả lập' in value or (case['menuId'], sheet, cell, value) in INDUSTRY_CODES, 'WORKBOOK_CASE_PRIVACY')
+                if (case['menuId'], sheet, cell) == ('N8', '03', 'C66'): check(rates and (case['menuId'], sheet, cell, value) in RATE_CODES, 'WORKBOOK_CASE_RATE')
+                check(re.fullmatch(r'(0|[1-9][0-9]{0,15})', value) or 'giả lập' in value or (case['menuId'], sheet, cell, value) in INDUSTRY_CODES | RATE_CODES, 'WORKBOOK_CASE_PRIVACY')
         check(type(case['expected']) is dict and 0 < len(case['expected']) <= 32)
         for path, value in case['expected'].items():
             check(re.fullmatch(r'HSoThueDTu/HSoKhaiThue/(CTieuTKhaiChinh|PLuc)(/[A-Za-z0-9_]{1,64}){1,4}', path) and type(value) is str and len(value) <= 64)
-    check(sum(1 for c in cases if c['menuId'] == 'N8') >= 2 and {c['menuId'] for c in cases} == set(UNITS), 'WORKBOOK_CASE_COVERAGE')
+        if rates:
+            # Every 5.8.2 case chooses a reviewed rate and expects exactly its code and catalogue name.
+            code = case['overrides'].get('03', {}).get('C66')
+            check(case['menuId'] == 'N8' and code in RATE_NAMES, 'WORKBOOK_CASE_RATE')
+            check(case['expected'].get(RATE_PATH + 'thueSuat') == code and case['expected'].get(RATE_PATH + 'tenThueSuat') == RATE_NAMES[code], 'WORKBOOK_CASE_RATE')
+    if rates: check({c['overrides']['03']['C66'] for c in cases} == set(RATE_NAMES), 'WORKBOOK_CASE_COVERAGE')
+    else: check(sum(1 for c in cases if c['menuId'] == 'N8') >= 2 and {c['menuId'] for c in cases} == set(UNITS), 'WORKBOOK_CASE_COVERAGE')
     return plan
 
 PLAN = validate(PLAN_FILE.read_bytes())
+PLAN_582 = validate(PLAN_582_FILE.read_bytes(), '5.8.2')

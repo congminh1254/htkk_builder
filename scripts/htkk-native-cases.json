@@ -943,6 +943,48 @@
         "annexes": ["01-10/GTGT"],
         "amendmentOrder": 0
       }
+    },
+    {
+      "caseId": "03TNDN-rate15-Y2025",
+      "producerCase": "tndn03-rate15-y2025",
+      "adapterId": "03-tndn-2.9.4",
+      "format": "htkk-web-tndn03-rate15-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-tndn03-rate15-y2025-input",
+      "inputBranch": "declaration-web-reference-tndn03-rate15-y2025-input",
+      "outputBranch": "declaration-web-native-tndn03-rate15-y2025-output",
+      "statusContext": "htkk-native/tndn03-rate15-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "N8",
+        "adapterVersion": "2.9.4",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": ["03-1A"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "03TNDN-rate17-Y2025",
+      "producerCase": "tndn03-rate17-y2025",
+      "adapterId": "03-tndn-2.9.4",
+      "format": "htkk-web-tndn03-rate17-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-tndn03-rate17-y2025-input",
+      "inputBranch": "declaration-web-reference-tndn03-rate17-y2025-input",
+      "outputBranch": "declaration-web-native-tndn03-rate17-y2025-output",
+      "statusContext": "htkk-native/tndn03-rate17-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "N8",
+        "adapterVersion": "2.9.4",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": ["03-1A"],
+        "amendmentOrder": 0
+      }
     }
   ]
 }
