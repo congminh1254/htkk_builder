@@ -488,7 +488,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('gtgt-amendment-khbs-inspect')) -and $value['khbsExportBytes'] -cne 0){throw 'invalid'}
   if(($value['khbsOpenMainState'] -isnot [int] -and $value['khbsOpenMainState'] -isnot [long]) -or $value['khbsOpenMainState'] -lt 0 -or $value['khbsOpenMainState'] -gt 2){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-amendment-khbs-inspect')) -and $value['khbsOpenMainState'] -cne 0){throw 'invalid'}
-  if(($value['khbsPostSaveWaitMask'] -isnot [int] -and $value['khbsPostSaveWaitMask'] -isnot [long]) -or $value['khbsPostSaveWaitMask'] -lt 0 -or $value['khbsPostSaveWaitMask'] -gt 63){throw 'invalid'}
+  if(($value['khbsPostSaveWaitMask'] -isnot [int] -and $value['khbsPostSaveWaitMask'] -isnot [long]) -or $value['khbsPostSaveWaitMask'] -lt 0 -or $value['khbsPostSaveWaitMask'] -gt 127){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-amendment-khbs-inspect')) -and $value['khbsPostSaveWaitMask'] -cne 0){throw 'invalid'}
   if($value['khbsExportSha256'] -isnot [string] -or ($value['khbsExportSha256'] -cne '' -and $value['khbsExportSha256'] -cnotmatch '\A[0-9a-f]{64}\z')){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-amendment-khbs-inspect')) -and $value['khbsExportSha256'] -cne ''){throw 'invalid'}

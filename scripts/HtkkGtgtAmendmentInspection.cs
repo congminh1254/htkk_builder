@@ -53,6 +53,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(finished){amendmentPriorWatcher.Stop();return;}if(amendmentPriorObservationBusy)return;amendmentPriorObservationBusy=true;
   try{
    if(!AmendmentInspectionMode()||!amendmentPriorSaveInvoked||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||amendmentPriorOwner.GetType().FullName!="HTKK.frmWinToKhai")throw new InvalidOperationException();
+   if(KhbsMode()&&!KhbsSaveWaitBounded())return;
    foreach(Form form in Application.OpenForms){if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage")continue;
     SetStage(HtkkAutomationStage.GtgtAmendmentSaveModalObserved);Record();
     if(form.Text.Trim()!="Thông Báo"&&form.Text.Trim()!="Thông báo")throw new InvalidOperationException();

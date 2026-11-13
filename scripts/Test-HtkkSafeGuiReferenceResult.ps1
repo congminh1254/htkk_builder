@@ -107,7 +107,7 @@ try {
  $second.khbsDirtyAfterSave=$true;$second.khbsDiscardPromptAnswered=$true;$second.khbsPostSaveWaitMask=32;$second.khbsOriginalMoneyMatched=$true;$second.khbsSavedMoneyMatched=$true;$second.khbsOpenMainState=2;$second.amendmentPriorMoneyZero=$false;$second.amendmentPriorSavedMoneyZero=$false
  $second | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
  if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'valid'){throw 'Typed KHBS case 2 rejected'};$cases++
- foreach($change in @(@{key='khbsOpenMainState';value=3},@{key='khbsOpenMainState';value=-1},@{key='khbsOriginalMoneyMatched';value='true'},@{key='khbsSavedMoneyMatched';value=1},@{key='webCaseId';value='01GTGT-khbs-sale5-to-sale10-M10-2026'},@{key='khbsPostSaveWaitMask';value=64},@{key='khbsDirtyAfterSave';value='true'},@{key='khbsDiscardPromptAnswered';value=1})){
+ foreach($change in @(@{key='khbsOpenMainState';value=3},@{key='khbsOpenMainState';value=-1},@{key='khbsOriginalMoneyMatched';value='true'},@{key='khbsSavedMoneyMatched';value=1},@{key='webCaseId';value='01GTGT-khbs-sale5-to-sale10-M10-2026'},@{key='khbsPostSaveWaitMask';value=128},@{key='khbsDirtyAfterSave';value='true'},@{key='khbsDiscardPromptAnswered';value=1})){
   $copy=[ordered]@{};foreach($key in $second.Keys){$copy[$key]=$second[$key]};$copy[$change.key]=$change.value
   $copy | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $file -Encoding UTF8
   if((Get-HtkkSafeGuiReferenceResult -ResultPath $file -ExpectedMode 'gtgt-amendment-khbs-inspect').status -ne 'invalid'){throw 'Unsafe KHBS case 2 accepted'};$cases++

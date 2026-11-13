@@ -4081,7 +4081,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 63,
+      "maximum": 127,
       "activeModes": [
         "gtgt-amendment-khbs-inspect"
       ]

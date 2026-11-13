@@ -43,7 +43,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return true;
  }
  // After the original Ghi success message: the bounded wait mask of the readiness conditions (1 owner hidden, 2 owner
- // disabled, 4 grid hidden, 8 grid disabled, 16 original message visible, 32 isDataChanged still set). Run 43367487266
+ // disabled, 4 grid hidden, 8 grid disabled, 16 original message visible, 32 isDataChanged still set; 64 = the success
+ // message itself was never acknowledged, KhbsSaveWaitBounded). Run 43367487266
  // (case 2) stayed here after a correct non-zero save. Case 2 only: when the dirty flag alone stays set for 2 s while the
  // sheet still holds the exact C0 vector, the close continues through HTKK's own 0013 prompt (StartKhbsDiscardPromptWatcher).
  // Anything else ends after 30 s with gtgt-amendment-khbs-post-save-timeout instead of the whole automation limit.
@@ -61,6 +62,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }
   if(khbsPostSaveClock.Elapsed.TotalSeconds>=30){finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);Record();amendmentPriorWatcher.Stop();}
   return false;
+ }
+ // KHBS mode: the wait for the original 0002 success message (Ghi -> message -> acknowledged) is bounded too: 60 s after
+ // Ghi without the acknowledged message ends with gtgt-amendment-khbs-post-save-timeout and wait mask bit 64 (no ack).
+ private Stopwatch khbsSaveClock=null;
+ private bool KhbsSaveWaitBounded(){
+  if(khbsSaveClock==null)khbsSaveClock=Stopwatch.StartNew();
+  if(amendmentPriorSaveSuccessAcknowledged||khbsSaveClock.Elapsed.TotalSeconds<60)return true;
+  khbsPostSaveWaitMask|=64;finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);Record();amendmentPriorWatcher.Stop();return false;
  }
  private System.Windows.Forms.Timer StartKhbsDiscardPromptWatcher(){
   if(!KhbsNonzeroOriginal()||!khbsDirtyAfterSave)throw new InvalidOperationException();

@@ -1264,7 +1264,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.KhbsOpenMainState:
     return 2;
    case HtkkNativeResultCounter.KhbsPostSaveWaitMask:
-    return 63;
+    return 127;
    default: throw new ArgumentException("Unknown result counter");
   }
  }

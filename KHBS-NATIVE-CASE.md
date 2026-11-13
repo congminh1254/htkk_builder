@@ -122,6 +122,17 @@ cmdExit_Click shows 0013 "Có muốn ghi lại thông tin thay đổi không?" (
 bỏ) and the driver answers **Không** (cmd_No: close without saving again; `khbsDiscardPromptAnswered`). The
 reopened B1 still re-hashes the C0 file and requires the same bytes as at the save.
 
+### Run 43369672859 (case 2): the actual cause
+
+Both case-2 runs ended within a minute with `failureCategory: operation-not-established` (an
+InvalidOperationException from a guard), stage left at `gtgt-original-declaration-save-success`, so neither the
+dirty flag nor the post-save wait was reached. The C0 sheet watcher (ConfigureOriginalGtgtPeriod) keeps ticking
+while Ghi and its observer run; for case 2 its next tick re-entered `PrepareKhbsOriginal`, whose guard throws once
+Ghi was invoked (case 1 went straight to `StartOriginalAmendmentPriorSave`, which just returns). The sheet watcher
+now returns once `amendmentPriorSaveInvoked` is set, before any C0 step. The wait for the acknowledged 0002 message
+is also bounded in KHBS mode (60 s, `khbsPostSaveWaitMask` bit 64, `gtgt-amendment-khbs-post-save-timeout`), and the
+post-save wait above stays bounded (30 s). The 0013 path stays as a fallback.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

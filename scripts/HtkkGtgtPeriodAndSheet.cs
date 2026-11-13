@@ -502,7 +502,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(gtgtObservationClock==null)gtgtObservationClock=Stopwatch.StartNew();
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
-  if(matched&&AmendmentInspectionMode()){if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
+  // The sheet watcher keeps ticking while the original Ghi and its observer run; once Ghi was invoked it has nothing left
+  // to do here (run 43369672859: case 2 re-entered PrepareKhbsOriginal after the save and failed closed).
+  if(matched&&AmendmentInspectionMode()){if(amendmentPriorSaveInvoked)return;if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12WebCase()){
    // Fixed web annex case: align the original signing date on the main sheet,
    // then build the proven zero baseline annex through original controls only.

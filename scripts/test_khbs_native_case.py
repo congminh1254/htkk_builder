@@ -63,7 +63,7 @@ class SecondCase(unittest.TestCase):
   self.assertIn('private string PeriodMonth(){return KhbsNonzeroOriginal()?"09":"10";}',text)
   sheet=source('HtkkGtgtPeriodAndSheet.cs')
   self.assertIn('if(KhbsMode())fixedInput=KhbsNonzeroOriginal()&&column==9&&((webCaseEditCount==0&&row==46&&value=="2000000")||(webCaseEditCount==1&&row==47&&value=="1000000"));',sheet)
-  self.assertIn('if(matched&&AmendmentInspectionMode()){if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}',sheet)
+  self.assertIn('if(matched&&AmendmentInspectionMode()){if(amendmentPriorSaveInvoked)return;if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}',sheet)
   self.assertIn('SetText(period,"mskMonth",PeriodMonth())',sheet);self.assertNotIn('SetText(period,"mskMonth","10")',sheet)
   prior=source('HtkkGtgtAmendmentInspection.cs')
   self.assertIn('!(KhbsNonzeroOriginal()?khbsOriginalMoneyMatched:gtgtZero)',prior);self.assertIn('if(!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27)throw new InvalidOperationException();',prior)
@@ -78,7 +78,7 @@ class PostSave(unittest.TestCase):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs');registry=json.loads(source('htkk-native-automation-registry.json'))
   self.assertIn('int mask=(amendmentPriorOwner.Visible?0:1)|(amendmentPriorOwner.Enabled?0:2)|(amendmentPriorGrid.Visible?0:4)|(amendmentPriorGrid.Enabled?0:8)|(OriginalMessageVisible()?16:0)|((bool)dirty.GetValue(amendmentPriorOwner)?32:0);',text)
   self.assertIn('if(khbsPostSaveClock.Elapsed.TotalSeconds>=30){finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);',text)
-  self.assertEqual(registry['resultFields']['khbsPostSaveWaitMask']['maximum'],63)
+  self.assertEqual(registry['resultFields']['khbsPostSaveWaitMask']['maximum'],127)
   for key in ('khbsPostSaveWaitMask','khbsDirtyAfterSave','khbsDiscardPromptAnswered'):self.assertEqual(registry['resultFields'][key]['activeModes'],[MODE])
   self.assertIn('gtgt-amendment-khbs-post-save-timeout',{s['id'] for s in registry['stages']})
   self.assertIn("'gtgt-amendment-khbs-post-save-timeout'",source('generate-native-automation-registry.py'))
@@ -99,6 +99,22 @@ class PostSave(unittest.TestCase):
   self.assertIn("{$lastGui.amendmentPriorDirtyCleared -or ($lastGui.khbsDirtyAfterSave -and $lastGui.khbsPostSaveWaitMask -eq 32)}else{$lastGui.amendmentPriorDirtyCleared -and -not $lastGui.khbsDirtyAfterSave}",line)
   # The reopened B1 still requires the C0 file unchanged (same hash as at the save).
   self.assertIn('amendmentOpenPriorUnchanged=amendmentPriorFileFresh&&PriorSavedMoneyExpected()&&',opened)
+
+class SheetWatcherAfterSave(unittest.TestCase):
+ """Runs 43367487266 and 43369672859: after the case-2 Ghi the still-ticking sheet watcher re-entered PrepareKhbsOriginal,
+ whose guard throws once Ghi was invoked (failureCategory operation-not-established, stage left at save-success)."""
+ def test_sheet_watcher_returns_before_any_c0_step_once_ghi_was_invoked(self):
+  sheet=source('HtkkGtgtPeriodAndSheet.cs');line=next(l for l in sheet.splitlines() if 'if(matched&&AmendmentInspectionMode()){' in l)
+  self.assertLess(line.index('if(amendmentPriorSaveInvoked)return;'),line.index('PrepareKhbsOriginal('))
+  self.assertLess(line.index('if(amendmentPriorSaveInvoked)return;'),line.index('StartOriginalAmendmentPriorSave('))
+  # The guard itself stays fail-closed for any other caller.
+  self.assertIn('if(!KhbsNonzeroOriginal()||amendmentPriorSaveInvoked)throw new InvalidOperationException();',source('HtkkGtgtAmendmentKhbsInspection.cs'))
+ def test_success_message_wait_is_bounded_with_its_own_mask_bit(self):
+  text=source('HtkkGtgtAmendmentKhbsInspection.cs');prior=source('HtkkGtgtAmendmentInspection.cs')
+  self.assertIn('if(amendmentPriorSaveSuccessAcknowledged||khbsSaveClock.Elapsed.TotalSeconds<60)return true;',text)
+  self.assertIn('khbsPostSaveWaitMask|=64;finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);',text)
+  observe=prior.split('private void ObserveOriginalAmendmentPriorSave(){',1)[1]
+  self.assertLess(observe.index('if(KhbsMode()&&!KhbsSaveWaitBounded())return;'),observe.index('foreach(Form form in Application.OpenForms)'))
 
 class InputValidator(unittest.TestCase):
  def setUp(self):self.body=f.sale_fixture(CASE);self.manifest=f.case_manifest(self.body,CASE)
