@@ -1,6 +1,6 @@
 # Native case design: 01/GTGT kê khai bổ sung lần 1 (D1, KHBS)
 
-Status (cases 12-13, quarterly, matched; cases 14-15, display rounding, differed and are ported; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
+Status (cases 12-13, quarterly, matched; cases 14-15, display rounding, differed and are ported; cases 16-20 wired, not yet run; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
 khbsTreeMatched, mask 0, 270 leaves, message ids 0). Case 2 `01GTGT-khbs-sale5-to-sale10-M09-2026` is
 **wired, non-gating, not yet run**. Both use adapter `01-gtgt-2.8.3-khbs`, driver mode
 `gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2 (per-case `htkkVersion`, `releaseGate=false`). The case
@@ -322,6 +322,43 @@ and 14 late days (ct3b 420 / 210) are as read. Case 14 (run 43591674509) differe
 50.002,5 as "50003" (web "50002"). htkk_web now uses the same display rule for ct04/ct05, tongCong_7, Muc_I.2 ct7 and
 tongCong_ct11; the raw exports are pinned there byte-identical and re-export equal, so `ROWS_ANNEX12_ROUND` /
 `ROWS_ANNEX12_LAN2_ROUND` carry "3" / "3" / "50003" and both cases are expected to match on their next run.
+
+## Cases 16-20: lần 1 on a lần đầu with 01-2, quý 3 with 01-2, negative display rounding (non-gating)
+
+**Static reading (HTKK.exe `331ed84a…f98a`, dnfile only, nothing executed).** `TongHopKhbsMoi` reads the previous version of
+EACH annex sheet listed by `GetDMToKhaiPhuLucKHBS`, 01-2 included, through `WinFnProcess.ReadSheet_LanTruoc(sheet)`, which for
+D1 calls `WinDoWorkEvent.GetFileNameLoadKhbs(TTPeriodInfo, DataFile, DataFiles\<MST>\, 0)`: SoLan "1" gives the lần đầu name
+(`01_GTGT_TT80_CQTQL10129_00_102026_283.xml`), SoLan N the `bs<N-1>_` name; the current lần's own `bs<N>_` file is used only when
+the last argument is non-zero (IL 0xd38-0xd56 and 0x12ff-0x131d), never here. `GetDetailSheetInfo` then reads the sheet from that
+file the same way. No method of `TongHopKhbsMoi`, `CollectionDynamicHeader01_1_KHBS`, `CollectionDynamic01_1_KHBS`,
+`CollectionDetailSoThuePhaiNopTungTinh_01_KHBS`, `DanhDauNeuCoPhanBo` or the `GeneralFunctions` / `WinSpreadProcess` /
+`WinFnProcess` helpers they call reads `SoLan` or `LoaiToKhai`. So the 01-2 hồ sơ group and Muc_I.2 of lần 1 against a lần đầu
+with 01-2 are computed exactly as lần N against lần N-1; htkk_web's producer files for cases 16-17 equal those of cases 5-6
+except `soLan` (`ROWS_ANNEX12_LAN1_*`), and htkk_web keeps the scope behind `KHBS_01GTGT_ANNEX_LAN1_EXISTING_RELEASED=false`.
+
+| Case | Flow | Annex (B1 / B2) | Web writes | Leaves |
+| --- | --- | --- | --- | --- |
+| `01GTGT-khbs-annex12-lan1-ct11-M10-2026` (`khbs-annex12-lan1-ct11`) | C0 imports the staged lần đầu (the proven annex web case `01GTGT-annex12-two-plants-nonzero-M10-2026`'s own file, `priorCaseId`), 01-2 selected, head CQTs restored, Ghi; B1 as case 4 | `TWO_PLANTS_CHANGED_VARIANT` (plant 1 at 40/60), main [32] 1.500.000 | case 5's fragments, soLan 1 | 465 |
+| `01GTGT-khbs-annex12-lan1-add-plant-M10-2026` (`khbs-annex12-lan1-add-plant`) | as case 16 | `ADD_PLANT_VARIANT` (third plant 99996) | case 6's fragments, soLan 1 | 527 |
+| `01GTGT-khbs-annex12-capture-Q3-2026` (`khbs-q3-annex12-capture`) | case 4 on quý 3/2026 (zero C0, `…_Q032026_283.xml`) | the proven two-plant annex | 14 late days, ct3b 420 (`AA38`, Σ Muc_I.1) | 504 |
+| `01GTGT-khbs-annex12-round3-M10-2026` (`khbs-annex12-round3`) | case 14's | `ROUND3_B1_VARIANT`: [10] 7 / 9 / 7, rows 50/50 | [12] 0 -> 4 "4", 0 -> 5 "5" (+3,5 / +4,5) | 564 |
+| `01GTGT-khbs-annex12-lan2-neg-round-M10-2026` (`khbs-annex12-lan2-neg-round`) | case 15's, round 1 imports case 19's exact file | `NEG_ROUND_B2_VARIANT`: plant 1 [10] 6 (rows 3/3), plants 2-3 removed | ct06/ct7 "0" (−0,5) twice, "-4" (−4,5), "-4" (−3,5); tongCong_7 49991 | 427 |
+
+Driver for cases 16-17 (`KhbsLan1ExistingCase`): the C0 period dialog selects 01-2 (`SelectOriginalAnnex12`); once the C0 sheet
+is matched, `PrepareKhbsOriginalImport` hands C0 to the phases `c0-import-ready` -> `c0-import-result` (original "Nhập từ XML" of
+`.web-prior.xml`, "Nhập dữ liệu từ XML thành công.", FileNameLoading = the prior, LoaiToKhai still C; `khbsPriorImportSucceeded`)
+-> `c0-annex-restore` (`InspectOriginalImportedAnnex12` with the proven two-plant annex, `RestoreImportedAnnex12HeadAuthorities`)
+-> `c0-main-ready` (main sheet = `KhbsSale10B1`, import state reset) -> the original Ghi (`StartOriginalAmendmentPriorSave`, which
+then requires 01-2 selected and the vector; the saved file must carry the vector, `khbsSavedMoneyMatched`). The C0 sheet watcher
+stands aside once the import began. B1 reopens with 01-2 selected again (or observed if HTKK keeps it), opens on the C0 vector (3)
+or zero (1), and runs case 4's B1 (import, annex check: plant 1 at 40/60 or case 6's annex, restore, Tổng hợp, export, compare).
+A dirty flag left after the C0 Ghi takes case 2's bounded discard path. Automation limit 240 s (cases 16-17, 20), 175 s (18-19).
+The previous version of cases 16-17 is staged like a lần-2 prior (`01GTGT-prior.xml` -> `.web-prior.xml`) and validated by the
+annex web case's own contract.
+
+What each run decides: cases 16-17 match -> htkk_web may open `KHBS_01GTGT_ANNEX_LAN1_EXISTING_RELEASED`; case 18 matches ->
+`KHBS_01GTGT_ANNEX_QUARTER_RELEASED` (late interest with 01-2 for a quarter); case 20's "-4" for −4,5 confirms the web's
+round-half-to-even negative branch (away from zero would give "-5"), "-4" for −3,5 rules out truncation toward zero.
 
 ## Raw native output retention
 

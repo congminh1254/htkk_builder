@@ -78,28 +78,48 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // "_Q" + String.Format("{0}{1}",Quy,Nam).PadLeft(6,'0')) and the saved B1 bs1_<that name> ("_Q0"+Quy+Nam for LoaiToKhai B).
  private const string KhbsQ3WebCaseId="01GTGT-khbs-zero-to-sale10-Q3-2026",KhbsQ3Lan2WebCaseId="01GTGT-khbs-lan2-sale10-Q3-2026";
  private const int KhbsQ3LeafTarget=270,KhbsQ3Lan2LeafTarget=270;
- private bool KhbsQuarterCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsQ3WebCaseId||webCaseId==KhbsQ3Lan2WebCaseId);}
+ private bool KhbsQuarterCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsQ3WebCaseId||webCaseId==KhbsQ3Lan2WebCaseId||webCaseId==KhbsAnnex12Q3CaptureCaseId);}
  // Cases 14-15 (htkk_web producers khbs-annex12-round / khbs-annex12-lan2-round): captures of the ct06/ct7 DISPLAY rounding of the
  // 01-2 hồ sơ group, non-gating. Case 14 is case 4's flow with its own B1 annex (plant 1 [10] 3, plant 2 [10] 5, each two rows
  // 50/50: [12] 1,5 and 2,5 against nothing); case 15 is case 5's two rounds with case 14's exact file as the previous version and
  // a B2 annex with plant 1 at [10] 8 (+2,5 twice) and plant 2 removed (-2,5). Expected annex: KhbsAnnexRound.
  private const string KhbsAnnex12RoundCaseId="01GTGT-khbs-annex12-round-M10-2026",KhbsAnnex12Lan2RoundCaseId="01GTGT-khbs-annex12-lan2-round-M10-2026";
  private const int KhbsAnnex12RoundLeafTarget=463,KhbsAnnex12Lan2RoundLeafTarget=388;
- private bool KhbsAnnexRoundCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId);}
+ private bool KhbsAnnexRoundCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId||webCaseId==KhbsAnnex12Round3CaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}
+ // Cases 16-17 (htkk_web producers khbs-annex12-lan1-ct11 / -lan1-add-plant, non-gating): bổ sung LẦN 1 when the LẦN ĐẦU already
+ // has phụ lục 01-2. C0 is not typed: its period dialog selects 01-2, the original import loads the staged previous-version file
+ // (.web-prior.xml: exactly the lần đầu file of the proven annex web case 01GTGT-annex12-two-plants-nonzero-M10-2026, loaiTKhai C),
+ // the imported annex is checked and its head CQTs restored as in case 4, and C0 is saved with the original Ghi (its sheet and
+ // saved file must carry the sale10 vector). B1 then opens with 01-2 selected (or kept selected by HTKK), imports the web B1 file
+ // (plant 1 at 40/60, or a third plant 99996), restores, summarises, exports and compares. Static reading of HTKK 5.8.2
+ // (GetFileNameLoadKhbs: lần 1 reads the lần đầu file as lần N reads bs<N-1>_) predicts the fragments of cases 5 and 6.
+ private const string KhbsAnnex12Lan1Ct11CaseId="01GTGT-khbs-annex12-lan1-ct11-M10-2026",KhbsAnnex12Lan1AddPlantCaseId="01GTGT-khbs-annex12-lan1-add-plant-M10-2026";
+ private const int KhbsAnnex12Lan1Ct11LeafTarget=465,KhbsAnnex12Lan1AddPlantLeafTarget=527;
+ private static bool KhbsLan1ExistingCaseId(string id){return id==KhbsAnnex12Lan1Ct11CaseId||id==KhbsAnnex12Lan1AddPlantCaseId;}
+ private bool KhbsLan1ExistingCase(){return KhbsMode()&&webInputVerified&&KhbsLan1ExistingCaseId(webCaseId);}
+ // Case 18 (htkk_web producer khbs-q3-annex12-capture, non-gating): case 4 on quý 3/2026 (14 late days: the first 01-2 case with
+ // late interest). Cases 19-20 (khbs-annex12-round3 / khbs-annex12-lan2-neg-round, non-gating): case 14's and case 15's flows with
+ // three plants ([10] 7/9/7, rows 50/50; [12] 3,5/4,5/3,5) and a lần-2 annex keeping plant 1 at [10] 6 (−0,5 twice) without plants
+ // 2 and 3 (−4,5, −3,5): the negative ct06/ct7 display.
+ private const string KhbsAnnex12Q3CaptureCaseId="01GTGT-khbs-annex12-capture-Q3-2026",KhbsAnnex12Round3CaseId="01GTGT-khbs-annex12-round3-M10-2026",KhbsAnnex12Lan2NegRoundCaseId="01GTGT-khbs-annex12-lan2-neg-round-M10-2026";
+ private const int KhbsAnnex12Q3CaptureLeafTarget=504,KhbsAnnex12Round3LeafTarget=564,KhbsAnnex12Lan2NegRoundLeafTarget=427;
  private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}
  private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:id==KhbsAnnex12EqualRowsCaseId?KhbsAnnex12EqualRowsLeafTarget:id==KhbsAnnex12DisplaySameCaseId?KhbsAnnex12DisplaySameLeafTarget:-1;}
  // Case 5 and cases 6-9 share the annex lần 2 flow.
- private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan2RoundCaseId);}
- private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId);}
- private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3WebCaseId||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12RoundCaseId||id==KhbsAnnex12Lan2RoundCaseId;}
- // The bổ sung lần 2 case ids (web file soLan 2, a staged previous-version file): cases 3, 5-11, 13 and 15.
- private static bool KhbsLan2CaseId(string id){return id==KhbsLan2WebCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12Lan2RoundCaseId;}
+ private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan2RoundCaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}
+ private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(webCaseId)||webCaseId==KhbsAnnex12Q3CaptureCaseId||webCaseId==KhbsAnnex12Round3CaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3WebCaseId||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12RoundCaseId||id==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(id)||id==KhbsAnnex12Q3CaptureCaseId||id==KhbsAnnex12Round3CaseId||id==KhbsAnnex12Lan2NegRoundCaseId;}
+ // The bổ sung lần 2 case ids (web file soLan 2, a staged previous-version file): cases 3, 5-11, 13, 15 and 20.
+ private static bool KhbsLan2CaseId(string id){return id==KhbsLan2WebCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12Lan2RoundCaseId||id==KhbsAnnex12Lan2NegRoundCaseId;}
+ private static int KhbsCaseLeafTarget(string id){return id==KhbsSale5WebCaseId?KhbsSale5LeafTarget:id==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:id==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(id)?KhbsAnnexWideLeafTarget(id):id==KhbsQ3WebCaseId?KhbsQ3LeafTarget:id==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:id==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:id==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:id==KhbsAnnex12Lan1Ct11CaseId?KhbsAnnex12Lan1Ct11LeafTarget:id==KhbsAnnex12Lan1AddPlantCaseId?KhbsAnnex12Lan1AddPlantLeafTarget:id==KhbsAnnex12Q3CaptureCaseId?KhbsAnnex12Q3CaptureLeafTarget:id==KhbsAnnex12Round3CaseId?KhbsAnnex12Round3LeafTarget:id==KhbsAnnex12Lan2NegRoundCaseId?KhbsAnnex12Lan2NegRoundLeafTarget:KhbsLeafTarget;}
  // The lần 2 flow (round 1 imports, summarises and saves the previous-version B1, round 2 opens B2): cases 3, 5 and 6-9.
  private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&KhbsLan2CaseId(webCaseId);}
  // The 01-2 percentages the imported annex must show: the proven two-plant annex, or in case 5's round 2 plant 1 at 40/60.
- private decimal[] KhbsAnnexFirstPlantPercentages(){return KhbsAnnexLan2Case()&&khbsRound==2?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};}
+ // Case 16's B1 (not its C0, which imports the proven annex) also has plant 1 at 40/60.
+ private decimal[] KhbsAnnexFirstPlantPercentages(){return KhbsAnnexLan2Case()&&khbsRound==2||webCaseId==KhbsAnnex12Lan1Ct11CaseId&&!khbsC0Import?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};}
  private string KhbsSoLan(){return KhbsLan2Case()?"2":"1";}
- private bool KhbsImportingPrior(){return KhbsLan2Case()&&khbsRound==1;}
+ // The staged previous-version file is imported in round 1 of lần 2, and into C0 by cases 16-17 (khbsC0Import).
+ private bool KhbsImportingPrior(){return KhbsLan2Case()&&khbsRound==1||khbsC0Import;}
  private string KhbsImportPath(){return KhbsImportingPrior()?webPriorPath:webInputPath;}
  private string KhbsImportHash(){return KhbsImportingPrior()?webPriorSha256:webImportInputSha256;}
  private bool KhbsB1Vector(object sheet){
@@ -139,6 +159,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // [34] 3.000.000, [35] 200.000, [36] 200.000, [40a] 200.000, [40] 200.000.
  private static readonly decimal[] KhbsSale5Original=new decimal[]{0,0,0,0,0,0,0,3000000,200000,0,2000000,100000,1000000,100000,0,3000000,200000,200000,0,0,0,200000,0,200000,0,0,0};
  private bool khbsOriginalMoneyMatched=false,khbsSavedMoneyMatched=false;private int khbsOpenMainState=0;
+ // Cases 16-17: the C0 import is running (khbsC0Import) or has started (khbsC0Started: the C0 sheet watcher then stands aside).
+ private bool khbsC0Import=false,khbsC0Started=false;
+ // A C0 that is not all zero: typed (case 2) or imported (cases 16-17); its exact vector is checked on the sheet and in the file.
+ private bool KhbsTypedOrImportedOriginal(){return KhbsNonzeroOriginal()||KhbsLan1ExistingCase();}
+ private bool KhbsOriginalVectorMatched(object sheet){return KhbsNonzeroOriginal()?KhbsOriginalVector(sheet):KhbsLan1ExistingCase()&&KhbsB1Vector(sheet);}
+ private decimal[] KhbsOriginalExpectedVector(){return KhbsNonzeroOriginal()?KhbsSale5Original:KhbsLan1ExistingCase()?KhbsSale10B1:null;}
  private static bool KhbsAmount(object value,out decimal number){
   number=Decimal.Zero;if(value==null||value==DBNull.Value)return false;string text=Convert.ToString(value,CultureInfo.InvariantCulture);
   return Decimal.TryParse(text,NumberStyles.Number,CultureInfo.InvariantCulture,out number);
@@ -162,8 +188,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int mask=(amendmentPriorOwner.Visible?0:1)|(amendmentPriorOwner.Enabled?0:2)|(amendmentPriorGrid.Visible?0:4)|(amendmentPriorGrid.Enabled?0:8)|(OriginalMessageVisible()?16:0)|((bool)dirty.GetValue(amendmentPriorOwner)?32:0);
   if(mask!=khbsPostSaveWaitMask){khbsPostSaveWaitMask=mask;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveWaiting);Record();}
   if(mask==0)return true;
-  if(mask==32&&KhbsNonzeroOriginal()&&khbsPostSaveClock.Elapsed.TotalSeconds>=2){
-   InspectMoneyZero(amendmentPriorSheet);if(gtgtEmptyMoney!=0||!KhbsOriginalVector(amendmentPriorSheet))throw new InvalidOperationException();
+  if(mask==32&&KhbsTypedOrImportedOriginal()&&khbsPostSaveClock.Elapsed.TotalSeconds>=2){
+   InspectMoneyZero(amendmentPriorSheet);if(gtgtEmptyMoney!=0||!KhbsOriginalVectorMatched(amendmentPriorSheet))throw new InvalidOperationException();
    khbsDirtyAfterSave=true;Record();return true;
   }
   if(khbsPostSaveClock.Elapsed.TotalSeconds>=30){finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);Record();amendmentPriorWatcher.Stop();}
@@ -178,7 +204,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   khbsPostSaveWaitMask|=64;finished=true;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPostSaveTimeout);Record();amendmentPriorWatcher.Stop();return false;
  }
  private System.Windows.Forms.Timer StartKhbsDiscardPromptWatcher(){
-  if(!KhbsNonzeroOriginal()||!khbsDirtyAfterSave)throw new InvalidOperationException();
+  if(!KhbsTypedOrImportedOriginal()||!khbsDirtyAfterSave)throw new InvalidOperationException();
   System.Windows.Forms.Timer watcher=new System.Windows.Forms.Timer();watcher.Interval=100;
   watcher.Tick+=delegate(object sender,EventArgs args){try{AnswerKhbsDiscardPrompt();}catch(Exception error){watcher.Stop();Failure(error);}};watcher.Start();return watcher;
  }
@@ -191,7 +217,65 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Button no=buttons[0] as Button;if(no==null||!no.Visible||!no.Enabled||no.Text.Replace("&",String.Empty).Trim()!="Không")throw new InvalidOperationException();
   khbsDiscardPromptAnswered=true;Record();no.PerformClick();
  }
- private bool PriorSavedMoneyExpected(){return KhbsNonzeroOriginal()?khbsSavedMoneyMatched:amendmentPriorSavedMoneyZero;}
+ private bool PriorSavedMoneyExpected(){return KhbsTypedOrImportedOriginal()?khbsSavedMoneyMatched:amendmentPriorSavedMoneyZero;}
+ // Cases 16-17, on the proven zero C0 sheet with 01-2 selected: the original "Nhập từ XML" of the staged lần đầu file, the read-only
+ // check of its annex and the head-CQT restoration (ContinueOriginalKhbs phases c0-*), then the original Ghi of C0 from there.
+ // Returns false always: the save is started by the last C0 phase, and the C0 sheet watcher stands aside once this has begun.
+ private bool PrepareKhbsOriginalImport(Form owner,Control grid,object sheet){
+  if(!KhbsLan1ExistingCase()||amendmentPriorSaveInvoked||khbsC0Started||khbsPhase!="not-started"||khbsRound!=1)throw new InvalidOperationException();
+  gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";
+  if(!gtgtAutoCalculationReady||!gtgtBusinessInstanceMatched||!owner.Enabled||!grid.Enabled||OriginalMessageVisible()){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return false;}
+  if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0||!periodAnnex12Matched||annexSelected!=1||Hash(webPriorPath)!=webPriorSha256)throw new InvalidOperationException();
+  khbsC0Started=true;khbsC0Import=true;khbsOwner=owner;roundtripOwner=owner;khbsPhase="c0-import-ready";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsImportInvoking);Record();
+  exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ContinueOriginalKhbs();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();
+  return false;
+ }
+ // The C0 phases of cases 16-17 (ContinueOriginalKhbs). Import: message 0291-like "Nhập dữ liệu từ XML thành công.", the loaded
+ // file is the staged prior and TTPeriodInfo still reads LoaiToKhai C. Then the annex check/restoration of case 4, the main sheet
+ // back in front, the sale10 vector on it (bounded wait), and the original Ghi (StartOriginalAmendmentPriorSave) with the B1 import
+ // state reset as BeginKhbsRound2 does.
+ private void ContinueOriginalKhbsC0(){
+  string text;Form message;
+  if(khbsPhase=="c0-import-ready"){
+   if(!KhbsOwnerReady())return;
+   Button import=Named(khbsOwner,"cmdImportXML") as Button;if(import==null||import.FindForm()!=khbsOwner||import.Text.Replace("&",String.Empty).Trim()!="Nhập từ XML")throw new InvalidOperationException();
+   roundtripImportCommandInvoked=true;khbsPhase="c0-import-result";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsImportWaiting);Record();
+   khbsOwner.BeginInvoke(new MethodInvoker(delegate{try{import.PerformClick();}catch(Exception error){Failure(error);}}));return;
+  }
+  if(khbsPhase=="c0-import-result"){
+   message=KhbsMessage(out text);
+   if(message==null){if(!roundtripImportDialogSubmitted)TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",KhbsImportPath(),true);return;}
+   if(text!="Nhập dữ liệu từ XML thành công."){khbsImportMessageId=OriginalMessageCatalogueId(text);KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsImportRejected);return;}
+   FieldInfo loading=OriginalAssembly().GetType("HTKK.frmWinToKhai",true).GetField("FileNameLoading",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);
+   if(loading==null||loading.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)loading.GetValue(null);
+   roundtripImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(webPriorPath),StringComparison.OrdinalIgnoreCase);
+   if(!roundtripImportDialogMatched||!roundtripImportKeyboardCommitted||!roundtripImportDialogSubmitted||!roundtripImportPathMatched){Record();throw new InvalidOperationException();}
+   if(Convert.ToString(Get(Global("TTPeriodInfo"),"LoaiToKhai"),CultureInfo.InvariantCulture)!="C")throw new InvalidOperationException();
+   khbsPriorImportSucceeded=true;roundtripImportSucceeded=true;khbsPhase="c0-annex-restore";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsSummaryWaiting);Record();CloseKhbsMessage(message);return;
+  }
+  if(khbsPhase=="c0-annex-restore"){
+   if(!KhbsOwnerReady())return;
+   List<Control> grids=new List<Control>();int visited=0;GatherSpreads(khbsOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();
+   if(!InspectOriginalImportedAnnex12(grids[0])){if(khbsPriorCloseClock==null)khbsPriorCloseClock=Stopwatch.StartNew();if(khbsPriorCloseClock.Elapsed.TotalSeconds>=10)throw new InvalidOperationException();return;}
+   khbsPhase="c0-annex-restoring";RestoreImportedAnnex12HeadAuthorities();
+   if(!annex12WebHeadAuthorityRestored)throw new InvalidOperationException();
+   khbsPriorCloseClock=null;khbsPhase="c0-main-ready";Record();return;
+  }
+  if(khbsPhase=="c0-main-ready"){
+   if(!KhbsOwnerReady())return;
+   List<Control> grids=new List<Control>();int visited=0;GatherSpreads(khbsOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();Control grid=grids[0];
+   object sheets=Get(grid,"Sheets");PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null||Convert.ToInt32(Get(sheets,"Count"))!=11)throw new InvalidOperationException();object main=item.GetValue(sheets,new object[]{0});
+   if(Convert.ToInt32(Get(main,"RowCount"))!=72||Convert.ToInt32(Get(main,"ColumnCount"))!=24||CellText(main,9,3)!=FakeName||CellText(main,10,3).Replace("-",String.Empty)!=Mst)throw new InvalidOperationException();
+   // The main sheet is read directly (the restoration leaves 01-2 in front, as before the summary of cases 4-15).
+   InspectMoneyZero(main);khbsOriginalMoneyMatched=gtgtEmptyMoney==0&&KhbsB1Vector(main);
+   if(!khbsOriginalMoneyMatched){if(khbsPriorCloseClock==null)khbsPriorCloseClock=Stopwatch.StartNew();if(khbsPriorCloseClock.Elapsed.TotalSeconds>=10)throw new InvalidOperationException();return;}
+   khbsPriorCloseClock=null;exportWatcher.Stop();khbsC0Import=false;khbsPhase="not-started";
+   roundtripImportCommandInvoked=false;roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
+   annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;annex12WebHeadAuthorityRepairCount=0;annex12WebHeadAuthorityFailureMask=0;annex12WebHeadAuthorityComboMask=0;annex12WebImportDisplayEmptyMask=0;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;
+   Record();StartOriginalAmendmentPriorSave(khbsOwner,grid,main);return;
+  }
+  throw new InvalidOperationException();
+ }
  // Case 2 only, on the proven zero C0 sheet: two fixed original edits, each committed through the original editor and
  // waited for the original auto-calculation; true once the whole fixed C0 vector is on the sheet (then Ghi).
  private bool PrepareKhbsOriginal(Form owner,Control grid,object sheet){
@@ -254,6 +338,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(finished){exportWatcher.Stop();return;}if(khbsBusy||exportFilenameEditing)return;khbsBusy=true;
   try{
    string text;Form message;
+   if(khbsPhase.StartsWith("c0-",StringComparison.Ordinal)){ContinueOriginalKhbsC0();return;}
    if(khbsPhase=="import-ready"){
     if(!KhbsOwnerReady())return;
     Button import=Named(khbsOwner,"cmdImportXML") as Button;if(import==null||import.FindForm()!=khbsOwner||import.Text.Replace("&",String.Empty).Trim()!="Nhập từ XML")throw new InvalidOperationException();
@@ -343,7 +428,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      SetStage(HtkkAutomationStage.GtgtAmendmentKhbsComparing);Record();
      if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),output=ReadBoundedOriginalXml(exportPath);
-     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:webCaseId==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:webCaseId==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(webCaseId)?KhbsAnnexWideLeafTarget(webCaseId):webCaseId==KhbsQ3WebCaseId?KhbsQ3LeafTarget:webCaseId==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:webCaseId==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:webCaseId==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
+     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,KhbsCaseLeafTarget(webCaseId),out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
      if(Hash(exportPath)!=khbsExportSha256)throw new InvalidOperationException();
      finished=true;SetStage(khbsTreeMatched?HtkkAutomationStage.GtgtAmendmentKhbsInspected:HtkkAutomationStage.GtgtAmendmentKhbsNotMatched);Record();exportWatcher.Stop();CloseKhbsMessage(message);return;
     }

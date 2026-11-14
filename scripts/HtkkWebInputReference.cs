@@ -54,10 +54,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(KhbsMode())khbsRound=1;
   // Lần 2 only: the staged previous-version file (bổ sung lần 1: the exact case-1 web file, or for cases 5-9 the exact
   // capture case web file), never another case's.
-  if(KhbsMode()&&KhbsLan2CaseId(webCaseId)){
+  // Cases 16-17: the staged lần đầu (loaiTKhai C, soLan 0: the proven annex web case's own file) that C0 imports.
+  if(KhbsMode()&&(KhbsLan2CaseId(webCaseId)||KhbsLan1ExistingCaseId(webCaseId))){
    webPriorPath=host+".web-prior.xml";webPriorSha256=ReadOwnHexSidecar(host+".web-prior.sha256",64);
    XmlDocument prior=ReadBoundedOriginalXml(webPriorPath);if(Hash(webPriorPath)!=webPriorSha256||webPriorSha256==webImportInputSha256)throw new InvalidOperationException();
-   if(FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!="B"||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!="1"||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhai")!=(webCaseId==KhbsQ3Lan2WebCaseId?"3/2026":"10/2026"))throw new InvalidOperationException();
+   bool first=KhbsLan1ExistingCaseId(webCaseId);
+   if(FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!=(first?"C":"B")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!=(first?"0":"1")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhai")!=(webCaseId==KhbsQ3Lan2WebCaseId?"3/2026":"10/2026"))throw new InvalidOperationException();
   }else if(File.Exists(host+".web-prior.xml")||File.Exists(host+".web-prior.sha256"))throw new InvalidOperationException();
   webInputVerified=true;Record();
  }

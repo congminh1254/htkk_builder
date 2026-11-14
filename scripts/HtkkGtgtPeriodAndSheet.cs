@@ -285,7 +285,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return target>=0&&RowVisible(sheet,target)&&Selected(Get(Cell(sheet,target,0),"Value"));
  }
  private void SelectOriginalAnnex12(Control grid,object sheet){
-  if(!(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  if(!(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening()||KhbsLan1ExistingCase())||annex12SelectionActionCount!=0||annexSelected!=0||!periodNoAnnexMatched||!grid.Visible||!grid.Enabled||grid.FindForm()==null||!grid.FindForm().Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   string root=Path.GetDirectoryName(project);
   annex12SourcePinsMatched=Hash(Path.Combine(root,"InterfaceTemplates/excel/01_GTGT_TT80_283.xls"))==HtkkOracleBaseline.File("InterfaceTemplates/excel/01_GTGT_TT80_283.xls")&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_283.xml"))=="9512dcfef9551892d132fd905250427c580a1320f77318ab048d6d26fd3a32e5"&&Hash(Path.Combine(root,"InterfaceTemplates/xml/01_2_GTGT_TT80_xml_283.xml"))=="9dafb55263fa2729383cf57bc73f3b97cf48dc9a28632a596806ad0afe8f17d3"&&Hash(Path.Combine(root,"InterfaceTemplates/Validate/01_GTGT_TT80_283.xsd"))=="8d4c0d88100e858ddfe221d080a6a338776d1364c7de04347bfb990d04833003";
   if(Annex12InputMode())annex12SourcePinsMatched=annex12SourcePinsMatched&&Hash(Path.Combine(root,"InterfaceIni/DM_DUNG_CHUNG.xml"))==HtkkOracleBaseline.File("InterfaceIni/DM_DUNG_CHUNG.xml");
@@ -471,10 +471,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int row=0;row<annexRows;row++)if(Selected(Get(Cell(annexSheet,row,0),"Value")))annexSelected++;
   periodNoAnnexMatched=annexSelected==0&&!CheckValue(all);
   // Case 5, round 2: HTKK may keep phụ lục 01-2 selected for B2 from the saved B1; then it is only observed, never clicked again.
-  if(KhbsAnnexLan2Case()&&AmendmentReopening()&&khbsRound==2&&annexSelected==1&&OriginalAnnex12RowSelected(annexSheet)){periodAnnex12Matched=true;periodNoAnnexMatched=false;Record();}
-  else if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);
+  // Cases 16-17: B1 may likewise find 01-2 kept selected from the saved C0 that had it.
+  if((KhbsAnnexLan2Case()&&khbsRound==2||KhbsLan1ExistingCase())&&AmendmentReopening()&&annexSelected==1&&OriginalAnnex12RowSelected(annexSheet)){periodAnnex12Matched=true;periodNoAnnexMatched=false;Record();}
+  // Cases 16-17 also select 01-2 for C0 (the imported lần đầu has the annex).
+  else if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening()||KhbsLan1ExistingCase()&&!AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);
   if(AmendmentReopening()){ConfigureOriginalAmendmentOpen(period);return;}
-  if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(Annex12InspectionMode()?periodAnnex12Matched:periodNoAnnexMatched)){SetStage(HtkkAutomationStage.GtgtPeriodInputsNotMatched);finished=true;Record();return;}
+  if(!periodDateMatched||!periodFirstMatched||!periodGeographyMatched||!periodActivityMatched||!(Annex12InspectionMode()||KhbsLan1ExistingCase()?periodAnnex12Matched:periodNoAnnexMatched)){SetStage(HtkkAutomationStage.GtgtPeriodInputsNotMatched);finished=true;Record();return;}
   Button confirm=Named(period,"btnDongY") as Button;if(confirm==null||confirm.Text.Replace("&",String.Empty).Trim()!="Đồng ý")throw new InvalidOperationException();
   navigationPhase="waiting-gtgt-sheet";SetStage(HtkkAutomationStage.GtgtPeriodConfirmInvoking);periodConfirmInvoked=true;Record();
   // Original OpenToKhai uses ShowDialog. This timer observes its real sheet inside
@@ -492,6 +494,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void InspectOriginalGtgtSheet(){if(gtgtSheetInspectionBusy)return;gtgtSheetInspectionBusy=true;try{InspectOriginalGtgtSheetCore();}finally{gtgtSheetInspectionBusy=false;}}
  private void InspectOriginalGtgtSheetCore(){
   if(finished||exportStarted)return;
+  // Cases 16-17: once the C0 import began, its own phases (ContinueOriginalKhbs) drive C0 up to the original Ghi.
+  if(khbsC0Started)return;
   List<Form> forms=new List<Form>();int visited=0;foreach(Form top in Application.OpenForms){if(visited>=512)break;if(top.Visible&&!top.IsDisposed)FindWorksheets(top,forms,ref visited);}
   if(forms.Count!=1){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
@@ -511,7 +515,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(!matched&&gtgtObservationClock.Elapsed.TotalSeconds<2){SetStage(HtkkAutomationStage.WaitingGtgtSheet);Record();return;}
   // The sheet watcher keeps ticking while the original Ghi and its observer run; once Ghi was invoked it has nothing left
   // to do here (run 43369672859: case 2 re-entered PrepareKhbsOriginal after the save and failed closed).
-  if(matched&&AmendmentInspectionMode()){if(amendmentPriorSaveInvoked)return;if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
+  if(matched&&AmendmentInspectionMode()){if(amendmentPriorSaveInvoked)return;if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;if(KhbsLan1ExistingCase()){PrepareKhbsOriginalImport(forms[0],grid,sheet);return;}StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}
   if(matched&&Annex12WebCase()){
    // Fixed web annex case: align the original signing date on the main sheet,
    // then build the proven zero baseline annex through original controls only.

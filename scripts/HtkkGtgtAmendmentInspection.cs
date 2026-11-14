@@ -36,7 +36,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(amendmentPriorSaveInvoked)return;
   // Source XLS loads all eleven worksheets; selection is separately proved by
   // periodNoAnnexMatched and annexSelected==0 (native run40419346023).
-  if(!AmendmentInspectionMode()||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!(KhbsNonzeroOriginal()?khbsOriginalMoneyMatched:gtgtZero)||gtgtEmptyMoney!=0||gtgtSheets!=11||!periodNoAnnexMatched||annexSelected!=0||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
+  // Cases 16-17: C0 carries the imported lần đầu (01-2 selected, the sale10 vector) instead of zero without annex.
+  if(!AmendmentInspectionMode()||!pins||!headerMatched||!successAcknowledged||!gtgtPins||!gtgtPeriod||!gtgtIdentity||!gtgtSigner||!(KhbsTypedOrImportedOriginal()?khbsOriginalMoneyMatched:gtgtZero)||gtgtEmptyMoney!=0||gtgtSheets!=11||!(KhbsLan1ExistingCase()?periodAnnex12Matched&&annexSelected==1&&khbsPriorImportSucceeded:periodNoAnnexMatched&&annexSelected==0)||owner.GetType().FullName!="HTKK.frmWinToKhai"||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   object business=Global("InstanceClass");gtgtBusinessInstanceMatched=business!=null&&business.GetType().FullName=="TAX.HTKK.Business.Gtgt01TT80Nckt283";gtgtAutoCalculationReady=Convert.ToBoolean(Get(sheet,"AutoCalculation"));if(!gtgtBusinessInstanceMatched||!gtgtAutoCalculationReady)throw new InvalidOperationException();
   // GetPeriodInfo060004E2 (KieuKy19,1356-137C) sets this misleadingly named
   // internal field from cboNganhKD.SelectedValue00, not exported accounting1701.
@@ -72,8 +73,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!amendmentPriorOwner.Visible||!amendmentPriorOwner.Enabled||!amendmentPriorGrid.Visible||!amendmentPriorGrid.Enabled||OriginalMessageVisible())return;
    FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool))throw new InvalidOperationException();
    amendmentPriorDirtyCleared=!(bool)dirty.GetValue(amendmentPriorOwner);if(!amendmentPriorDirtyCleared&&!khbsDirtyAfterSave)return;
-   InspectMoneyZero(amendmentPriorSheet);amendmentPriorMoneyZero=gtgtZero&&gtgtEmptyMoney==0;if(KhbsNonzeroOriginal())khbsOriginalMoneyMatched=gtgtEmptyMoney==0&&KhbsOriginalVector(amendmentPriorSheet);
-   if(KhbsNonzeroOriginal()?!khbsOriginalMoneyMatched:!amendmentPriorMoneyZero)throw new InvalidOperationException();
+   InspectMoneyZero(amendmentPriorSheet);amendmentPriorMoneyZero=gtgtZero&&gtgtEmptyMoney==0;if(KhbsTypedOrImportedOriginal())khbsOriginalMoneyMatched=gtgtEmptyMoney==0&&KhbsOriginalVectorMatched(amendmentPriorSheet);
+   if(KhbsTypedOrImportedOriginal()?!khbsOriginalMoneyMatched:!amendmentPriorMoneyZero)throw new InvalidOperationException();
    InspectOriginalPriorFile();ReadSavedHeader();if(!headerMatched||headerChecks!=8||headerMismatchMask!=0)throw new InvalidOperationException();
    if(mode=="gtgt-amendment-open-inspect"||KhbsMode()){CloseOriginalPriorForAmendment();return;}
    finished=true;SetStage(HtkkAutomationStage.GtgtOriginalDeclarationSavedInspected);Record();amendmentPriorWatcher.Stop();
@@ -93,9 +94,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   SetStage(HtkkAutomationStage.GtgtAmendmentPriorMoneyChecking);Record();
   amendmentPriorSavedMoneyCount=0;amendmentPriorSavedMoneyZero=true;XmlNodeList cells=document.SelectNodes("/Sections/Section/Cells/Cell[@Path]");
   if(cells==null||cells.Count>512)throw new InvalidOperationException();
-  // KHBS case 2: the saved C0 must carry exactly the fixed vector typed before Ghi (decimal comparison of each value).
-  bool vector=KhbsNonzeroOriginal();if(vector)khbsSavedMoneyMatched=true;
-  for(int index=0;index<money.Length;index++){string code=money[index];int matched=0;foreach(XmlNode cell in cells){XmlAttribute path=cell.Attributes["Path"];if(path!=null&&path.Value.EndsWith("/"+code,StringComparison.Ordinal)){matched++;if(cell.Attributes["Value"]==null||cell.Attributes["Value"].Value!="0")amendmentPriorSavedMoneyZero=false;decimal saved;if(vector&&(cell.Attributes["Value"]==null||!KhbsAmount(cell.Attributes["Value"].Value,out saved)||saved!=KhbsSale5Original[index]))khbsSavedMoneyMatched=false;}}if(matched!=1){amendmentPriorSavedMoneyZero=false;if(vector)khbsSavedMoneyMatched=false;}else amendmentPriorSavedMoneyCount++;}
+  // KHBS case 2: the saved C0 must carry exactly the fixed vector typed before Ghi (decimal comparison of each value); cases 16-17
+  // the sale10 vector of the imported lần đầu.
+  decimal[] expectedVector=KhbsOriginalExpectedVector();bool vector=expectedVector!=null;if(vector)khbsSavedMoneyMatched=true;
+  for(int index=0;index<money.Length;index++){string code=money[index];int matched=0;foreach(XmlNode cell in cells){XmlAttribute path=cell.Attributes["Path"];if(path!=null&&path.Value.EndsWith("/"+code,StringComparison.Ordinal)){matched++;if(cell.Attributes["Value"]==null||cell.Attributes["Value"].Value!="0")amendmentPriorSavedMoneyZero=false;decimal saved;if(vector&&(cell.Attributes["Value"]==null||!KhbsAmount(cell.Attributes["Value"].Value,out saved)||saved!=expectedVector[index]))khbsSavedMoneyMatched=false;}}if(matched!=1){amendmentPriorSavedMoneyZero=false;if(vector)khbsSavedMoneyMatched=false;}else amendmentPriorSavedMoneyCount++;}
   if(!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27)throw new InvalidOperationException();
   if(!amendmentPriorXmlParsed||Hash(files[0].FullName)!=hash)throw new InvalidOperationException();amendmentPriorFileFresh=true;amendmentPriorFileScopeMatched=String.Equals(Path.GetFullPath(files[0].DirectoryName),amendmentPriorDirectory,StringComparison.OrdinalIgnoreCase);amendmentPriorFileBytes=(int)files[0].Length;amendmentPriorFileSha256=hash;
   if(!amendmentPriorFileScopeMatched)throw new InvalidOperationException();
