@@ -63,7 +63,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026","02QTT-refund-transfer-Y2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -184,6 +184,18 @@ internal static class HtkkDeclarationCasePlans {
     "Validate/02_QTT_TNCN_TT80_273.xsd","9467d23b5deddd65739532ad470024df2f71af491b7cfc756e24bdd4225983cd",TKhaiThue,TKhaiThueSha256,WorkbookService,130,
     new string[]{"02|M86|300000000","02|M94|2","02|M109|10000000"},
     new string[]{Main+"ct20|300000000",Main+"ct21|300000000",Main+"ct24|2",Main+"ct27|79200000",Main+"ct34|10000000"});
+   // B8 năm 2026 with hoàn trả qua chuyển khoản (non-gating, HTKK 5.8.2 oracle; same menu, XLS, XML template and XSD as 5.8.1).
+   // Every transfer leaf is in the XML; the import binds text into the locked H149 (fpSpBindDataCell) and control 98 takes the
+   // bank name back from maNganHang (GetValueFromSelectedCell). Cell checks read the imported [21]/[34]/[46], the computed [44]
+   // and số tiền hoàn trả F145, and the account number in the unlocked O149; Header B37/B38/B55/B59 must pass for the export.
+   // The XML checks are the design leaves; tên chủ tài khoản and the bank (texts) are covered by the whole-tree comparison.
+   case "02QTT-refund-transfer-Y2026":return new HtkkDeclarationCasePlan(caseId,"B8","2.7.3","952","TncnQtt02TT80Nckt273",new string[]{"101","101_11","B8"},"year","12","2026","","01/2026","12/2026",false,
+    new string[]{"02-1/BK-QTT-TNCN"},new string[]{"02|Tờ khai","02-1|02-1/BK-QTT-TNCN"},
+    "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
+    "Validate/02_QTT_TNCN_TT80_273.xsd","9467d23b5deddd65739532ad470024df2f71af491b7cfc756e24bdd4225983cd",TKhaiThue,TKhaiThueSha256,WorkbookService,130,
+    new string[]{"02|M86|300000000","02|M94|2","02|M109|20000000","02|M124|14120000","02|M126|14120000","02|F145|14120000","02|O149|9999000011112"},
+    new string[]{Main+"ct21|300000000",Main+"ct24|2",Main+"ct27|79200000",Main+"ct31|88800000",Main+"ct32|5880000",Main+"ct33|20000000",Main+"ct44|14120000",Main+"ct45|14120000",Main+"ct46|14120000",Main+"ct47|0",Main+"ct48|0",
+     Main+"TTinHoanThue/soTienHoanTra|14120000",Main+"TTinHoanThue/HinhThucHoanTra/chuyenKhoan|1",Main+"TTinHoanThue/HinhThucHoanTra/tienMat|0",Main+"TTinHoanThue/HinhThucHoanTra/soTaiKhoan|9999000011112"});
    // U5 01/CNKD TT50: KieuKy 21 = SetLayoutToKhaiThangQuyLanPhatSinh (quarter), geography panel.
    case "01CNKD-TT50-revenue-two-groups-Q3-2026":return new HtkkDeclarationCasePlan(caseId,"U5","2.9.8","1266","CnkdHkd01TT50Nckt298",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
     new string[0],new string[]{"01|Tờ khai"},

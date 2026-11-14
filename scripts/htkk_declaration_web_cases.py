@@ -320,6 +320,13 @@ CASES = {
                                      # [08]/[07] NNT tỉnh/huyện (02!F23/N23, Catalogue_Dia_Ban_Tinh/Huyen 101/10101):
                                      # Header!B53/B54 refused the empty pair with 0016 (release 227, run 42302323087).
                                      'Hà Nội', 'Quận Ba Đình']),
+    # B8 02/QTT-TNCN năm 2026 with hoàn trả qua chuyển khoản (HTKK 5.8.2 oracle, non-gating): the dependants case's texts, the
+    # account holder (tên chủ tài khoản = RemoveDiacritics(tenNNT).ToUpper() = the synthetic NAME) and the DM_Tinh_NganHang name
+    # of bank 01204003 (MaTinh 101); the fictitious account number is a digit run.
+    '02QTT-refund-transfer-Y2026': _case('tncn02qtt-refund-transfer-y2026', 'B8', '952', '2.7.3', 'Validate/02_QTT_TNCN_TT80_273.xsd', ('Y', '2026', '', ''), None, '2026-10-27', '2026-10-27', 130, ['PLuc_02_1_BK_QTT_TNCN'], WORKBOOK_SERVICE,
+                                         ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu 02/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'Quyết toán theo năm dương lịch', 'NGUOI PHU THUOC A', 'NGUOI PHU THUOC B',
+                                          'Thẻ CCCD', 'Giấy khai sinh', 'GKS-0001', 'Con', 'Hà Nội', 'Quận Ba Đình',
+                                          'Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam - Chi nhánh Hà Nội']),
     # I9 01/NTNN TT80 (non-gating): KieuKy 18 month 09/2026 (HTKK 5.8.2 refuses I9 after 09/2026), two synthetic
     # foreign contractors without MST.
     '01NTNN-two-contractors-M09-2026': _case('ntnn01-two-contractors-m09-2026', 'I9', '838', '2.5.1', 'Validate/01_NTNN_TT80_251.xsd', ('M', '09/2026', '01/09/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
@@ -415,7 +422,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2026'})
 
 
 def is_case(case_id):

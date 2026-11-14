@@ -52,8 +52,9 @@ class Registry(unittest.TestCase):
     def test_committed_registry_keeps_every_case_on_the_default_oracle(self):
         # Only U5 3.1.0 and Z8 05/KK-TNCN TT89 (XML versions that exist only in HTKK 5.8.2) and the 01-10/GTGT candidate
         # (HTKK 5.8.2 accepts negative goods values there) name 5.8.2, as does the KHBS amendment case (TT80 01/KHBS of
-        # HTKK 5.8.2, the release in use for 2026 periods); every other case stays on the default oracle.
-        NEWER = {U5_310, '01CNKD-TT50-310-pl03-two-groups-Q3-2026', ANNEX10, Z8_TT89, '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '01GTGT-khbs-zero-to-sale10-M10-2026', '01GTGT-khbs-sale5-to-sale10-M09-2026', '01GTGT-khbs-lan2-sale10-M10-2026', '01GTGT-khbs-annex12-capture-M10-2026', '01GTGT-khbs-annex12-lan2-changed-M10-2026', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026'}
+        # HTKK 5.8.2, the release in use for 2026 periods) and the 02/QTT refund-by-transfer case name 5.8.2; every other case stays
+        # on the default oracle.
+        NEWER = {U5_310, '01CNKD-TT50-310-pl03-two-groups-Q3-2026', ANNEX10, Z8_TT89, '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '01GTGT-khbs-zero-to-sale10-M10-2026', '01GTGT-khbs-sale5-to-sale10-M09-2026', '01GTGT-khbs-lan2-sale10-M10-2026', '01GTGT-khbs-annex12-capture-M10-2026', '01GTGT-khbs-annex12-lan2-changed-M10-2026', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2026'}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
         self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER)
         self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER)
