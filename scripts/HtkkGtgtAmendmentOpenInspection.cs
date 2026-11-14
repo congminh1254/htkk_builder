@@ -24,7 +24,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if((mode!="gtgt-amendment-open-inspect"&&!KhbsMode())||amendmentOpenCloseInvoked||(!amendmentPriorDirtyCleared&&!khbsDirtyAfterSave)||!amendmentPriorSaveSuccessAcknowledged||!amendmentPriorFileFresh||!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27||amendmentPriorOwner==null||amendmentPriorOwner.IsDisposed||!amendmentPriorOwner.Visible||!amendmentPriorOwner.Enabled||OriginalMessageVisible())throw new InvalidOperationException();
   FieldInfo dirty=amendmentPriorOwner.GetType().GetField("isDataChanged",BindingFlags.Instance|BindingFlags.Public|BindingFlags.NonPublic);if(dirty==null||dirty.FieldType!=typeof(bool)||((bool)dirty.GetValue(amendmentPriorOwner)&&!khbsDirtyAfterSave))throw new InvalidOperationException();
   Button close=Named(amendmentPriorOwner,"cmdExit") as Button;if(close==null||close.FindForm()!=amendmentPriorOwner||!close.Visible||!close.Enabled||!close.CanSelect||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();
-  amendmentPriorWatcher.Stop();amendmentOpenCloseInvoked=true;navigationPhase="waiting-amendment-prior-close";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentPriorCloseInvoking);Record();
+  amendmentPriorWatcher.Stop();amendmentOpenCloseInvoked=true;
+  // Cases 16-17: B1 selects (or finds selected) phụ lục 01-2 again, as round 2 of case 5 does.
+  if(KhbsLan1ExistingCase()){annex12SelectionActionCount=0;annexSelected=0;periodAnnex12Matched=false;}navigationPhase="waiting-amendment-prior-close";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentPriorCloseInvoking);Record();
   // KHBS case 2 only: the original cmdExit_Click asks 0013 while its dirty flag is still set; the watcher answers "Không"
   // (cmd_No: close without saving again) because the saved C0 file was just verified and is re-hashed on reopening.
   System.Windows.Forms.Timer prompt=khbsDirtyAfterSave?StartKhbsDiscardPromptWatcher():null;
@@ -76,9 +78,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
     int matched=0;for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});if(Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture)!=(id=="01-1-KHBS"?"01-1/KHBS":"01-KHBS"))continue;matched++;object bounds=rectangle.Invoke(grid,new object[]{index});int width=Convert.ToInt32(Get(bounds,"Width")),height=Convert.ToInt32(Get(bounds,"Height"));int rows=Convert.ToInt32(Get(candidate,"RowCount")),columns=Convert.ToInt32(Get(candidate,"ColumnCount"));if(width<=0||height<=0||rows<1||rows>10000||columns<1||columns>512)throw new InvalidOperationException();if(id=="01-KHBS"){amendmentOpenKhbsRows=rows;amendmentOpenKhbsColumns=columns;}else{amendmentOpenExplanationRows=rows;amendmentOpenExplanationColumns=columns;}}if(matched!=1)throw new InvalidOperationException();observed++;
    }
    // The B1 main sheet before the import: zero (case 1), or for case 2 zero or the C0 vector carried over (1 / 2).
-   amendmentOpenKhbsSheetsObserved=observed==2;InspectMoneyZero(sheet);int mainState=gtgtEmptyMoney!=0?0:gtgtZero?1:KhbsNonzeroOriginal()&&KhbsOriginalVector(sheet)?2:KhbsLan2Case()&&khbsRound==2&&KhbsB1Vector(sheet)?3:0;if(KhbsMode())khbsOpenMainState=mainState;
+   amendmentOpenKhbsSheetsObserved=observed==2;InspectMoneyZero(sheet);int mainState=gtgtEmptyMoney!=0?0:gtgtZero?1:KhbsNonzeroOriginal()&&KhbsOriginalVector(sheet)?2:(KhbsLan2Case()&&khbsRound==2||KhbsLan1ExistingCase())&&KhbsB1Vector(sheet)?3:0;if(KhbsMode())khbsOpenMainState=mainState;
    // Round 2 of lần 2: the B2 sheet carries the saved B1 main sheet (3) or zero (1); otherwise as before.
-   if(mainState==0||(!KhbsNonzeroOriginal()&&!(KhbsLan2Case()&&khbsRound==2)&&mainState!=1)||CellText(sheet,9,3)!=FakeName||CellText(sheet,10,3).Replace("-",String.Empty)!=Mst)throw new InvalidOperationException();
+   // Cases 16-17: B1 carries the imported C0 vector (sale10, 3) or zero (1).
+   if(mainState==0||(!KhbsNonzeroOriginal()&&!(KhbsLan2Case()&&khbsRound==2)&&!KhbsLan1ExistingCase()&&mainState!=1)||CellText(sheet,9,3)!=FakeName||CellText(sheet,10,3).Replace("-",String.Empty)!=Mst)throw new InvalidOperationException();
    InspectOriginalPriorFile();ReadSavedHeader();amendmentOpenPriorUnchanged=amendmentPriorFileFresh&&PriorSavedMoneyExpected()&&amendmentPriorSavedMoneyCount==27&&headerMatched&&headerChecks==8&&headerMismatchMask==0;
    if(!amendmentOpenPriorUnchanged)throw new InvalidOperationException();
    if(KhbsMode()){khbsPeriodMatched=amendmentOpenPeriodMatched&&khbsDateTyped;StartOriginalKhbsImport(forms[0]);return;}

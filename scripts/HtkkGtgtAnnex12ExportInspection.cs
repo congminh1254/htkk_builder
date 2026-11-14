@@ -154,7 +154,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   decimal[][] percentages=two?new decimal[][]{KhbsAnnexCase()?KhbsAnnexFirstPlantPercentages():new decimal[]{33.33m,66.67m},new decimal[]{50m,25m,25m}}:new decimal[][]{new decimal[]{50m,50m}};
   string[][] types=two?new string[][]{new string[]{"01","02"},new string[]{"01","02","02"}}:new string[][]{new string[]{"01","02"}};
   string[][] wards=null;
-  if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId))KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);
+  if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan1AddPlantCaseId&&!khbsC0Import)KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);
   if(KhbsAnnexRoundCase())KhbsAnnexRound(out names,out codes,out parents,out percentages,out types,out wards);
   if(wards==null){wards=new string[types.Length][];for(int i=0;i<types.Length;i++){wards[i]=new string[types[i].Length];for(int j=0;j<wards[i].Length;j++)wards[i][j]=Annex12FixedWard;}}
   List<string> expectedWards=new List<string>();
@@ -200,7 +200,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void KhbsAnnexWideRound2(out string[] names,out string[] codes,out decimal[] parents,out decimal[][] percentages,out string[][] types,out string[][] wards){
   string n1="NHA MAY GIA LAP - KHONG NOP",n2="NHA MAY GIA LAP 2 - KHONG NOP",n3="NHA MAY GIA LAP 3 - KHONG NOP",w=Annex12FixedWard,v=Annex12SecondWard;
   decimal[] p1=new decimal[]{33.33m,66.67m},p2=new decimal[]{50m,25m,25m};string[] t1=new string[]{"01","02"},t2=new string[]{"01","02","02"};
-  if(webCaseId==KhbsAnnex12AddPlantCaseId){names=new string[]{n1,n2,n3};codes=new string[]{"9999999997-001","99997","99996"};parents=new decimal[]{7m,3m,5m};percentages=new decimal[][]{p1,p2,new decimal[]{60m,40m}};types=new string[][]{t1,t2,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w,w},new string[]{w,w}};return;}
+  // Case 17's B1 carries the add-plant annex of case 6 (its C0 the proven two-plant annex).
+  if(webCaseId==KhbsAnnex12AddPlantCaseId||webCaseId==KhbsAnnex12Lan1AddPlantCaseId){names=new string[]{n1,n2,n3};codes=new string[]{"9999999997-001","99997","99996"};parents=new decimal[]{7m,3m,5m};percentages=new decimal[][]{p1,p2,new decimal[]{60m,40m}};types=new string[][]{t1,t2,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w,w},new string[]{w,w}};return;}
   if(webCaseId==KhbsAnnex12RemovePlantCaseId){names=new string[]{n1};codes=new string[]{"9999999997-001"};parents=new decimal[]{7m};percentages=new decimal[][]{p1};types=new string[][]{t1};wards=new string[][]{new string[]{w,w}};return;}
   if(webCaseId==KhbsAnnex12TwoPlacesCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,v,v}};return;}
   if(webCaseId==KhbsAnnex12EqualRowsCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{new decimal[]{40m,60m},new decimal[]{50m,50m}};types=new string[][]{t1,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w}};return;}
@@ -214,7 +215,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string n1="NHA MAY GIA LAP - KHONG NOP",n2="NHA MAY GIA LAP 2 - KHONG NOP",w=Annex12FixedWard;decimal[] half=new decimal[]{50m,50m};string[] t1=new string[]{"01","02"};
   if(!KhbsAnnexRoundCase())throw new InvalidOperationException();
   if(webCaseId==KhbsAnnex12Lan2RoundCaseId&&khbsRound==2){names=new string[]{n1};codes=new string[]{"9999999997-001"};parents=new decimal[]{8m};percentages=new decimal[][]{half};types=new string[][]{t1};wards=new string[][]{new string[]{w,w}};return;}
+  // Cases 19-20: three plants [10] 7/9/7 (the third is case 6's 99996), each two rows 50/50; case 20's round 2 keeps plant 1 at [10] 6.
+  if(webCaseId==KhbsAnnex12Lan2NegRoundCaseId&&khbsRound==2){names=new string[]{n1};codes=new string[]{"9999999997-001"};parents=new decimal[]{6m};percentages=new decimal[][]{half};types=new string[][]{t1};wards=new string[][]{new string[]{w,w}};return;}
   if(khbsRound!=1)throw new InvalidOperationException();
+  if(webCaseId==KhbsAnnex12Round3CaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId){names=new string[]{n1,n2,"NHA MAY GIA LAP 3 - KHONG NOP"};codes=new string[]{"9999999997-001","99997","99996"};parents=new decimal[]{7m,9m,7m};percentages=new decimal[][]{half,half,half};types=new string[][]{t1,t1,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w},new string[]{w,w}};return;}
   names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{3m,5m};percentages=new decimal[][]{half,half};types=new string[][]{t1,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w}};
  }
  // Runs 42182681228/42182684607: after the ORIGINAL import every child R was blank (mask

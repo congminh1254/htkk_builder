@@ -9,7 +9,11 @@ w=load('khbs_web_input','fetch-htkk-web-input.py')
 f=load('khbs_web_input_fixtures','test_htkk_web_input.py')
 CASE='01GTGT-khbs-zero-to-sale10-M10-2026';CASE2='01GTGT-khbs-sale5-to-sale10-M09-2026';CASE3='01GTGT-khbs-lan2-sale10-M10-2026';CASE4='01GTGT-khbs-annex12-capture-M10-2026';CASE5='01GTGT-khbs-annex12-lan2-changed-M10-2026';WIDE=('01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026');MODE='gtgt-amendment-khbs-inspect'
 # Cases 12-15: the quarterly captures (quý 3/2026, lần 1 and lần 2) and the two display-rounding 01-2 captures (lần 1, lần 2).
-Q3='01GTGT-khbs-zero-to-sale10-Q3-2026';Q3L2='01GTGT-khbs-lan2-sale10-Q3-2026';ROUND='01GTGT-khbs-annex12-round-M10-2026';ROUND2='01GTGT-khbs-annex12-lan2-round-M10-2026';NEW=(Q3,Q3L2,ROUND,ROUND2)
+Q3='01GTGT-khbs-zero-to-sale10-Q3-2026';Q3L2='01GTGT-khbs-lan2-sale10-Q3-2026';ROUND='01GTGT-khbs-annex12-round-M10-2026';ROUND2='01GTGT-khbs-annex12-lan2-round-M10-2026'
+# Cases 16-20 (non-gating): bổ sung lần 1 on a lần đầu with 01-2 ([11] changed, a plant added), case 4 on quý 3/2026, and the
+# negative display-rounding pair (lần 1 with three plants, lần 2 on its exact file).
+LAN1='01GTGT-khbs-annex12-lan1-ct11-M10-2026';LAN1ADD='01GTGT-khbs-annex12-lan1-add-plant-M10-2026';Q3ANNEX='01GTGT-khbs-annex12-capture-Q3-2026';ROUND3='01GTGT-khbs-annex12-round3-M10-2026';NEGROUND='01GTGT-khbs-annex12-lan2-neg-round-M10-2026'
+NEW=(Q3,Q3L2,ROUND,ROUND2,LAN1,LAN1ADD,Q3ANNEX,ROUND3,NEGROUND)
 out=load('khbs_native_output_publisher','publish-htkk-khbs-native-output.py')
 TODAY=datetime.date(2026,11,20);SOURCE,ARTIFACT,BUILDER_SHA='a'*40,'b'*40,'c'*40
 def source(name):return (ROOT/name).read_text(encoding='utf-8')
@@ -41,7 +45,8 @@ class Registry(unittest.TestCase):
   # The D1 publisher never takes a KHBS case; only the KHBS publisher retains them, on their own output branches.
   output=load('khbs_native_output','publish-htkk-web-native-output.py');self.assertNotIn(CASE,output.BRANCHES);self.assertNotIn(CASE2,output.BRANCHES)
   self.assertEqual(out.BRANCHES,{CASE:'gtgt-web-native-khbs-zero-to-sale10-output',CASE2:'gtgt-web-native-khbs-sale5-to-sale10-output',CASE3:'gtgt-web-native-khbs-lan2-sale10-output',CASE4:'gtgt-web-native-khbs-annex12-capture-output',CASE5:'gtgt-web-native-khbs-annex12-lan2-changed-output',**{case:'gtgt-web-native-khbs-annex12-lan2-'+case.split('-lan2-')[1][:-len('-M10-2026')]+'-output' for case in WIDE},
-   Q3:'gtgt-web-native-khbs-q3-zero-to-sale10-output',Q3L2:'gtgt-web-native-khbs-q3-lan2-sale10-output',ROUND:'gtgt-web-native-khbs-annex12-round-output',ROUND2:'gtgt-web-native-khbs-annex12-lan2-round-output'})
+   Q3:'gtgt-web-native-khbs-q3-zero-to-sale10-output',Q3L2:'gtgt-web-native-khbs-q3-lan2-sale10-output',ROUND:'gtgt-web-native-khbs-annex12-round-output',ROUND2:'gtgt-web-native-khbs-annex12-lan2-round-output',
+   LAN1:'gtgt-web-native-khbs-annex12-lan1-ct11-output',LAN1ADD:'gtgt-web-native-khbs-annex12-lan1-add-plant-output',Q3ANNEX:'gtgt-web-native-khbs-q3-annex12-capture-output',ROUND3:'gtgt-web-native-khbs-annex12-round3-output',NEGROUND:'gtgt-web-native-khbs-annex12-lan2-neg-round-output'})
 
 class SecondCase(unittest.TestCase):
  """Case 2: non-zero C0, a decrease at 5% (negative chênh lệch), M09/2026 with 24 late days."""
@@ -68,12 +73,12 @@ class SecondCase(unittest.TestCase):
   self.assertIn('private string PeriodMonth(){return KhbsNonzeroOriginal()?"09":"10";}',text)
   sheet=source('HtkkGtgtPeriodAndSheet.cs')
   self.assertIn('if(KhbsMode())fixedInput=KhbsNonzeroOriginal()&&column==9&&((webCaseEditCount==0&&row==46&&value=="2000000")||(webCaseEditCount==1&&row==47&&value=="1000000"));',sheet)
-  self.assertIn('if(matched&&AmendmentInspectionMode()){if(amendmentPriorSaveInvoked)return;if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}',sheet)
+  self.assertIn('if(matched&&AmendmentInspectionMode()){if(amendmentPriorSaveInvoked)return;if(KhbsNonzeroOriginal()&&!PrepareKhbsOriginal(forms[0],grid,sheet))return;if(KhbsLan1ExistingCase()){PrepareKhbsOriginalImport(forms[0],grid,sheet);return;}StartOriginalAmendmentPriorSave(forms[0],grid,sheet);return;}',sheet)
   self.assertIn('SetText(period,"mskMonth",PeriodMonth())',sheet);self.assertNotIn('SetText(period,"mskMonth","10")',sheet)
   prior=source('HtkkGtgtAmendmentInspection.cs')
-  self.assertIn('!(KhbsNonzeroOriginal()?khbsOriginalMoneyMatched:gtgtZero)',prior);self.assertIn('if(!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27)throw new InvalidOperationException();',prior)
+  self.assertIn('!(KhbsTypedOrImportedOriginal()?khbsOriginalMoneyMatched:gtgtZero)',prior);self.assertIn('if(!PriorSavedMoneyExpected()||amendmentPriorSavedMoneyCount!=27)throw new InvalidOperationException();',prior)
   opened=source('HtkkGtgtAmendmentOpenInspection.cs')
-  self.assertIn('==(QuarterPeriod()?PeriodQuarter():PeriodMonth())&&',opened);self.assertIn('if(mainState==0||(!KhbsNonzeroOriginal()&&!(KhbsLan2Case()&&khbsRound==2)&&mainState!=1)',opened)
+  self.assertIn('==(QuarterPeriod()?PeriodQuarter():PeriodMonth())&&',opened);self.assertIn('if(mainState==0||(!KhbsNonzeroOriginal()&&!(KhbsLan2Case()&&khbsRound==2)&&!KhbsLan1ExistingCase()&&mainState!=1)',opened)
   # The month and the saved-file name change only for case 2; every other driver keeps M10/2026.
   self.assertNotIn('"Thang"),CultureInfo.InvariantCulture)=="10"',opened+sheet)
 
@@ -91,8 +96,11 @@ class PostSave(unittest.TestCase):
  def test_only_case_two_may_close_through_the_original_discard_prompt(self):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs')
   # Dirty alone (mask 32), stable for 2 s, the exact C0 vector still on the sheet, and only for the non-zero C0 case.
-  self.assertIn('if(mask==32&&KhbsNonzeroOriginal()&&khbsPostSaveClock.Elapsed.TotalSeconds>=2){',text)
-  self.assertIn('if(gtgtEmptyMoney!=0||!KhbsOriginalVector(amendmentPriorSheet))throw new InvalidOperationException();',text)
+  # Cases 16-17 (the imported C0, its sale10 vector) take the same bounded path.
+  self.assertIn('if(mask==32&&KhbsTypedOrImportedOriginal()&&khbsPostSaveClock.Elapsed.TotalSeconds>=2){',text)
+  self.assertIn('if(gtgtEmptyMoney!=0||!KhbsOriginalVectorMatched(amendmentPriorSheet))throw new InvalidOperationException();',text)
+  self.assertIn('private bool KhbsTypedOrImportedOriginal(){return KhbsNonzeroOriginal()||KhbsLan1ExistingCase();}',text)
+  self.assertIn('private bool KhbsOriginalVectorMatched(object sheet){return KhbsNonzeroOriginal()?KhbsOriginalVector(sheet):KhbsLan1ExistingCase()&&KhbsB1Vector(sheet);}',text)
   # Pinned 0013 text and the style-6 "Không" button (cmd_No); no other answer is possible.
   self.assertIn('text!="Có muốn ghi lại thông tin thay đổi không?"||buttons.Length!=1||CountVisibleButtons(message)!=3',text)
   self.assertIn('no.Text.Replace("&",String.Empty).Trim()!="Không"',text);self.assertNotIn('"btn_1"',text);self.assertNotIn('"btn_3"',text)
@@ -148,14 +156,14 @@ class Lan2(unittest.TestCase):
                    'string saved=khbsPriorFileSha256;InspectKhbsPriorSavedFile();if(khbsPriorFileSha256!=saved)throw new InvalidOperationException();'):self.assertIn(fragment,text)
   self.assertIn('new decimal[]{0,0,0,0,0,0,0,1000000,100000,0,0,0,1000000,100000,0,1000000,100000,100000,0,0,0,100000,0,100000,0,0,0}',text)
   opened=source('HtkkGtgtAmendmentOpenInspection.cs');self.assertNotIn('SetText(',opened)
-  self.assertIn('==khbsRound.ToString(CultureInfo.InvariantCulture)&&(KhbsMode()',opened);self.assertIn('KhbsLan2Case()&&khbsRound==2&&KhbsB1Vector(sheet)?3:0',opened)
+  self.assertIn('==khbsRound.ToString(CultureInfo.InvariantCulture)&&(KhbsMode()',opened);self.assertIn('(KhbsLan2Case()&&khbsRound==2||KhbsLan1ExistingCase())&&KhbsB1Vector(sheet)?3:0',opened)
   web=source('HtkkWebInputReference.cs');self.assertIn('webPriorPath=host+".web-prior.xml";webPriorSha256=ReadOwnHexSidecar(host+".web-prior.sha256",64);',web)
   self.assertIn('private string RoundtripInputHash(){return KhbsMode()?KhbsImportHash():',web)
   registry=json.loads(source('htkk-native-automation-registry.json'));self.assertEqual(registry['resultFields']['menuClickCount']['modeMaximums'][MODE],9)
   probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
   self.assertIn("{$lastGui.khbsRound -eq 2 -and $lastGui.khbsRound2Opened -and $lastGui.khbsPriorImportSucceeded -and $lastGui.khbsPriorSummaryAcknowledged -and $lastGui.khbsPriorSaveAcknowledged -and $lastGui.khbsPriorFileSaved",line)
   self.assertIn("$priorPath=$hostFull+'.web-prior.xml'",probe);self.assertIn("$manifest.priorCaseId -cne $expectedPriorCase",probe)
-  self.assertIn("$expectedPriorCase=if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026')){'01GTGT-khbs-annex12-capture-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){'01GTGT-khbs-annex12-round-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-Q3-2026'){'01GTGT-khbs-zero-to-sale10-Q3-2026'}else{'01GTGT-khbs-zero-to-sale10-M10-2026'}",probe)
+  self.assertIn("$expectedPriorCase=if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026')){'01GTGT-khbs-annex12-capture-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){'01GTGT-khbs-annex12-round-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-neg-round-M10-2026'){'01GTGT-khbs-annex12-round3-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-lan1-ct11-M10-2026','01GTGT-khbs-annex12-lan1-add-plant-M10-2026')){'01GTGT-annex12-two-plants-nonzero-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-Q3-2026'){'01GTGT-khbs-zero-to-sale10-Q3-2026'}else{'01GTGT-khbs-zero-to-sale10-M10-2026'}",probe)
 
 class Annex12Capture(unittest.TestCase):
  """Case 4: oracle capture of HTKK's KHBS annex handling (C0 without annex, B1 adds the proven two-plant 01-2 annex)."""
@@ -175,7 +183,7 @@ class Annex12Capture(unittest.TestCase):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs')
   for fragment in ('private const string KhbsAnnex12CaptureCaseId="01GTGT-khbs-annex12-capture-M10-2026";','KhbsAnnex12CaptureLeafTarget=504','khbsPhase=KhbsAnnexCase()?"annex-restore":"summary-ready";',
                    'if(!InspectOriginalImportedAnnex12(grids[0]))','RestoreImportedAnnex12HeadAuthorities();\n    if(!annex12WebHeadAuthorityRestored)throw new InvalidOperationException();'.replace('\\n','\n')):self.assertIn(fragment,text)
-  self.assertIn('if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);',source('HtkkGtgtPeriodAndSheet.cs'))
+  self.assertIn('else if(Annex12InspectionMode()||KhbsAnnexCase()&&AmendmentReopening()||KhbsLan1ExistingCase()&&!AmendmentReopening())SelectOriginalAnnex12(annex,annexSheet);',source('HtkkGtgtPeriodAndSheet.cs'))
   self.assertIn('!(KhbsAnnexCase()?periodAnnex12Matched&&annexSelected==1:periodNoAnnexMatched&&annexSelected==0)',source('HtkkGtgtAmendmentOpenInspection.cs'))
   self.assertIn('bool two=Annex12WebTwoPlantsCase()||KhbsAnnexCase();',source('HtkkGtgtAnnex12ExportInspection.cs'))
   probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
@@ -183,7 +191,7 @@ class Annex12Capture(unittest.TestCase):
   # The common period predicate takes the annex period for this case only (run 43437157891 matched the whole tree but was
   # refused on periodNoAnnexMatched); every other KHBS case still requires the no-annex period.
   period=next(l for l in probe.splitlines() if "'gtgt-amendment-khbs-inspected'" in l and 'periodNoAnnexMatched' in l)
-  self.assertIn("elseif($GuiAutomation -eq 'gtgt-amendment-khbs-inspect' -and $env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-lan2-round-M10-2026')){$lastGui.periodAnnex12Matched -and -not $lastGui.periodNoAnnexMatched}else{$lastGui.periodNoAnnexMatched})",period)
+  self.assertIn("elseif($GuiAutomation -eq 'gtgt-amendment-khbs-inspect' -and $env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-lan2-round-M10-2026','01GTGT-khbs-annex12-lan1-ct11-M10-2026','01GTGT-khbs-annex12-lan1-add-plant-M10-2026','01GTGT-khbs-annex12-capture-Q3-2026','01GTGT-khbs-annex12-round3-M10-2026','01GTGT-khbs-annex12-lan2-neg-round-M10-2026')){$lastGui.periodAnnex12Matched -and -not $lastGui.periodNoAnnexMatched}else{$lastGui.periodNoAnnexMatched})",period)
   self.assertEqual((period.count('01GTGT-khbs-annex12-capture-M10-2026'),period.count('01GTGT-khbs-annex12-lan2-changed-M10-2026')),(1,1))
  def test_capture_output_is_retained_with_catalogue_and_joined_key_texts_only(self):
   web=self.body;native=native_of(web)
@@ -219,19 +227,19 @@ class Annex12Lan2Changed(unittest.TestCase):
  def test_driver_runs_the_lan2_flow_with_the_annex_in_both_rounds(self):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs')
   for fragment in ('private const string KhbsAnnex12Lan2CaseId="01GTGT-khbs-annex12-lan2-changed-M10-2026";','private const int KhbsAnnex12Lan2LeafTarget=465;',
-                   'private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&KhbsLan2CaseId(webCaseId);}','private static bool KhbsLan2CaseId(string id){return id==KhbsLan2WebCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12Lan2RoundCaseId;}',
-                   'private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId);}',
-                   'return KhbsAnnexLan2Case()&&khbsRound==2?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};',
+                   'private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&KhbsLan2CaseId(webCaseId);}','private static bool KhbsLan2CaseId(string id){return id==KhbsLan2WebCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12Lan2RoundCaseId||id==KhbsAnnex12Lan2NegRoundCaseId;}',
+                   'private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(webCaseId)||webCaseId==KhbsAnnex12Q3CaptureCaseId||webCaseId==KhbsAnnex12Round3CaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}',
+                   'return KhbsAnnexLan2Case()&&khbsRound==2||webCaseId==KhbsAnnex12Lan1Ct11CaseId&&!khbsC0Import?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};',
                    'if(KhbsAnnexLan2Case()){annex12SelectionActionCount=0;annexSelected=0;periodAnnex12Matched=false;annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;',
-                   'webCaseId==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(webCaseId)?KhbsAnnexWideLeafTarget(webCaseId):webCaseId==KhbsQ3WebCaseId?KhbsQ3LeafTarget:webCaseId==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:webCaseId==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:webCaseId==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:KhbsLeafTarget'):self.assertIn(fragment,text)
+                   'id==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(id)?KhbsAnnexWideLeafTarget(id):id==KhbsQ3WebCaseId?KhbsQ3LeafTarget:id==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:id==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:id==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:id==KhbsAnnex12Lan1Ct11CaseId?KhbsAnnex12Lan1Ct11LeafTarget:id==KhbsAnnex12Lan1AddPlantCaseId?KhbsAnnex12Lan1AddPlantLeafTarget:id==KhbsAnnex12Q3CaptureCaseId?KhbsAnnex12Q3CaptureLeafTarget:id==KhbsAnnex12Round3CaseId?KhbsAnnex12Round3LeafTarget:id==KhbsAnnex12Lan2NegRoundCaseId?KhbsAnnex12Lan2NegRoundLeafTarget:KhbsLeafTarget','CompareKhbs(input,output,KhbsCaseLeafTarget(webCaseId),'):self.assertIn(fragment,text)
   self.assertIn('new decimal[][]{KhbsAnnexCase()?KhbsAnnexFirstPlantPercentages():new decimal[]{33.33m,66.67m},new decimal[]{50m,25m,25m}}',source('HtkkGtgtAnnex12ExportInspection.cs'))
   period=source('HtkkGtgtPeriodAndSheet.cs')
-  self.assertIn('if(KhbsAnnexLan2Case()&&AmendmentReopening()&&khbsRound==2&&annexSelected==1&&OriginalAnnex12RowSelected(annexSheet)){periodAnnex12Matched=true;periodNoAnnexMatched=false;Record();}',period)
-  web=source('HtkkWebInputReference.cs');self.assertIn('if(KhbsMode()&&KhbsLan2CaseId(webCaseId)){',web)
+  self.assertIn('if((KhbsAnnexLan2Case()&&khbsRound==2||KhbsLan1ExistingCase())&&AmendmentReopening()&&annexSelected==1&&OriginalAnnex12RowSelected(annexSheet)){periodAnnex12Matched=true;periodNoAnnexMatched=false;Record();}',period)
+  web=source('HtkkWebInputReference.cs');self.assertIn('if(KhbsMode()&&(KhbsLan2CaseId(webCaseId)||KhbsLan1ExistingCaseId(webCaseId))){',web)
   probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
   for fragment in ("elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){465}",
-                   "$(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-lan2-round-M10-2026')){$lastGui.khbsRound -eq 2",
-                   "$(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-lan2-round-M10-2026')){$lastGui.annexSelectedCount -eq 1"):self.assertIn(fragment,line)
+                   "$(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-lan2-round-M10-2026','01GTGT-khbs-annex12-lan2-neg-round-M10-2026')){$lastGui.khbsRound -eq 2",
+                   "$(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-lan2-round-M10-2026','01GTGT-khbs-annex12-lan1-ct11-M10-2026','01GTGT-khbs-annex12-lan1-add-plant-M10-2026','01GTGT-khbs-annex12-capture-Q3-2026','01GTGT-khbs-annex12-round3-M10-2026','01GTGT-khbs-annex12-lan2-neg-round-M10-2026')){$lastGui.annexSelectedCount -eq 1"):self.assertIn(fragment,line)
   self.assertIn("elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){210}",probe)
 
 class Annex12Wide(unittest.TestCase):
@@ -265,9 +273,9 @@ class Annex12Wide(unittest.TestCase):
   text=source('HtkkGtgtAmendmentKhbsInspection.cs')
   for case,(variant,leaves,marker,other) in self.SPEC.items():self.assertIn('="'+case+'";',text);self.assertIn('LeafTarget='+str(leaves)+';',text)
   for fragment in ('private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}',
-                   'private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan2RoundCaseId);}'):self.assertIn(fragment,text)
+                   'private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan2RoundCaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}'):self.assertIn(fragment,text)
   annex=source('HtkkGtgtAnnex12ExportInspection.cs')
-  self.assertIn('if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId))KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);',annex)
+  self.assertIn('if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan1AddPlantCaseId&&!khbsC0Import)KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);',annex)
   body=annex[annex.index(' private void KhbsAnnexWideRound2('):]
   body=body[:body.index('\n }\n')]
   for fragment in ('codes=new string[]{"9999999997-001","99997","99996"};parents=new decimal[]{7m,3m,5m};percentages=new decimal[][]{p1,p2,new decimal[]{60m,40m}}',
@@ -277,7 +285,7 @@ class Annex12Wide(unittest.TestCase):
   self.assertIn('private const int Annex12MaxRestoredRows=7;',annex);self.assertIn('if(ordinal>=Annex12MaxRestoredRows)throw new InvalidOperationException();',annex)
   self.assertIn('if(expectedWards.Count>Annex12MaxRestoredRows)return false;',annex)
   probe=source('probe-htkk-windows.ps1')
-  self.assertIn("$(if($env:EXPECTED_WEB_CASE_ID -cin @("+",".join("'"+c+"'" for c in WIDE+(ROUND2,))+")){240}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){210}",probe)
+  self.assertIn("$(if($env:EXPECTED_WEB_CASE_ID -cin @("+",".join("'"+c+"'" for c in (LAN1,LAN1ADD)+WIDE+(ROUND2,NEGROUND))+")){240}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){210}",probe)
   for case,(variant,leaves,marker,other) in self.SPEC.items():self.assertIn("elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+case+"'){"+str(leaves)+"}",probe)
 
 class QuarterAndRoundCaptures(unittest.TestCase):
@@ -331,9 +339,9 @@ class QuarterAndRoundCaptures(unittest.TestCase):
   body=annex[annex.index(' private void KhbsAnnexRound('):];body=body[:body.index('\n }\n')]
   self.assertIn('parents=new decimal[]{8m};percentages=new decimal[][]{half}',body);self.assertIn('parents=new decimal[]{3m,5m};percentages=new decimal[][]{half,half}',body);self.assertIn('if(khbsRound!=1)throw new InvalidOperationException();',body)
   probe=source('probe-htkk-windows.ps1')
-  for fragment in ("elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-round-M10-2026'){463}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){388}else{270}",
-                   "elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){'01GTGT-khbs-annex12-round-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-Q3-2026'){'01GTGT-khbs-zero-to-sale10-Q3-2026'}else{'01GTGT-khbs-zero-to-sale10-M10-2026'}",
-                   "'01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-round-M10-2026')){175}else{150})"):self.assertIn(fragment,probe)
+  for fragment in ("elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-round-M10-2026'){463}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){388}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan1-ct11-M10-2026'){465}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan1-add-plant-M10-2026'){527}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-Q3-2026'){504}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-round3-M10-2026'){564}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-neg-round-M10-2026'){427}else{270}",
+                   "elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){'01GTGT-khbs-annex12-round-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-neg-round-M10-2026'){'01GTGT-khbs-annex12-round3-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-annex12-lan1-ct11-M10-2026','01GTGT-khbs-annex12-lan1-add-plant-M10-2026')){'01GTGT-annex12-two-plants-nonzero-M10-2026'}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-lan2-sale10-Q3-2026'){'01GTGT-khbs-zero-to-sale10-Q3-2026'}else{'01GTGT-khbs-zero-to-sale10-M10-2026'}",
+                   "'01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-capture-Q3-2026','01GTGT-khbs-annex12-round3-M10-2026')){175}else{150})"):self.assertIn(fragment,probe)
  def test_quarterly_and_round_exports_are_retained_like_the_other_cases(self):
   for case,state in ((Q3L2,3),(ROUND2,3)):
    with self.subTest(case=case):
@@ -341,6 +349,86 @@ class QuarterAndRoundCaptures(unittest.TestCase):
     status=out.publish(native,NativeOutput.provenance(None,web,native,case,leaves=w.khbs.tax_leaves(case),state=state),'token',fetch,TODAY,version='5.8.2')
     self.assertEqual((status['status'],status['allTaxValuesMatched'],status['harnessAgreement']),('published',True,True))
     ref=next(c for c in calls if c[0]=='/git/refs');self.assertEqual(ref[2]['ref'],'refs/heads/'+out.oracle.output_branch(out.BRANCHES[case],'5.8.2'))
+
+class Lan1ExistingQuarterAnnexAndNegativeRound(unittest.TestCase):
+ """Cases 16-20 (non-gating): bổ sung lần 1 when the lần đầu already has 01-2 (C0 imports the proven annex web case's own file,
+ restores it and saves it with Ghi), case 4 on quý 3/2026, and the negative ct06/ct7 display pair (three plants, then lần 2)."""
+ TWO='01GTGT-annex12-two-plants-nonzero-M10-2026'
+ SPEC={LAN1:('01-gtgt-2.8.3-khbs-annex12','month','10/2026',1,TWO,'01GTGT-annex12-two-plants-changed-khbs-lan2',465),
+       LAN1ADD:('01-gtgt-2.8.3-khbs-annex12','month','10/2026',1,TWO,'01GTGT-annex12-add-plant-khbs-lan2',527),
+       Q3ANNEX:('01-gtgt-2.8.3-khbs-annex12','quarter','3/2026',1,None,TWO,504),
+       ROUND3:('01-gtgt-2.8.3-khbs-annex12','month','10/2026',1,None,'01GTGT-annex12-round3-khbs',564),
+       NEGROUND:('01-gtgt-2.8.3-khbs-annex12-lan2','month','10/2026',2,ROUND3,'01GTGT-annex12-neg-round-khbs-lan2',427)}
+ def test_registry_contract_prior_and_exact_inputs(self):
+  self.assertEqual(cases.TRUSTED_ADAPTERS['01-gtgt-2.8.3-khbs-annex12']['periods'],{'month':('10/2026',),'quarter':('3/2026',)})
+  for case,(adapter,kind,value,order,prior,variant,leaves) in self.SPEC.items():
+   with self.subTest(case=case):
+    c=cases.CASES[case];self.assertEqual((c['adapterId'],c['unit']['periodType'],c['unit']['periodValue'],c['unit']['amendmentOrder'],c['releaseGate'],cases.case_version(c),cases.driver(case)),(adapter,kind,value,order,False,'5.8.2',MODE))
+    self.assertEqual((w.khbs.prior_case(case),w.khbs.annex12_case(case),w.khbs.tax_leaves(case)),(prior,variant,leaves))
+    body=f.sale_fixture(case);manifest=f.case_manifest(body,case)
+    self.assertEqual(w.validate_web_xml(body,case_id=case,manifest=manifest)['amendmentTaxLeafCount'],leaves)
+    self.assertEqual(w.names(case),('01GTGT-web.xml','01GTGT-prior.xml','manifest.json') if prior else ('01GTGT-web.xml','manifest.json'))
+    if prior:
+     files={'01GTGT-web.xml':body,'01GTGT-prior.xml':f.sale_fixture(prior),'manifest.json':(json.dumps(manifest)+'\n').encode()}
+     self.assertIsNotNone(w.validate_prior(files,w.validate_manifest(files['manifest.json'])))
+     # The previous version is exactly its own case's file: a KHBS file, another annex or the B1 itself is refused.
+     for other in (CASE4,ROUND,case):
+      with self.assertRaises(w.InputError):w.validate_prior(dict(files,**{'01GTGT-prior.xml':f.sale_fixture(other)}),manifest)
+  # Cases 16-17 carry the fragments of cases 5-6 with soLan 1 (htkk_web's static reading: lần 1 reads the lần đầu as lần N
+  # reads bs<N-1>_); their files are not cases 5-6's, nor the reverse.
+  for lan1,lan2 in ((LAN1,CASE5),(LAN1ADD,WIDE[0])):
+   self.assertEqual([(p,a,'1' if p.endswith('/soLan') else t) for p,a,t in w.khbs.CASES[lan1]['rows']],[(p,a,'1' if p.endswith('/soLan') else t) for p,a,t in w.khbs.CASES[lan2]['rows']])
+   self.assertEqual(w.khbs.manifest_fields(lan1)['priorCaseId'],self.TWO)
+   for body,case in ((f.sale_fixture(lan2),lan1),(f.sale_fixture(lan1),lan2)):
+    with self.subTest(case=case),self.assertRaises(w.InputError):w.validate_web_xml(body,case_id=case)
+  # Case 18: quý 3/2026 in the three headers, 14 late days and ct3b 420 with the annex.
+  q3=f.sale_fixture(Q3ANNEX).decode()
+  self.assertEqual(q3.count('<kieuKy>Q</kieuKy><kyKKhai>3/2026</kyKKhai><kyKKhaiTuNgay>01/07/2026</kyKKhaiTuNgay><kyKKhaiDenNgay>30/09/2026</kyKKhaiDenNgay>'),3)
+  self.assertIn('<ct3a_2>14</ct3a_2><ct3b>420</ct3b>',q3);self.assertEqual(w.khbs.manifest_fields(Q3ANNEX)['expected']['ct3b'],'420')
+  for body,case in ((f.sale_fixture(CASE4),Q3ANNEX),(f.sale_fixture(Q3ANNEX),CASE4),(f.sale_fixture(Q3),Q3ANNEX)):
+   with self.subTest(case=case),self.assertRaises(w.InputError):w.validate_web_xml(body,case_id=case)
+  # Cases 19-20: [12] 3,5/4,5/3,5 written "4"/"5"/"4"; lần 2 writes −0,5 as "0" (twice), −4,5 and −3,5 as "-4".
+  r3=f.sale_fixture(ROUND3).decode();neg=f.sale_fixture(NEGROUND).decode()
+  self.assertEqual((r3.count('<ct11>50.00</ct11><ct12>4</ct12>'),r3.count('<ct11>50.00</ct11><ct12>5</ct12>')),(4,2));self.assertIn('<ct10_a>9</ct10_a>',r3);self.assertIn('<ct10_a>6</ct10_a>',neg)
+  rows=[t for p,a,t in w.khbs.CASES[NEGROUND]['rows'] if p.endswith('/CTietHSo/ChiTiet/ct06')]
+  self.assertEqual(rows[-4:],['0','0','-4','-4'])
+  self.assertIn(('PL01_1_KHBS/Muc_A/DSachHSo/TongCong/tongCong_7','','49991'),w.khbs.CASES[NEGROUND]['rows'])
+  for body,case in ((f.sale_fixture(ROUND),ROUND3),(f.sale_fixture(ROUND3),ROUND),(f.sale_fixture(ROUND2),NEGROUND),(f.sale_fixture(NEGROUND),ROUND2)):
+   with self.subTest(case=case),self.assertRaises(w.InputError):w.validate_web_xml(body,case_id=case)
+  self.assertEqual(w.annex12.VARIANTS['01GTGT-annex12-round3-khbs']['groupRows'],(2,2,2));self.assertFalse(w.annex12.is_case('01GTGT-annex12-round3-khbs'))
+ def test_driver_imports_saves_the_annexed_c0_then_runs_case_4s_b1(self):
+  text=source('HtkkGtgtAmendmentKhbsInspection.cs');prior=source('HtkkGtgtAmendmentInspection.cs');sheet=source('HtkkGtgtPeriodAndSheet.cs');opened=source('HtkkGtgtAmendmentOpenInspection.cs');web=source('HtkkWebInputReference.cs');annex=source('HtkkGtgtAnnex12ExportInspection.cs')
+  for fragment in ('private static bool KhbsLan1ExistingCaseId(string id){return id==KhbsAnnex12Lan1Ct11CaseId||id==KhbsAnnex12Lan1AddPlantCaseId;}',
+                   'private const int KhbsAnnex12Lan1Ct11LeafTarget=465,KhbsAnnex12Lan1AddPlantLeafTarget=527;','private const int KhbsAnnex12Q3CaptureLeafTarget=504,KhbsAnnex12Round3LeafTarget=564,KhbsAnnex12Lan2NegRoundLeafTarget=427;',
+                   'private bool KhbsImportingPrior(){return KhbsLan2Case()&&khbsRound==1||khbsC0Import;}',
+                   'if(khbsPhase.StartsWith("c0-",StringComparison.Ordinal)){ContinueOriginalKhbsC0();return;}',
+                   'Button import=Named(khbsOwner,"cmdImportXML") as Button;','if(text!="Nhập dữ liệu từ XML thành công."){khbsImportMessageId=OriginalMessageCatalogueId(text);KhbsStop(HtkkAutomationStage.GtgtAmendmentKhbsImportRejected);return;}',
+                   'String.Equals(Path.GetFullPath(actual),Path.GetFullPath(webPriorPath),StringComparison.OrdinalIgnoreCase)','if(Convert.ToString(Get(Global("TTPeriodInfo"),"LoaiToKhai"),CultureInfo.InvariantCulture)!="C")throw new InvalidOperationException();',
+                   'khbsPhase="c0-annex-restoring";RestoreImportedAnnex12HeadAuthorities();','InspectMoneyZero(main);khbsOriginalMoneyMatched=gtgtEmptyMoney==0&&KhbsB1Vector(main);',
+                   'Record();StartOriginalAmendmentPriorSave(khbsOwner,grid,main);return;',
+                   'if(!gtgtZero||gtgtEmptyMoney!=0||webCaseEditCount!=0||!periodAnnex12Matched||annexSelected!=1||Hash(webPriorPath)!=webPriorSha256)throw new InvalidOperationException();'):self.assertIn(fragment,text)
+  c0=text[text.index(' private void ContinueOriginalKhbsC0(){'):text.index(' private bool khbsDateTyped=')]
+  for forbidden in ('SetValue(','SendKeys','File.Write','"cmdExport"','"btnTongHopKHBS"'):self.assertNotIn(forbidden,c0)
+  # The imported C0's sale10 vector is checked on the sheet, after Ghi and in the saved file, as case 2's typed vector is.
+  self.assertIn('private decimal[] KhbsOriginalExpectedVector(){return KhbsNonzeroOriginal()?KhbsSale5Original:KhbsLan1ExistingCase()?KhbsSale10B1:null;}',text)
+  self.assertIn('saved!=expectedVector[index]))khbsSavedMoneyMatched=false;',prior)
+  self.assertIn('if(khbsC0Started)return;',sheet);self.assertIn('if(KhbsLan1ExistingCase()){PrepareKhbsOriginalImport(forms[0],grid,sheet);return;}',sheet)
+  self.assertIn('!(Annex12InspectionMode()||KhbsLan1ExistingCase()?periodAnnex12Matched:periodNoAnnexMatched)',sheet)
+  self.assertIn('if(KhbsLan1ExistingCase()){annex12SelectionActionCount=0;annexSelected=0;periodAnnex12Matched=false;}',opened)
+  self.assertIn('FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!=(first?"C":"B")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!=(first?"0":"1")',web)
+  body=annex[annex.index(' private void KhbsAnnexRound('):];body=body[:body.index('\n }\n')]
+  self.assertIn('parents=new decimal[]{7m,9m,7m};percentages=new decimal[][]{half,half,half}',body);self.assertIn('parents=new decimal[]{6m};percentages=new decimal[][]{half}',body)
+  probe=source('probe-htkk-windows.ps1');line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
+  for fragment in ("elseif($env:EXPECTED_WEB_CASE_ID -cin @('"+LAN1+"','"+LAN1ADD+"')){$lastGui.khbsOriginalMoneyMatched -and $lastGui.khbsSavedMoneyMatched -and -not $lastGui.amendmentPriorMoneyZero -and -not $lastGui.amendmentPriorSavedMoneyZero -and $lastGui.khbsOpenMainState -in @(1,3) -and $lastGui.webCaseEditCount -eq 0}",
+                   "$(if($env:EXPECTED_WEB_CASE_ID -cin @('"+LAN1+"','"+LAN1ADD+"')){$lastGui.khbsPriorImportSucceeded -and -not $lastGui.khbsPriorSummaryAcknowledged -and -not $lastGui.khbsPriorSaveAcknowledged -and -not $lastGui.khbsPriorFileSaved}else{-not $lastGui.khbsPriorImportSucceeded})",
+                   "-and $(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-sale5-to-sale10-M09-2026','"+LAN1+"','"+LAN1ADD+"')){$lastGui.amendmentPriorDirtyCleared -or"):self.assertIn(fragment,line)
+  for case,(adapter,kind,value,order,prior_case,variant,leaves) in self.SPEC.items():self.assertIn("elseif($env:EXPECTED_WEB_CASE_ID -ceq '"+case+"'){"+str(leaves)+"}",line)
+ def test_exports_are_retained_like_the_other_cases(self):
+  for case,state in ((LAN1,3),(NEGROUND,3),(Q3ANNEX,1)):
+   with self.subTest(case=case):
+    web=f.sale_fixture(case);manifest=f.case_manifest(web,case);prior=f.sale_fixture(w.khbs.prior_case(case)) if w.khbs.prior_case(case) else None;native=native_of(web);fetch,calls=NativeOutput.fake_api(None,web,manifest,prior)
+    status=out.publish(native,NativeOutput.provenance(None,web,native,case,leaves=w.khbs.tax_leaves(case),state=state),'token',fetch,TODAY,version='5.8.2')
+    self.assertEqual((status['status'],status['allTaxValuesMatched'],status['harnessAgreement']),('published',True,True))
 
 class InputValidator(unittest.TestCase):
  def setUp(self):self.body=f.sale_fixture(CASE);self.manifest=f.case_manifest(self.body,CASE)
@@ -375,10 +463,10 @@ class Driver(unittest.TestCase):
  def test_probe_and_workflow_require_the_whole_tree_and_report_status(self):
   probe=source('probe-htkk-windows.ps1');workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
   line=next(l for l in probe.splitlines() if "if($GuiAutomation -eq 'gtgt-amendment-khbs-inspect'){$matched=" in l)
-  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){504}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){465}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-add-plant-M10-2026'){527}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-remove-plant-M10-2026'){362}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-two-places-M10-2026'){478}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-ct10-M10-2026'){452}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-equal-rows-M10-2026'){424}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-display-same-M10-2026'){465}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-round-M10-2026'){463}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){388}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
+  for flag in ('khbsTreeMatched',"khbsLeafCount -eq $(if($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-sale5-to-sale10-M09-2026'){296}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-M10-2026'){504}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-changed-M10-2026'){465}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-add-plant-M10-2026'){527}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-remove-plant-M10-2026'){362}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-two-places-M10-2026'){478}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-ct10-M10-2026'){452}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-equal-rows-M10-2026'){424}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-display-same-M10-2026'){465}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-round-M10-2026'){463}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-round-M10-2026'){388}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan1-ct11-M10-2026'){465}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan1-add-plant-M10-2026'){527}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-capture-Q3-2026'){504}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-round3-M10-2026'){564}elseif($env:EXPECTED_WEB_CASE_ID -ceq '01GTGT-khbs-annex12-lan2-neg-round-M10-2026'){427}else{270})",'khbsMismatchMask -eq 0','khbsFirstDifferenceOrdinal -eq 0','khbsSummaryAcknowledged','khbsImportPathMatched','khbsExportSchemaPinnedVerified','-not $lastGui.amendmentLifecycleVerified',
                '$lastGui.khbsOriginalMoneyMatched -and $lastGui.khbsSavedMoneyMatched -and -not $lastGui.amendmentPriorSavedMoneyZero -and $lastGui.khbsOpenMainState -in @(1,2) -and $lastGui.webCaseEditCount -eq 2',
-               "$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq $(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-lan2-round-M10-2026')){3}else{1}) -and $lastGui.webCaseEditCount -eq 0"):self.assertIn(flag,line)
-  self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-zero-to-sale10-Q3-2026','01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-lan2-round-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
+               "$lastGui.amendmentPriorMoneyZero -and $lastGui.amendmentPriorSavedMoneyZero -and -not $lastGui.khbsOriginalMoneyMatched -and -not $lastGui.khbsSavedMoneyMatched -and $lastGui.khbsOpenMainState -eq $(if($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-lan2-round-M10-2026','01GTGT-khbs-annex12-lan2-neg-round-M10-2026')){3}else{1}) -and $lastGui.webCaseEditCount -eq 0"):self.assertIn(flag,line)
+  self.assertIn("if(($GuiAutomation -eq 'gtgt-amendment-khbs-inspect') -ne ($env:EXPECTED_WEB_CASE_ID -cin @('01GTGT-khbs-zero-to-sale10-M10-2026','01GTGT-khbs-sale5-to-sale10-M09-2026','01GTGT-khbs-lan2-sale10-M10-2026','01GTGT-khbs-annex12-capture-M10-2026','01GTGT-khbs-annex12-lan2-changed-M10-2026','01GTGT-khbs-annex12-lan2-add-plant-M10-2026','01GTGT-khbs-annex12-lan2-remove-plant-M10-2026','01GTGT-khbs-annex12-lan2-two-places-M10-2026','01GTGT-khbs-annex12-lan2-ct10-M10-2026','01GTGT-khbs-annex12-lan2-equal-rows-M10-2026','01GTGT-khbs-annex12-lan2-display-same-M10-2026','01GTGT-khbs-zero-to-sale10-Q3-2026','01GTGT-khbs-lan2-sale10-Q3-2026','01GTGT-khbs-annex12-round-M10-2026','01GTGT-khbs-annex12-lan2-round-M10-2026','01GTGT-khbs-annex12-lan1-ct11-M10-2026','01GTGT-khbs-annex12-lan1-add-plant-M10-2026','01GTGT-khbs-annex12-capture-Q3-2026','01GTGT-khbs-annex12-round3-M10-2026','01GTGT-khbs-annex12-lan2-neg-round-M10-2026'))){throw 'WEB_REFERENCE_INPUT_INVALID'}",probe)
   self.assertEqual(workflow.count("inputs.gui_automation == 'gtgt-amendment-khbs-inspect'"),4)
   self.assertIn("'01GTGT-khbs-zero-to-sale10-M10-2026'='htkk-web-khbs-zero-to-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
   self.assertIn("'01GTGT-khbs-sale5-to-sale10-M09-2026'='htkk-web-khbs-sale5-to-sale10-input-v1'",source('HtkkNativeCaseFormats.ps1'))
@@ -435,7 +523,7 @@ class NativeOutput(unittest.TestCase):
  def test_lan2_provenance_carries_its_round_2_main_state_and_publishes_with_the_prior_file(self):
   """Run 43402236959: the lần-2 export matched (270 leaves) but retention was refused as PROVENANCE, because the B2 sheet
   opens on the saved B1 (khbsOpenMainState 3) and the publisher only accepted 0..2. Each case accepts exactly its own states."""
-  self.assertEqual({case:w.khbs.open_main_states(case) for case in w.khbs.CASES},{CASE:(1,),CASE2:(1,2),CASE3:(1,3),CASE4:(1,),CASE5:(1,3),**{case:(1,3) for case in WIDE},Q3:(1,),Q3L2:(1,3),ROUND:(1,),ROUND2:(1,3)})
+  self.assertEqual({case:w.khbs.open_main_states(case) for case in w.khbs.CASES},{CASE:(1,),CASE2:(1,2),CASE3:(1,3),CASE4:(1,),CASE5:(1,3),**{case:(1,3) for case in WIDE},Q3:(1,),Q3L2:(1,3),ROUND:(1,),ROUND2:(1,3),LAN1:(1,3),LAN1ADD:(1,3),Q3ANNEX:(1,),ROUND3:(1,),NEGROUND:(1,3)})
   web=f.sale_fixture(CASE3);manifest=f.case_manifest(web,CASE3);prior=f.sale_fixture(CASE);native=native_of(web);fetch,calls=self.fake_api(web,manifest,prior)
   status=out.publish(native,self.provenance(web,native,CASE3,state=3),'token',fetch,TODAY,version='5.8.2')
   self.assertEqual((status['status'],status['allTaxValuesMatched'],status['harnessAgreement']),('published',True,True))

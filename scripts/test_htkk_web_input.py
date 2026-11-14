@@ -80,7 +80,7 @@ def case_manifest(body,case,producer_sha='c'*64):
  value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
  if w.khbs.is_case(case):
   value.update(w.khbs.manifest_fields(case))
-  if w.khbs.prior_case(case):prior=khbs_fixture(w.khbs.prior_case(case));value.update(priorBytes=len(prior),priorXmlSha256=hashlib.sha256(prior).hexdigest())
+  if w.khbs.prior_case(case):prior=sale_fixture(w.khbs.prior_case(case));value.update(priorBytes=len(prior),priorXmlSha256=hashlib.sha256(prior).hexdigest())
  if w.annex10.is_case(case):
   value.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=w.ANNEX10_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex10.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex12.is_case(case):

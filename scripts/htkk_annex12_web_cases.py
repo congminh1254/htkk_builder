@@ -65,6 +65,11 @@ DISPLAY_SAME_VARIANT='01GTGT-annex12-display-same-khbs-lan2'
 # [10] 8 ([12] 4/4) and removes plant 2.
 ROUND_B1_VARIANT='01GTGT-annex12-round-khbs'
 ROUND_B2_VARIANT='01GTGT-annex12-round-khbs-lan2'
+# Negative display-rounding captures (htkk_khbs_web_cases ANNEX12_ROUND3_CASE / ANNEX12_LAN2_NEG_ROUND_CASE): the B1 annex adds
+# plant 1 at [10] 7, plant 2 at [10] 9 and plant 3 (99996) at [10] 7, each two rows 50,00/50,00 ([12] 3,5 / 4,5 / 3,5, written
+# "4" / "5" / "4"); the lần-2 annex keeps plant 1 at [10] 6 ([12] 3/3) and removes plants 2 and 3.
+ROUND3_B1_VARIANT='01GTGT-annex12-round3-khbs'
+NEG_ROUND_B2_VARIANT='01GTGT-annex12-neg-round-khbs-lan2'
 _PLANT1=lambda:plant(0,'ID_1','7',[location('1.1','01','33.33','2','ID_1'),location('1.2','02','66.67','5','ID_2')])
 VARIANTS={
  TWO_PLANTS_CHANGED_VARIANT:{'plants':[
@@ -91,6 +96,12 @@ VARIANTS={
    plant(1,'ID_2','5',[location('2.1','01','50.00','3','ID_1'),location('2.2','02','50.00','3','ID_2')]),
   ],'ct13':'8','ct14':'8','totalLeaves':148,'taxLeaves':144,'groupRows':(2,2)},
  ROUND_B2_VARIANT:{'plants':[plant(0,'ID_1','8',[location('1.1','01','50.00','4','ID_1'),location('1.2','02','50.00','4','ID_2')])],'ct13':'8','ct14':'8','totalLeaves':112,'taxLeaves':108,'groupRows':(2,)},
+ ROUND3_B1_VARIANT:{'plants':[
+   plant(0,'ID_1','7',[location('1.1','01','50.00','4','ID_1'),location('1.2','02','50.00','4','ID_2')]),
+   plant(1,'ID_2','9',[location('2.1','01','50.00','5','ID_1'),location('2.2','02','50.00','5','ID_2')]),
+   plant(2,'ID_3','7',[location('3.1','01','50.00','4','ID_1'),location('3.2','02','50.00','4','ID_2')]),
+  ],'ct13':'23','ct14':'23','totalLeaves':184,'taxLeaves':180,'groupRows':(2,2,2)},
+ NEG_ROUND_B2_VARIANT:{'plants':[plant(0,'ID_1','6',[location('1.1','01','50.00','3','ID_1'),location('1.2','02','50.00','3','ID_2')])],'ct13':'6','ct14':'6','totalLeaves':112,'taxLeaves':108,'groupRows':(2,)},
  DISPLAY_SAME_VARIANT:{'plants':[
    plant(0,'ID_1','7',[location('1.1','01','35.00','2','ID_1'),location('1.2','02','65.00','5','ID_2')]),
    plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
