@@ -286,6 +286,12 @@ function New-HtkkNativeResultDefaults {
   declarationUiForegroundKind=0
   declarationUiVisibleForms=0
   declarationUiStallSeconds=0
+  declarationAnnexListMask=0
+  declarationAnnexListRows=0
+  declarationAnnexListTickedBefore=0
+  declarationAnnexListLockedBefore=0
+  declarationAnnexListTickedAfter=0
+  declarationAnnexListActions=0
   controlKinds=[ordered]@{form=0;button=0;combo=0;text=0;spread=0;other=0}
   realTaxpayerDataUsed=$false
   runtimeRoundTrip=$false

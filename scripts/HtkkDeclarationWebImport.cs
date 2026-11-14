@@ -28,6 +28,22 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private Stopwatch declarationClock=null;
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
  private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
+ // B8 visible period annex list (HtkkDeclarationCasePlans.VisibleAnnexListReviewed), value-free and text-free.
+ // declarationAnnexListMask bits: 1 the list was visible on a plan whose layout hides it; 2 the reviewed handling matched;
+ // 4 a row that is not a checkbox or whose label is neither a case annex nor KHBS; 8 a KHBS row ticked; 16 a KHBS row
+ // listed; 32 a case annex missing or listed twice; 64 a case annex unticked and locked (never forced); 128 more than 16
+ // rows; 256 the states after the actions differ from the case; 512 chkChonPhuLucKeKhaiAll checked; 1024 it was enabled;
+ // 2048 an action could not be made (row hidden, list disabled, focus not on the list or an original message shown).
+ // Rows: row count; masks: bit r = row r (before any action: ticked, locked; after: ticked); actions: SPACE presses.
+ private int declarationAnnexListMask=0,declarationAnnexListRows=0,declarationAnnexListTickedBefore=0,declarationAnnexListLockedBefore=0,declarationAnnexListTickedAfter=0,declarationAnnexListActions=0;
+ private bool declarationAnnexListFailed=false;
+ private string DeclarationAnnexListJson(){
+  string q=((char)34).ToString();StringBuilder json=new StringBuilder();
+  string[] names=new string[]{"declarationAnnexListMask","declarationAnnexListRows","declarationAnnexListTickedBefore","declarationAnnexListLockedBefore","declarationAnnexListTickedAfter","declarationAnnexListActions"};
+  int[] counts=new int[]{declarationAnnexListMask,declarationAnnexListRows,declarationAnnexListTickedBefore,declarationAnnexListLockedBefore,declarationAnnexListTickedAfter,declarationAnnexListActions};
+  for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
+  return json.ToString();
+ }
  private int declarationInvalidSheetMask=0,declarationInvalidCellCount=0,declarationInvalidCell1=0,declarationInvalidCell2=0,declarationInvalidCell3=0,declarationInvalidCell4=0;
  // Whole-tree comparison detail (HtkkDeclarationTreeComparison.Diagnostics): value-free, path-free classes and counts;
  // the ordinal indexes the synthetic web input only.
@@ -73,7 +89,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
   int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
-  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson();
+  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();
  }
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
@@ -149,6 +165,49 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Original Leave handlers (mskYear_Leave, mskTuNgay_Leave ...) run when focus moves on.
   input.Focus();input.Text=value;Control confirm=Named(period,"btnDongY");confirm.Focus();
  }
+ private string[] ObservedAnnexLabels(object sheet,int rows,bool[] ticked,bool[] locked){
+  string[] labels=new string[rows];
+  for(int row=0;row<rows;row++){
+   object selector=Get(Cell(sheet,row,0),"CellType");
+   if(selector==null||selector.GetType().FullName!="FarPoint.Win.Spread.CellType.CheckBoxCellType")continue;
+   labels[row]=Convert.ToString(Get(selector,"TextTrue"),CultureInfo.InvariantCulture);
+   ticked[row]=Selected(Get(Cell(sheet,row,0),"Value"));locked[row]=Convert.ToBoolean(Get(Cell(sheet,row,0),"Locked"));
+  }
+  return labels;
+ }
+ // Observe every row (before), select exactly the case annexes with the original SPACE on unlocked unticked rows, never a KHBS
+ // row (a lần đầu case), never a locked row, then read every row again. Any other state ends at
+ // declaration-period-annex-list-not-matched with the value-free masks above; nothing is retried.
+ private void SelectReviewedVisibleAnnexList(Control grid){
+  HtkkDeclarationCasePlan plan=declarationPlan;SetStage(HtkkAutomationStage.DeclarationPeriodAnnexSelecting);
+  object sheet=Get(grid,"ActiveSheet");int rows=Convert.ToInt32(Get(sheet,"RowCount"));if(rows<0||rows>512)throw new InvalidOperationException();
+  declarationAnnexListRows=rows;declarationAnnexListFailed=true;declarationAnnexMatched=false;
+  Control[] all=grid.Parent==null?new Control[0]:grid.Parent.Controls.Find("chkChonPhuLucKeKhaiAll",false);
+  if(all.Length==1){if(CheckValue(all[0]))declarationAnnexListMask|=512;if(all[0].Enabled)declarationAnnexListMask|=1024;}
+  if(rows>16){declarationAnnexListMask|=128;Record();return;}
+  bool[] ticked=new bool[rows],locked=new bool[rows];int[] owner=new int[rows];
+  string[] labels=ObservedAnnexLabels(sheet,rows,ticked,locked);
+  for(int row=0;row<rows;row++){if(ticked[row])declarationAnnexListTickedBefore|=1<<row;if(locked[row])declarationAnnexListLockedBefore|=1<<row;}
+  declarationAnnexListMask|=HtkkDeclarationCasePlans.ClassifyVisibleAnnexList(plan,labels,ticked,locked,owner);
+  Record();if((declarationAnnexListMask&(4|8|32|64))!=0)return;
+  for(int row=0;row<rows;row++){
+   if(owner[row]<0||Selected(Get(Cell(sheet,row,0),"Value")))continue;
+   if(Convert.ToBoolean(Get(Cell(sheet,row,0),"Locked"))){declarationAnnexListMask|=64;Record();return;}
+   if(!RowVisible(sheet,row)||!grid.Visible||!grid.Enabled||OriginalMessageVisible()){declarationAnnexListMask|=2048;Record();return;}
+   grid.Focus();sheet.GetType().GetMethod("SetActiveCell",new Type[]{typeof(int),typeof(int)}).Invoke(sheet,new object[]{row,0});
+   uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
+   if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus){declarationAnnexListMask|=2048;Record();return;}
+   SendKeys.SendWait(" ");declarationAnnexListActions++;
+   if(OriginalMessageVisible()){declarationAnnexListMask|=2048;Record();return;}
+  }
+  // Read back every row: same row count, every case annex ticked, every KHBS row clear.
+  bool[] after=new bool[rows],afterLocked=new bool[rows];
+  string[] afterLabels=Convert.ToInt32(Get(sheet,"RowCount"))==rows?ObservedAnnexLabels(sheet,rows,after,afterLocked):null;
+  declarationAnnexSelectedCount=0;
+  for(int row=0;row<rows;row++)if(after[row]){declarationAnnexListTickedAfter|=1<<row;declarationAnnexSelectedCount++;}
+  if(afterLabels==null||!HtkkDeclarationCasePlans.VisibleAnnexListExact(plan,afterLabels,after,owner)){declarationAnnexListMask|=256;Record();return;}
+  declarationAnnexListMask|=2;declarationAnnexListFailed=false;declarationAnnexMatched=true;Record();
+ }
  private void SelectDeclarationAnnexes(Control period){
   HtkkDeclarationCasePlan plan=declarationPlan;bool[] found=new bool[plan.Annexes.Length];
   Control[] annexes=period.Controls.Find("axfpsPhuLuc",true);
@@ -157,7 +216,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(hidden){
    // Observation only: no click on a list the original layout hides. Matched only if the
    // original defaults already include every reviewed annex of the case.
-   if(grid.Visible){declarationAnnexMatched=false;return;}
+   // A visible list fails here unless its menu has a reviewed visible-list handling (B8 after a typed year).
+   if(grid.Visible){declarationAnnexListMask|=1;if(!HtkkDeclarationCasePlans.VisibleAnnexListReviewed(plan)){declarationAnnexMatched=false;return;}SelectReviewedVisibleAnnexList(grid);return;}
    object hiddenSheet=Get(grid,"ActiveSheet");int hiddenRows=Convert.ToInt32(Get(hiddenSheet,"RowCount"));if(hiddenRows<0||hiddenRows>512)throw new InvalidOperationException();
    bool[] present=new bool[plan.Annexes.Length];declarationAnnexSelectedCount=0;
    for(int row=0;row<hiddenRows;row++){
@@ -239,6 +299,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   SelectDeclarationAnnexes(period);
   periodDescriptions.Clear();periodControlCount=0;int visited=0;DescribePeriod(period,ref visited);
   declarationPeriodMatched=periodDateMatched&&periodFirstMatched&&periodGeographyMatched;
+  if(declarationPeriodMatched&&declarationAnnexListFailed){DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodAnnexListNotMatched);return;}
   if(!declarationPeriodMatched||!declarationAnnexMatched){DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodInputsNotMatched);return;}
   Button confirm=Named(period,"btnDongY") as Button;if(confirm==null||confirm.Text.Replace("&",String.Empty).Trim()!="Đồng ý")throw new InvalidOperationException();
   navigationPhase="decl-sheet";SetStage(HtkkAutomationStage.DeclarationPeriodConfirmInvoking);periodConfirmInvoked=true;Record();

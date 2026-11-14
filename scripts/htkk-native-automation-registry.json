@@ -1306,6 +1306,11 @@
       "category": "declaration"
     },
     {
+      "id": "declaration-period-annex-list-not-matched",
+      "enumName": "DeclarationPeriodAnnexListNotMatched",
+      "category": "declaration"
+    },
+    {
       "id": "declaration-period-confirm-invoking",
       "enumName": "DeclarationPeriodConfirmInvoking",
       "category": "declaration"
@@ -1880,6 +1885,12 @@
     "declarationUiForegroundKind",
     "declarationUiVisibleForms",
     "declarationUiStallSeconds",
+    "declarationAnnexListMask",
+    "declarationAnnexListRows",
+    "declarationAnnexListTickedBefore",
+    "declarationAnnexListLockedBefore",
+    "declarationAnnexListTickedAfter",
+    "declarationAnnexListActions",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -3245,7 +3256,9 @@
         "01GTGT-khbs-annex12-lan2-round-M10-2026",
         "05KK-PBT-two-provinces-Q3-2026",
         "05KK-TT89-PBT-two-provinces-Q4-2026",
-        "02QTT-refund-transfer-Y2025"
+        "02QTT-refund-transfer-Y2025",
+        "02QTT-dependants-Y2026",
+        "02QTT-refund-transfer-Y2026"
       ]
     },
     "webCaseEditCount": {
@@ -3947,6 +3960,60 @@
       "default": 0,
       "minimum": 0,
       "maximum": 255,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexListMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4095,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexListRows": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 512,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexListTickedBefore": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexListLockedBefore": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexListTickedAfter": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationAnnexListActions": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16,
       "activeModes": [
         "declaration-web-import-inspect"
       ]

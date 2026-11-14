@@ -52,7 +52,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -250,7 +250,7 @@ class CompiledPlans(unittest.TestCase):
         for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7),
                               ('declarationTreeMismatch1', 6553599), ('declarationTreeMismatch2', 6553599), ('declarationTreeMismatch3', 6553599), ('declarationTreeMismatch4', 6553599)):
             self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson();', DRIVER)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();', DRIVER)
 
 
 class ExportInvocation(unittest.TestCase):
@@ -306,7 +306,7 @@ class InputPrivacy(unittest.TestCase):
         # Z8 05/KK-TNCN TT89: the web manifest carries htkkVersion 5.8.2 (the registry case version); no other
         # declaration manifest may carry the key, and the Z8 manifest must.
         # 03/TNDN C7 rate 15% / 17% (HTKK 5.8.2 oracle): the web writes htkkVersion for these producer cases too.
-        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025'}))
+        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026'}))
         for case in d.MANIFEST_HTKK_VERSION_CASES:
             self.assertEqual(registry.htkk_version(case), '5.8.2')
         case = '05KK-TT89-withheld-Q4-2026'; body = dfx.declaration_fixture(case); manifest = dfx.declaration_manifest(body, case)
@@ -648,7 +648,9 @@ class WorkflowAndProbe(unittest.TestCase):
         self.assertIn('plan.KieuKy=="12"&&plan.MenuId!="97"&&plan.MenuId!="H4"&&plan.MenuId!="C8"', plans)
         hidden = driver[driver.index('if(hidden){'):driver.index('if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}')]
         self.assertNotIn('SendKeys', hidden); self.assertNotIn('SetActiveCell', hidden); self.assertNotIn('set_Value', hidden)
-        self.assertIn('if(grid.Visible){declarationAnnexMatched=false;return;}', hidden)
+        # A visible list on a hidden-layout plan fails unless the menu has the reviewed visible-list handling (B8 only).
+        self.assertIn('if(grid.Visible){declarationAnnexListMask|=1;if(!HtkkDeclarationCasePlans.VisibleAnnexListReviewed(plan)){declarationAnnexMatched=false;return;}SelectReviewedVisibleAnnexList(grid);return;}', hidden)
+        self.assertIn('internal static bool VisibleAnnexListReviewed(HtkkDeclarationCasePlan plan){return plan!=null&&plan.MenuId=="B8"&&plan.KieuKy=="12";}', plans)
         # B9: the original import adds every sheet (cmdImportXML_Click → AddFullPLImportXML, run 42231692177).
         self.assertIn('if(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(plan))all=true;', hidden)
         self.assertIn('"~B8~37~33~B9~N7~W1~".IndexOf("~"+plan.MenuId+"~",StringComparison.Ordinal)>=0', plans)
@@ -697,6 +699,92 @@ class WorkflowAndProbe(unittest.TestCase):
             with self.subTest(mode=automation_mode, case=case), self.assertRaises(ValueError):
                 failure.request({**base, 'GUI_AUTOMATION': automation_mode, 'WEB_CASE_ID': case})
 
+
+
+class VisibleAnnexList(unittest.TestCase):
+    """B8 năm 2026: typing a year other than the dialog default (Now.Year - 1) leaves the period annex list visible
+    (run 43551336755). Static reading of HTKK 5.8.2: one row 02-1/BK-QTT-TNCN, ticked and locked; no KHBS row."""
+
+    def section(self, start, end):
+        return DRIVER[DRIVER.index(start):DRIVER.index(end)]
+
+    def test_fields_and_terminal_stage_are_registered_and_bounded(self):
+        fields = automation['resultFields']
+        for name, maximum in (('declarationAnnexListMask', 4095), ('declarationAnnexListRows', 512), ('declarationAnnexListTickedBefore', 65535),
+                              ('declarationAnnexListLockedBefore', 65535), ('declarationAnnexListTickedAfter', 65535), ('declarationAnnexListActions', 16)):
+            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
+            self.assertIn('"' + name + '"', DRIVER)
+        self.assertIn({'id': 'declaration-period-annex-list-not-matched', 'enumName': 'DeclarationPeriodAnnexListNotMatched', 'category': 'declaration'}, automation['stages'])
+        probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
+        terminal = re.search(r"\$terminal=.*?-in @\(([^)]*)\)", probe).group(1)
+        self.assertIn("'declaration-period-annex-list-not-matched'", terminal)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();', DRIVER)
+
+    def test_handling_is_bounded_never_ticks_khbs_never_forces_locked_rows(self):
+        body = self.section(' private void SelectReviewedVisibleAnnexList(Control grid){', ' private void SelectDeclarationAnnexes(Control period){')
+        # Observation first; any unknown, KHBS-ticked, missing/duplicate or locked-unticked case row stops before an action.
+        self.assertLess(body.index('ClassifyVisibleAnnexList(plan,labels,ticked,locked,owner)'), body.index('SendKeys.SendWait(" ")'))
+        self.assertIn('Record();if((declarationAnnexListMask&(4|8|32|64))!=0)return;', body)
+        # Only case-annex rows (owner >= 0) are ever pressed, one SPACE each, at most once per row (one pass, no retry loop).
+        self.assertIn('if(owner[row]<0||Selected(Get(Cell(sheet,row,0),"Value")))continue;', body)
+        self.assertIn('if(Convert.ToBoolean(Get(Cell(sheet,row,0),"Locked"))){declarationAnnexListMask|=64;Record();return;}', body)
+        self.assertEqual(body.count('SendKeys.SendWait('), 1); self.assertEqual(body.count('for(int row=0;row<rows;row++){'), 2)
+        self.assertIn('if(rows>16){declarationAnnexListMask|=128;Record();return;}', body)
+        self.assertIn('VisibleAnnexListExact(plan,afterLabels,after,owner)', body)
+        for forbidden in ('set_Value', '"Value",', 'PerformClick', 'chkChonPhuLucKeKhaiAll_', 'Thread.Sleep'):
+            self.assertNotIn(forbidden, body)
+        # Value-free: no label text leaves the method (labels only compared with the compiled plan).
+        self.assertNotIn('Append(label', body); self.assertNotIn('labels[row]+', body)
+        # The period confirmation never follows a failed list: own terminal stage, before the generic one.
+        configure = self.section(' private void ConfigureDeclarationPeriod(Control period){', ' private void InspectDeclarationSheet(){')
+        self.assertIn('if(declarationPeriodMatched&&declarationAnnexListFailed){DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodAnnexListNotMatched);return;}', configure)
+        self.assertLess(configure.index('DeclarationPeriodAnnexListNotMatched'), configure.index('confirm.PerformClick()'))
+
+    def test_only_b8_has_the_reviewed_handling_and_y2026_cases_use_it(self):
+        self.assertEqual(sorted(c for c in CASES if registry.CASES[c]['unit']['menuId'] == 'B8' and registry.CASES[c]['unit']['periodValue'] == '2026'),
+                         ['02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026'])
+        for case in ('02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026'):
+            self.assertEqual(registry.htkk_version(case), '5.8.2'); self.assertIs(registry.CASES[case]['releaseGate'], False)
+        for case in ('02QTT-dependants-Y2025', '02QTT-refund-transfer-Y2025'):
+            self.assertIn(case, CASES)
+        # Same compiled plan apart from the period: annex, pins, leaf count, cell and XML checks.
+        for name in ('02QTT-dependants', '02QTT-refund-transfer'):
+            y25 = PLANS[PLANS.index('   case "%s-Y2025":' % name):]; y25 = y25[:y25.index('});') + 3]
+            y26 = PLANS[PLANS.index('   case "%s-Y2026":' % name):]; y26 = y26[:y26.index('});') + 3]
+            self.assertEqual(y26, y25.replace('-Y2025', '-Y2026').replace('"year","12","2025","","01/2025","12/2025"', '"year","12","2026","","01/2026","12/2026"'))
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_classifier_selects_exactly_the_case_annexes(self):
+        rows = [
+            # (labels, ticked, locked) -> expected mask; the first row is the static B8 state after a typed year.
+            ('02-1/BK-QTT-TNCN', '1', '1', 0),
+            ('02-1/BK-QTT-TNCN', '0', '0', 0),
+            ('02-1/BK-QTT-TNCN', '0', '1', 64),
+            ('02-1/BK-QTT-TNCN;01-KHBS', '10', '11', 16),
+            ('02-1/BK-QTT-TNCN;01-1/KHBS', '11', '10', 24),
+            ('02-1/BK-QTT-TNCN;Tờ khai', '11', '11', 4),
+            ('-', '0', '0', 36),
+            ('', '', '', 32),
+            ('02-1/BK-QTT-TNCN;02-1/BK-QTT-TNCN', '11', '11', 32),
+        ]
+        lines = []
+        for labels, ticked, locked, _ in rows:
+            names = [] if labels == '' else [('null' if x == '-' else '"' + x + '"') for x in labels.split(';')]
+            lines.append('Show(p,new string[]{%s},new bool[]{%s},new bool[]{%s});' % (','.join(names), ','.join('true' if c == '1' else 'false' for c in ticked), ','.join('true' if c == '1' else 'false' for c in locked)))
+        program = ('using System;class P{static void Show(HtkkDeclarationCasePlan p,string[] l,bool[] t,bool[] k){int[] o=new int[l.Length];'
+                   'Console.WriteLine(HtkkDeclarationCasePlans.ClassifyVisibleAnnexList(p,l,t,k,o)+" "+string.Join(",",Array.ConvertAll(o,delegate(int x){return x.ToString();})));}'
+                   'static void Main(){HtkkOracleBaseline.Select("5.8.2");HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find("02QTT-dependants-Y2026");' + ''.join(lines) +
+                   'Console.WriteLine(HtkkDeclarationCasePlans.VisibleAnnexListExact(p,new string[]{"02-1/BK-QTT-TNCN","01-KHBS"},new bool[]{true,false},new int[]{0,-1}));'
+                   'Console.WriteLine(HtkkDeclarationCasePlans.VisibleAnnexListExact(p,new string[]{"02-1/BK-QTT-TNCN","01-KHBS"},new bool[]{true,true},new int[]{0,-1}));'
+                   'Console.WriteLine(HtkkDeclarationCasePlans.VisibleAnnexListExact(p,new string[]{"02-1/BK-QTT-TNCN"},new bool[]{false},new int[]{0}));'
+                   'Console.WriteLine(HtkkDeclarationCasePlans.VisibleAnnexListReviewed(p)+" "+HtkkDeclarationCasePlans.VisibleAnnexListReviewed(HtkkDeclarationCasePlans.Find("05QTT-two-employees-Y2025")));}}')
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory); (folder / 'P.cs').write_text(program, encoding='utf-8')
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkOracleBaseline.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
+            out = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True, text=True).stdout.split('\n')
+        self.assertEqual([int(line.split(' ')[0]) for line in out[:len(rows)]], [mask for *_, mask in rows])
+        self.assertEqual(out[0].split(' ')[1], '0'); self.assertEqual(out[3].split(' ')[1], '0,-1'); self.assertEqual(out[5].split(' ')[1], '0,-2')
+        self.assertEqual(out[len(rows):len(rows) + 4], ['True', 'False', 'False', 'True False'])
 
 if __name__ == '__main__':
     unittest.main()

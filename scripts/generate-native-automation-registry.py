@@ -510,7 +510,7 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         'gtgt-amendment-khbs-not-matched', 'gtgt-amendment-khbs-post-save-timeout', 'gtgt-amendment-khbs-prior-save-rejected',
         # Declaration-family driver (declaration-web-import-inspect): bounded failure terminals.
         'declaration-profile-preconditions-not-matched', 'declaration-menu-id-not-unique', 'declaration-menu-target-hidden',
-        'declaration-period-inputs-not-matched', 'declaration-period-original-message-rejected', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',
+        'declaration-period-inputs-not-matched', 'declaration-period-annex-list-not-matched', 'declaration-period-original-message-rejected', 'declaration-sheet-contract-not-matched', 'declaration-import-original-message-rejected',
         'declaration-import-sheet-not-matched', 'declaration-export-original-message-rejected', 'declaration-export-not-matched',
         # Native-case mode original-entry-export of the same driver: entry failure and entry success.
         'declaration-entry-not-matched', 'declaration-original-entry-exported',

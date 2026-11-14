@@ -63,12 +63,61 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026","02QTT-refund-transfer-Y2025"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026","02QTT-refund-transfer-Y2025","02QTT-dependants-Y2026","02QTT-refund-transfer-Y2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
  // that hidden list's original defaults (run 42218301225: axfpsPhuLuc not visible for B9).
  internal static bool AnnexPanelHidden(HtkkDeclarationCasePlan plan){return plan!=null&&plan.KieuKy=="12"&&plan.MenuId!="97"&&plan.MenuId!="H4"&&plan.MenuId!="C8";}
+ // B8 (02/QTT, KieuKy 12) only: the list a typed year leaves visible (static reading of HTKK 5.8.2 HTKK.exe 331ed84a, run
+ // 43551336755). frmHTKKPeriod.LoadDefaultInfor opens on Now.Year - 1; typing another year runs mskYear_Leave ->
+ // UpdatePeriodByVerSion, whose KieuKHBS "3" branch (B8 has four Menu.xml sheets) sets pnVT2_PhuLucKeKhai visible, calls
+ // LoadPhuLucSpread and only then hides the panel again for B9/B8/W1. WinSpreadProcess.BindDataToPhuLucSpread gives no row
+ // to a sheet whose SheetName contains "KHBS" (01-KHBS, 01-1/KHBS), sets Rows.Count to the other annexes (B8: one row,
+ // 02-1/BK-QTT-TNCN) and, for B8, ticks AND locks rows 0 and 1; once an earlier bind has cut the list to one row, Cells[1,0]
+ // throws (FarPoint Cells.get_Item: row >= RowCount), UpdatePeriodByVerSion's catch only logs, and the panel stays visible
+ // with row 0 ticked and locked (the run saw axfpsPhuLuc and chkChonPhuLucKeKhaiAll visible). On "Đồng ý" OpenToKhai adds
+ // the ticked rows (GetPhuLucThemMoi); KHBS sheets are opened only for a bổ sung (LoaiToKhai B). The driver handles this
+ // list by observation: SelectReviewedVisibleAnnexList ticks exactly the case annexes, never a KHBS row, never forces a
+ // locked row, and verifies (terminal declaration-period-annex-list-not-matched otherwise).
+ internal static bool VisibleAnnexListReviewed(HtkkDeclarationCasePlan plan){return plan!=null&&plan.MenuId=="B8"&&plan.KieuKy=="12";}
+ internal static bool KhbsAnnexLabel(string label){return label!=null&&label.IndexOf("KHBS",StringComparison.Ordinal)>=0;}
+ // The case annex a row label (CheckBoxCellType.TextTrue) names, -1 for none.
+ internal static int ReviewedAnnexIndex(HtkkDeclarationCasePlan plan,string label){
+  if(label==null)return -1;
+  for(int index=0;index<plan.Annexes.Length;index++)foreach(string option in plan.Annexes[index].Split('|'))if(option==label)return index;
+  return -1;
+ }
+ // Classifies the observed rows of a visible list (labels[r] null = not a checkbox row). owner[r]: case annex index, -1 a
+ // KHBS row, -2 any other row. Returns declarationAnnexListMask bits: 4 a non-checkbox row or a label that is neither a case
+ // annex nor KHBS; 8 a KHBS row ticked; 16 a KHBS row listed; 32 a case annex missing or listed twice; 64 a case annex
+ // unticked and locked. Bits 4/8/32/64 stop the case before any action; a KHBS row is never ticked.
+ internal static int ClassifyVisibleAnnexList(HtkkDeclarationCasePlan plan,string[] labels,bool[] ticked,bool[] locked,int[] owner){
+  if(labels.Length!=ticked.Length||labels.Length!=locked.Length||labels.Length!=owner.Length||labels.Length>16)throw new InvalidOperationException();
+  int mask=0;int[] seen=new int[plan.Annexes.Length];
+  for(int row=0;row<labels.Length;row++){
+   owner[row]=-2;
+   if(labels[row]==null){mask|=4;continue;}
+   if(KhbsAnnexLabel(labels[row])){owner[row]=-1;mask|=16;if(ticked[row])mask|=8;continue;}
+   int wanted=ReviewedAnnexIndex(plan,labels[row]);if(wanted<0){mask|=4;continue;}
+   owner[row]=wanted;seen[wanted]++;if(!ticked[row]&&locked[row])mask|=64;
+  }
+  foreach(int count in seen)if(count!=1)mask|=32;
+  return mask;
+ }
+ // After the actions: same rows, every case annex ticked, every other row (KHBS) clear.
+ internal static bool VisibleAnnexListExact(HtkkDeclarationCasePlan plan,string[] labels,bool[] ticked,int[] owner){
+  if(labels.Length!=owner.Length||labels.Length!=ticked.Length)return false;
+  int selected=0;
+  for(int row=0;row<labels.Length;row++){
+   if(labels[row]==null)return false;
+   int expected=KhbsAnnexLabel(labels[row])?-1:ReviewedAnnexIndex(plan,labels[row]);
+   if(expected==-1&&!KhbsAnnexLabel(labels[row]))return false;
+   if(expected!=owner[row]||ticked[row]!=(expected>=0))return false;
+   if(ticked[row])selected++;
+  }
+  return selected==plan.Annexes.Length;
+ }
  // Original frmWinToKhai.cmdImportXML_Click: MenuID in "~B8~37~33~B9~N7~W1" → AddFullPLImportXML,
  // which adds every sheet of the menu before the XML is read.
  // A2 BCTC TT133 (BctcB01aTt133Nckt232, no ExportXML override): no control of 133_B01A_01_THTC_232
@@ -192,6 +241,22 @@ internal static class HtkkDeclarationCasePlans {
    // and số tiền hoàn trả F145, and the account number in the unlocked O149; Header B37/B38/B55/B59 must pass for the export.
    // The XML checks are the design leaves; tên chủ tài khoản and the bank (texts) are covered by the whole-tree comparison.
    case "02QTT-refund-transfer-Y2025":return new HtkkDeclarationCasePlan(caseId,"B8","2.7.3","952","TncnQtt02TT80Nckt273",new string[]{"101","101_11","B8"},"year","12","2025","","01/2025","12/2025",false,
+    new string[]{"02-1/BK-QTT-TNCN"},new string[]{"02|Tờ khai","02-1|02-1/BK-QTT-TNCN"},
+    "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
+    "Validate/02_QTT_TNCN_TT80_273.xsd","9467d23b5deddd65739532ad470024df2f71af491b7cfc756e24bdd4225983cd",TKhaiThue,TKhaiThueSha256,WorkbookService,130,
+    new string[]{"02|M86|300000000","02|M94|2","02|M109|20000000","02|M124|14120000","02|M126|14120000","02|F145|14120000","02|O149|9999000011112"},
+    new string[]{Main+"ct21|300000000",Main+"ct24|2",Main+"ct27|79200000",Main+"ct31|88800000",Main+"ct32|5880000",Main+"ct33|20000000",Main+"ct44|14120000",Main+"ct45|14120000",Main+"ct46|14120000",Main+"ct47|0",Main+"ct48|0",
+     Main+"TTinHoanThue/soTienHoanTra|14120000",Main+"TTinHoanThue/HinhThucHoanTra/chuyenKhoan|1",Main+"TTinHoanThue/HinhThucHoanTra/tienMat|0",Main+"TTinHoanThue/HinhThucHoanTra/soTaiKhoan|9999000011112"});
+   // B8 năm 2026 (HTKK 5.8.2 oracle, non-gating): the two cases above, every month in 2026 (template 2.7.3 has no year
+   // branch; same amounts, cell and XML checks). The dialog opens on Now.Year - 1, so mskYear is typed and the annex list that
+   // leaves visible is handled by SelectReviewedVisibleAnnexList (VisibleAnnexListReviewed): 02-1 ticked, no KHBS row ticked.
+   case "02QTT-dependants-Y2026":return new HtkkDeclarationCasePlan(caseId,"B8","2.7.3","952","TncnQtt02TT80Nckt273",new string[]{"101","101_11","B8"},"year","12","2026","","01/2026","12/2026",false,
+    new string[]{"02-1/BK-QTT-TNCN"},new string[]{"02|Tờ khai","02-1|02-1/BK-QTT-TNCN"},
+    "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
+    "Validate/02_QTT_TNCN_TT80_273.xsd","9467d23b5deddd65739532ad470024df2f71af491b7cfc756e24bdd4225983cd",TKhaiThue,TKhaiThueSha256,WorkbookService,130,
+    new string[]{"02|M86|300000000","02|M94|2","02|M109|10000000"},
+    new string[]{Main+"ct20|300000000",Main+"ct21|300000000",Main+"ct24|2",Main+"ct27|79200000",Main+"ct34|10000000"});
+   case "02QTT-refund-transfer-Y2026":return new HtkkDeclarationCasePlan(caseId,"B8","2.7.3","952","TncnQtt02TT80Nckt273",new string[]{"101","101_11","B8"},"year","12","2026","","01/2026","12/2026",false,
     new string[]{"02-1/BK-QTT-TNCN"},new string[]{"02|Tờ khai","02-1|02-1/BK-QTT-TNCN"},
     "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
     "Validate/02_QTT_TNCN_TT80_273.xsd","9467d23b5deddd65739532ad470024df2f71af491b7cfc756e24bdd4225983cd",TKhaiThue,TKhaiThueSha256,WorkbookService,130,

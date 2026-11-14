@@ -1433,6 +1433,48 @@
         "annexes": ["02-1"],
         "amendmentOrder": 0
       }
+    },
+    {
+      "caseId": "02QTT-dependants-Y2026",
+      "producerCase": "tncn02qtt-dependants-y2026",
+      "adapterId": "02-qtt-tncn-2.7.3",
+      "htkkVersion": "5.8.2",
+      "format": "htkk-web-tncn02qtt-dependants-y2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-tncn02qtt-dependants-y2026-input",
+      "inputBranch": "declaration-web-reference-tncn02qtt-dependants-y2026-input",
+      "outputBranch": "declaration-web-native-tncn02qtt-dependants-y2026-output",
+      "statusContext": "htkk-native/tncn02qtt-dependants-y2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "B8",
+        "adapterVersion": "2.7.3",
+        "periodType": "year",
+        "periodValue": "2026",
+        "activityCode": "00",
+        "annexes": ["02-1"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "02QTT-refund-transfer-Y2026",
+      "producerCase": "tncn02qtt-refund-transfer-y2026",
+      "adapterId": "02-qtt-tncn-2.7.3-refund",
+      "htkkVersion": "5.8.2",
+      "format": "htkk-web-tncn02qtt-refund-transfer-y2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-tncn02qtt-refund-transfer-y2026-input",
+      "inputBranch": "declaration-web-reference-tncn02qtt-refund-transfer-y2026-input",
+      "outputBranch": "declaration-web-native-tncn02qtt-refund-transfer-y2026-output",
+      "statusContext": "htkk-native/tncn02qtt-refund-transfer-y2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "B8",
+        "adapterVersion": "2.7.3",
+        "periodType": "year",
+        "periodValue": "2026",
+        "activityCode": "00",
+        "annexes": ["02-1"],
+        "amendmentOrder": 0
+      }
     }
   ]
 }

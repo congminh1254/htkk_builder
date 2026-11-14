@@ -30,6 +30,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `05KK-PBT-two-provinces-Q3-2026` | `101 → 101_11 → L7` (05/KK 2.9.3, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 19 | quý 3/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 110 |
 | `05KK-TT89-PBT-two-provinces-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 3.0.9, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 14 | quý 4/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 117 |
 | `02QTT-refund-transfer-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2025 | 02-1 (2 người phụ thuộc); hoàn trả qua chuyển khoản | 126 |
+| `02QTT-dependants-Y2026`, `02QTT-refund-transfer-Y2026` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2026 (gõ `mskYear`) | 02-1 trên **danh sách hiện** (driver chọn, không bao giờ KHBS); như hai ca năm 2025 | 126 (dự kiến) |
 
 Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
 oracle 5.8.2 vì Z8 không có trong Menu.xml 5.8.1): KieuKy 14 = `SetLayoutToKhaiQuy` (chỉ kỳ quý). Driver chỉ tích `chkTKQuy` khi
@@ -193,6 +194,38 @@ hỏi mở trước đây (kỳ năm 2026) đã có câu trả lời ở dưới
 phải HTKK từ chối năm 2026. Ca chuyển sang `02QTT-refund-transfer-Y2025`, cùng số liệu (mẫu 2.7.3 không phân nhánh theo năm); không
 nới kiểm tra nào của driver. **Năm 2026 phải kiểm lại khi mùa quyết toán 2026 mở** (từ 01/01/2027 hộp kỳ mở năm 2026), hoặc khi
 driver chọn đúng phụ lục trên danh sách hiện của B8. Chưa chạy trên Windows.
+
+**Năm 2026: danh sách phụ lục hiện của B8 (chưa chạy Windows).** Đọc tĩnh lại trên gói HTKK 5.8.2 đúng ghim (HTKK.exe
+331ed84a…, Menu.xml f26c2ea2…, FarPoint.Win.Spread.dll 2e7a0d4f…; chỉ dnfile, không chạy/nạp): B8 có `KieuKHBS="3"` và bốn sheet
+(Tờ khai, 02-1, 01-KHBS, 01-1/KHBS; VersionToKhai.xml không có B8, nên `checkVersionDateEffect` trả false, không `FormInit` lại).
+`UpdatePeriodByVerSion` nhánh KieuKHBS 3 (hơn ba sheet): `pnVT2_PhuLucKeKhai.Visible = true`, `LoadPhuLucSpread`, rồi ẩn lại cho
+B9/B8/W1 (0x408). `WinSpreadProcess.BindDataToPhuLucSpread`: sheet có "KHBS" trong SheetName không có dòng (bỏ qua, không đếm),
+`Rows.Count` = số phụ lục còn lại (B8: 1, `02-1/BK-QTT-TNCN`, `CheckBoxCellType` TextTrue = SheetName); nhánh riêng B8 đặt dòng 0
+và dòng 1 tích + khóa. `GetPhuLucDaKeKhai(panelVisible, …)`: khi danh sách ẩn mọi phụ lục không KHBS vào `DicSheet` (tích, khóa,
+`chkChonPhuLucKeKhaiAll` tích và khóa); khi hiện chỉ phụ lục đã có tệp dữ liệu. Lần bind sau (danh sách hiện, đã còn một dòng):
+`Cells[1,0]` ném `IndexOutOfRangeException` (FarPoint `Cells.get_Item`: dòng ≥ RowCount), `BindDataToPhuLucSpread` và
+`LoadPhuLucSpread` ném lại, `UpdatePeriodByVerSion` bắt và chỉ ghi log, nên lệnh ẩn lại 0x408 không chạy. Kết quả: danh sách hiện,
+một dòng 02-1 **đã tích và khóa**, không có dòng KHBS; `chkChonPhuLucKeKhaiAll` hiện, tích, không bật (đúng như run 43551336755).
+Khi bấm "Đồng ý": `btnDongY_Click` tính lại `DicSheet`, `OpenToKhai(axfpsPhuLuc, panelVisible, …)` thêm các dòng đã tích
+(`GetPhuLucThemMoi`); sheet KHBS chỉ mở khi `LoaiToKhai` = B (bổ sung, KieuKHBS 3). Sau đó `cmdImportXML_Click` vẫn
+`AddFullPLImportXML` cho B8.
+
+Driver (`HtkkDeclarationCasePlans.VisibleAnnexListReviewed`: chỉ B8 KieuKy 12; mọi menu khác vẫn coi danh sách hiện của bố cục ẩn
+là không khớp): `SelectReviewedVisibleAnnexList` đọc mọi dòng (nhãn TextTrue, tích, khóa) trước khi làm gì, phân loại bằng
+`ClassifyVisibleAnnexList` (biên dịch, thử bằng mono): dòng không phải checkbox hoặc nhãn lạ, dòng KHBS đã tích, phụ lục của ca
+thiếu/trùng, phụ lục của ca chưa tích mà khóa → dừng trước mọi thao tác. Chỉ dòng phụ lục của ca chưa tích và không khóa nhận một
+phím cách gốc (một lượt, không thử lại); dòng KHBS không bao giờ được tích; ô khóa không bao giờ bị ép. Đọc lại mọi dòng
+(`VisibleAnnexListExact`: cùng số dòng, phụ lục của ca tích, KHBS không tích). Lệch → stage kết thúc
+`declaration-period-annex-list-not-matched` (trước khi bấm "Đồng ý"). Chẩn đoán số nguyên, không giá trị/chữ:
+`declarationAnnexListMask` (1 danh sách hiện trên bố cục ẩn; 2 xử lý khớp; 4 dòng lạ; 8 KHBS đã tích; 16 có dòng KHBS; 32 phụ
+lục thiếu/trùng; 64 phụ lục chưa tích mà khóa; 128 hơn 16 dòng; 256 đọc lại lệch; 512/1024 ô chọn tất cả tích/bật; 2048 không
+thao tác được), `declarationAnnexListRows`, `declarationAnnexListTickedBefore/LockedBefore/TickedAfter` (bit theo dòng),
+`declarationAnnexListActions`. Không nới kiểm tra nào: kiểm kỳ, sheet sau khi nhập, ô, lá XML và so toàn cây giữ nguyên.
+
+Ca non-gating `02QTT-dependants-Y2026` và `02QTT-refund-transfer-Y2026` (htkk_web `tncn02qtt-dependants-y2026`,
+`tncn02qtt-refund-transfer-y2026`, oracle 5.8.2): cùng kế hoạch biên dịch với ca năm 2025 trừ kỳ (2026, 01/2026–12/2026). Theo đọc
+tĩnh danh sách đã đúng (02-1 tích, khóa) nên dự kiến 0 thao tác, `declarationAnnexListRows` 1, `declarationAnnexListMask` 515
+(1|2|512: không có dòng KHBS; ô chọn tất cả tích, không bật). Hai ca năm 2025 giữ nguyên (danh sách ẩn, quan sát như trước).
 
 I9 (01/NTNN TT80, non-gating) dùng ca thiết kế `01NTNN-two-contractors-M09-2026`: hai nhà thầu "GIẢ LẬP" không MST, ngành
 01/02 của `DM_NNKD_NTNN.xml`, ngày thanh toán trong tháng 09/2026 (checkTKChinh E_27), ngày hợp đồng trước ngày chạy (E_36).
