@@ -1550,6 +1550,7 @@
       "outputBranch": "declaration-web-native-tncn02qtt-dependants-y2026-output",
       "statusContext": "htkk-native/tncn02qtt-dependants-y2026",
       "releaseGate": false,
+      "notBefore": "2026-12-01",
       "unit": {
         "menuId": "B8",
         "adapterVersion": "2.7.3",
@@ -1571,6 +1572,7 @@
       "outputBranch": "declaration-web-native-tncn02qtt-refund-transfer-y2026-output",
       "statusContext": "htkk-native/tncn02qtt-refund-transfer-y2026",
       "releaseGate": false,
+      "notBefore": "2026-12-01",
       "unit": {
         "menuId": "B8",
         "adapterVersion": "2.7.3",

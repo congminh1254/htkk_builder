@@ -30,7 +30,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `05KK-PBT-two-provinces-Q3-2026` | `101 → 101_11 → L7` (05/KK 2.9.3, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 19 | quý 3/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 110 |
 | `05KK-TT89-PBT-two-provinces-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 3.0.9, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 14 | quý 4/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 117 |
 | `02QTT-refund-transfer-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2025 | 02-1 (2 người phụ thuộc); hoàn trả qua chuyển khoản | 126 |
-| `02QTT-dependants-Y2026`, `02QTT-refund-transfer-Y2026` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2026 (gõ `mskYear`) | 02-1 trên **danh sách hiện** (driver chọn, không bao giờ KHBS); như hai ca năm 2025 | 126 (dự kiến) |
+| `02QTT-dependants-Y2026`, `02QTT-refund-transfer-Y2026` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2026 (gõ `mskYear`; **hoãn đến 2026-12-01**, `notBefore`) | 02-1 trên **danh sách hiện** (driver chọn, không bao giờ KHBS); như hai ca năm 2025 | 126 (dự kiến) |
 
 Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
 oracle 5.8.2 vì Z8 không có trong Menu.xml 5.8.1): KieuKy 14 = `SetLayoutToKhaiQuy` (chỉ kỳ quý). Driver chỉ tích `chkTKQuy` khi
@@ -226,6 +226,26 @@ Ca non-gating `02QTT-dependants-Y2026` và `02QTT-refund-transfer-Y2026` (htkk_w
 `tncn02qtt-refund-transfer-y2026`, oracle 5.8.2): cùng kế hoạch biên dịch với ca năm 2025 trừ kỳ (2026, 01/2026–12/2026). Theo đọc
 tĩnh danh sách đã đúng (02-1 tích, khóa) nên dự kiến 0 thao tác, `declarationAnnexListRows` 1, `declarationAnnexListMask` 515
 (1|2|512: không có dòng KHBS; ô chọn tất cả tích, không bật). Hai ca năm 2025 giữ nguyên (danh sách ẩn, quan sát như trước).
+
+**Run 43642303269 (dependants) / 43642305532 (refund), 14/11/2026: HTKK từ chối kỳ (0471).** Xử lý danh sách phụ lục đúng như dự
+kiến (`declarationAnnexListRows` 1, 02-1 tích và khóa trước/sau, 0 thao tác), rồi "Đồng ý" ra stage
+`declaration-period-original-message-rejected`, `declarationPeriodRejectedMessageId` 471 = Message.xml 0471 "Đến tháng không được
+lớn hơn tháng hiện tại". Đọc tĩnh (HTKK.exe 5.8.2 331ed84a…, 5.8.1 411141d2…; IL chuẩn hóa của `CheckTuThangDenThang` giống nhau,
+token 0x60004dc / 0x60004da): `btnDongY_Click` → `CheckPeriod` → `CheckTuNgayDenNgay` rồi `CheckTuThangDenThang`. Hàm này chạy khi
+`pnTuThang` và `pnDenThang` hiện, `chkTuQuyDenQuy` không tích, menu khác 99/H6/Q4 (B8/B9 KieuKy 12 thỏa): `tu =
+ConvertToDateTime("01/"+mskTuThang)`, `den = ConvertToDateTime("01/"+mskDenThang)` (sai → 0018; tu > den → 0097; các kiểm 0335/0336
+khoảng tháng, năm), rồi `tu > DateTime.Today` → 0470, `den > DateTime.Today` → 0471 (trừ menu 28/G5/G7). Với năm 2026 `den` =
+01/12/2026, nên HTKK từ chối đến hết 30/11/2026 và nhận từ **01/12/2026** (Today = 01/12/2026 00:00, `>` là so sánh nghiêm ngặt).
+Runner Windows chạy giờ UTC, nên mốc là ngày UTC.
+
+Bảo vệ theo ngày: trường registry tùy chọn `notBefore` (YYYY-MM-DD, chỉ ca non-gating; `htkk_native_cases.not_before` /
+`deferred_until`). Hai ca Y2026 có `notBefore` "2026-12-01". Trước ngày đó `dispatch-native-cases.py` không dispatch và **không
+đặt status** cho ca (log: `Native case <id> deferred until 2026-12-01 (HTKK refuses its period before that day); not dispatched, no
+status.`), không bao giờ báo là thành công; ca vẫn được sinh và công bố đầu vào như mọi ca (producer web cố định ngày lập 01/12/2026,
+`htkk_declaration_web_cases` kiểm `ngayLapTKhai` 2026-12-01). Ca non-gating nên cohort phát hành không chờ ca hoãn. htkk_web
+`check:native-contract` so `notBefore` của producer với registry builder (lệch → FAIL `NOT_BEFORE_MISMATCH`, trước ngày in
+`DEFERRED`). Web nay cũng từ chối như HTKK (0470/0471 khi mở kỳ và khi kết xuất). Giữ nguyên xử lý danh sách phụ lục của driver.
+
 
 I9 (01/NTNN TT80, non-gating) dùng ca thiết kế `01NTNN-two-contractors-M09-2026`: hai nhà thầu "GIẢ LẬP" không MST, ngành
 01/02 của `DM_NNKD_NTNN.xml`, ngày thanh toán trong tháng 09/2026 (checkTKChinh E_27), ngày hợp đồng trước ngày chạy (E_36).
