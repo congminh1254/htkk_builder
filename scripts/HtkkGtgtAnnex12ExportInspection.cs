@@ -146,18 +146,23 @@ public sealed partial class HtkkGuiReferenceAutomation {
   PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)return false;object annex=null;
   for(int index=0;index<count;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_2"||name=="01-2/GTGT"){if(annex!=null)return false;annex=candidate;}}
   if(annex==null||Convert.ToInt32(Get(annex,"ColumnCount"))!=45)return false;
-  // The KHBS annex cases import exactly the two-plant web annex (case 5's B2: plant 1 at 40/60).
+  // The KHBS annex cases import exactly the two-plant web annex (case 5's B2: plant 1 at 40/60; cases 6-9's B2: their variant).
   bool two=Annex12WebTwoPlantsCase()||KhbsAnnexCase();
   string[] names=two?new string[]{"NHA MAY GIA LAP - KHONG NOP","NHA MAY GIA LAP 2 - KHONG NOP"}:new string[]{"NHA MAY GIA LAP - KHONG NOP"};
   string[] codes=two?new string[]{"9999999997-001","99997"}:new string[]{"9999999997-001"};
   decimal[] parents=two?new decimal[]{7m,3m}:new decimal[]{0m};
   decimal[][] percentages=two?new decimal[][]{KhbsAnnexCase()?KhbsAnnexFirstPlantPercentages():new decimal[]{33.33m,66.67m},new decimal[]{50m,25m,25m}}:new decimal[][]{new decimal[]{50m,50m}};
   string[][] types=two?new string[][]{new string[]{"01","02"},new string[]{"01","02","02"}}:new string[][]{new string[]{"01","02"}};
+  string[][] wards=null;
+  if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId))KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);
+  if(wards==null){wards=new string[types.Length][];for(int i=0;i<types.Length;i++){wards[i]=new string[types[i].Length];for(int j=0;j<wards[i].Length;j++)wards[i][j]=Annex12FixedWard;}}
+  List<string> expectedWards=new List<string>();
   System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)return false;object info=null;
   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)return false;info=candidate;}
   if(info==null||!Selected(Get(info,"Active")))return false;
   System.Collections.IList tables=Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count!=names.Length)return false;
   int total=Convert.ToInt32(Get(annex,"RowCount")),seen=0;if(total<46||total>10000)return false;
+  for(int i=0;i<wards.Length;i++)expectedWards.AddRange(wards[i]);if(expectedWards.Count>Annex12MaxRestoredRows)return false;
   for(int i=0;i<tables.Count;i++){
    object table=tables[i];string id=(i+1).ToString(CultureInfo.InvariantCulture);
    if(Convert.ToString(Get(table,"TableName"),CultureInfo.InvariantCulture)!="01_2_GTGT"||Convert.ToString(Get(table,"TablePath"),CultureInfo.InvariantCulture)!="PLuc_01_2_GTGT/TenNhaMay"||Convert.ToString(Get(table,"TableID"),CultureInfo.InvariantCulture)!=id||Convert.ToString(Get(Get(table,"CellTableSTT"),"Value"),CultureInfo.InvariantCulture)!=id)return false;
@@ -173,13 +178,32 @@ public sealed partial class HtkkGuiReferenceAutomation {
     int[] display=new int[]{2,12,16,17,18};int ordinal=seen+j;
     // The mask keeps the state right after the original import, before any restoration.
     for(int k=0;k<display.Length;k++)if(!annex12WebHeadAuthorityRestored&&ordinal<5&&CellText(annex,row,display[k])==String.Empty)annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k);
-    if(CellText(annex,row,1)!=id+"."+(j+1).ToString(CultureInfo.InvariantCulture)||CellText(annex,row,32)!=types[i][j]||CellText(annex,row,33)!="101"||CellText(annex,row,42)!="10129087"||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!="10129"||CellText(annex,row,4)!=String.Empty||CellText(annex,row,9)!=String.Empty||!Annex12NumberMatched(annex,row,20,percentages[i][j]))return false;
+    if(CellText(annex,row,1)!=id+"."+(j+1).ToString(CultureInfo.InvariantCulture)||CellText(annex,row,32)!=types[i][j]||CellText(annex,row,33)!="101"||CellText(annex,row,42)!=wards[i][j]||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!=Annex12WardCqtCode(wards[i][j])||CellText(annex,row,4)!=String.Empty||CellText(annex,row,9)!=String.Empty||!Annex12NumberMatched(annex,row,20,percentages[i][j]))return false;
     // Child: source-locked name/MST/amount and allocated tax; only the percentage is editable.
     if(!Annex12CellLocked(annex,row,4)||!Annex12CellLocked(annex,row,9)||!Annex12CellLocked(annex,row,19)||Annex12CellLocked(annex,row,20)||!Annex12CellLocked(annex,row,23))return false;
    }
    seen+=rows.Count;
   }
-  annex12WebImportGroupCount=tables.Count;annex12WebImportRowCount=seen;annex12WebImportSheetMatched=true;Record();return true;
+  annex12ExpectedWards=expectedWards.ToArray();annex12WebImportGroupCount=tables.Count;annex12WebImportRowCount=seen;annex12WebImportSheetMatched=true;Record();return true;
+ }
+ // Fixed synthetic places of the annex cases (public HTKK 5.8.2 catalogues): the proven ward, and the second ward of the
+ // KHBS two-places variant (same tỉnh and head CQT 10100, its own local CQT). Any other ward fails closed.
+ private const string Annex12FixedWard="10129087",Annex12SecondWard="10131091";
+ // At most seven imported rows (case 6: 2+3+2); the failure mask keeps the 1-based ordinal in bits 6-8.
+ private const int Annex12MaxRestoredRows=7;
+ private string[] annex12ExpectedWards=new string[0];
+ private static string Annex12WardCqtCode(string ward){if(ward==Annex12FixedWard)return "10129";if(ward==Annex12SecondWard)return "10131";throw new InvalidOperationException();}
+ private static string Annex12WardCqtName(string ward){if(ward==Annex12FixedWard)return "Thuế cơ sở 16 Thành phố Hà Nội";if(ward==Annex12SecondWard)return "Thuế cơ sở 25 Thành phố Hà Nội";throw new InvalidOperationException();}
+ private string Annex12ExpectedWard(int ordinal){if(ordinal<0||ordinal>=annex12ExpectedWards.Length)throw new InvalidOperationException();return annex12ExpectedWards[ordinal];}
+ // Round 2 of the KHBS wider-scope cases 6-9: the B2 annex variant (htkk_annex12_web_cases VARIANTS), plants in document order.
+ private void KhbsAnnexWideRound2(out string[] names,out string[] codes,out decimal[] parents,out decimal[][] percentages,out string[][] types,out string[][] wards){
+  string n1="NHA MAY GIA LAP - KHONG NOP",n2="NHA MAY GIA LAP 2 - KHONG NOP",n3="NHA MAY GIA LAP 3 - KHONG NOP",w=Annex12FixedWard,v=Annex12SecondWard;
+  decimal[] p1=new decimal[]{33.33m,66.67m},p2=new decimal[]{50m,25m,25m};string[] t1=new string[]{"01","02"},t2=new string[]{"01","02","02"};
+  if(webCaseId==KhbsAnnex12AddPlantCaseId){names=new string[]{n1,n2,n3};codes=new string[]{"9999999997-001","99997","99996"};parents=new decimal[]{7m,3m,5m};percentages=new decimal[][]{p1,p2,new decimal[]{60m,40m}};types=new string[][]{t1,t2,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w,w},new string[]{w,w}};return;}
+  if(webCaseId==KhbsAnnex12RemovePlantCaseId){names=new string[]{n1};codes=new string[]{"9999999997-001"};parents=new decimal[]{7m};percentages=new decimal[][]{p1};types=new string[][]{t1};wards=new string[][]{new string[]{w,w}};return;}
+  if(webCaseId==KhbsAnnex12TwoPlacesCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,v,v}};return;}
+  if(webCaseId==KhbsAnnex12Ct10CaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,4m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,w,w}};return;}
+  throw new InvalidOperationException();
  }
  // Runs 42182681228/42182684607: after the ORIGINAL import every child R was blank (mask
  // 264 / 8659208) and the reexport was refused with 0016 (Header row 83: R44 required).
@@ -207,7 +231,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     System.Collections.IList rows=Get(tables[i],"RowsValues") as System.Collections.IList;if(rows==null||rows.Count<1||rows.Count>5)throw new InvalidOperationException();
     int start=Convert.ToInt32(Get(Get(tables[i],"Location"),"DataLocationTemplateRowStart"))-1;
     for(int j=0;j<rows.Count;j++){
-     int row=start+j,ordinal=seen+j;if(ordinal>4)throw new InvalidOperationException();
+     int row=start+j,ordinal=seen+j;if(ordinal>=Annex12MaxRestoredRows)throw new InvalidOperationException();string cqt=Annex12WardCqtName(Annex12ExpectedWard(ordinal));
      annex12WebHeadAuthorityFailureMask=(annex12WebHeadAuthorityFailureMask&2048)|((ordinal+1)<<6);Record();
      if(CellText(annex,row,17)==String.Empty){
       try{SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
@@ -216,15 +240,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
      // Runs 42206910531/42206915586 stopped right after the second combo action: the original
      // handlers may act when the user leaves a cell, so move to S as a user does before reading it.
      MoveImportedAnnex12Cell(grid,annex,row,18);
-     if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"){
-      try{SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=1024;Record();throw;}
+     if(CellText(annex,row,18)!=cqt){
+      try{SelectImportedAnnex12Combo(grid,annex,row,18,cqt);}catch{annex12WebHeadAuthorityFailureMask|=1024;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;Record();
      }
      // Leave S for the child's percentage (the next field of the proven 14-input order), then wait
      // (bounded) for the original handlers. Only if they have not run, open and close the original
      // percentage editor without typing, exactly as a user tabbing through; its value must not change.
-     MoveImportedAnnex12Cell(grid,annex,row,20);int unmet=WaitImportedAnnex12HeadAuthority(annex,row,1.0);
-     if(unmet!=0){annex12WebHeadAuthorityFailureMask|=2048;Record();PassImportedAnnex12Percentage(grid,annex,row);unmet=WaitImportedAnnex12HeadAuthority(annex,row,2.0);}
+     MoveImportedAnnex12Cell(grid,annex,row,20);int unmet=WaitImportedAnnex12HeadAuthority(annex,row,ordinal,1.0);
+     if(unmet!=0){annex12WebHeadAuthorityFailureMask|=2048;Record();PassImportedAnnex12Percentage(grid,annex,row);unmet=WaitImportedAnnex12HeadAuthority(annex,row,ordinal,2.0);}
      // frmWinToKhai.cellChange (ComboCloseUp/EditChange) writes the hidden code AJ of a table row only
      // from Cells[ActiveCell.Row, SelectedValue column] and only when the R cell text is non-empty when
      // the list closes; winFpSpread_ComboCloseUp skips cellChange while the cell is still empty. A
@@ -253,11 +277,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
       try{SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,"Thuế Thành phố Hà Nội");SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;annex12WebHeadAuthorityComboMask|=64;Record();
       MoveImportedAnnex12Cell(grid,annex,row,18);
-      if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội"){
-       try{SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=1024;Record();throw;}
+      if(CellText(annex,row,18)!=cqt){
+       try{SelectImportedAnnex12Combo(grid,annex,row,18,cqt);}catch{annex12WebHeadAuthorityFailureMask|=1024;Record();throw;}
        annex12WebHeadAuthorityRepairCount++;Record();
       }
-      MoveImportedAnnex12Cell(grid,annex,row,20);unmet=WaitImportedAnnex12HeadAuthority(annex,row,2.0);
+      MoveImportedAnnex12Cell(grid,annex,row,20);unmet=WaitImportedAnnex12HeadAuthority(annex,row,ordinal,2.0);
       if((unmet&4)==0)annex12WebHeadAuthorityComboMask|=128;Record();
      }
      if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;Record();throw new InvalidOperationException();}
@@ -324,20 +348,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))==row)mask|=32;
   return mask;
  }
- private int ImportedAnnex12HeadAuthorityUnmet(object annex,int row){
-  int unmet=0;
+ private int ImportedAnnex12HeadAuthorityUnmet(object annex,int row,int ordinal){
+  int unmet=0;string ward=Annex12ExpectedWard(ordinal);
   if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội")unmet|=1;
-  if(CellText(annex,row,18)!="Thuế cơ sở 16 Thành phố Hà Nội")unmet|=2;
+  if(CellText(annex,row,18)!=Annex12WardCqtName(ward))unmet|=2;
   if(CellText(annex,row,35)!="10100")unmet|=4;
-  if(CellText(annex,row,36)!="10129")unmet|=8;
+  if(CellText(annex,row,36)!=Annex12WardCqtCode(ward))unmet|=8;
   if(CellText(annex,row,33)!="101")unmet|=16;
-  if(CellText(annex,row,42)!="10129087")unmet|=32;
+  if(CellText(annex,row,42)!=ward)unmet|=32;
   return unmet;
  }
- private int WaitImportedAnnex12HeadAuthority(object annex,int row,double seconds){
+ private int WaitImportedAnnex12HeadAuthority(object annex,int row,int ordinal,double seconds){
   Stopwatch clock=Stopwatch.StartNew();int unmet;
-  do{unmet=ImportedAnnex12HeadAuthorityUnmet(annex,row);if(unmet==0||OriginalMessageVisible())return unmet;Application.DoEvents();System.Threading.Thread.Sleep(10);}while(clock.Elapsed.TotalSeconds<seconds);
-  return ImportedAnnex12HeadAuthorityUnmet(annex,row);
+  do{unmet=ImportedAnnex12HeadAuthorityUnmet(annex,row,ordinal);if(unmet==0||OriginalMessageVisible())return unmet;Application.DoEvents();System.Threading.Thread.Sleep(10);}while(clock.Elapsed.TotalSeconds<seconds);
+  return ImportedAnnex12HeadAuthorityUnmet(annex,row,ordinal);
  }
  // Navigation only: the original active cell moves as with the keyboard; nothing is written.
  private void MoveImportedAnnex12Cell(Control grid,object annex,int row,int column){

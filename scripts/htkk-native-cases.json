@@ -1152,6 +1152,90 @@
       }
     },
     {
+      "caseId": "01GTGT-khbs-annex12-lan2-add-plant-M10-2026",
+      "producerCase": "khbs-annex12-lan2-add-plant",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-add-plant-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-add-plant-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-add-plant-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-add-plant-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-add-plant",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-lan2-remove-plant-M10-2026",
+      "producerCase": "khbs-annex12-lan2-remove-plant",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-remove-plant-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-remove-plant-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-remove-plant-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-remove-plant-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-remove-plant",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-lan2-two-places-M10-2026",
+      "producerCase": "khbs-annex12-lan2-two-places",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-two-places-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-two-places-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-two-places-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-two-places-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-two-places",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-lan2-ct10-M10-2026",
+      "producerCase": "khbs-annex12-lan2-ct10",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-ct10-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-ct10-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-ct10-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-ct10-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-ct10",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
       "caseId": "05KK-PBT-two-provinces-Q3-2026",
       "producerCase": "tncn05kk-pbt-two-provinces-q3-2026",
       "adapterId": "05-kk-tncn-2.9.3-pbt",

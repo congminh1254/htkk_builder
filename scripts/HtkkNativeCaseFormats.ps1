@@ -42,6 +42,10 @@ $HtkkNativeCaseFormats=@{
  '01GTGT-khbs-lan2-sale10-M10-2026'='htkk-web-khbs-lan2-sale10-input-v1'
  '01GTGT-khbs-annex12-capture-M10-2026'='htkk-web-khbs-annex12-capture-input-v1'
  '01GTGT-khbs-annex12-lan2-changed-M10-2026'='htkk-web-khbs-annex12-lan2-changed-input-v1'
+ '01GTGT-khbs-annex12-lan2-add-plant-M10-2026'='htkk-web-khbs-annex12-lan2-add-plant-input-v1'
+ '01GTGT-khbs-annex12-lan2-remove-plant-M10-2026'='htkk-web-khbs-annex12-lan2-remove-plant-input-v1'
+ '01GTGT-khbs-annex12-lan2-two-places-M10-2026'='htkk-web-khbs-annex12-lan2-two-places-input-v1'
+ '01GTGT-khbs-annex12-lan2-ct10-M10-2026'='htkk-web-khbs-annex12-lan2-ct10-input-v1'
  '05KK-PBT-two-provinces-Q3-2026'='htkk-web-tncn05kk-pbt-two-provinces-q3-2026-input-v1'
  '05KK-TT89-PBT-two-provinces-Q4-2026'='htkk-web-tncn05kk-tt89-pbt-two-provinces-q4-2026-input-v1'
 }

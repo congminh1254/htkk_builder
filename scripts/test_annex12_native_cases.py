@@ -385,13 +385,18 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   self.assertEqual(keyed.count('SendKeys'),1);self.assertIn('SendKeys.SendWait("{LEFT}")',keyed)
   block=block.replace(keyed,'')
   self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội")',block)
-  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,"Thuế cơ sở 16 Thành phố Hà Nội")',block)
+  # The local CQT is the one of the row's fixed synthetic ward (the proven ward, or the KHBS two-places variant's second ward).
+  self.assertIn('string cqt=Annex12WardCqtName(Annex12ExpectedWard(ordinal));',block);self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,cqt)',block)
+  names=annex[annex.index(' private static string Annex12WardCqtCode('):annex.index(' private string Annex12ExpectedWard(')]
+  self.assertIn('if(ward==Annex12FixedWard)return "Thuế cơ sở 16 Thành phố Hà Nội";if(ward==Annex12SecondWard)return "Thuế cơ sở 25 Thành phố Hà Nội";throw new InvalidOperationException();',names)
+  self.assertIn('if(ward==Annex12FixedWard)return "10129";if(ward==Annex12SecondWard)return "10131";throw new InvalidOperationException();',names)
+  self.assertIn('private const string Annex12FixedWard="10129087",Annex12SecondWard="10131091";',annex)
   self.assertIn('SetPublic(vendor,"SelectedIndex",selected)',block);self.assertIn('FindVendorCombo(editor,0)',block)
   # Only the vendor combo index and the public sheet selection are set; never a cell value or code.
   for forbidden in ('set_Value','"Value",','"Text",','"Formula"','InsertTable','SendKeys'):self.assertNotIn(forbidden,block)
   self.assertEqual(block.count('SetValue('),1);self.assertIn('active.SetValue(grid,found,null)',block)
   self.assertIn('if((column!=17&&column!=18)',block)
-  for code in ('CellText(annex,row,35)!="10100"','CellText(annex,row,36)!="10129"','CellText(annex,row,33)!="101"','CellText(annex,row,42)!="10129087"'):self.assertIn(code,block)
+  for code in ('CellText(annex,row,35)!="10100"','CellText(annex,row,36)!=Annex12WardCqtCode(ward)','CellText(annex,row,33)!="101"','CellText(annex,row,42)!=ward','string ward=Annex12ExpectedWard(ordinal);'):self.assertIn(code,block)
   phase=roundtrip[roundtrip.index('if(roundtripPhase=="waiting-reexport-ready"){'):]
   self.assertLess(phase.index('RestoreImportedAnnex12HeadAuthorities()'),phase.index('Named(roundtripOwner,"cmdExport")'))
   self.assertIn('if(!annex12WebHeadAuthorityRestored&&ordinal<5',annex)
@@ -400,9 +405,10 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   # of R, S again; the driver bounds it at 4*seen). The zero case restored both children with 8
   # picks and matched every tax value but the gate allowed 2*rows (run 42302287921); the two-plants
   # case needs up to 20 and its 11th pick made the result unreadable at maximum 10 (run 42302292502).
-  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(20,['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']))
-  # Five children at most (ordinal>4 throws), four picks each.
-  self.assertIn('if(ordinal>4)throw new InvalidOperationException();',annex);self.assertEqual(registry['annex12WebHeadAuthorityRepairCount']['maximum'],4*5)
+  # At most four repairs a row (C# repairCount>4*seen) and seven rows (Annex12MaxRestoredRows: KHBS add-plant B2, 2+3+2).
+  self.assertEqual((registry['annex12WebHeadAuthorityRepairCount']['maximum'],registry['annex12WebHeadAuthorityRepairCount']['activeModes']),(28,['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']))
+  # Seven children at most (Annex12MaxRestoredRows, the KHBS add-plant B2: 2+3+2), four picks each.
+  self.assertIn('if(ordinal>=Annex12MaxRestoredRows)throw new InvalidOperationException();',annex);self.assertIn('private const int Annex12MaxRestoredRows=7;',annex);self.assertEqual(registry['annex12WebHeadAuthorityRepairCount']['maximum'],4*7)
   probe=(ROOT/'probe-htkk-windows.ps1').read_text()
   self.assertIn('-and $lastGui.annex12WebHeadAuthorityRestored -and $lastGui.annex12WebHeadAuthorityRepairCount -ge $lastGui.annex12WebImportRowCount -and $lastGui.annex12WebHeadAuthorityRepairCount -le (4*$lastGui.annex12WebImportRowCount)',probe)
   self.assertIn("'annex12WebImportSheetMatched','annex12WebHeadAuthorityRestored')",probe)
@@ -415,7 +421,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   block=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):]
   loop=block[:block.index(' private void SelectImportedAnnex12Combo(')]
-  order=[loop.index(x) for x in ('SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','SelectImportedAnnex12Combo(grid,annex,row,18,','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,1.0)','PassImportedAnnex12Percentage(grid,annex,row)')]
+  order=[loop.index(x) for x in ('SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','SelectImportedAnnex12Combo(grid,annex,row,18,','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,ordinal,1.0)','PassImportedAnnex12Percentage(grid,annex,row)')]
   self.assertEqual(order,sorted(order))
   self.assertIn('annex12WebHeadAuthorityFailureMask&=2048;annex12WebHeadAuthorityRestored=true;',loop)
   move=block[block.index(' private void MoveImportedAnnex12Cell('):block.index(' private void PassImportedAnnex12Percentage(')]
@@ -435,7 +441,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12Combo(')]
   retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
-  order=[retry.index(x) for x in ('ImportedAnnex12ComboShape(annex,row,17,','SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,2.0)')]
+  order=[retry.index(x) for x in ('ImportedAnnex12ComboShape(annex,row,17,','SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,ordinal,2.0)')]
   self.assertEqual(order,sorted(order))
   for forbidden in ('set_Value','"Text",','SendKeys','Cell.Value'):self.assertNotIn(forbidden,retry)
   shape=annex[annex.index(' private int ImportedAnnex12ComboShape('):annex.index(' private int ImportedAnnex12HeadAuthorityUnmet(')]

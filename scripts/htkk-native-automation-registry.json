@@ -2246,7 +2246,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 20,
+      "maximum": 28,
       "activeModes": [
         "gtgt-web-import-inspect",
         "gtgt-amendment-khbs-inspect"
@@ -3228,6 +3228,10 @@
         "01GTGT-khbs-lan2-sale10-M10-2026",
         "01GTGT-khbs-annex12-capture-M10-2026",
         "01GTGT-khbs-annex12-lan2-changed-M10-2026",
+        "01GTGT-khbs-annex12-lan2-add-plant-M10-2026",
+        "01GTGT-khbs-annex12-lan2-remove-plant-M10-2026",
+        "01GTGT-khbs-annex12-lan2-two-places-M10-2026",
+        "01GTGT-khbs-annex12-lan2-ct10-M10-2026",
         "05KK-PBT-two-provinces-Q3-2026",
         "05KK-TT89-PBT-two-provinces-Q4-2026"
       ]

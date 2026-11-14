@@ -50,11 +50,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/tenNNT")!=FakeName||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/nguoiKy")!=FakeSigner)throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinDVu/maDVu")!="CCKK"||FixedWebLeaf(document,"TTinChung/TTinDVu/tenDVu")!="Công cụ Kê khai"||FixedWebLeaf(document,"TTinChung/TTinDVu/ttinNhaCCapDVu")!="hotrokekhai.net — Công cụ Kê khai, công cụ độc lập"||!Regex.IsMatch(FixedWebLeaf(document,"TTinChung/TTinDVu/pbanDVu"),"^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"))throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/maTKhai")!="842"||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/pbanTKhaiXML")!="2.8.3")throw new InvalidOperationException();
-  if(KhbsMode()&&(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!="B"||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!=(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId?"2":"1")))throw new InvalidOperationException();
+  if(KhbsMode()&&(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!="B"||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!=(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)?"2":"1")))throw new InvalidOperationException();
   if(KhbsMode())khbsRound=1;
-  // Lần 2 only: the staged previous-version file (bổ sung lần 1: the exact case-1 web file, or for case 5 the exact capture
-  // case web file), never another case's.
-  if(KhbsMode()&&(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId)){
+  // Lần 2 only: the staged previous-version file (bổ sung lần 1: the exact case-1 web file, or for cases 5-9 the exact
+  // capture case web file), never another case's.
+  if(KhbsMode()&&(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId))){
    webPriorPath=host+".web-prior.xml";webPriorSha256=ReadOwnHexSidecar(host+".web-prior.sha256",64);
    XmlDocument prior=ReadBoundedOriginalXml(webPriorPath);if(Hash(webPriorPath)!=webPriorSha256||webPriorSha256==webImportInputSha256)throw new InvalidOperationException();
    if(FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!="B"||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!="1"||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhai")!="10/2026")throw new InvalidOperationException();

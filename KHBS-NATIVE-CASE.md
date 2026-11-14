@@ -223,6 +223,31 @@ re-exports them equal), so `ROWS_ANNEX12_LAN2` is the ported fragment (355 rows,
 match. `annex12InputPercentagesMatched` belongs to `gtgt-annex12-input-inspect` (typed 50/50/100 inputs) and is never set
 in this mode; the KHBS annex check is `annex12WebImportSheetMatched` (40/60 in round 2), which held.
 
+## Cases 6-9: ORACLE CAPTURES of the wider 01-2 scope, bổ sung lần 2 (adapter `01-gtgt-2.8.3-khbs-annex12-lan2`)
+
+Not port checks (non-gating, `releaseGate` false). Exactly case 5's two rounds: round 1 imports, summarises and saves case 4's
+exact B1 file (two plants, one place each); round 2 opens B2, selects 01-2, imports the web B2 file, checks its annex,
+restores the head CQTs, summarises, exports and compares the whole tree. Main sheet as case 5 ([32] 1.500.000). Each B2
+annex is a contract **variant** (`htkk_annex12_web_cases.VARIANTS`), never a native annex case:
+
+| Case | B2 annex (vs the capture B1) | Leaves (annex + main + KHBS) |
+| --- | --- | --- |
+| `01GTGT-khbs-annex12-lan2-add-plant-M10-2026` | third plant `99996` ([10] 5, two rows 60,00/40,00 at the plants' place); 7 rows | 527 (125 + 70 + 332) |
+| `01GTGT-khbs-annex12-lan2-remove-plant-M10-2026` | plant 2 removed; plant 1 unchanged | 362 (38 + 70 + 254) |
+| `01GTGT-khbs-annex12-lan2-two-places-M10-2026` | plant 2's rows 2-3 at a second place: Xã Phúc Lộc `10131091`, Thuế cơ sở 25 Thành phố Hà Nội `10131` (same tỉnh, head CQT `10100`) | 478 (89 + 70 + 319) |
+| `01GTGT-khbs-annex12-lan2-ct10-M10-2026` | plant 2's [10] 3 -> 4 (its [12] 1,5/0,75/0,75 -> 2/1/1) | 452 (89 + 70 + 293) |
+
+The web file's 01-2 hồ sơ group and Muc_I.2 are htkk_web's STATIC reading of HTKK 5.8.2 (`computeKhbsAnnex12Wide`, read
+from frmWinToKhai.CollectionDynamic01_1_KHBS and CollectionDetailSoThuePhaiNopTungTinh_01_KHBS): pass 1 over the current rows
+(each against the first previous row of its key, written when the two values differ as numbers), pass 2 over the previous
+rows (skipped when the key already has a row for that item; else compared with the only current row of the key, or 0), and a
+Muc_I.2 row for every place whose Σ[12] changed, removed places included. A mismatch (`gtgt-amendment-khbs-not-matched`) is
+therefore possible; the raw export is retained to port HTKK's output. The driver checks the B2 annex in round 2 per case
+(`KhbsAnnexWideRound2`: names, codes, [10], percentages, types and each row's ward); the head-CQT restoration selects each
+row's own local CQT (`Annex12WardCqtName`; only the two fixed wards are accepted) and handles up to seven rows
+(`Annex12MaxRestoredRows`; `annex12WebHeadAuthorityRepairCount` at most 4 × 7 = 28). Automation limit 240 s (case 5 keeps
+210 s). Cases 6-9 are the evidence the htkk_web gate `KHBS_01GTGT_ANNEX_WIDE_RELEASED` waits for.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

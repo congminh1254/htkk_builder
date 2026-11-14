@@ -26,10 +26,16 @@ class AnnexWebContractError(ValueError):
   self.code=code;self.field=field;self.fieldId=FIELDS.index(field);super().__init__(code)
 def reject(code,field='pluc'):raise AnnexWebContractError(code,field)
 
-def location(serial,kind,ct11,ct12,row_id):
- return {'id':row_id,'values':{'sTT':serial,'loai':kind,**FIXED_LOCATION,'ct10':'0','ct11':ct11,'ct12':ct12}}
+# A second fixed synthetic place in the same tỉnh, used only by the KHBS two-places variant (public HTKK 5.8.2 catalogues
+# Catalogue_Dia_Ban_Xa_Moi.xml and the CQT list of that ward, as htkk_web data/htkk-taxpayer-profile.json pins them).
+SECOND_LOCATION={**FIXED_LOCATION,'ma_xa':'10131091','ten_xa':'Xã Phúc Lộc','ct09_cqt_ma':'10131','ct09_cqt_ten':'Thuế cơ sở 25 Thành phố Hà Nội'}
+# Plant 3 exists only in the KHBS add-plant variant.
+EXTRA_PLANT_NAMES=PLANT_NAMES+('NHA MAY GIA LAP 3 - KHONG NOP',)
+EXTRA_PLANT_CODES=PLANT_CODES+('99996',)
+def location(serial,kind,ct11,ct12,row_id,place=None):
+ return {'id':row_id,'values':{'sTT':serial,'loai':kind,**(place or FIXED_LOCATION),'ct10':'0','ct11':ct11,'ct12':ct12}}
 def plant(index,group_id,ct10_a,rows,ct12_a='0'):
- return {'id':group_id,'values':{'sTT':str(index+1),'ten_nhaMay':PLANT_NAMES[index],'ma_nhaMay':PLANT_CODES[index]},'totals':{'ct10_a':ct10_a,'ct11_a':'100.00','ct12_a':ct12_a},'rows':rows}
+ return {'id':group_id,'values':{'sTT':str(index+1),'ten_nhaMay':EXTRA_PLANT_NAMES[index],'ma_nhaMay':EXTRA_PLANT_CODES[index]},'totals':{'ct10_a':ct10_a,'ct11_a':'100.00','ct12_a':ct12_a},'rows':rows}
 
 # Exact values come from the application's actual producer at the source commit;
 # both input and the native reexport must carry identical strings (the native
@@ -42,13 +48,31 @@ CASES={
   ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
 }
 # Annex VARIANTS that are not native annex cases of their own: only a KHBS case carries them (validate_annex accepts them,
-# is_case does not). Case 5 (htkk_khbs_web_cases ANNEX12_LAN2_CASE): the two-plant annex with plant 1 at 40/60.
+# is_case does not). Case 5 (htkk_khbs_web_cases ANNEX12_LAN2_CASE): the two-plant annex with plant 1 at 40/60. Cases 6-9
+# (the wider-scope captures, bổ sung lần 2 against the capture B1): a third plant added; plant 2 removed; plant 2's rows 2
+# and 3 moved to SECOND_LOCATION; plant 2's [10] 3 -> 4.
 TWO_PLANTS_CHANGED_VARIANT='01GTGT-annex12-two-plants-changed-khbs-lan2'
+ADD_PLANT_VARIANT='01GTGT-annex12-add-plant-khbs-lan2'
+REMOVE_PLANT_VARIANT='01GTGT-annex12-remove-plant-khbs-lan2'
+TWO_PLACES_VARIANT='01GTGT-annex12-two-places-khbs-lan2'
+CT10_VARIANT='01GTGT-annex12-ct10-khbs-lan2'
+_PLANT1=lambda:plant(0,'ID_1','7',[location('1.1','01','33.33','2','ID_1'),location('1.2','02','66.67','5','ID_2')])
 VARIANTS={
  TWO_PLANTS_CHANGED_VARIANT:{'plants':[
    plant(0,'ID_1','7',[location('1.1','01','40.00','3','ID_1'),location('1.2','02','60.00','4','ID_2')]),
    plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
   ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
+ ADD_PLANT_VARIANT:{'plants':[_PLANT1(),
+   plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
+   plant(2,'ID_3','5',[location('3.1','01','60.00','3','ID_1'),location('3.2','02','40.00','2','ID_2')]),
+  ],'ct13':'15','ct14':'15','totalLeaves':199,'taxLeaves':195,'groupRows':(2,3,2)},
+ REMOVE_PLANT_VARIANT:{'plants':[_PLANT1()],'ct13':'7','ct14':'7','totalLeaves':112,'taxLeaves':108,'groupRows':(2,)},
+ TWO_PLACES_VARIANT:{'plants':[_PLANT1(),
+   plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2',SECOND_LOCATION),location('2.3','02','25.00','1','ID_3',SECOND_LOCATION)]),
+  ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
+ CT10_VARIANT:{'plants':[_PLANT1(),
+   plant(1,'ID_2','4',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
+  ],'ct13':'11','ct14':'11','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
 }
 def is_case(case_id):return case_id in CASES
 def tax_leaves(case_id):
