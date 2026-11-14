@@ -1875,6 +1875,11 @@
     "declarationTreeMismatch2",
     "declarationTreeMismatch3",
     "declarationTreeMismatch4",
+    "declarationUiWaitMask",
+    "declarationUiWaitSeconds",
+    "declarationUiForegroundKind",
+    "declarationUiVisibleForms",
+    "declarationUiStallSeconds",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -3890,6 +3895,51 @@
       "default": 0,
       "minimum": 0,
       "maximum": 6553599,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationUiWaitMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4095,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationUiWaitSeconds": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationUiForegroundKind": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 8,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationUiVisibleForms": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 64,
+      "activeModes": [
+        "declaration-web-import-inspect"
+      ]
+    },
+    "declarationUiStallSeconds": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
       "activeModes": [
         "declaration-web-import-inspect"
       ]
