@@ -71,11 +71,13 @@ TRUSTED_ADAPTERS={
  '01-cnkd-hkd-3.1.0-pl03':{**_declaration('U5','3.1.0',{'quarter':('3/2026',)},['01-5'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
  # B8 02/QTT-TNCN (non-gating): KieuKy 12 like B9; the import adds every annex (AddFullPLImportXML).
  '02-qtt-tncn-2.7.3':_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),
- # B8 năm 2026 with hoàn trả qua chuyển khoản (chuyenKhoan, tenChuTaiKhoan, soTaiKhoan, maNganHang/tenNganHang) on the HTKK
+ # B8 năm 2025 with hoàn trả qua chuyển khoản (chuyenKhoan, tenChuTaiKhoan, soTaiKhoan, maNganHang/tenNganHang) on the HTKK
  # 5.8.2 oracle (non-gating). Every transfer leaf is in the XML (G151 tỉnh only filters the bank list), and the import binds
  # text into the locked tên chủ tài khoản H149 (fpSpBindDataCell), so plain XML import → re-export (htkk_web plugin
  # qtt02-refund-transfer, docs/NGHIEP-VU-TNCN.md).
- '02-qtt-tncn-2.7.3-refund':{**_declaration('B8','2.7.3',{'year':('2026',)},['02-1']),'htkkVersion':'5.8.2'},
+ # Năm 2025, not 2026: the period dialog opens a year period on Now.Year - 1 (LoadDefaultInfor); typing another year runs
+ # mskYear_Leave -> UpdatePeriodByVerSion, which shows the B8 annex list (run 43551336755: declaration-period-inputs-not-matched).
+ '02-qtt-tncn-2.7.3-refund':{**_declaration('B8','2.7.3',{'year':('2025',)},['02-1']),'htkkVersion':'5.8.2'},
  # I9 01/NTNN TT80 (non-gating): KieuKy 18 = SetLayoutToKhaiThangLanPhatSinh, month (Tháng is the default).
  # Lần phát sinh (period 'day', KieuKy 18 chkTKLanPS: GetPeriodInfo KieuKy D, TuNgay = DenNgay = kyKKhai = the day).
  # HTKK 5.8.2 ends I9 (Menu.xml EndDate 30/09/2026, GeneralFunctions.CheckToKhaiHetHieuLuc: month after 09/2026 and

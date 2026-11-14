@@ -33,7 +33,7 @@ TRUSTED={
  # chosen in the original grid (Thuế tỉnh/CCT has no XML leaf).
  '05-kk-tncn-2.9.3-pbt':{'menuId':'L7','businessClass':'TncnKk05TT80','xmlVersion':'2.9.3','schemaId':'Validate/05_KK_TNCN_TT80_293.xsd','annexes':['01-1'],'mode':'web-xml-import-tick-reexport','periodTypes':{'quarter'},'htkkVersion':'5.8.2'},
  '05-kk-tncn-tt89-3.0.9-pbt':{'menuId':'Z8','businessClass':'TncnKk05TT89','xmlVersion':'3.0.9','schemaId':'Validate/05_KK_TNCN_TT89_309.xsd','annexes':['01-1'],'mode':'web-xml-import-tick-reexport','periodTypes':{'quarter'},'htkkVersion':'5.8.2'},
- # 02/QTT-TNCN năm 2026 with hoàn trả qua chuyển khoản (HTKK 5.8.2 oracle): plain import → re-export; a refund needs [44] > 0.
+ # 02/QTT-TNCN năm 2025 with hoàn trả qua chuyển khoản (HTKK 5.8.2 oracle): plain import → re-export; a refund needs [44] > 0.
  '02-qtt-tncn-2.7.3-refund':{'menuId':'B8','businessClass':'TncnQtt02TT80','xmlVersion':'2.7.3','schemaId':'Validate/02_QTT_TNCN_TT80_273.xsd','annexes':['02-1'],'mode':'web-xml-import-reexport','periodTypes':{'year'},'htkkVersion':'5.8.2'},
  '02-ntnn-tt80-2.5.1':{'menuId':'C9','businessClass':'Ntnn02TT80','xmlVersion':'2.5.1','schemaId':'Validate/02_NTNN_TT80_251.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
 }

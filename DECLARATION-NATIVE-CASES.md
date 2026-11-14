@@ -29,7 +29,7 @@ release/Pages/cohort/scoped evidence vẫn chỉ chờ 13 ca gate D1.
 | `05KK-TT89-withheld-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 **3.0.9**, chỉ oracle **HTKK 5.8.2**) | 14 | quý 4/2026 | — | 69 |
 | `05KK-PBT-two-provinces-Q3-2026` | `101 → 101_11 → L7` (05/KK 2.9.3, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 19 | quý 3/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 110 |
 | `05KK-TT89-PBT-two-provinces-Q4-2026` | `101 → 101_11 → Z8` (05/KK-TNCN TT89 3.0.9, oracle **HTKK 5.8.2**, mode `web-xml-import-tick-reexport`) | 14 | quý 4/2026 | 05-1/PBT-KK-TNCN (2 dòng tiền lương, 2 tỉnh) | 117 |
-| `02QTT-refund-transfer-Y2026` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2026 | 02-1 (2 người phụ thuộc); hoàn trả qua chuyển khoản | 126 |
+| `02QTT-refund-transfer-Y2025` | `101 → 101_11 → B8` (02/QTT 2.7.3, oracle **HTKK 5.8.2**) | 12 | năm 2025 | 02-1 (2 người phụ thuộc); hoàn trả qua chuyển khoản | 126 |
 
 Z8 05/KK-TNCN TT89 (`05KK-TT89-withheld-Q4-2026`, non-gating, `htkkVersion` 5.8.2; adapter `05-kk-tncn-tt89-3.0.9` ghim vào
 oracle 5.8.2 vì Z8 không có trong Menu.xml 5.8.1): KieuKy 14 = `SetLayoutToKhaiQuy` (chỉ kỳ quý). Driver chỉ tích `chkTKQuy` khi
@@ -170,9 +170,9 @@ giả thuyết này sai và phải chẩn đoán lại.
 
 B8 (02/QTT) dùng ca thiết kế `02QTT-dependants-Y2025` (hai người phụ thuộc, 6 và 12 tháng); web kết xuất XML qua descriptor engine.
 
-B8 hoàn trả qua chuyển khoản (`02QTT-refund-transfer-Y2026`, non-gating, `htkkVersion` 5.8.2, adapter `02-qtt-tncn-2.7.3-refund`;
-producer htkk_web `tncn02qtt-refund-transfer-y2026`, plugin `qtt02-refund-transfer`, ẩn trong ứng dụng bởi
-`QTT02_REFUND_TRANSFER_RELEASED` đến khi ca này đạt). Năm 2026, hai người phụ thuộc như ca 2025, [33] 20.000.000 → [44] = [46] =
+B8 hoàn trả qua chuyển khoản (`02QTT-refund-transfer-Y2025`, non-gating, `htkkVersion` 5.8.2, adapter `02-qtt-tncn-2.7.3-refund`;
+producer htkk_web `tncn02qtt-refund-transfer-y2025`, plugin `qtt02-refund-transfer`, ẩn trong ứng dụng bởi
+`QTT02_REFUND_TRANSFER_RELEASED` đến khi ca này đạt). Năm 2025, hai người phụ thuộc như ca dependants, [33] 20.000.000 → [44] = [46] =
 14.120.000 (> 5 triệu: Header B51 bắt buộc chuyển khoản), `chuyenKhoan` 1, `tenChuTaiKhoan` = tên NNT giả lập, tài khoản giả lập
 9999000011112, ngân hàng 01204003 (`DM_Tinh_NganHang`, MaTinh 101). Đọc tĩnh HTKK 5.8.2 (gói chính thức đúng ghim, không chạy):
 `TncnQtt02TT80Nckt273` (.ctor, ButtonClick_0, CellChange_0, GetDM) và `GeneralFunctions` (checkLockUnLockCells, LockUnLockCol,
@@ -181,7 +181,18 @@ sách ngân hàng, không xuất XML); `fpSpBindDataCell` (0x60001aa) ghi văn b
 control 98 lấy lại tên ngân hàng theo mã (`GetValueFromSelectedCell`). Nên mode là nhập XML → kết xuất lại, không cần thao tác trong
 lưới gốc; ô kiểm đọc [21]/[24]/[34]/[44]/[46], F145 và số tài khoản O149; lá XML kiểm = lá thiết kế; tên chủ tài khoản và ngân hàng
 do so sánh cả cây quyết định. Giới hạn: ca không quan sát ButtonClick_0 tự điền H149 (tên giả lập không dấu nên giá trị trùng). Câu
-hỏi mở: HTKK 5.8.2 có nhận kỳ năm 2026 (năm hiện tại) ở hộp kỳ KieuKy 12 không. Chưa chạy trên Windows.
+hỏi mở trước đây (kỳ năm 2026) đã có câu trả lời ở dưới.
+
+**Đổi sang năm 2025 (run 43551336755).** Ca ban đầu `02QTT-refund-transfer-Y2026` dừng ở `declaration-period-inputs-not-matched`
+(chưa nhập XML; `declarationPeriodMatched` true, `declarationAnnexMatched` false, HTKK không hiện thông báo từ chối;
+`axfpsPhuLuc` hiện, trong khi ở ca `02QTT-dependants-Y2025` cùng đợt thì ẩn). Đọc tĩnh (5.8.1 và 5.8.2 như nhau):
+`frmHTKKPeriod.LoadDefaultInfor` mở kỳ năm ở `Now.Year − 1` (2025 khi chạy năm 2026), nên ca năm 2025 không gõ lại `mskYear`
+(`SetDeclarationText` bỏ qua khi đã đúng); gõ 2026 làm chạy `mskYear_Leave` → `UpdatePeriodByVerSion`, hàm này đặt
+`pnVT2_PhuLucKeKhai.Visible = true` cho menu có hơn hai sheet (B8: 02, 02-1, KHBS) ngoài các menu loại trừ. Driver dùng
+`AnnexPanelHidden` (bố cục `SetLayoutToKhaiNamTuThangDenThang` ẩn danh sách) và coi danh sách hiện là không khớp, không nhấp. Không
+phải HTKK từ chối năm 2026. Ca chuyển sang `02QTT-refund-transfer-Y2025`, cùng số liệu (mẫu 2.7.3 không phân nhánh theo năm); không
+nới kiểm tra nào của driver. **Năm 2026 phải kiểm lại khi mùa quyết toán 2026 mở** (từ 01/01/2027 hộp kỳ mở năm 2026), hoặc khi
+driver chọn đúng phụ lục trên danh sách hiện của B8. Chưa chạy trên Windows.
 
 I9 (01/NTNN TT80, non-gating) dùng ca thiết kế `01NTNN-two-contractors-M09-2026`: hai nhà thầu "GIẢ LẬP" không MST, ngành
 01/02 của `DM_NNKD_NTNN.xml`, ngày thanh toán trong tháng 09/2026 (checkTKChinh E_27), ngày hợp đồng trước ngày chạy (E_36).
