@@ -70,7 +70,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private const string KhbsAnnex12EqualRowsCaseId="01GTGT-khbs-annex12-lan2-equal-rows-M10-2026";
  private const int KhbsAnnex12EqualRowsLeafTarget=424;
  private const string KhbsAnnex12DisplaySameCaseId="01GTGT-khbs-annex12-lan2-display-same-M10-2026";
- private const int KhbsAnnex12DisplaySameLeafTarget=452;
+ private const int KhbsAnnex12DisplaySameLeafTarget=465;
  private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}
  private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:id==KhbsAnnex12EqualRowsCaseId?KhbsAnnex12EqualRowsLeafTarget:id==KhbsAnnex12DisplaySameCaseId?KhbsAnnex12DisplaySameLeafTarget:-1;}
  // Case 5 and cases 6-9 share the annex lần 2 flow.

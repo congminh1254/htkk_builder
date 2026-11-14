@@ -40,7 +40,8 @@ ANNEX12_TWO_PLACES_CASE='01GTGT-khbs-annex12-lan2-two-places-M10-2026'
 ANNEX12_CT10_CASE='01GTGT-khbs-annex12-lan2-ct10-M10-2026'
 # Cases 10-11: captures of the two possible deviations of the released verified scope (same two rounds as cases 5-9):
 # equal-rows (plant 1 at 40/60, plant 2 two EQUAL rows 50/50: htkk_web's wide reading writes a pass-2 "50,00 -> 0,00" row);
-# display-same (plant 1 at 35/65: htkk_web's released display rule omits the [12] row shown "2" -> "2").
+# display-same (plant 1 at 35/65): run 43555407694 showed HTKK writes the [12] row shown "2" -> "2" that htkk_web's first
+# display rule omitted; the web now writes it (numeric rule), so the fragment below is HTKK's and the case must match.
 ANNEX12_EQUAL_ROWS_CASE='01GTGT-khbs-annex12-lan2-equal-rows-M10-2026'
 ANNEX12_DISPLAY_SAME_CASE='01GTGT-khbs-annex12-lan2-display-same-M10-2026'
 ANNEX12_WIDE_CASES=(ANNEX12_ADD_PLANT_CASE,ANNEX12_REMOVE_PLANT_CASE,ANNEX12_TWO_PLACES_CASE,ANNEX12_CT10_CASE,ANNEX12_EQUAL_ROWS_CASE,ANNEX12_DISPLAY_SAME_CASE)
@@ -3607,11 +3608,25 @@ ROWS_ANNEX12_DISPLAY_SAME=(
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', '9999999997-001 - Phường Sơn Tây - Thành phố Hà Nội - Thuế cơ sở 16 Thành phố Hà Nội'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '2'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '2'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_6', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[12]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ten', '', 'Số thuế phải nộp [12]=[11]x [10]'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_1_ten', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', '9999999997-001 - Phường Sơn Tây - Thành phố Hà Nội - Thuế cơ sở 16 Thành phố Hà Nội'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '2'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '5'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '2'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '2'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
-  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_6', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_7', None),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[12]'),
@@ -3625,7 +3640,7 @@ ROWS_ANNEX12_DISPLAY_SAME=(
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '-1'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '-1'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
-  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_7', None),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet', 'id=ID_8', None),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ma', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct2_ten', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_ma', '', '[12]'),
@@ -3658,7 +3673,7 @@ CASES={ZERO_TO_SALE10_CASE:{'rows':ROWS,'money':SALE10,'mainTaxLeaves':70,'fragm
  ANNEX12_TWO_PLACES_CASE:{'rows':ROWS_ANNEX12_TWO_PLACES,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':319,'taxLeaves':478,'period':None,'soLan':'2','prior':ANNEX12_CAPTURE_CASE,'annex12':'01GTGT-annex12-two-places-khbs-lan2'},
  ANNEX12_CT10_CASE:{'rows':ROWS_ANNEX12_CT10,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':293,'taxLeaves':452,'period':None,'soLan':'2','prior':ANNEX12_CAPTURE_CASE,'annex12':'01GTGT-annex12-ct10-khbs-lan2'},
  ANNEX12_EQUAL_ROWS_CASE:{'rows':ROWS_ANNEX12_EQUAL_ROWS,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':280,'taxLeaves':424,'period':None,'soLan':'2','prior':ANNEX12_CAPTURE_CASE,'annex12':'01GTGT-annex12-equal-rows-khbs-lan2'},
- ANNEX12_DISPLAY_SAME_CASE:{'rows':ROWS_ANNEX12_DISPLAY_SAME,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':293,'taxLeaves':452,'period':None,'soLan':'2','prior':ANNEX12_CAPTURE_CASE,'annex12':'01GTGT-annex12-display-same-khbs-lan2'}}
+ ANNEX12_DISPLAY_SAME_CASE:{'rows':ROWS_ANNEX12_DISPLAY_SAME,'money':SALE15,'mainTaxLeaves':70,'fragmentLeaves':306,'taxLeaves':465,'period':None,'soLan':'2','prior':ANNEX12_CAPTURE_CASE,'annex12':'01GTGT-annex12-display-same-khbs-lan2'}}
 # Public HTKK 5.8.2 catalogue texts (Project/MapMCT.xml, Map D1, SheetIndex 1 = 01-2/GTGT) that HTKK may write into the
 # 01-1/KHBS annex hồ sơ group of the capture case: the sheet name and each item caption, with and without its "[nn] - "
 # prefix (frmWinToKhai.UpdateCtForDoiTac strips it for dynamic items). Only the output publisher of the capture case uses them.

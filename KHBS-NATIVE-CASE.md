@@ -263,9 +263,16 @@ Same two rounds and B1 as cases 5-9.
 | Case | B2 annex (vs the capture B1) | Web file | Leaves |
 | --- | --- | --- | --- |
 | `01GTGT-khbs-annex12-lan2-equal-rows-M10-2026` | plant 1 at 40/60; plant 2 at two EQUAL rows 50,00/50,00 (row 3 dropped) | wide reading: pass 2 writes plant 2 "50,00 -> 0,00" and [12] "2" -> "0" (no single current row of the key) | 424 (74 + 70 + 280) |
-| `01GTGT-khbs-annex12-lan2-display-same-M10-2026` | plant 1 at 35/65 (first [12] 2,3331 -> 2,45, shown "2" both) | the RELEASED verified computation, which omits that row; the static reading and run 43549126253 say HTKK writes it | 452 (89 + 70 + 293) |
+| `01GTGT-khbs-annex12-lan2-display-same-M10-2026` | plant 1 at 35/65 (first [12] 2,3331 -> 2,45, shown "2" both) | since run 43555407694: HTKK's output (the [12] row "2" -> "2", ct06/ct7 0 included) | 465 (89 + 70 + 306) |
 
 Either outcome is retained raw; the released verified scope changes only after HTKK has decided.
+
+**Results (builder 8dd4a53, web 1585a559).** ct10 matched (run 43555403183, 452 leaves) after the displayRound port;
+equal-rows matched (run 43555405226, 424 leaves), confirming pass 2 for equal duplicate rows. display-same differed
+structurally (run 43555407694, mismatch mask 1, first difference 357): HTKK writes the [12] row whose value changes but
+whose display does not (`[12] 2 -> 2`, ct06 0, ct7 0), which the released web computation omitted. htkk_web now uses the
+same rules for every 01-2 amendment, so `ROWS_ANNEX12_DISPLAY_SAME` is HTKK's fragment (355 rows, 306 fragment leaves) and the
+case is expected to match on its next run.
 
 ## Raw native output retention
 
