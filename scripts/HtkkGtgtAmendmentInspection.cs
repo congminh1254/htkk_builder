@@ -23,8 +23,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // GetFileNameBySheet060000A2 monthlyD1 + GetNameNopTheoTinhCQT060000A3:
  // source menu NopTheoTinhCQT=3 => CQTQL10129; TieuMucHachToanVal00 (internal activity); M10/2026; XML2.8.3.
  // The period part is Thang+Nam (Thang padded to two digits by GetPeriodInfo): KHBS case 2 is M09/2026.
- private const string OriginalPriorFileName="01_GTGT_TT80_CQTQL10129_00_102026_283.xml",OriginalPriorM09FileName="01_GTGT_TT80_CQTQL10129_00_092026_283.xml";
- private string PriorFileName(){return KhbsNonzeroOriginal()?OriginalPriorM09FileName:OriginalPriorFileName;}
+ // KHBS cases 12-13 (quý 3/2026): KieuKy Q with TuThang empty -> "_Q" + String.Format("{0}{1}",Quy,Nam).PadLeft(6,'0').
+ private const string OriginalPriorFileName="01_GTGT_TT80_CQTQL10129_00_102026_283.xml",OriginalPriorM09FileName="01_GTGT_TT80_CQTQL10129_00_092026_283.xml",OriginalPriorQ3FileName="01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml";
+ private string PriorFileName(){return KhbsNonzeroOriginal()?OriginalPriorM09FileName:KhbsQuarterCase()?OriginalPriorQ3FileName:OriginalPriorFileName;}
  private FileInfo[] OriginalPriorCandidates(){
   DirectoryInfo directory=new DirectoryInfo(amendmentPriorDirectory);if(!directory.Exists||(directory.Attributes&FileAttributes.ReparsePoint)!=0)throw new InvalidOperationException();
   FileInfo[] all=directory.GetFiles("*.xml",SearchOption.TopDirectoryOnly);if(all.Length>64)throw new InvalidOperationException();List<FileInfo> found=new List<FileInfo>();

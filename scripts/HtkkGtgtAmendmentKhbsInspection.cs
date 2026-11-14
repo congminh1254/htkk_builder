@@ -1,6 +1,6 @@
 // Own bounded ORIGINAL amendment (kê khai bổ sung lần 1, KHBS) observation of D1 01/GTGT 2.8.3 on HTKK 5.8.2.
 // Flow (KHBS-NATIVE-CASE.md): C0 Ghi (HtkkGtgtAmendmentInspection.cs; zero, or for case 2 two fixed original edits)
-// -> original Đóng -> reopen D1 10/2026 (case 2: 09/2026) with
+// -> original Đóng -> reopen D1 10/2026 (case 2: 09/2026; cases 12-13: quý 3/2026) with
 // OptBosung and the fixed ngày lập 13/11/2026 (HtkkGtgtAmendmentOpenInspection.cs) -> original "Nhập từ XML" of the
 // fixed web B1 file (cmdImportXML_Click 0x060003AC: LoaiToKhai B -> RevertFromXml, message 0291) -> original
 // "Tổng hợp KHBS" (btnTongHopKHBS_Click 0x060003C1, message 0222) -> original "Kết xuất" XML -> whole-tree comparison
@@ -31,7 +31,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // summarises and exports; the whole tree is compared with the B2 file (270 leaves). HTKK's lần trước of round 2 is the saved
  // B1 main sheet (ReadSheet_LanTruoc), so the B2 sheet opens with the B1 vector ([32] 1.000.000) or zero (khbsOpenMainState 3/1).
  private const string KhbsLan2WebCaseId="01GTGT-khbs-lan2-sale10-M10-2026";
- private const string KhbsPriorB1FileName="bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml";
+ private const string KhbsPriorB1MonthFileName="bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml",KhbsPriorB1Q3FileName="bs1_01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml";
+ private string KhbsPriorB1FileName(){return KhbsQuarterCase()?KhbsPriorB1Q3FileName:KhbsPriorB1MonthFileName;}
  private static readonly decimal[] KhbsSale10B1=new decimal[]{0,0,0,0,0,0,0,1000000,100000,0,0,0,1000000,100000,0,1000000,100000,100000,0,0,0,100000,0,100000,0,0,0};
  private int khbsRound=0,khbsPriorSaveMessageId=0;private string webPriorPath="",webPriorSha256="",khbsPriorFileSha256="";
  private bool khbsPriorImportSucceeded=false,khbsPriorSummaryAcknowledged=false,khbsPriorSaveAcknowledged=false,khbsPriorFileSaved=false,khbsRound2Opened=false;private Stopwatch khbsPriorCloseClock=null;
@@ -71,14 +72,30 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private const int KhbsAnnex12EqualRowsLeafTarget=424;
  private const string KhbsAnnex12DisplaySameCaseId="01GTGT-khbs-annex12-lan2-display-same-M10-2026";
  private const int KhbsAnnex12DisplaySameLeafTarget=465;
+ // Cases 12-13 (htkk_web producers khbs-q3-zero-to-sale10 / khbs-q3-lan2-sale10): QUARTERLY captures, non-gating. Case 1 and
+ // case 3 on quý 3/2026 (chkTKQuy, cbbQuy 3; GetHanNopToKhai D1 KieuKy Q: due 30/10/2026, so the fixed ngày lập gives 14 late
+ // days). The C0 file is 01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml (GetFileNameBySheet D1, KieuKy Q, TuThang empty:
+ // "_Q" + String.Format("{0}{1}",Quy,Nam).PadLeft(6,'0')) and the saved B1 bs1_<that name> ("_Q0"+Quy+Nam for LoaiToKhai B).
+ private const string KhbsQ3WebCaseId="01GTGT-khbs-zero-to-sale10-Q3-2026",KhbsQ3Lan2WebCaseId="01GTGT-khbs-lan2-sale10-Q3-2026";
+ private const int KhbsQ3LeafTarget=270,KhbsQ3Lan2LeafTarget=270;
+ private bool KhbsQuarterCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsQ3WebCaseId||webCaseId==KhbsQ3Lan2WebCaseId);}
+ // Cases 14-15 (htkk_web producers khbs-annex12-round / khbs-annex12-lan2-round): captures of the ct06/ct7 DISPLAY rounding of the
+ // 01-2 hồ sơ group, non-gating. Case 14 is case 4's flow with its own B1 annex (plant 1 [10] 3, plant 2 [10] 5, each two rows
+ // 50/50: [12] 1,5 and 2,5 against nothing); case 15 is case 5's two rounds with case 14's exact file as the previous version and
+ // a B2 annex with plant 1 at [10] 8 (+2,5 twice) and plant 2 removed (-2,5). Expected annex: KhbsAnnexRound.
+ private const string KhbsAnnex12RoundCaseId="01GTGT-khbs-annex12-round-M10-2026",KhbsAnnex12Lan2RoundCaseId="01GTGT-khbs-annex12-lan2-round-M10-2026";
+ private const int KhbsAnnex12RoundLeafTarget=463,KhbsAnnex12Lan2RoundLeafTarget=388;
+ private bool KhbsAnnexRoundCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId);}
  private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}
  private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:id==KhbsAnnex12EqualRowsCaseId?KhbsAnnex12EqualRowsLeafTarget:id==KhbsAnnex12DisplaySameCaseId?KhbsAnnex12DisplaySameLeafTarget:-1;}
  // Case 5 and cases 6-9 share the annex lần 2 flow.
- private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId));}
- private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId));}
- private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id);}
+ private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan2RoundCaseId);}
+ private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId);}
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3WebCaseId||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12RoundCaseId||id==KhbsAnnex12Lan2RoundCaseId;}
+ // The bổ sung lần 2 case ids (web file soLan 2, a staged previous-version file): cases 3, 5-11, 13 and 15.
+ private static bool KhbsLan2CaseId(string id){return id==KhbsLan2WebCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12Lan2RoundCaseId;}
  // The lần 2 flow (round 1 imports, summarises and saves the previous-version B1, round 2 opens B2): cases 3, 5 and 6-9.
- private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsLan2WebCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId));}
+ private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&KhbsLan2CaseId(webCaseId);}
  // The 01-2 percentages the imported annex must show: the proven two-plant annex, or in case 5's round 2 plant 1 at 40/60.
  private decimal[] KhbsAnnexFirstPlantPercentages(){return KhbsAnnexLan2Case()&&khbsRound==2?new decimal[]{40m,60m}:new decimal[]{33.33m,66.67m};}
  private string KhbsSoLan(){return KhbsLan2Case()?"2":"1";}
@@ -91,7 +108,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   return true;
  }
  private void InspectKhbsPriorSavedFile(){
-  string directory=Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst));FileInfo file=new FileInfo(Path.Combine(directory,KhbsPriorB1FileName));
+  string directory=Path.GetFullPath(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst));FileInfo file=new FileInfo(Path.Combine(directory,KhbsPriorB1FileName()));
   if(!file.Exists||(file.Attributes&FileAttributes.ReparsePoint)!=0||file.Length<2||file.Length>262144||!String.Equals(Path.GetFullPath(file.DirectoryName),directory,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException();
   khbsPriorFileSha256=Hash(file.FullName);khbsPriorFileSaved=true;
  }
@@ -114,6 +131,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool KhbsNonzeroOriginal(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsSale5WebCaseId;}
  // The only period month of the D1 drivers: 10, or 09 for KHBS case 2 (GetPeriodInfo pads Thang to two digits, 0x0efc).
  private string PeriodMonth(){return KhbsNonzeroOriginal()?"09":"10";}
+ // The quarterly D1 drivers: the zero quý 4/2026 web case, and the KHBS quarterly cases 12-13 on quý 3/2026.
+ private bool QuarterPeriod(){return QuarterCase()||KhbsQuarterCase();}
+ private string PeriodQuarter(){return KhbsQuarterCase()?"3":"4";}
  // Exact C0 money of case 2 in the fixed 27-indicator order of InspectMoneyZero / InspectOriginalPriorFile
  // (ct22 ... ct43): [27] 3.000.000, [28] 200.000, [30] 2.000.000, [31] 100.000, [32] 1.000.000, [33] 100.000,
  // [34] 3.000.000, [35] 200.000, [36] 200.000, [40a] 200.000, [40] 200.000.
@@ -275,7 +295,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    // Lần 2, round 1 only: save the summarised B1 with the original Ghi, verify the bs1_ file, close it with the original Đóng.
    if(khbsPhase=="prior-save-ready"){
     if(!KhbsOwnerReady())return;
-    if(File.Exists(Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),KhbsPriorB1FileName)))throw new InvalidOperationException();
+    if(File.Exists(Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),KhbsPriorB1FileName())))throw new InvalidOperationException();
     Button save=Named(khbsOwner,"cmdSave") as Button;if(save==null||save.FindForm()!=khbsOwner||save.Text.Replace("&",String.Empty).Trim()!="Ghi")throw new InvalidOperationException();
     khbsPhase="prior-save-result";SetStage(HtkkAutomationStage.GtgtAmendmentKhbsPriorSaving);Record();
     khbsOwner.BeginInvoke(new MethodInvoker(delegate{try{save.PerformClick();}catch(Exception error){Failure(error);}}));return;
@@ -323,7 +343,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      SetStage(HtkkAutomationStage.GtgtAmendmentKhbsComparing);Record();
      if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
      XmlDocument input=ReadBoundedOriginalXml(webInputPath),output=ReadBoundedOriginalXml(exportPath);
-     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:webCaseId==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:webCaseId==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(webCaseId)?KhbsAnnexWideLeafTarget(webCaseId):KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
+     khbsTreeMatched=HtkkWebTaxComparison.CompareKhbs(input,output,webCaseId==KhbsSale5WebCaseId?KhbsSale5LeafTarget:webCaseId==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:webCaseId==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(webCaseId)?KhbsAnnexWideLeafTarget(webCaseId):webCaseId==KhbsQ3WebCaseId?KhbsQ3LeafTarget:webCaseId==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:webCaseId==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:webCaseId==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:KhbsLeafTarget,out khbsLeafCount,out khbsMismatchMask,out khbsFirstDifferenceOrdinal,out khbsIdentityMatched,out khbsCreationDateValid);
      if(Hash(exportPath)!=khbsExportSha256)throw new InvalidOperationException();
      finished=true;SetStage(khbsTreeMatched?HtkkAutomationStage.GtgtAmendmentKhbsInspected:HtkkAutomationStage.GtgtAmendmentKhbsNotMatched);Record();exportWatcher.Stop();CloseKhbsMessage(message);return;
     }

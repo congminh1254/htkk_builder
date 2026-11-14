@@ -155,6 +155,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[][] types=two?new string[][]{new string[]{"01","02"},new string[]{"01","02","02"}}:new string[][]{new string[]{"01","02"}};
   string[][] wards=null;
   if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId))KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);
+  if(KhbsAnnexRoundCase())KhbsAnnexRound(out names,out codes,out parents,out percentages,out types,out wards);
   if(wards==null){wards=new string[types.Length][];for(int i=0;i<types.Length;i++){wards[i]=new string[types[i].Length];for(int j=0;j<wards[i].Length;j++)wards[i][j]=Annex12FixedWard;}}
   List<string> expectedWards=new List<string>();
   System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)return false;object info=null;
@@ -206,6 +207,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(webCaseId==KhbsAnnex12DisplaySameCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{new decimal[]{35m,65m},p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,w,w}};return;}
   if(webCaseId==KhbsAnnex12Ct10CaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,4m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,w,w}};return;}
   throw new InvalidOperationException();
+ }
+ // Cases 14-15 (display-rounding captures): the B1 annex (case 14, and case 15's round 1) has plant 1 at [10] 3 and plant 2 at
+ // [10] 5, each two rows 50/50 (types 01/02, the fixed ward); case 15's round 2 keeps plant 1 alone at [10] 8, rows 50/50.
+ private void KhbsAnnexRound(out string[] names,out string[] codes,out decimal[] parents,out decimal[][] percentages,out string[][] types,out string[][] wards){
+  string n1="NHA MAY GIA LAP - KHONG NOP",n2="NHA MAY GIA LAP 2 - KHONG NOP",w=Annex12FixedWard;decimal[] half=new decimal[]{50m,50m};string[] t1=new string[]{"01","02"};
+  if(!KhbsAnnexRoundCase())throw new InvalidOperationException();
+  if(webCaseId==KhbsAnnex12Lan2RoundCaseId&&khbsRound==2){names=new string[]{n1};codes=new string[]{"9999999997-001"};parents=new decimal[]{8m};percentages=new decimal[][]{half};types=new string[][]{t1};wards=new string[][]{new string[]{w,w}};return;}
+  if(khbsRound!=1)throw new InvalidOperationException();
+  names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{3m,5m};percentages=new decimal[][]{half,half};types=new string[][]{t1,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w}};
  }
  // Runs 42182681228/42182684607: after the ORIGINAL import every child R was blank (mask
  // 264 / 8659208) and the reexport was refused with 0016 (Header row 83: R44 required).

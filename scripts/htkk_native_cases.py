@@ -31,14 +31,15 @@ TRUSTED_ADAPTERS={
  # Tổng hợp KHBS, original export, whole tree. The only adapter whose unit has amendmentOrder 1.
  '01-gtgt-2.8.3-khbs':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1,
   # Case 2 (non-zero C0, 24 late days) is M09/2026: due 20/10/2026, before the fixed ngày lập 13/11/2026.
-  'periods':{'month':('10/2026','09/2026')}},
+  # Case 12 (quarterly capture, 14 late days) is quý 3/2026: due 30/10/2026 (GetHanNopToKhai D1 KieuKy Q).
+  'periods':{'month':('10/2026','09/2026'),'quarter':('3/2026',)}},
  # Bổ sung LẦN 2 (amendmentOrder 2) on the same driver: the previous version (bổ sung lần 1 of the case-1 web file) is
  # imported, summarised and saved in HTKK first (htkk_khbs_web_cases.prior_case), then B2 is opened, imported and summarised.
  # KHBS ORACLE CAPTURE with phụ lục 01-2/GTGT (C0 without annex, B1 adds the proven two-plant annex): non-gating.
  '01-gtgt-2.8.3-khbs-annex12':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':['01-2/GTGT'],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1,'periods':{'month':('10/2026',)}},
  # KHBS ORACLE CAPTURE of a CHANGED allocation, bổ sung lần 2: round 1 is the annex capture B1 (saved), round 2 B2 moves [11].
  '01-gtgt-2.8.3-khbs-annex12-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':['01-2/GTGT'],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,'periods':{'month':('10/2026',)}},
- '01-gtgt-2.8.3-khbs-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,'periods':{'month':('10/2026',)}},
+ '01-gtgt-2.8.3-khbs-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,'periods':{'month':('10/2026',),'quarter':('3/2026',)}},
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.
  '03-tndn-2.9.4':_declaration('N8','2.9.4',{'year':('2025',)},['03-1A']),

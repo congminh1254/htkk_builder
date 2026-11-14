@@ -1288,6 +1288,90 @@
       }
     },
     {
+      "caseId": "01GTGT-khbs-zero-to-sale10-Q3-2026",
+      "producerCase": "khbs-q3-zero-to-sale10",
+      "adapterId": "01-gtgt-2.8.3-khbs",
+      "format": "htkk-web-khbs-q3-zero-to-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-q3-zero-to-sale10-input",
+      "inputBranch": "gtgt-web-reference-khbs-q3-zero-to-sale10-input",
+      "outputBranch": "gtgt-web-native-khbs-q3-zero-to-sale10-output",
+      "statusContext": "htkk-native/khbs-q3-zero-to-sale10",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-lan2-sale10-Q3-2026",
+      "producerCase": "khbs-q3-lan2-sale10",
+      "adapterId": "01-gtgt-2.8.3-khbs-lan2",
+      "format": "htkk-web-khbs-q3-lan2-sale10-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-q3-lan2-sale10-input",
+      "inputBranch": "gtgt-web-reference-khbs-q3-lan2-sale10-input",
+      "outputBranch": "gtgt-web-native-khbs-q3-lan2-sale10-output",
+      "statusContext": "htkk-native/khbs-q3-lan2-sale10",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-round-M10-2026",
+      "producerCase": "khbs-annex12-round",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12",
+      "format": "htkk-web-khbs-annex12-round-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-round-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-round-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-round-output",
+      "statusContext": "htkk-native/khbs-annex12-round",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-lan2-round-M10-2026",
+      "producerCase": "khbs-annex12-lan2-round",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-round-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-round-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-round-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-round-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-round",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
       "caseId": "05KK-PBT-two-provinces-Q3-2026",
       "producerCase": "tncn05kk-pbt-two-provinces-q3-2026",
       "adapterId": "05-kk-tncn-2.9.3-pbt",

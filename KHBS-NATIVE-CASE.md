@@ -1,6 +1,6 @@
 # Native case design: 01/GTGT kê khai bổ sung lần 1 (D1, KHBS)
 
-Status: case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
+Status (cases 12-15, quarterly and display-rounding captures, are wired, non-gating, not yet run; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
 khbsTreeMatched, mask 0, 270 leaves, message ids 0). Case 2 `01GTGT-khbs-sale5-to-sale10-M09-2026` is
 **wired, non-gating, not yet run**. Both use adapter `01-gtgt-2.8.3-khbs`, driver mode
 `gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2 (per-case `htkkVersion`, `releaseGate=false`). The case
@@ -273,6 +273,46 @@ structurally (run 43555407694, mismatch mask 1, first difference 357): HTKK writ
 whose display does not (`[12] 2 -> 2`, ct06 0, ct7 0), which the released web computation omitted. htkk_web now uses the
 same rules for every 01-2 amendment, so `ROWS_ANNEX12_DISPLAY_SAME` is HTKK's fragment (355 rows, 306 fragment leaves) and the
 case is expected to match on its next run.
+
+## Cases 12-13: QUARTERLY captures (non-gating; adapters `01-gtgt-2.8.3-khbs` / `-khbs-lan2`, period `quarter` `3/2026`)
+
+htkk_web releases bổ sung for monthly AND quarterly 01/GTGT, but cases 1-11 are all monthly. Cases 12-13 are case 1 and case 3
+on **quý 3/2026** (most small taxpayers file 01/GTGT quarterly). Static reading of the pinned 5.8.2 payload (nothing executed):
+
+- `GeneralFunctions.GetHanNopToKhai` (TAX.HTKK.Business, KieuKy Q): quý 4 -> 30/01 of the next year, 3 -> 30/10, 2 -> 30/07,
+  1 -> 01/05; then the DMNgayLe rows of the period's own KieuKy (only Q rows 30/04/2021 and 01/05/2021 exist) and Saturday +2 /
+  Sunday +1. 30/10/2026 is a Friday, so the due date is 30/10/2026 (the law's 31/10 would move to 02/11; htkk_web follows HTKK).
+- `GeneralFunctions.SoNgayNopCham` = ngày lập KHBS − hạn nộp in days (min 0): the fixed ngày lập 13/11/2026 gives **14** days.
+  `CheckPeriodKhbs` (KieuKy not D) refuses only a date after today (0224) or after hạn nộp + 10 years (0507).
+- `WinDoWorkEvent.GetFileNameBySheet`, D1, KieuKy Q, `TuThang` empty (GetPeriodInfo sets it only while mskTuThang is visible; the proven quý-4 web case exports an empty kyKKhaiTuThang): C0 file
+  `01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml` ("_Q" + String.Format("{0}{1}",Quy,Nam).PadLeft(6,'0')) and, for LoaiToKhai B,
+  `bs1_01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml` ("_Q0" + Quy + Nam). If HTKK names them otherwise, the run stops at
+  `gtgt-amendment-prior-file-missing` (bounded), which is itself the finding.
+
+| Case | Flow | Web file | Leaves |
+| --- | --- | --- | --- |
+| `01GTGT-khbs-zero-to-sale10-Q3-2026` (producer `khbs-q3-zero-to-sale10`) | case 1 on Q3/2026: zero C0 Ghi, B1 imports sale10 | ct10 100.000, ct3a_2 **14**, ct3b **420** (0,03% x 14 x 100.000) | 270 |
+| `01GTGT-khbs-lan2-sale10-Q3-2026` (producer `khbs-q3-lan2-sale10`) | case 3 on Q3/2026: round 1 imports case 12's exact file, Ghi; round 2 [32] 1.500.000 | ct10 50.000, ct3a_2 14, ct3b **210** | 270 |
+
+Driver: `KhbsQuarterCase()` selects `chkTKQuy` and `cbbQuy` "3" in the period dialog for C0, B1 and B2 (`QuarterPeriod()`,
+`PeriodQuarter()`; the zero quý-4 web case keeps "4"), and TTPeriodInfo must read KieuKy Q, Quy 3 at the C0 sheet and at every
+reopening (`amendmentOpenPeriodMatched`). Input privacy: the exact PLuc rows (the KHBS headers carry Q, 3/2026, 01/07/2026,
+30/09/2026), then the main header projected in memory onto the M10 baseline (`Q3_PERIOD`) and the unchanged no-annex allowlist.
+The case-13 prior must be case 12's file (kyKKhai 3/2026). Automation limit 150 s / 175 s (as cases 1 / 3).
+
+## Cases 14-15: captures of the ct06/ct7 display rounding (non-gating; adapters `-khbs-annex12` / `-khbs-annex12-lan2`)
+
+htkk_web's `displayRound` is fitted to three observed points only (+0,5 -> "1", −0,5 -> "0", −1,5 -> "−2"). These cases add
++1,5, +2,5 and −2,5 (and a .5 annex-group total), all exact in binary64:
+
+| Case | Flow | Annex | Web writes ([12] ct04 -> ct05, ct06) | Leaves |
+| --- | --- | --- | --- | --- |
+| `01GTGT-khbs-annex12-round-M10-2026` (producer `khbs-annex12-round`) | case 4's (C0 without annex, B1 adds 01-2) | `htkk_annex12_web_cases.ROUND_B1_VARIANT`: plant 1 [10] 3, plant 2 [10] 5, each two rows 50,00/50,00 | 0 -> 2, "2" (+1,5) twice; 0 -> 2, "3" (+2,5) twice; tongCong_7 100008 | 463 (74 + 70 + 319) |
+| `01GTGT-khbs-annex12-lan2-round-M10-2026` (producer `khbs-annex12-lan2-round`) | case 5's two rounds, round 1 imports case 14's exact file | `ROUND_B2_VARIANT`: plant 1 [10] 8 (rows 4/4), plant 2 removed | 2 -> 4, "3" (+2,5) twice; 2 -> 0, "-2" (−2,5, pass 2); tongCong_7 50002 | 388 (38 + 70 + 280) |
+
+They also pin two other .5 displays the web reads statically: the 01-2 XML `ct12` of 2,5 (web "3") and the 01-1/KHBS ct04/ct05
+of 2,5 (web roundEven "2"). Driver: `KhbsAnnexRound` gives the expected imported annex per round (names, codes, [10],
+percentages, types, the fixed ward); everything else is case 4's / case 5's flow. Automation limit 175 s / 240 s.
 
 ## Raw native output retention
 

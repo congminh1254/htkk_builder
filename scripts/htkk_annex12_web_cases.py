@@ -60,6 +60,11 @@ CT10_VARIANT='01GTGT-annex12-ct10-khbs-lan2'
 # EQUAL rows 50/50 (row 3 dropped); plant 1 at 35/65 (its first [12] row shown "2" before and after).
 EQUAL_ROWS_VARIANT='01GTGT-annex12-equal-rows-khbs-lan2'
 DISPLAY_SAME_VARIANT='01GTGT-annex12-display-same-khbs-lan2'
+# Display-rounding captures (htkk_khbs_web_cases ANNEX12_ROUND_CASE / ANNEX12_LAN2_ROUND_CASE): the B1 annex adds plant 1 at [10] 3
+# and plant 2 at [10] 5, each two rows 50,00/50,00 ([12] 1,5 and 2,5, written "2" and "3"); the lần-2 annex keeps plant 1 at
+# [10] 8 ([12] 4/4) and removes plant 2.
+ROUND_B1_VARIANT='01GTGT-annex12-round-khbs'
+ROUND_B2_VARIANT='01GTGT-annex12-round-khbs-lan2'
 _PLANT1=lambda:plant(0,'ID_1','7',[location('1.1','01','33.33','2','ID_1'),location('1.2','02','66.67','5','ID_2')])
 VARIANTS={
  TWO_PLANTS_CHANGED_VARIANT:{'plants':[
@@ -81,6 +86,11 @@ VARIANTS={
    plant(0,'ID_1','7',[location('1.1','01','40.00','3','ID_1'),location('1.2','02','60.00','4','ID_2')]),
    plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','50.00','2','ID_2')]),
   ],'ct13':'10','ct14':'10','totalLeaves':148,'taxLeaves':144,'groupRows':(2,2)},
+ ROUND_B1_VARIANT:{'plants':[
+   plant(0,'ID_1','3',[location('1.1','01','50.00','2','ID_1'),location('1.2','02','50.00','2','ID_2')]),
+   plant(1,'ID_2','5',[location('2.1','01','50.00','3','ID_1'),location('2.2','02','50.00','3','ID_2')]),
+  ],'ct13':'8','ct14':'8','totalLeaves':148,'taxLeaves':144,'groupRows':(2,2)},
+ ROUND_B2_VARIANT:{'plants':[plant(0,'ID_1','8',[location('1.1','01','50.00','4','ID_1'),location('1.2','02','50.00','4','ID_2')])],'ct13':'8','ct14':'8','totalLeaves':112,'taxLeaves':108,'groupRows':(2,)},
  DISPLAY_SAME_VARIANT:{'plants':[
    plant(0,'ID_1','7',[location('1.1','01','35.00','2','ID_1'),location('1.2','02','65.00','5','ID_2')]),
    plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
