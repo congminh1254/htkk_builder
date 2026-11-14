@@ -381,10 +381,10 @@ class Lan1ExistingQuarterAnnexAndNegativeRound(unittest.TestCase):
    self.assertEqual(w.khbs.manifest_fields(lan1)['priorCaseId'],self.TWO)
    for body,case in ((f.sale_fixture(lan2),lan1),(f.sale_fixture(lan1),lan2)):
     with self.subTest(case=case),self.assertRaises(w.InputError):w.validate_web_xml(body,case_id=case)
-  # Case 18: quý 3/2026 in the three headers, 14 late days and ct3b 420 with the annex.
+  # Case 18: quý 3/2026 in the three headers, 14 late days and, as HTKK wrote in run 43642289420, ct3b 0 with two Muc_I.2 rows.
   q3=f.sale_fixture(Q3ANNEX).decode()
   self.assertEqual(q3.count('<kieuKy>Q</kieuKy><kyKKhai>3/2026</kyKKhai><kyKKhaiTuNgay>01/07/2026</kyKKhaiTuNgay><kyKKhaiDenNgay>30/09/2026</kyKKhaiDenNgay>'),3)
-  self.assertIn('<ct3a_2>14</ct3a_2><ct3b>420</ct3b>',q3);self.assertEqual(w.khbs.manifest_fields(Q3ANNEX)['expected']['ct3b'],'420')
+  self.assertIn('<ct3a_2>14</ct3a_2><ct3b>0</ct3b>',q3);self.assertEqual(w.khbs.manifest_fields(Q3ANNEX)['expected']['ct3b'],'0')
   for body,case in ((f.sale_fixture(CASE4),Q3ANNEX),(f.sale_fixture(Q3ANNEX),CASE4),(f.sale_fixture(Q3),Q3ANNEX)):
    with self.subTest(case=case),self.assertRaises(w.InputError):w.validate_web_xml(body,case_id=case)
   # Cases 19-20: [12] 3,5/4,5/3,5 written "4"/"5"/"4"; lần 2 writes −0,5 as "0" (twice), −4,5 and −3,5 as "-4".

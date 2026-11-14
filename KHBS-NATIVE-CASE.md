@@ -1,6 +1,6 @@
 # Native case design: 01/GTGT kê khai bổ sung lần 1 (D1, KHBS)
 
-Status (cases 12-13, quarterly, matched; cases 14-15, display rounding, differed and are ported; cases 16-20 wired, not yet run; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
+Status (cases 12-13, quarterly, matched; cases 14-15, display rounding, differed and are ported; cases 16, 19, 20 matched, 18 ported, 17 to rerun; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
 khbsTreeMatched, mask 0, 270 leaves, message ids 0). Case 2 `01GTGT-khbs-sale5-to-sale10-M09-2026` is
 **wired, non-gating, not yet run**. Both use adapter `01-gtgt-2.8.3-khbs`, driver mode
 `gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2 (per-case `htkkVersion`, `releaseGate=false`). The case
@@ -340,7 +340,7 @@ except `soLan` (`ROWS_ANNEX12_LAN1_*`), and htkk_web keeps the scope behind `KHB
 | --- | --- | --- | --- | --- |
 | `01GTGT-khbs-annex12-lan1-ct11-M10-2026` (`khbs-annex12-lan1-ct11`) | C0 imports the staged lần đầu (the proven annex web case `01GTGT-annex12-two-plants-nonzero-M10-2026`'s own file, `priorCaseId`), 01-2 selected, head CQTs restored, Ghi; B1 as case 4 | `TWO_PLANTS_CHANGED_VARIANT` (plant 1 at 40/60), main [32] 1.500.000 | case 5's fragments, soLan 1 | 465 |
 | `01GTGT-khbs-annex12-lan1-add-plant-M10-2026` (`khbs-annex12-lan1-add-plant`) | as case 16 | `ADD_PLANT_VARIANT` (third plant 99996) | case 6's fragments, soLan 1 | 527 |
-| `01GTGT-khbs-annex12-capture-Q3-2026` (`khbs-q3-annex12-capture`) | case 4 on quý 3/2026 (zero C0, `…_Q032026_283.xml`) | the proven two-plant annex | 14 late days, ct3b 420 (`AA38`, Σ Muc_I.1) | 504 |
+| `01GTGT-khbs-annex12-capture-Q3-2026` (`khbs-q3-annex12-capture`) | case 4 on quý 3/2026 (zero C0, `…_Q032026_283.xml`) | the proven two-plant annex | 14 late days, ct3b 0 (HTKK, run 43642289420; see results) | 504 |
 | `01GTGT-khbs-annex12-round3-M10-2026` (`khbs-annex12-round3`) | case 14's | `ROUND3_B1_VARIANT`: [10] 7 / 9 / 7, rows 50/50 | [12] 0 -> 4 "4", 0 -> 5 "5" (+3,5 / +4,5) | 564 |
 | `01GTGT-khbs-annex12-lan2-neg-round-M10-2026` (`khbs-annex12-lan2-neg-round`) | case 15's, round 1 imports case 19's exact file | `NEG_ROUND_B2_VARIANT`: plant 1 [10] 6 (rows 3/3), plants 2-3 removed | ct06/ct7 "0" (−0,5) twice, "-4" (−4,5), "-4" (−3,5); tongCong_7 49991 | 427 |
 
@@ -359,6 +359,16 @@ annex web case's own contract.
 What each run decides: cases 16-17 match -> htkk_web may open `KHBS_01GTGT_ANNEX_LAN1_EXISTING_RELEASED`; case 18 matches ->
 `KHBS_01GTGT_ANNEX_QUARTER_RELEASED` (late interest with 01-2 for a quarter); case 20's "-4" for −4,5 confirms the web's
 round-half-to-even negative branch (away from zero would give "-5"), "-4" for −3,5 rules out truncation toward zero.
+
+**Results (builder 23b7abf, web 18e72dc9).** Case 16 (run 43642284685) matched the whole tree (465 leaves): the C0 import flow works
+and lần 1 against the annexed lần đầu is exactly case 5's computation. Cases 19 (run 43642291803, 564 leaves) and 20 (run
+43642294376, 427 leaves) matched: −4,5 -> "-4", −3,5 -> "-4", −0,5 -> "0" confirm htkk_web's negative `displayRound` branch. Case
+17 failed before any tax step (profile-wait-timeout) and reruns with the next release. Case 18 (run 43642289420) differed only at
+leaf 213, PL01_KHBS Muc_3 ct3b: HTKK wrote 0 where the web wrote 420 (ct3a_1 and 14 days as the web).
+`TinhSoTienPhatNopCham` copies the FIXED cell AA38 of 01-KHBS, whose formula `0.03/100*P71*O49` names fixed cells (P71 the days
+cell, O49 Σ Muc_I.1 of `KHBS_01_TT80_DIA_BAN_283.xls`); the second Muc_I.2 row is inserted above row 71, so P71 is then an empty
+template cell. htkk_web ports it (`khbsAnnex12LateInterest`: 2-11 Muc_I.2 rows give 0) and `ROWS_ANNEX12_CAPTURE_Q3` now carries
+ct3b 0; the raw exports are pinned in htkk_web byte-identical and the producer reproduces every leaf of all four.
 
 ## Raw native output retention
 

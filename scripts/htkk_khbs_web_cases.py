@@ -63,7 +63,8 @@ ANNEX12_LAN2_ROUND_CASE='01GTGT-khbs-annex12-lan2-round-M10-2026'
 ANNEX12_LAN1_CT11_CASE='01GTGT-khbs-annex12-lan1-ct11-M10-2026'
 ANNEX12_LAN1_ADD_PLANT_CASE='01GTGT-khbs-annex12-lan1-add-plant-M10-2026'
 ANNEX12_LAN1_EXISTING_CASES=(ANNEX12_LAN1_CT11_CASE,ANNEX12_LAN1_ADD_PLANT_CASE)
-# Case 18 (non-gating): case 4 on quý 3/2026 (14 late days, ct3b 420): kỳ quý with 01-2 and the first 01-2 case with late interest.
+# Case 18 (non-gating): case 4 on quý 3/2026 (14 late days): kỳ quý with 01-2 and the first 01-2 case with late interest. Run
+# 43642289420 differed only at Muc_3 ct3b: HTKK wrote 0, not 420 (fixed-cell AA38 with two Muc_I.2 rows); htkk_web now writes 0.
 ANNEX12_CAPTURE_Q3_CASE='01GTGT-khbs-annex12-capture-Q3-2026'
 # Cases 19-20 (non-gating): the NEGATIVE ct06/ct7 display. Case 19 is case 14's flow with htkk_annex12_web_cases.ROUND3_B1_VARIANT
 # (three plants, [12] 3,5/4,5/3,5); case 20 is case 15's flow with case 19's exact file as the previous version and
@@ -5686,7 +5687,7 @@ ROWS_ANNEX12_CAPTURE_Q3=(
   ('PL01_KHBS/Muc_A/Muc_I/Muc_3', '', None),
   ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3a_1', '', '2026-11-13'),
   ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3a_2', '', '14'),
-  ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3b', '', '420'),
+  ('PL01_KHBS/Muc_A/Muc_I/Muc_3/ct3b', '', '0'),
   ('PL01_KHBS/Muc_A/Muc_II', '', None),
   ('PL01_KHBS/Muc_A/Muc_II/ChiTiet', 'id=ID_1', None),
   ('PL01_KHBS/Muc_A/Muc_II/ChiTiet/ct2_ma', '', ''),
@@ -6975,7 +6976,7 @@ MANIFEST={ZERO_TO_SALE10_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','produce
  ANNEX12_LAN1_ADD_PLANT_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,'priorCaseId':ANNEX12_CAPTURE_SOURCE,
  'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'50000','tongCong_ct10':'50000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1500000','ct33':'150000','ct40':'150000'}}},
  ANNEX12_CAPTURE_Q3_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,
- 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'100000','tongCong_ct10':'100000','ct3a_1':FIXED_DATE,'ct3a_2':'14','ct3b':'420','main':{'ct32':'1000000','ct33':'100000','ct40':'100000'}}},
+ 'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'100000','tongCong_ct10':'100000','ct3a_1':FIXED_DATE,'ct3a_2':'14','ct3b':'0','main':{'ct32':'1000000','ct33':'100000','ct40':'100000'}}},
  ANNEX12_ROUND3_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':1,'ngayLapKHBS':FIXED_DATE,
  'expected':{'rows':['[27]','[28]','[32]','[33]','[34]','[35]','[36]','[40a]','[40]'],'tongCong_7':'100000','tongCong_ct10':'100000','ct3a_1':FIXED_DATE,'ct3a_2':'0','ct3b':'0','main':{'ct32':'1000000','ct33':'100000','ct40':'100000'}}},
  ANNEX12_LAN2_NEG_ROUND_CASE:{'exporter':'lib/htkk-gtgt01-khbs-xml.ts','producer':'scripts/generate-htkk-web-khbs-reference.mjs','htkkVersion':'5.8.2','soLan':2,'ngayLapKHBS':FIXED_DATE,'priorCaseId':ANNEX12_ROUND3_CASE,
