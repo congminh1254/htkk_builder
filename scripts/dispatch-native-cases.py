@@ -108,10 +108,19 @@ def inputs(source,item):
  if version(case)!=case_registry.oracle.DEFAULT:value['htkk_version']=version(case)
  return value
 
+def deferred(case,at):
+ """notBefore of a case whose period HTKK refuses at `at` (UTC day of the dispatch), else None."""
+ return case_registry.deferred_until(case,at.astimezone(datetime.timezone.utc).date())
+
 def dispatch(value,actions_token,status_token,send=None,builder=None,get=None,sleep=None,now=None):
  send=send or post;get=get or get_json;sleep=sleep or time.sleep;now=now or (lambda:datetime.datetime.now(datetime.timezone.utc))
  if builder is not None:sha(builder)
+ count=0
  for item in value['cases']:
+  # A deferred case (registry notBefore) is neither dispatched nor given a status: never reported as a success.
+  until=deferred(item['caseId'],now())
+  if until is not None:print('Native case '+item['caseId']+' deferred until '+until+' (HTKK refuses its period before that day); not dispatched, no status.',flush=True);continue
+  count+=1
   status='https://api.github.com/repos/'+REPO+'/statuses/'+value['sourceCommit']
   # Commit statuses are last-writer hints, so a blind retry of the same pending status is safe.
   deliver(send,status,status_token,{'state':'pending','context':context(item['caseId']),'description':'Fixed synthetic native case queued input:'+item['artifactCommit']},sleep)
@@ -123,6 +132,7 @@ def dispatch(value,actions_token,status_token,send=None,builder=None,get=None,sl
   except Exception:
    deliver(send,status,status_token,{'state':'failure','context':context(item['caseId']),'description':'Fixed synthetic native case dispatch failed'},sleep)
    raise
+ return count
 
 def main():
  try:
@@ -130,7 +140,7 @@ def main():
   path=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-web-input-publication.json'
   if path.is_symlink() or not path.is_file() or path.stat().st_size>16384:raise ValueError('PUBLICATION')
   value=publication(path.read_bytes(),os.environ['COMMIT_SHA'])
-  dispatch(value,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'),builder=sha(os.environ.get('GITHUB_SHA')))
-  print(str(len(CASES))+' immutable synthetic native cases dispatched; results use separate commit statuses.')
+  count=dispatch(value,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'),builder=sha(os.environ.get('GITHUB_SHA')))
+  print(str(count)+' immutable synthetic native cases dispatched'+('' if count==len(CASES) else ', '+str(len(CASES)-count)+' deferred (no status)')+'; results use separate commit statuses.')
  except Exception:raise SystemExit('Native-case dispatch failed; no raw response, input, path or credential published.')
 if __name__=='__main__':main()

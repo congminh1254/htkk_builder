@@ -1,5 +1,5 @@
 """Trusted adapter/case metadata. Private plans cannot select arbitrary commands/drivers."""
-import copy,importlib.util,json,pathlib,re
+import copy,datetime,importlib.util,json,pathlib,re
 ROOT=pathlib.Path(__file__).parent
 REGISTRY=json.loads((ROOT/'htkk-native-cases.json').read_text())
 def check(value):
@@ -124,14 +124,25 @@ _oracle_spec=importlib.util.spec_from_file_location('trusted_case_oracle',ROOT/'
 CASE_KEYS=frozenset({'caseId','producerCase','adapterId','format','stagingDirectory','inputBranch','outputBranch','statusContext','releaseGate','unit'})
 def case_version(c):
  """The reviewed oracle version of one registry case; refuses anything else."""
- check(type(c)is dict and CASE_KEYS<=set(c)<=CASE_KEYS|{'htkkVersion'})
+ check(type(c)is dict and CASE_KEYS<=set(c)<=CASE_KEYS|{'htkkVersion','notBefore'})
  if 'htkkVersion' not in c:return oracle.DEFAULT
  value=c['htkkVersion'];check(type(value)is str and value in oracle.VERSIONS and value!=oracle.DEFAULT and c['releaseGate']is False)
+ return value
+# Optional 'notBefore' (YYYY-MM-DD, UTC day): the first day HTKK accepts the case's period, statically read from the
+# pinned oracle. Before it the case is produced and published as usual but never dispatched and gets no status (it is
+# reported as deferred, never as a success). Only a candidate case may carry it. 02/QTT năm 2026 (B8, KieuKy 12):
+# frmHTKKPeriod.CheckTuThangDenThang refuses đến tháng 12/2026 while ConvertToDateTime('01/12/2026') > DateTime.Today
+# (Message.xml 0471; runs 43642303269/43642305532 on 14/11/2026), so the first accepted day is 2026-12-01.
+def not_before(c):
+ if 'notBefore' not in c:return None
+ value=c['notBefore'];check(type(value)is str and re.fullmatch(r'20[0-9]{2}-[01][0-9]-[0-3][0-9]',value) and c['releaseGate']is False)
+ try:check(datetime.date.fromisoformat(value).isoformat()==value)
+ except ValueError:check(False)
  return value
 CASES={c['caseId']:c for c in REGISTRY['cases']}
 check(0<len(CASES)<=256 and len(CASES)==len(REGISTRY['cases']))
 for c in CASES.values():
- case_version(c)
+ case_version(c);not_before(c)
  check(re.fullmatch('[A-Za-z0-9-]{1,100}',c['caseId']) and re.fullmatch('[a-z0-9-]{1,80}',c['producerCase']))
  a=ADAPTERS[c['adapterId']];u=c['unit']
  # An adapter of a later HTKK release (an XML version absent from 5.8.1) runs only on that oracle.
@@ -166,6 +177,10 @@ def htkk_version(case):check(case in CASES);return case_version(CASES[case])
 # Status context of a dispatched case: the registry context, suffixed '@htkk582' for a 5.8.2 case.
 def status_context(case):return oracle.status_context(CASES[case]['statusContext'],htkk_version(case))
 def is_declaration(case):return case in DECLARATION_CASES
+def deferred_until(case,day):
+ """The case's notBefore while `day` (a datetime.date, UTC) is earlier, else None."""
+ check(case in CASES and type(day)is datetime.date);value=not_before(CASES[case])
+ return value if value is not None and day.isoformat()<value else None
 def policy(case):
  check(case in CASES);return copy.deepcopy(CASES[case])
 def validate_plan(value):

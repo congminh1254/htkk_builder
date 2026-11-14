@@ -6,15 +6,47 @@ def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
 def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3'))]}
+import datetime
+DECEMBER=datetime.datetime(2026,12,1,0,0,5,tzinfo=datetime.timezone.utc)
+NOVEMBER=datetime.datetime(2026,11,30,23,59,59,tzinfo=datetime.timezone.utc)
 class NativeCases(unittest.TestCase):
  def test_every_registered_case_and_separate_tokens_pending_before_dispatch(self):
   value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[]
-  d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args))
+  # On/after every notBefore (2026-12-01) all registered cases are dispatched.
+  self.assertEqual(d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args),now=lambda:DECEMBER),len(d.CASES))
   self.assertEqual(len(calls),2*len(d.CASES))
   for index,case in enumerate(d.CASES):
    status,dispatch=calls[index*2:index*2+2]
    self.assertEqual(status[0],'https://api.github.com/repos/'+d.REPO+'/statuses/'+'a'*40);self.assertEqual(status[1],'source-token');self.assertEqual(status[2]['context'],d.case_registry.status_context(case));self.assertEqual(status[2]['context'].split('@')[0],d.CONTEXTS[case]);self.assertEqual(status[2]['state'],'pending')
    self.assertEqual(dispatch[1],'builder-token');self.assertEqual(dispatch[2]['inputs']['web_case_id'],case);self.assertEqual(dispatch[2]['inputs']['web_artifact_commit'],document()['cases'][index]['artifactCommit']);self.assertEqual(dispatch[2]['inputs']['web_source_sha'],'a'*40)
+ def test_deferred_cases_get_no_dispatch_and_no_status_before_not_before(self):
+  # 02/QTT năm 2026: HTKK CheckTuThangDenThang refuses đến tháng 12/2026 before 01/12/2026 (0471, runs 43642303269/43642305532).
+  deferred={c for c,v in d.case_registry.CASES.items() if 'notBefore' in v}
+  self.assertEqual(deferred,{'02QTT-dependants-Y2026','02QTT-refund-transfer-Y2026'})
+  for case in deferred:
+   self.assertEqual(d.case_registry.CASES[case]['notBefore'],'2026-12-01');self.assertIs(d.case_registry.CASES[case]['releaseGate'],False)
+   self.assertEqual(d.deferred(case,NOVEMBER),'2026-12-01');self.assertIsNone(d.deferred(case,DECEMBER))
+   # The UTC day decides: 01/12 00:30 in Hà Nội is still 30/11 UTC.
+   self.assertEqual(d.deferred(case,datetime.datetime(2026,12,1,0,30,tzinfo=datetime.timezone(datetime.timedelta(hours=7)))),'2026-12-01')
+  for case in set(d.CASES)-deferred:self.assertIsNone(d.deferred(case,NOVEMBER))
+  value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[];printed=[]
+  with patch('builtins.print',lambda *a,**k:printed.append(a[0])):
+   count=d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args),now=lambda:NOVEMBER)
+  self.assertEqual(count,len(d.CASES)-2);self.assertEqual(len(calls),2*count)
+  touched={args[2].get('context') for args in calls}|{args[2].get('inputs',{}).get('web_case_id') for args in calls}
+  for case in deferred:
+   self.assertNotIn(d.context(case),touched);self.assertNotIn(case,touched)
+   self.assertIn('Native case '+case+' deferred until 2026-12-01 (HTKK refuses its period before that day); not dispatched, no status.',printed)
+  self.assertFalse(any(args[2].get('state')=='success' for args in calls))
+ def test_not_before_is_a_reviewed_date_on_candidates_only(self):
+  import copy
+  base=copy.deepcopy(d.case_registry.CASES['02QTT-dependants-Y2026'])
+  for bad in ('2026-12-1','2026-13-01','2026-02-30',20261201,''):
+   c=dict(base,notBefore=bad)
+   with self.assertRaises(ValueError):d.case_registry.not_before(c)
+  with self.assertRaises(ValueError):d.case_registry.not_before(dict(base,releaseGate=True))
+  self.assertIsNone(d.case_registry.not_before({k:v for k,v in base.items() if k!='notBefore'}))
+  with self.assertRaises(ValueError):d.case_registry.deferred_until('02QTT-dependants-Y2026','2026-11-30')
  def test_dispatch_failure_sets_failure_status_without_retrying_action(self):
   calls=[]
   def send(url,token,payload):

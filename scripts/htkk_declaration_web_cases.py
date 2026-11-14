@@ -328,14 +328,15 @@ CASES = {
                                           'Thẻ CCCD', 'Giấy khai sinh', 'GKS-0001', 'Con', 'Hà Nội', 'Quận Ba Đình',
                                           'Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam - Chi nhánh Hà Nội']),
     # B8 năm 2026 (HTKK 5.8.2 oracle, non-gating): the two cases above with every month in 2026. The period dialog opens on
-    # Now.Year - 1, so the driver types 2026 and selects on the annex list that typing leaves visible.
-    '02QTT-dependants-Y2026': _case('tncn02qtt-dependants-y2026', 'B8', '952', '2.7.3', 'Validate/02_QTT_TNCN_TT80_273.xsd', ('Y', '2026', '', ''), None, '2026-10-27', '2026-10-27', 130, ['PLuc_02_1_BK_QTT_TNCN'], WORKBOOK_SERVICE,
+    # Now.Year - 1, so the driver types 2026 and selects on the annex list that typing leaves visible. Ngày lập 01/12/2026: the
+    # web, like HTKK (CheckTuThangDenThang 0471), refuses đến tháng 12/2026 before that day; the registry defers them (notBefore).
+    '02QTT-dependants-Y2026': _case('tncn02qtt-dependants-y2026', 'B8', '952', '2.7.3', 'Validate/02_QTT_TNCN_TT80_273.xsd', ('Y', '2026', '', ''), None, '2026-10-27', '2026-12-01', 130, ['PLuc_02_1_BK_QTT_TNCN'], WORKBOOK_SERVICE,
                                     ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu 02/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'Quyết toán theo năm dương lịch', 'NGUOI PHU THUOC A', 'NGUOI PHU THUOC B',
                                      'Thẻ CCCD', 'Giấy khai sinh', 'GKS-0001', 'Con',
                                      # [08]/[07] NNT tỉnh/huyện (02!F23/N23, Catalogue_Dia_Ban_Tinh/Huyen 101/10101):
                                      # Header!B53/B54 refused the empty pair with 0016 (release 227, run 42302323087).
                                      'Hà Nội', 'Quận Ba Đình']),
-    '02QTT-refund-transfer-Y2026': _case('tncn02qtt-refund-transfer-y2026', 'B8', '952', '2.7.3', 'Validate/02_QTT_TNCN_TT80_273.xsd', ('Y', '2026', '', ''), None, '2026-10-27', '2026-10-27', 130, ['PLuc_02_1_BK_QTT_TNCN'], WORKBOOK_SERVICE,
+    '02QTT-refund-transfer-Y2026': _case('tncn02qtt-refund-transfer-y2026', 'B8', '952', '2.7.3', 'Validate/02_QTT_TNCN_TT80_273.xsd', ('Y', '2026', '', ''), None, '2026-10-27', '2026-12-01', 130, ['PLuc_02_1_BK_QTT_TNCN'], WORKBOOK_SERVICE,
                                          ['TỜ KHAI QUYẾT TOÁN THUẾ THU NHẬP CÁ NHÂN (Mẫu 02/QTT-TNCN)', TEMPLATE_TT80, ADDRESS, 'Quyết toán theo năm dương lịch', 'NGUOI PHU THUOC A', 'NGUOI PHU THUOC B',
                                           'Thẻ CCCD', 'Giấy khai sinh', 'GKS-0001', 'Con', 'Hà Nội', 'Quận Ba Đình',
                                           'Ngân hàng Nông nghiệp và Phát triển Nông thôn Việt Nam - Chi nhánh Hà Nội']),
