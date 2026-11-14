@@ -33,7 +33,10 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  public override object InitializeLifetimeService(){return null;}
  public static string Hash(string path){using(FileStream stream=File.OpenRead(path))using(SHA256 hash=SHA256.Create()){StringBuilder value=new StringBuilder();foreach(byte b in hash.ComputeHash(stream))value.Append(b.ToString("x2",CultureInfo.InvariantCulture));return value.ToString();}}
  private static string Bool(bool value){return value?"true":"false";}
- public void Record(){
+ // The UI thread and the stall watchdog (Poll thread) may both record; one writer at a time.
+ private readonly object recordGate=new object();
+ public void Record(){lock(recordGate){RecordUnlocked();}}
+ private void RecordUnlocked(){
   string q=((char)34).ToString();StringBuilder counts=new StringBuilder();
   foreach(string key in new string[]{"form","button","combo","text","spread","other"}){if(counts.Length>0)counts.Append(',');counts.Append(q+key+q+":"+(kinds.ContainsKey(key)?kinds[key]:0).ToString(CultureInfo.InvariantCulture));}
   string json="{"+q+"format"+q+":"+q+"htkk-gui-reference-automation-v1"+q+","+q+"mode"+q+":"+q+mode+q+","+q+"stage"+q+":"+q+stage+q+","+q+"failureCategory"+q+":"+q+failure+q+","+q+"editorKind"+q+":"+q+editorKind+q+","+q+"runtime"+q+":"+q+"clr2-x86-custom-reference"+q+","+q+"sourcePinsVerified"+q+":"+Bool(pins)+","+q+"visibleForms"+q+":"+forms+","+q+"spreadCount"+q+":"+spreads+","+q+"sheetRows"+q+":"+rows+","+q+"sheetColumns"+q+":"+columns+","+q+"mstBoxesMatched"+q+":"+Bool(mstMatched)+","+q+"initialRequiredTextBlank"+q+":"+Bool(initialBlank)+","+q+"editingApiAvailable"+q+":"+Bool(editingAvailable)+","+q+"performedInputCount"+q+":"+inputCount+","+q+"originalSaveInvoked"+q+":"+Bool(saveInvoked)+","+q+"savedHeaderExists"+q+":"+Bool(headerExists)+","+q+"savedHeaderChecksMatched"+q+":"+Bool(headerMatched)+","+q+"savedHeaderCheckedFieldCount"+q+":"+headerChecks+","+q+"saveDialogKind"+q+":"+q+saveDialogKind+q+","+q+"savedHeaderMismatchMask"+q+":"+headerMismatchMask+(adapter!=null?adapter.BuildNavigationJson():NavigationJson())+","+q+"controlKinds"+q+":{ "+counts.ToString()+"},"+q+"realTaxpayerDataUsed"+q+":false,"+q+"runtimeRoundTrip"+q+":false}";
@@ -61,6 +64,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  }
  private void Poll(){
   Stopwatch clock=Stopwatch.StartNew();
+  Stopwatch dispatch=null;
   // Annex web cases add the proven 14-input baseline; the nonzero probe exports twice.
   // Both stay below the registry's 180-second mode ceiling.
   double limit=modeEnum==HtkkAutomationMode.GtgtWebImportInspect||modeEnum==HtkkAutomationMode.GtgtAnnex12ExportNonzero||modeEnum==HtkkAutomationMode.DeclarationWebImportInspect?170:120;
@@ -69,8 +73,10 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
     if(!queued&&Application.OpenForms.Count>0){
      Form dispatcher=null;
      foreach(Form form in Application.OpenForms){if(form.IsHandleCreated&&!form.IsDisposed){dispatcher=form;break;}}
-     if(dispatcher!=null){queued=true;dispatcher.BeginInvoke(new MethodInvoker(delegate{try{InspectAndMaybeSave();}catch(Exception error){Failure(error);}finally{queued=false;}}));}
+     if(dispatcher!=null){queued=true;dispatch=Stopwatch.StartNew();dispatcher.BeginInvoke(new MethodInvoker(delegate{try{InspectAndMaybeSave();}catch(Exception error){Failure(error);}finally{queued=false;}}));}
     }
+    // Bounded UI-thread responsiveness watchdog: how long the queued dispatch has waited (declaration export only).
+    else if(queued&&dispatch!=null)ObserveDeclarationUiStall(dispatch.Elapsed.TotalSeconds);
    }catch{}
    Thread.Sleep(200);
   }
