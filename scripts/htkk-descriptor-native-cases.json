@@ -137,8 +137,8 @@
      "expectedLeaves": {"mst_cu": "9999999997", "ct14": "1", "ct15": "12", "ct16": "10", "ct17": "10", "ct18": "8", "ct19": "2", "ct20": "180000000", "ct21": "150000000", "ct22": "30000000", "ct23": "2000005", "ct24": "8000000", "ct25": "0", "ct27": "0", "ct29": "150000000", "ct32": "90000000", "ct35": "200001", "ct36": "5000000", "ct39": "0", "ct40": "0", "ct41": "1000000", "ct42": "12000000", "ct44": "6000000", "ct45": "200001"},
      "expectedRows": {"PLuc_05_1_PBT_KK_TNCN/PhanBoTuTienLuong/NDungPhanBoTuTienLuong": 2, "PLuc_05_1_PBT_KK_TNCN/PhanBoTuTrungThuong/NDungPhanBoTuTrungThuong": 1},
      "question": "05-1/PBT: sau Nhập từ XML, ô Thuế tỉnh/CCT (control 8, path_15, không có trong XML) trống (GetValueFromSelectedCell không ghi tên cho L7/Z8); chọn lại Thuế tỉnh/CCT rồi CQT quản lý qua ô gốc thì kết xuất khớp toàn cây?"},
-    {"caseId": "02QTT-refund-transfer-Y2026", "adapterId": "02-qtt-tncn-2.7.3-refund", "htkkVersion": "5.8.2", "releaseGate": false,
-     "unit": {"menuId": "B8", "adapterVersion": "2.7.3", "periodType": "year", "periodValue": "2026", "activityCode": "00", "annexes": ["02-1"], "amendmentOrder": 0},
+    {"caseId": "02QTT-refund-transfer-Y2025", "adapterId": "02-qtt-tncn-2.7.3-refund", "htkkVersion": "5.8.2", "releaseGate": false,
+     "unit": {"menuId": "B8", "adapterVersion": "2.7.3", "periodType": "year", "periodValue": "2025", "activityCode": "00", "annexes": ["02-1"], "amendmentOrder": 0},
      "expectedLeaves": {"ct21": "300000000", "ct24": "2", "ct27": "79200000", "ct31": "88800000", "ct32": "5880000", "ct33": "20000000", "ct44": "14120000", "ct45": "14120000", "ct46": "14120000", "ct47": "0", "ct48": "0", "soTienHoanTra": "14120000", "chuyenKhoan": "1", "tienMat": "0", "soTaiKhoan": "9999000011112"},
      "expectedRows": {"PLuc_02_1_BK_QTT_TNCN/CTiet": 2},
      "question": "Hoàn trả qua chuyển khoản: sau Nhập từ XML, HTKK giữ chuyenKhoan, tenChuTaiKhoan (ô khóa H149), soTaiKhoan, maNganHang/tenNganHang (control 98) và kết xuất khớp toàn cây? Kiểm tra Header B37/B38/B55/B59 đạt (tỉnh G151 không có trong XML, chỉ lọc ngân hàng)."}
