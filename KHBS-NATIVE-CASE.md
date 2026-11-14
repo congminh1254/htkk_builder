@@ -1,6 +1,6 @@
 # Native case design: 01/GTGT kê khai bổ sung lần 1 (D1, KHBS)
 
-Status (cases 12-15, quarterly and display-rounding captures, are wired, non-gating, not yet run; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
+Status (cases 12-13, quarterly, matched; cases 14-15, display rounding, differed and are ported; see below): case 1 `01GTGT-khbs-zero-to-sale10-M10-2026` **passed** on Windows (release run 43358377013:
 khbsTreeMatched, mask 0, 270 leaves, message ids 0). Case 2 `01GTGT-khbs-sale5-to-sale10-M09-2026` is
 **wired, non-gating, not yet run**. Both use adapter `01-gtgt-2.8.3-khbs`, driver mode
 `gtgt-amendment-khbs-inspect`, oracle HTKK 5.8.2 (per-case `htkkVersion`, `releaseGate=false`). The case
@@ -313,6 +313,15 @@ htkk_web's `displayRound` is fitted to three observed points only (+0,5 -> "1", 
 They also pin two other .5 displays the web reads statically: the 01-2 XML `ct12` of 2,5 (web "3") and the 01-1/KHBS ct04/ct05
 of 2,5 (web roundEven "2"). Driver: `KhbsAnnexRound` gives the expected imported annex per round (names, codes, [10],
 percentages, types, the fixed ward); everything else is case 4's / case 5's flow. Automation limit 175 s / 240 s.
+
+**Results (builder a960f8c, web 3c6ea8e3).** Case 12 (run 43591669543) and case 13 (run 43591672052) matched the whole tree
+(270 leaves each): the quarterly period dialog, the static file names `…_Q032026_283.xml` / `bs1_…`, the 30/10/2026 due date
+and 14 late days (ct3b 420 / 210) are as read. Case 14 (run 43591674509) differed only at leaves 442/455 and case 15 (run
+43591676788) at 379/384, all in PL01_1_KHBS: ct06/ct7 were exactly as `displayRound` predicted (+1,5 "2", +2,5 "3", −2,5
+"−2"), but HTKK shows the [12] ct04/ct05 of 2,5 as "3" (web wrote "2", round half to even) and the annex group tongCong_7
+50.002,5 as "50003" (web "50002"). htkk_web now uses the same display rule for ct04/ct05, tongCong_7, Muc_I.2 ct7 and
+tongCong_ct11; the raw exports are pinned there byte-identical and re-export equal, so `ROWS_ANNEX12_ROUND` /
+`ROWS_ANNEX12_LAN2_ROUND` carry "3" / "3" / "50003" and both cases are expected to match on their next run.
 
 ## Raw native output retention
 
