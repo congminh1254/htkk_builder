@@ -64,8 +64,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private const int KhbsAnnex12TwoPlacesLeafTarget=478;
  private const string KhbsAnnex12Ct10CaseId="01GTGT-khbs-annex12-lan2-ct10-M10-2026";
  private const int KhbsAnnex12Ct10LeafTarget=452;
- private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId;}
- private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:-1;}
+ // Cases 10-11 (htkk_web producers khbs-annex12-lan2-equal-rows/-display-same): non-gating captures of the released verified
+ // scope's two possible deviations, the same two rounds: plant 1 at 40/60 with plant 2 at two EQUAL rows 50/50 (row 3 dropped);
+ // plant 1 at 35/65 with plant 2 unchanged.
+ private const string KhbsAnnex12EqualRowsCaseId="01GTGT-khbs-annex12-lan2-equal-rows-M10-2026";
+ private const int KhbsAnnex12EqualRowsLeafTarget=424;
+ private const string KhbsAnnex12DisplaySameCaseId="01GTGT-khbs-annex12-lan2-display-same-M10-2026";
+ private const int KhbsAnnex12DisplaySameLeafTarget=452;
+ private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}
+ private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:id==KhbsAnnex12EqualRowsCaseId?KhbsAnnex12EqualRowsLeafTarget:id==KhbsAnnex12DisplaySameCaseId?KhbsAnnex12DisplaySameLeafTarget:-1;}
  // Case 5 and cases 6-9 share the annex lần 2 flow.
  private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId));}
  private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId));}

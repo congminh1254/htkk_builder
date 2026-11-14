@@ -248,6 +248,25 @@ row's own local CQT (`Annex12WardCqtName`; only the two fixed wards are accepted
 (`Annex12MaxRestoredRows`; `annex12WebHeadAuthorityRepairCount` at most 4 × 7 = 28). Automation limit 240 s (case 5 keeps
 210 s). Cases 6-9 are the evidence the htkk_web gate `KHBS_01GTGT_ANNEX_WIDE_RELEASED` waits for.
 
+**Results (builder 44daec1, web 6312552).** add-plant (run 43549118061), remove-plant (run 43549120429) and two-places (run
+43549123678) matched the whole tree; htkk_web releases them (`KHBS_01GTGT_ANNEX_WIDE_RELEASED`). ct10 (run 43549126253)
+differed only at leaves 419/420: ct06/ct7 of plant 2's first [12] row (1,5 -> 2, shown "2" -> "2") are "1" in HTKK, the web
+wrote "0" (round half to even). HTKK wrote that row, confirming the numeric (not displayed) difference rule; its two −0,5 rows
+are "0" and the remove-plant −1,5 row is "−2". htkk_web now writes the displayed text as observed (`displayRound`), so
+`ROWS_ANNEX12_CT10` carries "1"/"1" there and the case is expected to match on its next run; the [10] change stays behind
+`KHBS_01GTGT_ANNEX_CT10_RELEASED` until it does.
+
+## Cases 10-11: captures of the released verified scope's two possible deviations (non-gating)
+
+Same two rounds and B1 as cases 5-9.
+
+| Case | B2 annex (vs the capture B1) | Web file | Leaves |
+| --- | --- | --- | --- |
+| `01GTGT-khbs-annex12-lan2-equal-rows-M10-2026` | plant 1 at 40/60; plant 2 at two EQUAL rows 50,00/50,00 (row 3 dropped) | wide reading: pass 2 writes plant 2 "50,00 -> 0,00" and [12] "2" -> "0" (no single current row of the key) | 424 (74 + 70 + 280) |
+| `01GTGT-khbs-annex12-lan2-display-same-M10-2026` | plant 1 at 35/65 (first [12] 2,3331 -> 2,45, shown "2" both) | the RELEASED verified computation, which omits that row; the static reading and run 43549126253 say HTKK writes it | 452 (89 + 70 + 293) |
+
+Either outcome is retained raw; the released verified scope changes only after HTKK has decided.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

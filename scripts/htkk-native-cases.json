@@ -1246,6 +1246,48 @@
       }
     },
     {
+      "caseId": "01GTGT-khbs-annex12-lan2-equal-rows-M10-2026",
+      "producerCase": "khbs-annex12-lan2-equal-rows",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-equal-rows-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-equal-rows-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-equal-rows-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-equal-rows-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-equal-rows",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-khbs-annex12-lan2-display-same-M10-2026",
+      "producerCase": "khbs-annex12-lan2-display-same",
+      "adapterId": "01-gtgt-2.8.3-khbs-annex12-lan2",
+      "format": "htkk-web-khbs-annex12-lan2-display-same-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-annex12-lan2-display-same-input",
+      "inputBranch": "gtgt-web-reference-khbs-annex12-lan2-display-same-input",
+      "outputBranch": "gtgt-web-native-khbs-annex12-lan2-display-same-output",
+      "statusContext": "htkk-native/khbs-annex12-lan2-display-same",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2/GTGT"],
+        "amendmentOrder": 2
+      }
+    },
+    {
       "caseId": "05KK-PBT-two-provinces-Q3-2026",
       "producerCase": "tncn05kk-pbt-two-provinces-q3-2026",
       "adapterId": "05-kk-tncn-2.9.3-pbt",

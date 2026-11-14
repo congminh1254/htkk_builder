@@ -56,6 +56,10 @@ ADD_PLANT_VARIANT='01GTGT-annex12-add-plant-khbs-lan2'
 REMOVE_PLANT_VARIANT='01GTGT-annex12-remove-plant-khbs-lan2'
 TWO_PLACES_VARIANT='01GTGT-annex12-two-places-khbs-lan2'
 CT10_VARIANT='01GTGT-annex12-ct10-khbs-lan2'
+# Non-gating captures of the released verified scope's two possible deviations: plant 1 at 40/60 with plant 2 keeping two
+# EQUAL rows 50/50 (row 3 dropped); plant 1 at 35/65 (its first [12] row shown "2" before and after).
+EQUAL_ROWS_VARIANT='01GTGT-annex12-equal-rows-khbs-lan2'
+DISPLAY_SAME_VARIANT='01GTGT-annex12-display-same-khbs-lan2'
 _PLANT1=lambda:plant(0,'ID_1','7',[location('1.1','01','33.33','2','ID_1'),location('1.2','02','66.67','5','ID_2')])
 VARIANTS={
  TWO_PLANTS_CHANGED_VARIANT:{'plants':[
@@ -73,6 +77,14 @@ VARIANTS={
  CT10_VARIANT:{'plants':[_PLANT1(),
    plant(1,'ID_2','4',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
   ],'ct13':'11','ct14':'11','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
+ EQUAL_ROWS_VARIANT:{'plants':[
+   plant(0,'ID_1','7',[location('1.1','01','40.00','3','ID_1'),location('1.2','02','60.00','4','ID_2')]),
+   plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','50.00','2','ID_2')]),
+  ],'ct13':'10','ct14':'10','totalLeaves':148,'taxLeaves':144,'groupRows':(2,2)},
+ DISPLAY_SAME_VARIANT:{'plants':[
+   plant(0,'ID_1','7',[location('1.1','01','35.00','2','ID_1'),location('1.2','02','65.00','5','ID_2')]),
+   plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),
+  ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
 }
 def is_case(case_id):return case_id in CASES
 def tax_leaves(case_id):
