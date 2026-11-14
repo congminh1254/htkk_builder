@@ -33,6 +33,30 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // the ordinal indexes the synthetic web input only.
  private int declarationTreeAttributeMask=0,declarationTreeTextMismatchCount=0,declarationTreeFirstMismatchOrdinal=0,declarationTreeFirstMismatchKind=0;
  private int declarationTreeMismatch1=0,declarationTreeMismatch2=0,declarationTreeMismatch3=0,declarationTreeMismatch4=0;
+ // Bounded, value-free export wait diagnostics (runs 43498861393/43549091519: values matched, the original
+ // "Kết xuất" was invoked and neither the selector nor any message appeared before the probe deadline).
+ // declarationUiWaitMask bits: 1 the original import click handler has returned; 2 cmdExport.CanSelect at the
+ // last gate check; 4 export click delegate entered; 8 export click delegate returned; 16 that click returned and
+ // nothing (selector, message, new form, native dialog) appeared for the settle window; 32 the single bounded
+ // second invocation was made; 64 the UI thread did not dispatch for >= 5 s during export (Poll watchdog);
+ // 128 the owner (or its MDI parent) was the active form at invocation; 256 a visible native #32770 dialog of
+ // this process during the selector wait; 512 owner ready (visible, enabled, no original message) at the last
+ // gate check; 1024 the original cmdExport Click event was raised (observer only); 2048 the grid had an
+ // active cell editor at invocation.
+ // declarationUiForegroundKind: 0 not observed, 1 owner/MDI parent, 2 export selector, 3 original message,
+ // 4 other own managed form, 5 own native #32770 dialog, 6 other own-process window, 7 other process, 8 none.
+ private int declarationUiWaitMask=0,declarationUiWaitSeconds=0,declarationUiForegroundKind=0,declarationUiVisibleForms=0,declarationUiStallSeconds=0;
+ private int declarationExportInvokeCount=0,declarationExportFormsAtInvoke=0,declarationStallRecordedSeconds=0;
+ private bool declarationImportClickReturned=false,declarationExportClickReturned=false;
+ private Stopwatch declarationExportClock=null,declarationExportQuietClock=null;
+ private const double DeclarationExportSettleSeconds=10;
+ private string DeclarationUiWaitJson(){
+  string q=((char)34).ToString();StringBuilder json=new StringBuilder();
+  string[] names=new string[]{"declarationUiWaitMask","declarationUiWaitSeconds","declarationUiForegroundKind","declarationUiVisibleForms","declarationUiStallSeconds"};
+  int[] counts=new int[]{declarationUiWaitMask,declarationUiWaitSeconds,declarationUiForegroundKind,declarationUiVisibleForms,declarationUiStallSeconds};
+  for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
+  return json.ToString();
+ }
  private string DeclarationTreeJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"declarationTreeAttributeMask","declarationTreeTextMismatchCount","declarationTreeFirstMismatchOrdinal","declarationTreeFirstMismatchKind","declarationTreeMismatch1","declarationTreeMismatch2","declarationTreeMismatch3","declarationTreeMismatch4"};
@@ -49,7 +73,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
   int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
-  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson();
+  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson();
  }
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
@@ -383,6 +407,82 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Control[] controls=message.Controls.Find("btn_2",true);if(message.Text.Trim()!="Thông Báo"||controls.Length!=1||CountVisibleButtons(message)!=1)throw new InvalidOperationException();
   Button close=controls[0] as Button;if(close==null||!close.Visible||!close.Enabled||close.Text.Replace("&",String.Empty).Trim()!="Đóng")throw new InvalidOperationException();return close;
  }
+ // ---- Original export invocation: observable readiness gate, one click per invocation, bounded diagnostics ----
+ private Button DeclarationExportCommand(){
+  Button command=Named(roundtripOwner,"cmdExport") as Button;if(command==null||command.FindForm()!=roundtripOwner||command.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();return command;
+ }
+ private static int VisibleFormCount(){int count=0;foreach(Form form in Application.OpenForms)if(form.Visible&&!form.IsDisposed&&count<64)count++;return count;}
+ private bool OwnerOrParent(Form form){return form!=null&&(form==roundtripOwner||form==roundtripOwner.MdiParent);}
+ // Readiness for an original "Kết xuất": the owner is ready, the original import click handler (if any) has
+ // fully returned (its success message is closed inside it, so a click queued earlier could run re-entrantly
+ // in a still-running import), the button itself can take a click (PerformClick silently drops a click when
+ // CanSelect is false) and no selector is already up.
+ private bool DeclarationExportGate(){
+  bool owner=OriginalRoundtripOwnerReady();Control[] found=roundtripOwner.Controls.Find("cmdExport",true);if(found.Length!=1||!(found[0] is Button))throw new InvalidOperationException();
+  // A transiently disabled/hidden button is waited for here; the invocation itself still requires DeclarationExportCommand().
+  bool selectable=owner&&found[0].Visible&&found[0].Enabled&&found[0].CanSelect;
+  declarationUiWaitMask=(declarationUiWaitMask&~(2|512))|(selectable?2:0)|(owner?512:0);
+  bool ready=owner&&selectable&&(!roundtripImportCommandInvoked||declarationImportClickReturned)&&VisibleExportSelectors().Count==0;
+  if(!ready)ObserveDeclarationUiWait(false);
+  return ready;
+ }
+ private void InvokeDeclarationExport(Button command){
+  declarationExportInvokeCount++;declarationExportClickReturned=false;declarationExportQuietClock=null;declarationExportFormsAtInvoke=VisibleFormCount();
+  if(OwnerOrParent(Form.ActiveForm))declarationUiWaitMask|=128;
+  List<Control> grids=new List<Control>();int visited=0;GatherSpreads(roundtripOwner,grids,ref visited);if(grids.Count==1&&Get(grids[0],"EditingControl")!=null)declarationUiWaitMask|=2048;
+  ObserveDeclarationUiWait(true);
+  // Observer only: records that the original Click event was raised; HTKK's own handler runs first.
+  EventHandler observed=delegate(object sender,EventArgs args){declarationUiWaitMask|=1024;};
+  roundtripOwner.BeginInvoke(new MethodInvoker(delegate{
+   try{declarationUiWaitMask|=4;command.Click+=observed;try{command.PerformClick();}finally{command.Click-=observed;}declarationExportClickReturned=true;declarationUiWaitMask|=8;}
+   catch(Exception error){Failure(error);}
+  }));
+ }
+ private void ObserveDeclarationExportWithoutSelector(){
+  bool native=ObserveDeclarationUiWait(false);
+  if(!declarationExportClickReturned)return;
+  // The click handler returned: a modal selector or message would still be open inside it. Wait a bounded
+  // settle window with nothing new on screen before treating the click as not taken.
+  bool quiet=!native&&VisibleFormCount()<=declarationExportFormsAtInvoke&&!OriginalMessageVisible();
+  if(!quiet){declarationExportQuietClock=null;return;}
+  if(declarationExportQuietClock==null){declarationExportQuietClock=Stopwatch.StartNew();return;}
+  if(declarationExportQuietClock.Elapsed.TotalSeconds<DeclarationExportSettleSeconds)return;
+  if((declarationUiWaitMask&16)==0){declarationUiWaitMask|=16;Record();}
+  if(declarationExportInvokeCount==1){declarationPhase="export-reinvoke";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);Record();}
+ }
+ // Updates the bounded wait fields; records at most once per elapsed second (or when forced).
+ private bool ObserveDeclarationUiWait(bool force){
+  int seconds=declarationExportClock==null?0:Math.Min(255,(int)declarationExportClock.Elapsed.TotalSeconds);
+  if(!force&&seconds==declarationUiWaitSeconds)return (declarationUiWaitMask&256)!=0&&OwnNativeDialogVisible();
+  declarationUiWaitSeconds=seconds;declarationUiVisibleForms=VisibleFormCount();declarationUiForegroundKind=ManagedForegroundKind();
+  bool native=declarationPhase=="export-selector"&&OwnNativeDialogVisible();if(native)declarationUiWaitMask|=256;
+  Record();return native;
+ }
+ private int ManagedForegroundKind(){
+  int kind=NativeForegroundKind();if(kind!=6)return kind;
+  Form form=Control.FromHandle(GetForegroundWindow()) as Form;if(form==null)return 6;
+  if(OwnerOrParent(form))return 1;string type=form.GetType().FullName;
+  return type=="HTKK.frmWinSelectExport"?2:type=="TAX.HTKK.Utilities.Control.frmMessage"?3:4;
+ }
+ // Thread-agnostic (also used from the Poll thread): native handles and class names only, no text.
+ private static int NativeForegroundKind(){
+  IntPtr window=GetForegroundWindow();if(window==IntPtr.Zero)return 8;uint process;GetWindowThreadProcessId(window,out process);
+  if(process!=(uint)Process.GetCurrentProcess().Id)return 7;return NativeText(window,true)=="#32770"?5:6;
+ }
+ private static bool OwnNativeDialogVisible(){
+  uint own=(uint)Process.GetCurrentProcess().Id;bool found=false;int visited=0;
+  EnumWindows(delegate(IntPtr window,IntPtr parameter){if(++visited>1024)return false;uint process;GetWindowThreadProcessId(window,out process);if(process==own&&IsWindowVisible(window)&&NativeText(window,true)=="#32770"){found=true;return false;}return true;},IntPtr.Zero);
+  return found;
+ }
+ // Poll-thread watchdog: the UI thread has not run a queued dispatch for `seconds`. Records only while it is
+ // stalled (so no UI-thread mutation races the snapshot), at most once per 5 s of stall.
+ internal void ObserveDeclarationUiStall(double seconds){
+  if(!DeclarationMode()||finished||!declarationPhase.StartsWith("export-",StringComparison.Ordinal))return;
+  if(seconds<5){declarationStallRecordedSeconds=0;return;}
+  int value=Math.Min(255,(int)seconds);if(value>declarationUiStallSeconds)declarationUiStallSeconds=value;declarationUiWaitMask|=64;
+  if(value-declarationStallRecordedSeconds<5)return;declarationStallRecordedSeconds=value;
+  declarationUiForegroundKind=NativeForegroundKind();try{Record();}catch{}
+ }
  private void ContinueDeclarationFlow(){
   if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing||declarationEntryBusy)return;
   if(!DeclarationMode()||declarationPlan==null||!webInputVerified||Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
@@ -393,7 +493,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!OriginalRoundtripOwnerReady())return;
    Button import=Named(roundtripOwner,"cmdImportXML") as Button;if(import==null||import.FindForm()!=roundtripOwner||import.Text.Replace("&",String.Empty).Trim()!="Nhập từ XML"||roundtripImportCommandInvoked)throw new InvalidOperationException();
    roundtripImportCommandInvoked=true;declarationPhase="import-result";SetStage(HtkkAutomationStage.DeclarationImportCommandInvoking);Record();
-   roundtripOwner.BeginInvoke(new MethodInvoker(delegate{try{import.PerformClick();}catch(Exception error){Failure(error);}}));return;
+   roundtripOwner.BeginInvoke(new MethodInvoker(delegate{try{import.PerformClick();declarationImportClickReturned=true;declarationUiWaitMask|=1;}catch(Exception error){Failure(error);}}));return;
   }
   if(declarationPhase=="import-result"){
    if(DeclarationMessage(out message,out text)){
@@ -419,7 +519,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
    declarationPhase="export-start";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);Record();return;
   }
   if(declarationPhase=="export-start"){
-   if(!OriginalRoundtripOwnerReady())return;
+   // Bounded by the probe deadline; the stage stays declaration-export-ready-waiting with the gate bits recorded.
+   if(declarationExportClock==null)declarationExportClock=Stopwatch.StartNew();
+   if(!DeclarationExportGate())return;
    string schema=Path.Combine(Path.GetDirectoryName(project),"InterfaceTemplates/"+declarationPlan.SchemaFile);string originalSchema=Convert.ToString(Get(Global("ToKhaiInfo"),"XsdFileName"),CultureInfo.InvariantCulture);
    exportSchemaPinnedVerified=!String.IsNullOrEmpty(originalSchema)&&String.Equals(Path.GetFullPath(originalSchema),Path.GetFullPath(schema),StringComparison.OrdinalIgnoreCase)&&Hash(schema)==declarationPlan.SchemaSha256&&Hash(Path.Combine(project,"TAX.HTKK.ComputeHash.dll"))=="d9d63921565ea2039109ad63d71977dcf56889cd83851977a0c712873ab687f5";
    if(!exportSchemaPinnedVerified){DeclarationTerminal(HtkkAutomationStage.DeclarationExportNotMatched);return;}
@@ -427,11 +529,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
    exportPath=Path.Combine(directory,"declaration.xml");exportDestinationFresh=!File.Exists(exportPath);
    Assembly utilities=null;foreach(Assembly loaded in AppDomain.CurrentDomain.GetAssemblies())if(loaded.GetName().Name=="TAX.HTKK.Utilities")utilities=loaded;if(utilities==null)throw new InvalidOperationException();
    Type configuration=utilities.GetType("TAX.HTKK.Utilities.Core.HTKKConfig",true);PropertyInfo temporary=configuration.GetProperty("PATH_TEMP",BindingFlags.Public|BindingFlags.Static);if(temporary==null)throw new InvalidOperationException();expectedSaveTitle="Tệp XML kết xuất tới thư mục "+Convert.ToString(temporary.GetValue(null,null),CultureInfo.InvariantCulture);
-   Button command=Named(roundtripOwner,"cmdExport") as Button;if(command==null||command.FindForm()!=roundtripOwner||command.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
-   exportCommandInvoked=true;declarationPhase="export-selector";SetStage(HtkkAutomationStage.DeclarationExportCommandInvoking);Record();
-   roundtripOwner.BeginInvoke(new MethodInvoker(delegate{try{command.PerformClick();}catch(Exception error){Failure(error);}}));return;
+   Button command=DeclarationExportCommand();
+   exportCommandInvoked=true;declarationPhase="export-selector";SetStage(HtkkAutomationStage.DeclarationExportCommandInvoking);
+   InvokeDeclarationExport(command);return;
   }
-  if(declarationPhase=="export-selector"||declarationPhase=="export-dialog"){
+  if(declarationPhase=="export-selector"||declarationPhase=="export-dialog"||declarationPhase=="export-reinvoke"){
    if(DeclarationMessage(out message,out text)){
     if(text!="Kết xuất tờ khai xml thành công."){exportRejectedMessageId=OriginalMessageCatalogueId(text);if(exportRejectedMessageId==16)InspectDeclarationRefusedCells();DeclarationTerminal(HtkkAutomationStage.DeclarationExportOriginalMessageRejected);return;}
     if(declarationPhase!="export-dialog"||!exportDialogSubmitted)throw new InvalidOperationException();
@@ -446,8 +548,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(declarationTickPlan!=null)matched=matched&&declarationImportSheetMatched&&DeclarationTickSucceeded();
     DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:declarationTickPlan!=null?HtkkAutomationStage.DeclarationImportTickExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched);close.PerformClick();return;
    }
+   if(declarationPhase=="export-reinvoke"){
+    // At most one more original click, only after the first click's handler fully returned and nothing at all
+    // appeared for the settle window: no selector, message, save dialog or file can exist from the first one.
+    if(declarationExportInvokeCount!=1||exportSelectorMatched||exportButtonInvoked||exportDialogMatched||exportDialogSubmitted||File.Exists(exportPath))throw new InvalidOperationException();
+    if(!DeclarationExportGate())return;
+    Button again=DeclarationExportCommand();declarationUiWaitMask|=32;declarationPhase="export-selector";SetStage(HtkkAutomationStage.DeclarationExportCommandInvoking);
+    InvokeDeclarationExport(again);return;
+   }
    if(declarationPhase=="export-selector"){
-    List<Form> selectors=new List<Form>();int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors(top,selectors,ref count);if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
+    List<Form> selectors=VisibleExportSelectors();if(selectors.Count==0){ObserveDeclarationExportWithoutSelector();return;}if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
     RadioButton xml=Named(selector,"radKetXuatXML") as RadioButton,excel=Named(selector,"radKetXuatExcel") as RadioButton;Button button=Named(selector,"btnExport") as Button;
     if(xml==null||excel==null||!xml.Checked||excel.Checked||xml.Text!="Kết xuất XML"||button==null||button.FindForm()!=selector||button.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
     exportSelectorMatched=true;exportButtonInvoked=true;declarationPhase="export-dialog";SetStage(HtkkAutomationStage.DeclarationExportFileDialogWaiting);Record();

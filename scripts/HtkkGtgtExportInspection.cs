@@ -48,6 +48,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   json.Append(","+q+"exportBytes"+q+":"+exportBytes+","+q+"exportSha256"+q+":"+q+exportSha256+q);
   json.Append(","+q+"exportRejectedMessageId"+q+":"+exportRejectedMessageId+","+q+"importRejectedMessageId"+q+":"+importRejectedMessageId);return json.ToString()+RoundtripJson();
  }
+ // Each visible top-level form gets its own bounded scan, so a large original form earlier in
+ // Application.OpenForms can never use up the budget before the modal selector (itself top-level) is checked.
+ private static List<Form> VisibleExportSelectors(){List<Form> selectors=new List<Form>();foreach(Form top in Application.OpenForms){if(!top.Visible)continue;int count=0;FindExportSelectors(top,selectors,ref count);}return selectors;}
  private static void FindExportSelectors(Control root,List<Form> found,ref int count){if(++count>512)return;Form form=root as Form;if(form!=null&&form.Visible&&form.GetType().FullName=="HTKK.frmWinSelectExport"&&!found.Contains(form))found.Add(form);foreach(Control child in root.Controls){if(count>=512)break;FindExportSelectors(child,found,ref count);}}
  private void StartOriginalGtgtExport(Form owner){
   if(exportStarted)return;gtgtCt42BeforeExportObserved=true;gtgtCt42LockedBeforeExport=gtgtCt42Locked;exportStarted=true;roundtripOwner=owner;
@@ -105,7 +108,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    }else SetStage(mode=="gtgt-annex12-export-inspect"?HtkkAutomationStage.GtgtAnnex12ExportInspected:HtkkAutomationStage.GtgtExportInspected);
    finished=true;Record();exportWatcher.Stop();close.PerformClick();return;
   }
-  if(!exportButtonInvoked){List<Form> selectors=new List<Form>();int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors(top,selectors,ref count);if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
+  if(!exportButtonInvoked){List<Form> selectors=VisibleExportSelectors();if(selectors.Count==0)return;if(selectors.Count!=1)throw new InvalidOperationException();Form selector=selectors[0];
    RadioButton xml=Named(selector,"radKetXuatXML") as RadioButton,excel=Named(selector,"radKetXuatExcel") as RadioButton;Button button=Named(selector,"btnExport") as Button;
    if(xml==null||excel==null||!xml.Checked||excel.Checked||xml.Text!="Kết xuất XML"||button==null||button.FindForm()!=selector||button.Text.Replace("&",String.Empty).Trim()!="Kết xuất")throw new InvalidOperationException();
    exportSelectorMatched=true;exportButtonInvoked=true;SetStage(HtkkAutomationStage.GtgtExportFileDialogWaiting);Record();selector.BeginInvoke(new MethodInvoker(delegate{try{button.PerformClick();}catch(Exception error){Failure(error);}}));return;

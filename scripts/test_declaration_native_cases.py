@@ -250,7 +250,48 @@ class CompiledPlans(unittest.TestCase):
         for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7),
                               ('declarationTreeMismatch1', 6553599), ('declarationTreeMismatch2', 6553599), ('declarationTreeMismatch3', 6553599), ('declarationTreeMismatch4', 6553599)):
             self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson();', DRIVER)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson();', DRIVER)
+
+
+class ExportInvocation(unittest.TestCase):
+    """Runs 43498861393/43549091519: values matched, the original Ket xuat was invoked and nothing appeared."""
+
+    def section(self, start, end):
+        return DRIVER[DRIVER.index(start):DRIVER.index(end)]
+
+    def test_diagnostic_fields_are_bounded_declaration_only_counters(self):
+        fields = automation['resultFields']
+        for name, maximum in (('declarationUiWaitMask', 4095), ('declarationUiWaitSeconds', 255), ('declarationUiForegroundKind', 8),
+                              ('declarationUiVisibleForms', 64), ('declarationUiStallSeconds', 255)):
+            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
+            # Never an export/comparison progress field for the pre-tax classifier.
+            self.assertNotIn('export', name.lower())
+        for name in ('Math.Min(255,(int)declarationExportClock', 'Math.Min(255,(int)seconds)', 'count<64'):
+            self.assertIn(name, DRIVER)
+        # Native diagnostics read class names only, never window or control text.
+        diag = self.section(' private int ManagedForegroundKind(){', ' private void ContinueDeclarationFlow(){')
+        self.assertNotIn('GetWindowText', diag); self.assertNotIn('NativeText(window,false)', diag); self.assertNotIn('.Text', diag)
+
+    def test_export_waits_on_observable_readiness_and_clicks_at_most_twice(self):
+        start = self.section('  if(declarationPhase=="export-start"){', '  if(declarationPhase=="export-selector"||')
+        self.assertIn('if(!DeclarationExportGate())return;', start)
+        gate = self.section(' private bool DeclarationExportGate(){', ' private void InvokeDeclarationExport(')
+        self.assertIn('(!roundtripImportCommandInvoked||declarationImportClickReturned)', gate)
+        self.assertIn('found[0].CanSelect', gate)
+        self.assertIn('import.PerformClick();declarationImportClickReturned=true;', DRIVER)
+        reinvoke = self.section('   if(declarationPhase=="export-reinvoke"){', '   if(declarationPhase=="export-selector"){')
+        self.assertIn('if(declarationExportInvokeCount!=1||exportSelectorMatched||exportButtonInvoked||exportDialogMatched||exportDialogSubmitted||File.Exists(exportPath))throw new InvalidOperationException();', reinvoke)
+        settle = self.section(' private void ObserveDeclarationExportWithoutSelector(){', ' private bool ObserveDeclarationUiWait(')
+        self.assertIn('if(!declarationExportClickReturned)return;', settle)
+        self.assertIn('if(declarationExportInvokeCount==1){declarationPhase="export-reinvoke";', settle)
+        self.assertEqual(DRIVER.count('command.PerformClick();'), 1)
+        self.assertNotIn('Thread.Sleep', DRIVER)
+
+    def test_selector_scan_budget_is_per_top_level_form(self):
+        export = (ROOT / 'HtkkGtgtExportInspection.cs').read_text(encoding='utf-8')
+        self.assertIn('foreach(Form top in Application.OpenForms){if(!top.Visible)continue;int count=0;FindExportSelectors(top,selectors,ref count);}', export)
+        for name in ('HtkkGtgtExportInspection.cs', 'HtkkDeclarationWebImport.cs', 'HtkkGtgtAmendmentKhbsInspection.cs'):
+            self.assertNotIn('int count=0;foreach(Form top in Application.OpenForms)if(top.Visible)FindExportSelectors', (ROOT / name).read_text(encoding='utf-8'))
 
 
 class InputPrivacy(unittest.TestCase):
