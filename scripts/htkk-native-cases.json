@@ -392,6 +392,26 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "02-qtt-tncn-2.7.3-khbs",
+      "htkkVersion": "5.8.2",
+      "menuId": "B8",
+      "xmlVersion": "2.7.3",
+      "producer": "scripts/generate-htkk-web-qtt02-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "02-qtt-tncn-2.7.3-khbs-lan2",
+      "htkkVersion": "5.8.2",
+      "menuId": "B8",
+      "xmlVersion": "2.7.3",
+      "producer": "scripts/generate-htkk-web-qtt02-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "01-tts-tt40-2.8.3-bk1",
       "htkkVersion": "5.8.2",
       "menuId": "G7",
@@ -2391,6 +2411,98 @@
         "activityCode": "00",
         "annexes": [
           "01-4"
+        ],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "02QTT-khbs-increase-Y2025",
+      "producerCase": "qtt02-khbs-increase-y2025",
+      "adapterId": "02-qtt-tncn-2.7.3-khbs",
+      "format": "htkk-web-qtt02-khbs-increase-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-qtt02-khbs-increase-y2025-input",
+      "inputBranch": "declaration-web-reference-qtt02-khbs-increase-y2025-input",
+      "outputBranch": "declaration-web-native-qtt02-khbs-increase-y2025-output",
+      "statusContext": "htkk-native/qtt02-khbs-increase-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "B8",
+        "adapterVersion": "2.7.3",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": [
+          "02-1"
+        ],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "02QTT-khbs-lan2-Y2025",
+      "producerCase": "qtt02-khbs-lan2-y2025",
+      "adapterId": "02-qtt-tncn-2.7.3-khbs-lan2",
+      "format": "htkk-web-qtt02-khbs-lan2-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-qtt02-khbs-lan2-y2025-input",
+      "inputBranch": "declaration-web-reference-qtt02-khbs-lan2-y2025-input",
+      "outputBranch": "declaration-web-native-qtt02-khbs-lan2-y2025-output",
+      "statusContext": "htkk-native/qtt02-khbs-lan2-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "B8",
+        "adapterVersion": "2.7.3",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": [
+          "02-1"
+        ],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "02QTT-khbs-decrease-Y2025",
+      "producerCase": "qtt02-khbs-decrease-y2025",
+      "adapterId": "02-qtt-tncn-2.7.3-khbs",
+      "format": "htkk-web-qtt02-khbs-decrease-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-qtt02-khbs-decrease-y2025-input",
+      "inputBranch": "declaration-web-reference-qtt02-khbs-decrease-y2025-input",
+      "outputBranch": "declaration-web-native-qtt02-khbs-decrease-y2025-output",
+      "statusContext": "htkk-native/qtt02-khbs-decrease-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "B8",
+        "adapterVersion": "2.7.3",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": [
+          "02-1"
+        ],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "02QTT-khbs-refund-Y2025",
+      "producerCase": "qtt02-khbs-refund-y2025",
+      "adapterId": "02-qtt-tncn-2.7.3-khbs",
+      "format": "htkk-web-qtt02-khbs-refund-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-qtt02-khbs-refund-y2025-input",
+      "inputBranch": "declaration-web-reference-qtt02-khbs-refund-y2025-input",
+      "outputBranch": "declaration-web-native-qtt02-khbs-refund-y2025-output",
+      "statusContext": "htkk-native/qtt02-khbs-refund-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "B8",
+        "adapterVersion": "2.7.3",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": [
+          "02-1"
         ],
         "amendmentOrder": 1
       }

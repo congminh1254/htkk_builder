@@ -17,7 +17,8 @@ The same driver mode runs the 05/KK-TNCN KHBS cases (L7, Z8): their pins and per
 before the KHBS fragments, input mode) live in htkk_kk05_khbs_web_cases.py and are merged into CASES, MENUS and PERIODS here,
 so every reader of this contract (fetch, publishers, probe lists) covers them with the same checks. The 01/CNKD KHBS cases (U5)
 are merged the same way from htkk_cnkd_khbs_web_cases.py; their B files carry no KHBS fragment (per-case khbsParts empty: U5 has
-KieuKHBS "" in HTKK 5.8.2, so its bổ sung is the declaration itself with loaiTKhai B)."""
+KieuKHBS "" in HTKK 5.8.2, so its bổ sung is the declaration itself with loaiTKhai B). The 02/QTT-TNCN KHBS cases (B8, KieuKHBS
+3, 02-1/BK-QTT-TNCN before the two fragments) are merged the same way from htkk_qtt02_khbs_web_cases.py."""
 import hashlib
 import importlib.util
 import io
@@ -74,6 +75,15 @@ CASES.update(cnkd.CASES)
 MENUS.update(cnkd.MENUS)
 PERIODS.update(cnkd.PERIODS)
 CNKD_CASES = tuple(cnkd.CASES)
+_qtt02_spec = importlib.util.spec_from_file_location('htkk_qtt02_khbs_web_cases_data', pathlib.Path(__file__).with_name('htkk_qtt02_khbs_web_cases.py'))
+qtt02 = importlib.util.module_from_spec(_qtt02_spec)
+_qtt02_spec.loader.exec_module(qtt02)
+if set(qtt02.CASES) & set(CASES) or set(qtt02.MENUS) & set(MENUS):
+    raise ValueError('CASE_POLICY')
+CASES.update(qtt02.CASES)
+MENUS.update(qtt02.MENUS)
+PERIODS.update(qtt02.PERIODS)
+QTT02_CASES = tuple(qtt02.CASES)
 KHBS_FRAGMENTS = ('PL01_KHBS', 'PL01_1_KHBS')
 for _spec in CASES.values():
     _spec.setdefault('khbsParts', KHBS_FRAGMENTS)
