@@ -10,6 +10,10 @@ D1_DRIVER='gtgt-web-import-inspect'
 KHBS_DRIVER='gtgt-amendment-khbs-inspect'
 DECLARATION_DRIVER='declaration-web-import-inspect'
 DECLARATION_PRODUCER='scripts/generate-htkk-declaration-reference.mjs'
+# Kê khai bổ sung of 01/NTNN (I9) and 01/NTNN, NCCNN (Y8) on the declaration driver (HtkkDeclarationKhbs.cs, KHBS-NATIVE-CASE.md
+# "01/NTNN"): own mode, producer, staged names and privacy contract (htkk_ntnn_khbs_web_cases.py); oracle HTKK 5.8.2, non-gating.
+NTNN_KHBS_DRIVER='declaration-amendment-khbs-inspect'
+NTNN_KHBS_PRODUCER='scripts/generate-htkk-web-ntnn-khbs-reference.mjs'
 _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('10/2026',),'quarter':('4/2026',)}}
 # Native-case input modes of the declaration driver: the original "Nhập từ XML" of the web XML, or
 # typing a compiled fixed plan into the original grid (HtkkDeclarationCasePlans.Entry) when the
@@ -96,6 +100,10 @@ TRUSTED_ADAPTERS={
  # LockUnlock -> LockUnLockColsInTable deleteData=true, release 238), so the same synthetic rows are
  # typed into the original grid and exported with the original export instead.
  '01-ntnn-nccnn-tt89-3.0.9-entry':_declaration('Y8','3.0.9',{'month':('10/2026',),'day':('20/10/2026',)},[],ENTRY_MODE),
+ # KHBS 01/NTNN: I9 imported (C0 and bổ sung), Y8 typed (the original import resets the Y8 tables); lần 2 has its own adapter.
+ '01-ntnn-tt80-2.5.1-khbs':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'I9','xmlVersion':'2.5.1','periods':{'month':('09/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
+ '01-ntnn-tt80-2.5.1-khbs-lan2':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'I9','xmlVersion':'2.5.1','periods':{'month':('09/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
+ '01-ntnn-nccnn-tt89-3.0.9-khbs':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Y8','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
  # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 like I9; FinishImportXML clears rate [9], so the case uses rate 0.
  '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',),'day':('20/10/2026',)},[]),
  # D6/Y1 04/NTNN quyết toán (non-gating): KieuKy 22 = SetLayoutToKhaiTuNgayDenNgay, period 'range' (from-to
@@ -162,6 +170,9 @@ ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8
 ANNEX10_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex10')
 KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId'] in ('01-gtgt-2.8.3-khbs','01-gtgt-2.8.3-khbs-lan2','01-gtgt-2.8.3-khbs-annex12','01-gtgt-2.8.3-khbs-annex12-lan2'))
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in KHBS_CASES))
+# Kê khai bổ sung 01/NTNN cases (driver NTNN_KHBS_DRIVER): observation cases, never a release gate, HTKK 5.8.2 only.
+NTNN_KHBS_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==NTNN_KHBS_DRIVER)
+check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in NTNN_KHBS_CASES))
 # Declaration-family cases use their own input/output file names, privacy allowlist and driver.
 DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==DECLARATION_DRIVER)
 check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))

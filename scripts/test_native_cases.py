@@ -5,7 +5,7 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3'))]}
+def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8'))]}
 import datetime
 DECEMBER=datetime.datetime(2026,12,1,0,0,5,tzinfo=datetime.timezone.utc)
 NOVEMBER=datetime.datetime(2026,11,30,23,59,59,tzinfo=datetime.timezone.utc)
@@ -235,4 +235,4 @@ class NativeImportDispatchIdentity(unittest.TestCase):
   self.assertEqual(cases[case],('htkk-web-reference-native-import-sale10-input','gtgt-web-reference-native-import-sale10-input'))
   self.assertNotEqual(cases[case],cases[sale]);self.assertNotEqual(output.BRANCHES[case],output.BRANCHES[sale])
   self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));# The KHBS amendment driver retains no raw native output yet (case status from the in-harness comparison only).
-  self.assertEqual(set(output.BRANCHES),set(d.CASES)-set(reader.case_registry.DECLARATION_CASES)-set(reader.case_registry.KHBS_CASES))
+  self.assertEqual(set(output.BRANCHES),set(d.CASES)-set(reader.case_registry.DECLARATION_CASES)-set(reader.case_registry.KHBS_CASES)-set(reader.case_registry.NTNN_KHBS_CASES))

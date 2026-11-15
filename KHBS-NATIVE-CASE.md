@@ -386,7 +386,7 @@ publishes an orphan commit with `khbs-native.xml` + `manifest.json` (format
 immutable tag. It retains mismatches too; it never grants qualification. The web repository pins such bytes
 under `tests/fixtures/htkk-khbs-native-reexport/` (index-driven test `tests/htkk-khbs-web-native-reexport.test.ts`).
 
-## 01/NTNN (I9) and 01/NTNN, NCCNN (Y8): input contract only, driver not built yet
+## 01/NTNN (I9) and 01/NTNN, NCCNN (Y8): mode `declaration-amendment-khbs-inspect` (observation cases)
 
 htkk_web (docs/KE-KHAI-BO-SUNG-01-NTNN.md, `lib/htkk-ntnn01-khbs.ts`, hidden behind `KHBS_01NTNN_*_RELEASED=false`) ports the
 KHBS of both menus statically from HTKK 5.8.2: KieuKHBS 3 like D1, but every MapMCT item is DYNAMIC (LoaiChiTieu 4), so the
@@ -396,8 +396,10 @@ KHBS of both menus statically from HTKK 5.8.2: KieuKHBS 3 like D1, but every Map
 `KHBS_01_NTNN_TT80_251.xsd` / `KHBS_01_NTNN_NCCNN_TT89_309.xsd`.
 
 `scripts/htkk_ntnn_khbs_web_cases.py` is the reviewed INPUT half of five cases (sizes and SHA-256 of every staged file pinned,
-bounded structural checks; `test_ntnn_khbs_web_cases.py`). None is in `htkk-native-cases.json`: registering one would dispatch
-it with a driver that does not exist. The htkk_web contract check lists them as pending.
+bounded structural checks; the reviewed bytes themselves in `htkk_ntnn_khbs_web_inputs.json`; `test_ntnn_khbs_web_cases.py`).
+The five cases are registered in `htkk-native-cases.json` (adapters `01-ntnn-tt80-2.5.1-khbs`, `01-ntnn-tt80-2.5.1-khbs-lan2`,
+`01-ntnn-nccnn-tt89-3.0.9-khbs`; driver `declaration-amendment-khbs-inspect`, HTKK 5.8.2) with `releaseGate: false`: they are
+observation cases, dispatched by the cohort but never in `GATE_CASES`, so a mismatch neither blocks a release nor turns Assess red.
 
 | Case | Menu | Files | Web leaf target (no TTinDVu) |
 | --- | --- | --- | --- |
@@ -407,7 +409,7 @@ it with a driver that does not exist. The htkk_web contract check lists them as 
 | `01NTNN-NCCNN-khbs-part1-M10-2026` | Y8 | original, web | 265 |
 | `01NTNN-NCCNN-khbs-part2-M10-2026` | Y8 | original, web | 249 |
 
-Driver to build (mode `declaration-amendment-khbs-inspect`, adapter on the declaration driver, HTKK 5.8.2, non-gating):
+Driver (`scripts/HtkkDeclarationKhbs.cs` on the declaration driver; step mask bits listed there):
 
 1. Declaration flow up to the C0 sheet (menu chain 101 → 101_8 → I9/Y8, period month 09/2026 or 10/2026 with Chính thức).
    I9: original "Nhập từ XML" of `.web-original.xml` (I9 keeps its table on import, release 238). Y8: the tables are reset on
@@ -420,7 +422,16 @@ Driver to build (mode `declaration-amendment-khbs-inspect`, adapter on the decla
 4. I9: original import of the bổ sung file (lần 2 round 1: `.web-prior.xml`, then Tổng hợp KHBS, Ghi `bs1_…`, Đóng, round 2).
    Y8: the changed cells typed (the B sheet may open reset; type every planned cell).
 5. Original "Tổng hợp KHBS" (0222), original export (schema pinned: the two KHBS XSDs above), whole-tree comparison
-   `HtkkWebTaxComparison.CompareKhbs` with the leaf targets above, raw export retained on match and on mismatch.
+   with the web B file (C# leaf counts = targets above + 4 service leaves); the shared export readiness gate applies.
+
+Probe (`probe-htkk-windows.ps1`): stages `declaration-original.xml` as `<host>.web-original.xml/.sha256` and, for the lần-2 case,
+`declaration-prior.xml` as `<host>.web-prior.xml/.sha256` (manifest `originalXmlSha256`/`priorXmlSha256`); limit 300 s (lần 2:
+420 s); success = stage `declaration-khbs-inspected`, the last round (1, or 2), step mask 1591 (lần 2: 1791), entry (Y8) or
+import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaration-khbs-inspected` or
+`declaration-export-not-matched` the original export is staged and `publish-htkk-declaration-native-output.py` retains it
+(inputMode `khbs-web-xml-import-reexport` / `khbs-original-entry-export`) after `htkk_ntnn_khbs_web_cases.validate_native_output`:
+HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
+leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
 What only these runs decide (web predictions in its golden): the text of the row key `ct3_2_ten` (dates dd/MM/yyyy, rates "5"),
 `ct04`/`ct05` of amounts ("1.000.000"), ct3b 0 when Muc_I.1 has two rows (gross-up case: 24 late days), negative ct3b −7.200

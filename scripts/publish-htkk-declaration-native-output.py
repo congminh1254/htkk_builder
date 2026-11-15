@@ -12,12 +12,16 @@ def module(name,file):
 transport=module('declaration_output_transport','publish-htkk-web-inputs.py')
 reader=transport.reader
 declaration=reader.declaration
+# Kê khai bổ sung 01/NTNN (declaration-amendment-khbs-inspect, observation cases): the same retention of the original B export,
+# validated by htkk_ntnn_khbs_web_cases.py against the case's own staged input files (fetched again from the pinned artifact).
+ntnn=reader.ntnn
+NTNN_ERRORS=(ntnn.NtnnKhbsWebCaseError,ntnn.declaration().DeclarationWebCaseError)
 oracle=module('htkk_oracle_declaration_output','htkk_oracle.py')
 REPO=reader.REPO
 BUILDER=reader.BUILDER
 DIRECTORY='htkk-declaration-native-output'
 NAMES=('declaration-native.xml','provenance.json')
-BRANCHES={id:c['outputBranch'] for id,c in reader.case_registry.CASES.items() if declaration.is_case(id)}
+BRANCHES={id:c['outputBranch'] for id,c in reader.case_registry.CASES.items() if declaration.is_case(id) or ntnn.is_case(id)}
 CODES=transport.CODES|frozenset(('PROVENANCE','COMPARE','FILES','NATIVE_IDENTITY','NATIVE_DATE'))
 NATIVE_ERRORS={'SERVICE':'NATIVE_IDENTITY','DATE':'NATIVE_DATE','SIZE':'XML_SIZE','ENCODING':'XML_ENCODING','DECLARATION':'XML_DECLARATION','PARSE':'XML_PARSE'}
 HARNESS={'harnessSchemaValid':bool,'harnessTreeMatched':bool,'harnessTreeMismatchMask':(0,63),'harnessTreeLeafCount':(0,4096),'harnessXmlMismatchMask':(0,16777215),'harnessCellMismatchMask':(0,16777215)}
@@ -43,15 +47,23 @@ def safe_context(context):
 def safe_failure(error):
  context={}
  if isinstance(error,OutputError):code=error.code if error.code in CODES else 'INTERNAL';context=safe_context(error.context) if code=='XML_PRIVACY' else {}
- elif isinstance(error,declaration.DeclarationWebCaseError):code='XML_PRIVACY'
+ elif isinstance(error,(declaration.DeclarationWebCaseError,)+NTNN_ERRORS):code='XML_PRIVACY'
  else:code=transport.safe_failure(error)['code']
  return {'format':'htkk-declaration-native-output-publication-status-v1','status':'rejected','code':code,**context}
 def exact_sha(value,count=40):
  if not isinstance(value,str) or not re.fullmatch('[0-9a-f]{'+str(count)+'}',value):fail('PROVENANCE')
  return value
 
-def validate_native(body,case_id,today=None,version=oracle.DEFAULT):
+def validate_native(body,case_id,today=None,version=oracle.DEFAULT,files=None):
  if case_id not in BRANCHES:fail('PROVENANCE')
+ # KHBS: without the staged files only identity, period, lần, NNT and date are checked; publish() repeats it with the files
+ # (every text then must come from them) before anything is uploaded.
+ if ntnn.is_case(case_id):
+  try:return ntnn.validate_native_output(body,case_id,today,oracle.service_version(version),files)
+  except ntnn.NtnnKhbsWebCaseError:fail('HASH')
+  except NTNN_ERRORS[1] as error:
+   code=NATIVE_ERRORS.get(error.code,'XML_PRIVACY')
+   fail(code,dict(error.context,nativeRule=error.code) if code=='XML_PRIVACY' else None)
  try:return declaration.validate_native_output(body,case_id,today,oracle.service_version(version))
  except declaration.DeclarationWebCaseError as error:
   code=NATIVE_ERRORS.get(error.code,'XML_PRIVACY')
@@ -64,13 +76,18 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
  if not isinstance(body,bytes) or not 0<len(body)<=reader.MAX_MANIFEST or not isinstance(native,bytes):fail('PROVENANCE')
  try:observed=reader.json_object(body,'MANIFEST')
  except reader.InputError:fail('PROVENANCE')
+ # KHBS: the Y8 bổ sung (and its lần đầu) are typed into the original grid; the I9 files are imported.
+ if ntnn.is_case(case_id):entry=ntnn.case(case_id)['menuId']=='Y8';mode='khbs-original-entry-export' if entry else 'khbs-web-xml-import-reexport';imported=not entry
+ else:mode=reader.case_registry.input_mode(case_id);imported=mode in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE)
  expected={'format':'htkk-declaration-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'runAttempt':int(run_attempt),'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':oracle.baseline(version)['serviceVersion'],'runtimeHost':'clr2-x86-reference','caseId':case_id,'artifactCommit':artifact_commit,
   'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,
   # Native-case input mode: the original import of the web XML, the import completed by fixed original edits/ticks,
   # or the fixed plan typed into the original grid (no import).
-  'inputMode':reader.case_registry.input_mode(case_id),'originalImportSucceeded':reader.case_registry.input_mode(case_id) in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE),'originalExportSucceeded':True,'originalExporterValidatedSchema':True,
+  'inputMode':mode,'originalImportSucceeded':imported,'originalExportSucceeded':True,'originalExporterValidatedSchema':True,
   'webImportInputSha256':observed.get('webImportInputSha256'),'originalOutputSha256':hashlib.sha256(native).hexdigest(),'originalOutputBytes':len(native),'creationDateRule':'native-export-current-date','fullRoundTrip':False}
  exact_sha(expected['webImportInputSha256'],64)
+ # A KHBS case's web B file is pinned by its contract: the harness must have imported (or typed from) exactly that file.
+ if ntnn.is_case(case_id) and expected['webImportInputSha256']!=ntnn.case(case_id)['web'][1]:fail('PROVENANCE')
  if set(observed)!=set(expected)|set(HARNESS) or any(type(observed[key]) is not type(value) or observed[key]!=value for key,value in expected.items()):fail('PROVENANCE')
  for key,rule in HARNESS.items():
   value=observed[key]
@@ -99,9 +116,16 @@ def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False,v
  inputs=reader.download(token,fetch=lambda path,read_token:fetch(path,read_token),expected_source=metadata['sourceCommit'],expected_case=metadata['caseId'],artifact_commit=metadata['artifactCommit'])
  name=reader.xml_name(metadata['caseId']);input_manifest=reader.validate_manifest(inputs['manifest.json'])
  if hashlib.sha256(inputs[name]).hexdigest()!=metadata['webImportInputSha256']:fail('HASH')
- try:comparison=declaration.compare_tree(inputs[name],native,declaration.case(metadata['caseId'])['exportDates'])
- except declaration.DeclarationWebCaseError:fail('COMPARE')
- comparison['expectedTaxLeafCount']=declaration.tax_leaf_count(metadata['caseId'])
+ if ntnn.is_case(metadata['caseId']):
+  # Every text of the native B export must come from the case's own pinned staged files, checked before any upload.
+  checked=validate_native(native,metadata['caseId'],today,version,{key:body for key,body in inputs.items() if key!='manifest.json'})
+  try:comparison=ntnn.compare_tree(inputs[name],native,metadata['caseId'])
+  except NTNN_ERRORS:fail('COMPARE')
+  comparison['expectedTaxLeafCount']=ntnn.tax_leaf_count(metadata['caseId'])
+ else:
+  try:comparison=declaration.compare_tree(inputs[name],native,declaration.case(metadata['caseId'])['exportDates'])
+  except declaration.DeclarationWebCaseError:fail('COMPARE')
+  comparison['expectedTaxLeafCount']=declaration.tax_leaf_count(metadata['caseId'])
  comparison['allTaxValuesMatched']=comparison['allTaxValuesMatched'] and comparison['checkedTaxLeafCount']==comparison['expectedTaxLeafCount']
  # Independent recomputation vs the harness flag; a disagreement is recorded, never hidden.
  comparison['harnessAgreement']=comparison['allTaxValuesMatched']==metadata['harnessTreeMatched'] and comparison['mismatchSectionMask']==metadata['harnessTreeMismatchMask']

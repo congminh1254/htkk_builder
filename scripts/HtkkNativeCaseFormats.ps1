@@ -62,7 +62,14 @@ $HtkkNativeCaseFormats=@{
  '02QTT-refund-transfer-Y2025'='htkk-web-tncn02qtt-refund-transfer-y2025-input-v1'
  '02QTT-dependants-Y2026'='htkk-web-tncn02qtt-dependants-y2026-input-v1'
  '02QTT-refund-transfer-Y2026'='htkk-web-tncn02qtt-refund-transfer-y2026-input-v1'
+ '01NTNN-khbs-grossup-lan1-M09-2026'='htkk-web-ntnn01-khbs-grossup-lan1-m09-2026-input-v1'
+ '01NTNN-khbs-lan2-M09-2026'='htkk-web-ntnn01-khbs-lan2-m09-2026-input-v1'
+ '01NTNN-khbs-decrease-M09-2026'='htkk-web-ntnn01-khbs-decrease-m09-2026-input-v1'
+ '01NTNN-NCCNN-khbs-part1-M10-2026'='htkk-web-ntnn01-nccnn-khbs-part1-m10-2026-input-v1'
+ '01NTNN-NCCNN-khbs-part2-M10-2026'='htkk-web-ntnn01-nccnn-khbs-part2-m10-2026-input-v1'
 }
 $HtkkDeclarationCases=@('03TNDN-profit20-Y2025','BCTC133-B01a-basic-Y2025','BCTC200-LT-basic-Y2025','05KK-withheld-Q3-2026','05KK-TT89-withheld-Q4-2026','05QTT-two-employees-Y2025','01CNKD-TT50-revenue-two-groups-Q3-2026','02QTT-dependants-Y2025','01NTNN-two-contractors-M09-2026','03NTNN-no-rate-M10-2026','01NTNN-NCCNN-entry-M10-2026','04NTNN-TT80-one-subcontractor-2026','04NTNN-TT89-one-subcontractor-2026','02NTNN-TT89-two-annexes-2026','02NTNN-TT80-two-annexes-2026','01NTNN-occurrence-D20-09-2026','01NTNN-NCCNN-occurrence-D20-10-2026','03NTNN-occurrence-D20-10-2026','01CNKD-TT50-310-pl01-three-groups-Q3-2026','01CNKD-TT50-310-pl03-two-groups-Q3-2026','03TNDN-rate15-Y2025','03TNDN-rate17-Y2025','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026','02QTT-refund-transfer-Y2025','02QTT-dependants-Y2026','02QTT-refund-transfer-Y2026')
 $HtkkDeclarationEntryCases=@('01NTNN-NCCNN-entry-M10-2026','01NTNN-NCCNN-occurrence-D20-10-2026')
 $HtkkDeclarationTickCases=@('01CNKD-TT50-310-pl01-three-groups-Q3-2026','01CNKD-TT50-310-pl03-two-groups-Q3-2026','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026')
+$HtkkNtnnKhbsCases=@('01NTNN-khbs-grossup-lan1-M09-2026','01NTNN-khbs-lan2-M09-2026','01NTNN-khbs-decrease-M09-2026','01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026')
+$HtkkNtnnKhbsLan2Cases=@('01NTNN-khbs-lan2-M09-2026')

@@ -621,7 +621,7 @@ class NativeOutput(unittest.TestCase):
                 out.validate_provenance(json.dumps(changed).encode(), native, '123', BUILDER_SHA, SOURCE, case, ARTIFACT, '1')
         with self.assertRaises(out.OutputError):
             out.validate_provenance(json.dumps(value).encode(), native, '123', BUILDER_SHA, SOURCE, '01GTGT-zero-M10-2026', ARTIFACT, '1')
-        self.assertTrue(set(CASES).isdisjoint(d1_out.BRANCHES)); self.assertEqual(set(out.BRANCHES), set(CASES))
+        self.assertTrue(set(CASES).isdisjoint(d1_out.BRANCHES)); self.assertEqual(set(out.BRANCHES), set(CASES) | set(registry.NTNN_KHBS_CASES))
 
 
 class WorkflowAndProbe(unittest.TestCase):

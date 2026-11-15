@@ -55,21 +55,34 @@ _declaration_spec=importlib.util.spec_from_file_location('htkk_declaration_web_i
 declaration=importlib.util.module_from_spec(_declaration_spec);_declaration_spec.loader.exec_module(declaration)
 if set(declaration.CASES)!=set(case_registry.DECLARATION_CASES):raise ValueError('CASE_POLICY')
 DECLARATION_NAMES=('declaration-web.xml','manifest.json')
+# Kê khai bổ sung 01/NTNN (mode declaration-amendment-khbs-inspect): every staged file pinned by htkk_ntnn_khbs_web_cases.py.
+_ntnn_spec=importlib.util.spec_from_file_location('htkk_ntnn_khbs_web_input_contract',pathlib.Path(__file__).with_name('htkk_ntnn_khbs_web_cases.py'))
+ntnn=importlib.util.module_from_spec(_ntnn_spec);_ntnn_spec.loader.exec_module(ntnn)
+if set(ntnn.CASES)!=set(case_registry.NTNN_KHBS_CASES):raise ValueError('CASE_POLICY')
+NTNN_ERRORS={'SIZE':'XML_SIZE','HASH':'HASH','ENCODING':'XML_ENCODING','DECLARATION':'XML_DECLARATION','PARSE':'XML_PARSE','NAMESPACE':'XML_PRIVACY','SERVICE':'XML_SERVICE','MANIFEST':'MANIFEST','CASE':'MANIFEST','NAMES':'STAGING'}
 DECLARATION_PRODUCER='scripts/generate-htkk-declaration-reference.mjs'
 DECLARATION_ERRORS={'SIZE':'XML_SIZE','ENCODING':'XML_ENCODING','DECLARATION':'XML_DECLARATION','PARSE':'XML_PARSE','SERVICE':'XML_SERVICE','MANIFEST':'MANIFEST'}
 def names(case_id):
  if case_id not in CASES:raise InputError('MANIFEST')
  if declaration.is_case(case_id):return DECLARATION_NAMES
+ if ntnn.is_case(case_id):return ntnn.names(case_id)
  # A KHBS case whose previous version must exist in HTKK first (bổ sung lần 2) also stages that exact prior web file.
  return (NAMES[0],khbs.PRIOR_NAME,NAMES[1]) if khbs.is_case(case_id) and khbs.prior_case(case_id) else NAMES
 def validate_prior(files,manifest,today=None):
  """The prior file of a KHBS case: exactly the manifest's hash and size, and the full contract of its own prior case."""
  case=manifest['caseId']
+ if ntnn.is_case(case):
+  # The lần đầu file and (lần 2) the previous bổ sung, each against its own pin.
+  try:
+   for name,role in ((ntnn.ORIGINAL_NAME,'original'),(ntnn.PRIOR_NAME,'prior')):
+    if name in ntnn.names(case):ntnn.validate_xml(files.get(name),case,role)
+  except ntnn.NtnnKhbsWebCaseError as error:raise InputError(NTNN_ERRORS.get(error.code,'XML_PRIVACY')) from None
+  return {'privacyValuesVerified':True,'serviceIdentity':'web-tool','nativeProvenance':False}
  if not (khbs.is_case(case) and khbs.prior_case(case)):return None
  body=files.get(khbs.PRIOR_NAME)
  if not isinstance(body,bytes) or manifest['priorBytes']!=len(body) or manifest['priorXmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
  return validate_web_xml(body,today,khbs.prior_case(case))
-def xml_name(case_id):return names(case_id)[0]
+def xml_name(case_id):return ntnn.WEB_NAME if ntnn.is_case(case_id) else names(case_id)[0]
 class InputError(ValueError):
  def __init__(self,code,**context):
   if code not in CODES:raise ValueError('Invalid safe input error')
@@ -129,6 +142,11 @@ def validate_manifest(body):
  manifest=json_object(body,'MANIFEST')
  case=manifest.get('caseId')
  if not isinstance(case,str) or case not in CASES:raise InputError('MANIFEST')
+ if ntnn.is_case(case):
+  try:ntnn.validate_manifest(manifest)
+  except ntnn.NtnnKhbsWebCaseError:raise InputError('MANIFEST') from None
+  if manifest['format']!=CASES[case] or case_registry.htkk_version(case)!=manifest['htkkVersion']:raise InputError('MANIFEST')
+  return manifest
  fixed={'format':CASES[case],'sourceRepository':REPO,'sourceVersion':'0.9.2','caseId':case,'inputsSynthetic':True,'exporter':'lib/htkk-xml.ts'}
  variable={'sourceCommit','producerSha256','xmlSha256','bytes'}
  if declaration.is_case(case):
@@ -172,6 +190,10 @@ def annex_manifest_leaves(root):
  return rows
 def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=None):
  if case_id not in CASES:raise InputError('MANIFEST')
+ if ntnn.is_case(case_id):
+  try:ntnn.validate_xml(body,case_id,'web')
+  except ntnn.NtnnKhbsWebCaseError as error:raise InputError(NTNN_ERRORS.get(error.code,'XML_PRIVACY')) from None
+  return {'privacyValuesVerified':True,'serviceIdentity':'web-tool','nativeProvenance':False,'amendmentLeafTarget':ntnn.case(case_id)['leafTarget']}
  if declaration.is_case(case_id):
   try:return declaration.validate_web_input(body,case_id,manifest)
   except declaration.DeclarationWebCaseError as error:raise InputError(DECLARATION_ERRORS.get(error.code,'XML_PRIVACY')) from None
@@ -281,6 +303,10 @@ def download(token,fetch=None,today=None,expected_source=None,expected_case=None
  if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
  validate_web_xml(body,today,manifest['caseId'],manifest)
  files={name:body,'manifest.json':manifest_body}
+ if ntnn.is_case(manifest['caseId']):
+  for extra in ntnn.names(manifest['caseId']):
+   if extra not in files:files[extra]=content_file(fetch('/contents/'+extra+query,token),extra,MAX_XML)
+  validate_prior(files,manifest,today)
  if khbs.is_case(manifest['caseId']) and khbs.prior_case(manifest['caseId']):
   files[khbs.PRIOR_NAME]=content_file(fetch('/contents/'+khbs.PRIOR_NAME+query,token),khbs.PRIOR_NAME,MAX_XML)
   validate_prior(files,manifest,today)

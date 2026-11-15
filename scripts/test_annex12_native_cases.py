@@ -27,7 +27,7 @@ def edited(body,edit,preamble=True):
 
 class RegistryContract(unittest.TestCase):
  def test_two_candidate_cases_use_the_annex_product_producer_and_own_status_contexts(self):
-  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES and c not in cases.ANNEX10_CASES and c not in cases.KHBS_CASES),ANNEX)
+  self.assertEqual(cases.ANNEX12_CASES,ANNEX);self.assertEqual(tuple(c for c in cases.CANDIDATE_CASES if c not in cases.DECLARATION_CASES and c not in cases.ANNEX10_CASES and c not in cases.KHBS_CASES and c not in cases.NTNN_KHBS_CASES),ANNEX)
   self.assertEqual(len(cases.GATE_CASES),13);self.assertTrue(set(cases.GATE_CASES).isdisjoint(ANNEX))
   for case,producer_case in ((ZERO,'annex12-zero'),(TWO,'annex12-two-plants')):
    c=cases.CASES[case];a=cases.ADAPTERS[c['adapterId']]
@@ -119,6 +119,8 @@ class InputPrivacyContract(unittest.TestCase):
  def test_each_producer_is_hash_bound_separately_before_writes(self):
   self.assertEqual(publisher.CASE_PRODUCERS[ZERO],'scripts/generate-htkk-web-annex12-reference.mjs');self.assertEqual(publisher.CASE_PRODUCERS['01GTGT-zero-M10-2026'],publisher.PRODUCER)
   import test_htkk_web_input_publisher as fixtures
+  # The 01/NTNN KHBS inputs are synthetic files pinned into each reader instance (ntnn_khbs_test_support.py).
+  fixtures.f.ntnn_fx.pin(publisher.reader.ntnn)
   inputs=fixtures.fixtures();index=list(cases.CASES).index(ZERO);item=inputs[index];metadata=dict(item[3]);metadata['producerSha256']=hashlib.sha256(fixtures.PRODUCER).hexdigest()
   files=dict(item[2]);files['manifest.json']=(json.dumps(metadata,ensure_ascii=False)+'\n').encode();inputs[index]=(item[0],item[1],files,metadata)
   fetch,calls,_=fixtures.fake_api()

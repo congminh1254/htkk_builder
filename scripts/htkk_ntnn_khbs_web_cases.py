@@ -8,11 +8,13 @@ contract pins each file's size and SHA-256, so any other value is refused before
 structural checks below repeat what the pins already imply in a form that fails with a bounded code (namespace, no comment,
 web service identity, synthetic NNT/signer, declaration identity, loaiTKhai/soLan of each file).
 
-NOT REGISTERED YET: the Windows driver mode these cases need (KHBS-NATIVE-CASE.md, section "01/NTNN") does not exist, so
-htkk-native-cases.json carries no such case and nothing dispatches them. This module is the reviewed input half.
+This repository is public, so the reviewed files never enter it: only their pins do (tests pin synthetic in-memory files of their
+own, ntnn_khbs_test_support.py). Registered cases of driver mode declaration-amendment-khbs-inspect (HtkkDeclarationKhbs.cs),
+non-gating, HTKK 5.8.2; the native B export is checked against the staged files themselves (validate_native_output).
 No value, path or text of a file is ever reported; errors are bounded codes."""
 import hashlib
 import io
+import pathlib
 import re
 import xml.etree.ElementTree as ET
 
@@ -28,6 +30,8 @@ SERVICE = ('CCKK', 'Công cụ Kê khai', '0.9.2', 'hotrokekhai.net — Công c�
 MST, NAME, SIGNER = '9999999997', 'NNT KIEM THU GIA LAP - KHONG NOP', 'NGUOI KY GIA LAP'
 MENUS = {'I9': ('838', '2.5.1'), 'Y8': ('2012', '3.0.9')}
 CODES = frozenset(('CASE', 'NAMES', 'MANIFEST', 'SIZE', 'HASH', 'ENCODING', 'DECLARATION', 'PARSE', 'NAMESPACE', 'SERVICE', 'IDENTITY', 'AMENDMENT'))
+# kieuKy, kyKKhai, kyKKhaiTuNgay, kyKKhaiDenNgay of every file of a menu's cases.
+PERIODS = {'I9': ('M', '09/2026', '01/09/2026', '30/09/2026'), 'Y8': ('M', '10/2026', '01/10/2026', '31/10/2026')}
 CASES = {
     '01NTNN-khbs-grossup-lan1-M09-2026': {'producerCase': 'ntnn01-khbs-grossup-lan1-m09-2026', 'menuId': 'I9', 'soLan': 1, 'web': (7582, '412889221ab533e07874e40de04c1fc8789568eeddf6d8184d9429c739bc0e6a'), 'original': (2256, '98ff814c3aa9d0449b3fd5d9f6c69877d9f0a3433916003bb45034d8d7fb6ff4'), 'prior': None,
         'leafTarget': 216, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '540166'], ['1052', '540166']], 'ct10': '1080332', 'ct3a_1': '2026-11-13', 'ct3a_2': '24', 'ct3b': '0'}},
@@ -149,6 +153,8 @@ def validate_xml(body, case_id, role):
         reject('IDENTITY')
     if (_leaf(root, tk + 'maTKhai'), _leaf(root, tk + 'pbanTKhaiXML')) != MENUS[spec['menuId']] or _leaf(root, tk + 'ngayLapTKhai') != FIXED_DATE:
         reject('IDENTITY')
+    if tuple(_leaf(root, tk + 'KyKKhaiThue/' + name) for name in ('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay')) != PERIODS[spec['menuId']]:
+        reject('IDENTITY')
     expected = ('C', '0') if role == 'original' else ('B', str(spec['soLan'] - (1 if role == 'prior' else 0)))
     if (_leaf(root, tk + 'loaiTKhai'), _leaf(root, tk + 'soLan')) != expected:
         reject('AMENDMENT')
@@ -172,3 +178,83 @@ def validate_files(files, manifest):
         if name in files:
             validate_xml(files[name], case_id, role)
     return {'privacyValuesVerified': True, 'serviceIdentity': 'web-tool', 'nativeProvenance': False, 'amendmentLeafTarget': case(case_id)['leafTarget']}
+
+
+# ---- Native re-export (publish-htkk-declaration-native-output.py) ----
+# The original B export of the last bổ sung round is read with the declaration contract's parser, leaf walk, privacy rule
+# and whole-tree comparison (htkk_declaration_web_cases.py): its errors and bounded diagnostics are reused unchanged.
+_declaration = None
+
+
+def declaration():
+    global _declaration
+    if _declaration is None:
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('ntnn_khbs_declaration_contract', pathlib.Path(__file__).with_name('htkk_declaration_web_cases.py'))
+        _declaration = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(_declaration)
+    return _declaration
+
+
+def input_texts(files):
+    """Every leaf text of the case's staged files (lần đầu, previous bổ sung, this bổ sung), already validated by the caller."""
+    d = declaration()
+    return frozenset(value for name in (ORIGINAL_NAME, PRIOR_NAME, WEB_NAME) if name in files for _, value in d.leaves(d._parse(files[name], True)))
+
+
+def tax_leaf_count(case_id):
+    """Compared leaves of the web B file excluding the four service-identity leaves (C# KhbsPlan leaf counts minus 4)."""
+    return case(case_id)['leafTarget']
+
+
+def validate_native_output(body, case_id, today=None, service_version=None, files=None):
+    """Native B re-export: original service identity, fresh creation date, this case's identity, period and lần, synthetic NNT.
+    With ``files`` (the case's staged files, each validated against its pin here) every text must also be a leaf text of those
+    files, the synthetic profile or the service identity; the publisher checks that before anything is retained."""
+    import datetime
+    d, spec = declaration(), case(case_id)
+    root = d._parse(body, False)
+    items = d.leaves(root)
+    service = tuple(d._one(items, d.SERVICE_PATH + name) for name in d.SERVICE_NAMES)
+    if service[:3] != d.native_service(service_version) or not re.fullmatch(r'[0-9A-F]{32}', service[3]):
+        d.reject('SERVICE')
+    if files is not None:
+        if type(files) is not dict or set(files) != set(names(case_id)) - {MANIFEST_NAME}:
+            reject('NAMES')
+        for name, role in ((ORIGINAL_NAME, 'original'), (PRIOR_NAME, 'prior'), (WEB_NAME, 'web')):
+            if name in files:
+                validate_xml(files[name], case_id, role)
+    ma, version = MENUS[spec['menuId']]
+    for name, expected in (('maTKhai', ma), ('pbanTKhaiXML', version), ('loaiTKhai', 'B'), ('soLan', str(spec['soLan']))):
+        if d._one(items, d.TK + name) != expected:
+            d.reject('IDENTITY', d._where(items, d.TK + name, d._one(items, d.TK + name)))
+    for name, expected in zip(('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay'), PERIODS[spec['menuId']]):
+        path = d.TK + 'KyKKhaiThue/' + name
+        if d._one(items, path) != expected:
+            d.reject('PERIOD', d._where(items, path, d._one(items, path)))
+    for path, expected in ((d.NNT + 'mst', MST), (d.NNT + 'tenNNT', NAME), (d.TK + 'nguoiKy', SIGNER)):
+        if d._one(items, path) != expected:
+            d.reject('PRIVACY', d._where(items, path, d._one(items, path), (expected,)))
+    for path, value in items:
+        if re.search(r'(^|/)(mst|mst_cu|mstDLyThue)$', path) and value not in ('', MST):
+            d.reject('PRIVACY', d._where(items, path))
+    created = d._one(items, d.CREATION_PATH)
+    try:
+        created_date = datetime.date.fromisoformat(created) if re.fullmatch(r'[0-9]{4}-[0-9]{2}-[0-9]{2}', created) else None
+    except ValueError:
+        created_date = None
+    today = today or datetime.datetime.now(datetime.timezone.utc).date()
+    if created_date is None or abs((today - created_date).days) > 1:
+        d.reject('DATE')
+    if files is None:
+        return {'privacyValuesVerified': False, 'leafCount': len(items), 'nativeServiceIdentityVerified': True, 'creationDateRule': 'native-export-current-date'}
+    d._texts(items, input_texts(files) | d.PROFILE_TEXTS | set(service))
+    return {'privacyValuesVerified': True, 'leafCount': len(items), 'nativeServiceIdentityVerified': True, 'creationDateRule': 'native-export-current-date'}
+
+
+def compare_tree(web_body, native_body, case_id):
+    """Whole-tree comparison of the native B export with the case's web B file, checked against its pin first (declaration rule:
+    creation date and the four service leaves normalised in memory; every other leaf, ngày lập KHBS and late days included, exact)."""
+    validate_xml(web_body, case_id, 'web')
+    return declaration().compare_tree(web_body, native_body, ())
+

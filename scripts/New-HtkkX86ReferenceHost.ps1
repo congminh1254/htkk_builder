@@ -57,7 +57,7 @@ function New-HtkkX86ReferenceHost {
     $automationResultFile=$program+'.gui-automation.json'
     $automationPermitFile=$program+'.gui-automation.allow'
     $candidates=@($program,$hostConfig,$resultFile,$automationResultFile,$automationPermitFile)
-    if($GuiAutomation -in @('gtgt-web-import-inspect','gtgt-amendment-khbs-inspect','declaration-web-import-inspect')){
+    if($GuiAutomation -in @('gtgt-web-import-inspect','gtgt-amendment-khbs-inspect','declaration-web-import-inspect','declaration-amendment-khbs-inspect')){
       $safe.webImportCasePath=$program+'.web-case.id';$safe.webImportInputPath=$program+'.web-input.xml';$safe.webImportInputHashPath=$program+'.web-input.sha256';$safe.webImportSourceShaPath=$program+'.web-source.sha'
       $candidates+=@($safe.webImportInputPath,$safe.webImportInputHashPath,$safe.webImportSourceShaPath,$safe.webImportCasePath)
     }

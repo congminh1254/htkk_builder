@@ -63,7 +63,7 @@ class Registration(unittest.TestCase):
         self.assertEqual(registry.driver(CASE), MODE)
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'ntnn01-nccnn-entry-m10-2026')
         # The import-based Y8 case was removed after release 242 (HTKK resets the tables on import).
-        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8'], [CASE, OCCURRENCE])
+        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8' and c not in registry.NTNN_KHBS_CASES], [CASE, OCCURRENCE])
         self.assertEqual(registry.input_mode(OCCURRENCE), registry.ENTRY_MODE); self.assertIs(registry.CASES[OCCURRENCE]['releaseGate'], False)
         self.assertNotIn(BASE, registry.CASES); self.assertNotIn(BASE, d.CASES); self.assertNotIn('01-ntnn-nccnn-tt89-3.0.9', registry.TRUSTED_ADAPTERS)
         self.assertNotIn(BASE, automation['resultFields']['webCaseId']['values'])
@@ -260,9 +260,10 @@ class Driver(unittest.TestCase):
         self.assertIn('-not $lastGui.roundtripImportCommandInvoked -and -not $lastGui.roundtripImportSucceeded', probe)
         self.assertIn('$lastGui.declarationEntryActionCount -eq $lastGui.declarationEntryPlannedCount', probe)
         self.assertIn("@('declaration-web-import-inspected','declaration-original-entry-exported','declaration-import-tick-exported','declaration-export-not-matched')", probe)
-        self.assertIn("inputMode=$(if($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
+        self.assertIn("inputMode=$(if($declarationKhbs){if($declarationEntryCase){'khbs-original-entry-export'}else{'khbs-web-xml-import-reexport'}}elseif($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
         publisher = (ROOT / 'publish-htkk-declaration-native-output.py').read_text(encoding='utf-8')
-        self.assertIn("'inputMode':reader.case_registry.input_mode(case_id)", publisher)
+        self.assertIn("else:mode=reader.case_registry.input_mode(case_id);imported=mode in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE)", publisher)
+        self.assertIn("'inputMode':mode,'originalImportSucceeded':imported,", publisher)
 
 
 if __name__ == '__main__':
