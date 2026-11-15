@@ -434,6 +434,11 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort 9d45beb (Y8 runs 43733503058, 43733506098): shape 23305 again, no 32768: {HOME} and the first character (SendKeys) did
+not take. The repair now makes up to three bounded keyboard attempts and records each outcome in the high byte of
+`declarationKhbsEntryLengths` (2 bits each: 1 took, 2 still without the first character, 3 other): A {HOME} + SendKeys,
+B {HOME} + KEYEVENTF_UNICODE, C select all and type the first character twice then the rest.
+
 Cohort 455ecc7 (Y8 runs 43727202330, 43727204841): shape 23305: the FIRST character was missing and a select-all retype lost
 it again. A bổ sung round now repairs only that: with the editor holding the typed text minus its first character, {HOME} and
 the first character are typed (same keyboard path), for text, number and date-text entries; 16384/32768 record it. (Importing

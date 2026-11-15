@@ -301,6 +301,9 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         repair = repair[:repair.index('\n }\n')]
         self.assertIn('if(editor.Text==typed||typed.Length<2||editor.Text!=typed.Substring(1))return true;', repair)
         self.assertIn('SendKeys.SendWait("{HOME}");', repair)
+        # Cohort 9d45beb (runs 43733503058, 43733506098): {HOME} + SendKeys did not take; three bounded attempts, outcomes recorded.
+        self.assertIn('outcomes|=outcome<<(2*attempt);declarationKhbsEntryLengths=(declarationKhbsEntryLengths&255)|(outcomes<<8);', repair)
+        self.assertIn('TypeDeclarationEntryUnicode(grid,editor,first+typed)', repair)
         for forbidden in ('PerformClick', '.Text=t', '.Text= ', 'SetValue'):
             self.assertNotIn(forbidden, repair)
         self.assertEqual(registry['resultFields']['declarationKhbsEntryLengths']['maximum'], 65535)

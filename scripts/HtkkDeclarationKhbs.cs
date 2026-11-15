@@ -30,8 +30,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // cell text when the editor opened, 16 editor = planned after typing, 32 editor ends with planned, 64 editor starts with the
  // cell's previous text, 128 editor empty after, 256 editor kept focus, 512 the foreground window is this process, 1024 the
  // editor is a TextBoxBase, 2048 recorded, 4096 the editor holds the planned text without its first character, 8192 without
- // its last, 16384 the first character was typed again at the start, 32768 the editor then held the planned text; declarationKhbsEntryLengths = 256 × length before
- // (≤ 255) + length after (≤ 255). Run 43705699385 (part1): 2825, lengths 30 for a 31-character text (part2: 34 of 35).
+ // its last, 16384 the first character was typed again (DeclarationKhbsFirstKeyRepair), 32768 the editor then held the
+ // planned text; declarationKhbsEntryLengths = 256 × length before (≤ 255) + length after (≤ 255), its high byte then replaced
+ // by the repair outcomes (DeclarationKhbsFirstKeyRepair). Run 43705699385 (part1): 2825, lengths 30 for a 31-character text.
  private int declarationKhbsEntryShape=0,declarationKhbsEntryLengths=0;
  private bool declarationKhbsPromptAnswered=false;
  private string webOriginalPath="",webOriginalSha256="",webPriorFilePath="",webPriorFileSha256="";
@@ -161,12 +162,24 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
   if(editor.Text==typed||typed.Length<2||editor.Text!=typed.Substring(1))return true;
   ObserveDeclarationKhbsEntry(before,opened,editor,typed);declarationKhbsEntryShape|=16384;
-  if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return false;}
-  SendKeys.SendWait("{HOME}");DeclarationKhbsSettle();
-  string first=typed.Substring(0,1);
-  if(DeclarationEntryAscii(first))SendKeys.SendWait(EscapeSendKeys(first));else if(!TypeDeclarationEntryUnicode(grid,editor,first)){DeclarationEntryFail(10);return false;}
-  clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-  if(String.Equals(editor.Text,typed,StringComparison.Ordinal))declarationKhbsEntryShape|=32768;
+  // Run 43733503058/43733506098: {HOME} + the first character by SendKeys did not take either. Up to three bounded keyboard
+  // attempts, stopping at the first that leaves exactly the typed text; each outcome is recorded in the high byte of
+  // declarationKhbsEntryLengths (2 bits per attempt: 1 took, 2 still without the first character, 3 other text):
+  // A {HOME} + the first character by SendKeys; B {HOME} + the first character as KEYEVENTF_UNICODE input;
+  // C select the editor's text with the keyboard and type the first character twice, then the rest (a dropped first key
+  // leaves exactly the typed text).
+  string first=typed.Substring(0,1);int outcomes=0;
+  for(int attempt=0;attempt<3;attempt++){
+   if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return false;}
+   if(attempt<2){SendKeys.SendWait("{HOME}");DeclarationKhbsSettle();
+    if(attempt==0&&DeclarationEntryAscii(first))SendKeys.SendWait(EscapeSendKeys(first));else if(!TypeDeclarationEntryUnicode(grid,editor,first)){DeclarationEntryFail(10);return false;}}
+   else{SendKeys.SendWait("^a");SendKeys.SendWait("{END}+{HOME}");DeclarationKhbsSettle();if(!TypeDeclarationEntryUnicode(grid,editor,first+typed)){DeclarationEntryFail(10);return false;}}
+   clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+   int outcome=String.Equals(editor.Text,typed,StringComparison.Ordinal)?1:editor.Text==typed.Substring(1)?2:3;
+   outcomes|=outcome<<(2*attempt);declarationKhbsEntryLengths=(declarationKhbsEntryLengths&255)|(outcomes<<8);
+   if(outcome==1){declarationKhbsEntryShape|=32768;return true;}
+   if(outcome==3&&attempt==0)attempt=1;
+  }
   return true;
  }
  private static void DeclarationKhbsSettle(){for(int turn=0;turn<5;turn++){Application.DoEvents();System.Threading.Thread.Sleep(20);}}
