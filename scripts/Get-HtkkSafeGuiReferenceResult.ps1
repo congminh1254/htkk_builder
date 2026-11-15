@@ -166,7 +166,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if($value['d1MenuClicked'] -isnot [bool]){throw 'invalid'}
   if($value['gtgtPeriodObserved'] -isnot [bool]){throw 'invalid'}
   if(($value['menuRowCount'] -isnot [int] -and $value['menuRowCount'] -isnot [long]) -or $value['menuRowCount'] -lt 0 -or $value['menuRowCount'] -gt 2048){throw 'invalid'}
-  if(($value['menuClickCount'] -isnot [int] -and $value['menuClickCount'] -isnot [long]) -or $value['menuClickCount'] -lt 0 -or $value['menuClickCount'] -gt $(if($ExpectedMode -ceq 'gtgt-amendment-open-inspect'){6}else{$(if($ExpectedMode -ceq 'gtgt-amendment-khbs-inspect'){9}else{3})})){throw 'invalid'}
+  if(($value['menuClickCount'] -isnot [int] -and $value['menuClickCount'] -isnot [long]) -or $value['menuClickCount'] -lt 0 -or $value['menuClickCount'] -gt $(if($ExpectedMode -ceq 'gtgt-amendment-open-inspect'){6}else{$(if($ExpectedMode -ceq 'gtgt-amendment-khbs-inspect'){9}else{$(if($ExpectedMode -ceq 'declaration-amendment-khbs-inspect'){9}else{3})})})){throw 'invalid'}
   if(($value['periodControlCount'] -isnot [int] -and $value['periodControlCount'] -isnot [long]) -or $value['periodControlCount'] -lt 0 -or $value['periodControlCount'] -gt 512){throw 'invalid'}
   if($value['periodControls'] -isnot [Collections.IDictionary]){throw 'invalid'}
   if($value['periodYearMonthMatched'] -isnot [bool]){throw 'invalid'}

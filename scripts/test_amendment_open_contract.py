@@ -71,8 +71,8 @@ class AmendmentReaderTypeBoundaryTests(unittest.TestCase):
  def test_second_menu_traversal_budget_is_restricted_to_the_new_b1_mode(self):
   reader=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text();fixture=(ROOT/'Test-HtkkSafeGuiReferenceResult.ps1').read_text()
   self.assertEqual(field('menuClickCount')['maximum'],3)
-  # KHBS lần 2 traverses the menu three times (C0, B1, B2).
-  self.assertEqual(field('menuClickCount')['modeMaximums'],{MODE:6,'gtgt-amendment-khbs-inspect':9})
+  # KHBS lần 2 traverses the menu three times (C0, B1, B2), on the D1 driver and on the declaration driver alike.
+  self.assertEqual(field('menuClickCount')['modeMaximums'],{MODE:6,'gtgt-amendment-khbs-inspect':9,'declaration-amendment-khbs-inspect':9})
   self.assertIn('$open.menuClickCount=4',fixture)
   self.assertIn("@{key='menuClickCount';value=7}",fixture)
 

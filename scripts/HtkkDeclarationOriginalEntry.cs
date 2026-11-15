@@ -212,6 +212,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   bool typeMatched=kind=="combo"?type=="FarPoint.Win.Spread.CellType.ComboBoxCellType":kind=="date"||kind=="date-optional"?dateMask||dateText:
    type!="FarPoint.Win.Spread.CellType.ComboBoxCellType"&&type!="FarPoint.Win.Spread.CellType.CheckBoxCellType"&&type!="FarPoint.Win.Spread.CellType.ButtonCellType"&&type!="FarPoint.Win.Spread.CellType.MaskCellType";
   if(!typeMatched){declarationEntryCellTypeMismatchMask|=1<<index;DeclarationEntryFail(9);return;}
+  if(DeclarationKhbsEntryHeld(sheet,cell,kind,parts,row,column)){declarationEntryActionCount++;Record();return;}
   DeclarationEntrySelect(grid,sheet,row,column);
   if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationEntryFail(10);return;}
   Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);
@@ -220,6 +221,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="combo"){EditDeclarationEntryCombo(grid,sheet,editor,index,parts,row,column);return;}
   editorKind=editor is TextBoxBase?"text-box":"other-control";
   SendKeys.SendWait("^a");
+  // A bổ sung round's cell can hold the previous version's value: also select it with the keyboard before typing over it.
+  if(DeclarationKhbsMode()&&declarationKhbsRound>0)SendKeys.SendWait("{END}+{HOME}");
   string value=parts[2];
   if(kind=="text"){
    if(DeclarationEntryAscii(value))SendKeys.SendWait(EscapeSendKeys(value));else if(!TypeDeclarationEntryUnicode(grid,editor,value)){DeclarationEntryFail(10);return;}
