@@ -232,7 +232,7 @@ class Driver(unittest.TestCase):
         self.assertIn('declarationPhase="import-inspect";declarationClock=Stopwatch.StartNew();SetStage(HtkkAutomationStage.DeclarationImportSheetChecking);', TICK)
 
     def test_import_driver_routes_the_tick_plan_after_the_original_import(self):
-        self.assertIn('declarationTickPlan=DeclarationKhbsMode()?null:HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();', IMPORT)
+        self.assertIn('declarationTickPlan=DeclarationKhbsMode()?HtkkDeclarationCasePlans.KhbsImportTick(declarationPlan.CaseId):HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();', IMPORT)
         self.assertIn('if(declarationPhase.StartsWith("tick-",StringComparison.Ordinal)){ContinueDeclarationTick();return;}', IMPORT)
         self.assertIn('if(declarationTickPlan!=null){declarationPhase="tick-pins";SetStage(HtkkAutomationStage.DeclarationImportTickReadyWaiting);}', IMPORT)
         self.assertIn('if(declarationTickPlan!=null)matched=matched&&declarationImportSheetMatched&&DeclarationTickSucceeded();', IMPORT)

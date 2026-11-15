@@ -12,7 +12,7 @@ def module(name,file):
 transport=module('declaration_output_transport','publish-htkk-web-inputs.py')
 reader=transport.reader
 declaration=reader.declaration
-# Kê khai bổ sung 01/NTNN (declaration-amendment-khbs-inspect, observation cases): the same retention of the original B export,
+# Kê khai bổ sung 01/NTNN and 05/KK-TNCN (declaration-amendment-khbs-inspect, observation cases): the same retention of the original B export,
 # validated by htkk_ntnn_khbs_web_cases.py against the case's own staged input files (fetched again from the pinned artifact).
 ntnn=reader.ntnn
 NTNN_ERRORS=(ntnn.NtnnKhbsWebCaseError,ntnn.declaration().DeclarationWebCaseError)
@@ -76,8 +76,9 @@ def validate_provenance(body,native,run_id,builder_commit,source_commit,case_id,
  if not isinstance(body,bytes) or not 0<len(body)<=reader.MAX_MANIFEST or not isinstance(native,bytes):fail('PROVENANCE')
  try:observed=reader.json_object(body,'MANIFEST')
  except reader.InputError:fail('PROVENANCE')
- # KHBS: the Y8 bổ sung (and its lần đầu) are typed into the original grid; the I9 files are imported.
- if ntnn.is_case(case_id):entry=ntnn.case(case_id)['menuId']=='Y8';mode='khbs-original-entry-export' if entry else 'khbs-web-xml-import-reexport';imported=not entry
+ # KHBS: the Y8 bổ sung (and its lần đầu) are typed into the original grid; the I9 and 05/KK-TNCN files are imported (the
+ # 05-1/PBT case then has its Thuế tỉnh/CCT chosen in the grid: khbs-web-xml-import-tick-reexport).
+ if ntnn.is_case(case_id):mode=ntnn.input_mode(case_id);imported=mode!='khbs-original-entry-export'
  else:mode=reader.case_registry.input_mode(case_id);imported=mode in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE)
  expected={'format':'htkk-declaration-native-output-staging-v1','builderRepository':BUILDER,'builderCommit':builder_commit,'runId':run_id,'runAttempt':int(run_attempt),'sourceRepository':REPO,'sourceCommit':source_commit,'sourceVersion':oracle.baseline(version)['serviceVersion'],'runtimeHost':'clr2-x86-reference','caseId':case_id,'artifactCommit':artifact_commit,
   'inputsSynthetic':True,'originalProcessStopped':True,'originalSourcesUnmodified':True,

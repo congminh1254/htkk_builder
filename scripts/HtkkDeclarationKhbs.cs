@@ -1,4 +1,4 @@
-// Kê khai bổ sung (KHBS) of 01/NTNN TT80 (I9) and 01/NTNN, NCCNN TT89 (Y8) on the declaration driver, mode
+// Kê khai bổ sung (KHBS) of 01/NTNN TT80 (I9), 01/NTNN, NCCNN TT89 (Y8) and 05/KK-TNCN (L7, Z8) on the declaration driver, mode
 // declaration-amendment-khbs-inspect (HTKK 5.8.2, non-gating; KHBS-NATIVE-CASE.md "01/NTNN"). C# 2.0 / CLR2.
 // Rounds: 0 = the lần đầu C0 (I9: original "Nhập từ XML" of .web-original.xml; Y8: typed, the original import resets the
 // Y8 tables), saved with the original Ghi and closed with the original Đóng; 1..n = the bổ sung, reopened from the original
@@ -115,6 +115,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   roundtripImportCommandInvoked=false;roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
   declarationImportClickReturned=false;declarationImportSheetMatched=false;declarationSheetObserved=false;declarationPeriodObserved=false;declarationPeriodMatched=false;declarationAnnexMatched=false;declarationClock=null;
   declarationEntryActionCount=0;declarationEntryMismatchMask=0;declarationEntryLockedMask=0;declarationEntryCellTypeMismatchMask=0;declarationEntryRowInsertCount=0;
+  // A 05-1/PBT round (KhbsImportTick) chooses its Thuế tỉnh/CCT again after each import: the tick state starts afresh.
+  declarationTickClock=null;declarationTickMethodPinsMatched=false;declarationTickEditsMatched=false;declarationTickTicksMatched=false;declarationTickReadbackMatched=false;
+  declarationTickPlannedCount=0;declarationTickActionCount=0;declarationTickMethodPinMask=0;declarationTickReadbackMask=0;declarationTickComboMask=0;declarationTickComboListCount=0;declarationTickEntryMask=0;declarationTickEntryStartOffset=0;declarationTickEntryKeyOffset=0;
   declarationFlowStarted=false;declarationPhase="not-started";navigationPhase="decl-main-menu-again";menuStep=0;
   SetStage(HtkkAutomationStage.DeclarationKhbsReopening);Record();
  }

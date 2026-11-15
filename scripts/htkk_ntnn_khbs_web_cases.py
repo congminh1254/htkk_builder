@@ -11,8 +11,13 @@ web service identity, synthetic NNT/signer, declaration identity, loaiTKhai/soLa
 This repository is public, so the reviewed files never enter it: only their pins do (tests pin synthetic in-memory files of their
 own, ntnn_khbs_test_support.py). Registered cases of driver mode declaration-amendment-khbs-inspect (HtkkDeclarationKhbs.cs),
 non-gating, HTKK 5.8.2; the native B export is checked against the staged files themselves (validate_native_output).
-No value, path or text of a file is ever reported; errors are bounded codes."""
+No value, path or text of a file is ever reported; errors are bounded codes.
+
+The same driver mode runs the 05/KK-TNCN KHBS cases (L7, Z8): their pins and per-case settings (producer, exporter, PLuc parts
+before the KHBS fragments, input mode) live in htkk_kk05_khbs_web_cases.py and are merged into CASES, MENUS and PERIODS here,
+so every reader of this contract (fetch, publishers, probe lists) covers them with the same checks."""
 import hashlib
+import importlib.util
 import io
 import pathlib
 import re
@@ -44,6 +49,20 @@ CASES = {
     '01NTNN-NCCNN-khbs-part2-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part2-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (8748, 'b289ac26290d25dd376ee1951d0ae4cc8496bef481d12f66b681cf50f304f5e6'), 'original': (3940, 'c12296c09bd11817f5dfa2e07ba76d1c530034a4d909ae3bccbaea0d0ec97ff0'), 'prior': None,
         'leafTarget': 249, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1052', '4000000']], 'ct10': '4000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
 }
+for _spec in CASES.values():
+    _spec.setdefault('annexParts', ())
+    _spec.setdefault('inputMode', 'khbs-original-entry-export' if _spec['menuId'] == 'Y8' else 'khbs-web-xml-import-reexport')
+    _spec['producer'], _spec['exporter'] = PRODUCER, EXPORTER
+NTNN_CASES = tuple(CASES)
+_kk05_spec = importlib.util.spec_from_file_location('htkk_kk05_khbs_web_cases_data', pathlib.Path(__file__).with_name('htkk_kk05_khbs_web_cases.py'))
+kk05 = importlib.util.module_from_spec(_kk05_spec)
+_kk05_spec.loader.exec_module(kk05)
+if set(kk05.CASES) & set(CASES) or set(kk05.MENUS) & set(MENUS):
+    raise ValueError('CASE_POLICY')
+CASES.update(kk05.CASES)
+MENUS.update(kk05.MENUS)
+PERIODS.update(kk05.PERIODS)
+KK05_CASES = tuple(kk05.CASES)
 
 
 class NtnnKhbsWebCaseError(ValueError):
@@ -78,7 +97,7 @@ def manifest_fields(case_id):
     """The fixed manifest values of the producer (manifestFor); sourceCommit, producerSha256 and the sizes/hashes vary."""
     spec = case(case_id)
     return {'format': 'htkk-web-' + spec['producerCase'] + '-input-v1', 'sourceRepository': 'htkk-net/htkk_web', 'sourceVersion': '0.9.2',
-            'caseId': case_id, 'menuId': spec['menuId'], 'htkkVersion': '5.8.2', 'exporter': EXPORTER, 'producer': PRODUCER,
+            'caseId': case_id, 'menuId': spec['menuId'], 'htkkVersion': '5.8.2', 'exporter': spec['exporter'], 'producer': spec['producer'],
             'soLan': spec['soLan'], 'ngayLapKHBS': FIXED_DATE, 'expected': spec['expected'], 'inputsSynthetic': True, 'nativeAmendmentVerified': False}
 
 
@@ -160,7 +179,8 @@ def validate_xml(body, case_id, role):
         reject('AMENDMENT')
     pluc = [child for child in root.find('{%s}HSoKhaiThue' % NS) if _local(child) == 'PLuc']
     parts = [_local(child) for item in pluc for child in item]
-    if parts != ([] if role == 'original' else ['PL01_KHBS', 'PL01_1_KHBS']):
+    # The case's own annexes (05/KK-TNCN: 05-1/PBT-KK-TNCN) precede the two KHBS fragments of a B file.
+    if parts != list(spec['annexParts']) + ([] if role == 'original' else ['PL01_KHBS', 'PL01_1_KHBS']):
         reject('AMENDMENT')
     for part in ([] if role == 'original' else ['PL01_KHBS', 'PL01_1_KHBS']):
         if _leaf(root, 'HSoKhaiThue/PLuc/' + part + '/Header/soLan') != expected[1] or _leaf(root, 'HSoKhaiThue/PLuc/' + part + '/Header/mst') != MST:
@@ -200,6 +220,16 @@ def input_texts(files):
     """Every leaf text of the case's staged files (lần đầu, previous bổ sung, this bổ sung), already validated by the caller."""
     d = declaration()
     return frozenset(value for name in (ORIGINAL_NAME, PRIOR_NAME, WEB_NAME) if name in files for _, value in d.leaves(d._parse(files[name], True)))
+
+
+def producer(case_id):
+    """The reviewed htkk_web producer of a case."""
+    return case(case_id)['producer']
+
+
+def input_mode(case_id):
+    """How the driver puts the case's files into HTKK: imported, imported then completed in the grid, or typed (Y8)."""
+    return case(case_id)['inputMode']
 
 
 def tax_leaf_count(case_id):
