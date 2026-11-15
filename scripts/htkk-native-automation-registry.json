@@ -2797,7 +2797,8 @@
       "maximum": 3,
       "modeMaximums": {
         "gtgt-amendment-open-inspect": 6,
-        "gtgt-amendment-khbs-inspect": 9
+        "gtgt-amendment-khbs-inspect": 9,
+        "declaration-amendment-khbs-inspect": 9
       }
     },
     "periodControlCount": {
@@ -3391,7 +3392,8 @@
         "05KK-khbs-lan2-Q3-2026",
         "05KK-khbs-decrease-Q3-2026",
         "05KK-TT89-khbs-increase-Q4-2026",
-        "05KK-PBT-khbs-Q3-2026"
+        "05KK-PBT-khbs-Q3-2026",
+        "05KK-khbs-increase-M03-2026"
       ]
     },
     "webCaseEditCount": {

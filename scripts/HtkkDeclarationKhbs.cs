@@ -121,6 +121,18 @@ public sealed partial class HtkkGuiReferenceAutomation {
   }
   throw new InvalidOperationException();
  }
+ // A bổ sung round's sheet opens with the values HTKK loaded from the saved previous version (runs 43686717364 and
+ // 43686719047: Y8 round 1 failed at entry 0, code 12, because the planned text was typed into a cell that already held it).
+ // A planned cell that already holds exactly its planned value is left as HTKK loaded it and counted; any other cell is typed
+ // as in C0. Read only: nothing is clicked, typed or assigned here.
+ private bool DeclarationKhbsEntryHeld(object sheet,object cell,string kind,string[] parts,int row,int column){
+  if(!DeclarationKhbsMode()||declarationKhbsRound==0)return false;
+  if(kind=="text")return CellText(sheet,row,column)==parts[2];
+  if(kind=="number")return DeclarationEntryNumber(cell,parts[2]);
+  if(kind=="date"||kind=="date-optional")return DeclarationEntryDate(cell,parts[2]);
+  if(kind=="combo"){int[] code=DeclarationEntryCell(parts[5]);return CellText(sheet,row,column)==parts[4]&&CellText(sheet,code[0],code[1])==parts[6];}
+  return false;
+ }
  // The saved round is closed: the original menu, period dialog (Bổ sung) and sheet steps run again for the next round.
  private void BeginDeclarationKhbsRound(){
   if(declarationKhbsRound>=declarationKhbsTarget)throw new InvalidOperationException();
@@ -128,7 +140,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(declarationKhbsRound==declarationKhbsTarget)declarationKhbsStepMask|=512;else declarationKhbsStepMask|=8;
   roundtripImportCommandInvoked=false;roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
   declarationImportClickReturned=false;declarationImportSheetMatched=false;declarationSheetObserved=false;declarationPeriodObserved=false;declarationPeriodMatched=false;declarationAnnexMatched=false;declarationClock=null;
-  declarationEntryActionCount=0;declarationEntryMismatchMask=0;declarationEntryLockedMask=0;declarationEntryCellTypeMismatchMask=0;declarationEntryRowInsertCount=0;
+  declarationEntryActionCount=0;declarationEntryComboCount=0;declarationEntryMismatchMask=0;declarationEntryLockedMask=0;declarationEntryCellTypeMismatchMask=0;declarationEntryRowInsertCount=0;
   // A 05-1/PBT round (KhbsImportTick) chooses its Thuế tỉnh/CCT again after each import: the tick state starts afresh.
   declarationTickClock=null;declarationTickMethodPinsMatched=false;declarationTickEditsMatched=false;declarationTickTicksMatched=false;declarationTickReadbackMatched=false;
   declarationTickPlannedCount=0;declarationTickActionCount=0;declarationTickMethodPinMask=0;declarationTickReadbackMask=0;declarationTickComboMask=0;declarationTickComboListCount=0;declarationTickEntryMask=0;declarationTickEntryStartOffset=0;declarationTickEntryKeyOffset=0;

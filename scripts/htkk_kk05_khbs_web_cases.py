@@ -28,7 +28,11 @@ CASES = {
         'expected': {'rows': ['[29]', '[31]'], 'subitems': [['1001', '-1000000']], 'allocation': [], 'ct10': '-1000000', 'ct11': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '14', 'ct3b': '-4200'}},
     '05KK-TT89-khbs-increase-Q4-2026': {'producerCase': 'kk05-tt89-khbs-increase-q4-2026', 'menuId': 'Z8', 'soLan': 1, 'web': (5381, '8b14b2eeaa4b764e09de4f9481936df4bb7d592ff74ebaf7174e1c877eb5bfdc'), 'original': (2239, 'd0e5fbff3b66a826e2200908477affd238dc8f320ade3c922c73d25837f4b906'), 'prior': None, 'leafTarget': 174,
         'expected': {'rows': ['[42]', '[43]'], 'subitems': [['1001', '1000000']], 'allocation': [], 'ct10': '1000000', 'ct11': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
-    '05KK-PBT-khbs-Q3-2026': {'producerCase': 'kk05-pbt-khbs-q3-2026', 'menuId': 'L7', 'soLan': 1, 'web': (7516, '225f394733bd352746b2ebeb2f71339ec092e2cb4a86ddbaca43facefefb047e'), 'original': (3541, '7f42c909ac6ba799691bf3f560211ce3fb20b4fa94a52ad7b4cc5c5fda70c69e'), 'prior': None, 'leafTarget': 230,
+    # L7 KỲ THÁNG 3/2026 (HTKK takes monthly 05/KK-TNCN until tháng 3/2026): the increase case on a month, its own period.
+    '05KK-khbs-increase-M03-2026': {'producerCase': 'kk05-khbs-increase-m03-2026', 'menuId': 'L7', 'soLan': 1, 'web': (6360, '363acc5436766fd2da5e3d64d93113f7ceb3ebf3b13ce21d261f90269bc9d78d'), 'original': (2004, '6dceb1348089e9ccd1d3fb4e7dcc8b25a7c8ca488bcb9716e84fdef430d78be1'), 'prior': None, 'leafTarget': 213,
+        'period': ('M', '03/2026', '01/03/2026', '31/03/2026'),
+        'expected': {'rows': ['[21]', '[22]', '[26]', '[27]', '[29]', '[30]'], 'subitems': [['1001', '1000000']], 'allocation': [], 'ct10': '1000000', 'ct11': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '207', 'ct3b': '62100'}},
+    '05KK-PBT-khbs-Q3-2026': {'producerCase': 'kk05-pbt-khbs-q3-2026', 'menuId': 'L7', 'soLan': 1, 'web': (7460, 'f27e9cf3168a94295e6a80344d7e983ef45554fc3260bd1b5aaa7e9252bcb806'), 'original': (3541, '7f42c909ac6ba799691bf3f560211ce3fb20b4fa94a52ad7b4cc5c5fda70c69e'), 'prior': None, 'leafTarget': 230,
         'annexParts': (PBT,), 'inputMode': IMPORT_TICK,
         'expected': {'rows': ['[29]', '[30]', '[14]'], 'subitems': [['1001', '1000000']], 'allocation': [['00001', '10300', '1000000']], 'ct10': '1000000', 'ct11': '1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '14', 'ct3b': '4200'}},
 }

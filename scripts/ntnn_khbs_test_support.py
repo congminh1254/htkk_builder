@@ -11,7 +11,7 @@ ROLES = ('original', 'prior', 'web')
 def _tk(m, case_id, role):
     spec = m.CASES[case_id]
     ma, version = m.MENUS[spec['menuId']]
-    kind, period, start, end = m.PERIODS[spec['menuId']]
+    kind, period, start, end = m.period_of(spec)
     loai, lan = ('C', '0') if role == 'original' else ('B', str(spec['soLan'] - (1 if role == 'prior' else 0)))
     return ('<TKhaiThue><maTKhai>%s</maTKhai><tenTKhai>TO KHAI GIA LAP KIEM THU</tenTKhai><pbanTKhaiXML>%s</pbanTKhaiXML>'
             '<loaiTKhai>%s</loaiTKhai><soLan>%s</soLan><KyKKhaiThue><kieuKy>%s</kieuKy><kyKKhai>%s</kyKKhai>'

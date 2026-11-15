@@ -1154,6 +1154,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.MenuClickCount:
     if(mode==HtkkAutomationMode.GtgtAmendmentOpenInspect)return 6;
     if(mode==HtkkAutomationMode.GtgtAmendmentKhbsInspect)return 9;
+    if(mode==HtkkAutomationMode.DeclarationAmendmentKhbsInspect)return 9;
     return 3;
    case HtkkNativeResultCounter.PeriodControlCount:
     return 512;

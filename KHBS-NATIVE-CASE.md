@@ -434,6 +434,17 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort 1019e5f: `01NTNN-khbs-decrease-M09-2026` matched the whole tree (run 43686715380, retained). The other four:
+- Gross-up (run 43686711369): exported and retained; one leaf differed, `PL01_KHBS/.../Muc_3/ct3b` (HTKK 7.778, web 0). HTKK
+  computes AA38 over ct10 with two Muc_I.1 rows too; the web was fixed to HTKK and the pins of the gross-up web file and of the
+  lần-2 prior (the same file) changed with it.
+- Lần 2 (run 43686713666, and the 05/KK lần 2): every result was refused once round 2 clicked the menu a fourth time;
+  `menuClickCount` allowed 3 for this mode. It now allows 9 (three menu traversals), as for `gtgt-amendment-khbs-inspect`.
+- Y8 part1/part2 (runs 43686717364, 43686719047): round 1 failed at entry 0 (code 12): the B sheet opens with the saved C0
+  values and the planned text was typed over a cell that already held it. A bổ sung round now leaves a planned cell that
+  already holds its planned value as HTKK loaded it (read only), selects with {END}+{HOME} before typing over any other, and
+  resets the combo counter per round.
+
 Cohort 1a6f600 (runs 43676048794, 43676050610, 43676052218, 43676054472, 43676056452): permit written, the seven profile
 inputs typed and the original profile Ghi clicked; four cases then never showed a valid result past `original-save-invoking`
 (no success message, no HEADER.xml), part1 stopped after `waiting-profile-close-ready`, and none showed the driver's own 400 s
@@ -488,3 +499,18 @@ What only these runs decide (web predictions in its golden): hạn nộp quý 30
 and Z8 quý 4/2026 30/01/2027 moved to 01/02/2027 (0 days, ct3a_1 still written); the 05-1/PBT hồ sơ group 000101 and its key text;
 Muc_I.2 with ct04 = Thuế tỉnh/CCT of the row (path_24, saved by HTKK in its Sections file) and ct3 = the unit's MST; tongCong_7
 adding the [14] row; ct3b kept with one Muc_I.2 row.
+
+Cohort 1019e5f (HTKK 5.8.2): `05KK-khbs-increase-Q3-2026` (run 43686728548, 213 leaves), `05KK-khbs-decrease-Q3-2026` (run 43686732231,
+161) and `05KK-TT89-khbs-increase-Q4-2026` (run 43686734447, 174) matched the whole tree. `05KK-PBT-khbs-Q3-2026` (run 43686736338)
+got through every round, KhbsImportTick included, and differed only in leaves 141/142: HTKK writes Muc_I.2 `ct04_ma`/`ct04_ten`
+EMPTY (the web had put the row's Thuế tỉnh/CCT there). htkk_web now writes them empty (its raw export reproduces every leaf);
+the pinned web file of the PBT case changed accordingly (7460 bytes, f27e9cf3…b806; leaf target unchanged). `05KK-khbs-lan2-Q3-2026`
+(run 43686730343) stopped in round 2 at `declaration-menu-click` (step mask 767, menuClickCount 3, every later result refused, none
+missing): the reader caps `menuClickCount` at 3 for this mode while a third round clicks again, the shared lần-2 path of the
+01/NTNN lần-2 case.
+
+
+`05KK-khbs-increase-M03-2026` (observation, adapter `05-kk-tncn-2.9.3-khbs` now also takes month 03/2026): the increase case on L7
+kỳ tháng 3/2026 (HTKK takes monthly 05/KK-TNCN until tháng 3/2026), its own period in the contract (`period_of`), plan month
+03/2026 (`chkTkhaiThang`, KieuKy 19). Web prediction: hạn 20/04/2026, 207 late days, ct3b 62.100; 213 leaves. htkk_web released
+KHBS 05/KK lần 1 without 05-1/PBT for L7 kỳ quý and Z8 only (runs 43686728548, 43686732231, 43686734447); kỳ tháng waits for this case.

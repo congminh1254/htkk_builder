@@ -22,7 +22,8 @@ kk05 = load('htkk_kk05_khbs_web_cases_test', 'htkk_kk05_khbs_web_cases.py')
 support = load('ntnn_khbs_test_support_kk05', 'ntnn_khbs_test_support.py')
 sm = support.pin(load('htkk_ntnn_khbs_web_cases_kk05_pinned', 'htkk_ntnn_khbs_web_cases.py'))
 registry = load('htkk_native_cases_kk05', 'htkk_native_cases.py')
-CASES = ('05KK-khbs-increase-Q3-2026', '05KK-khbs-lan2-Q3-2026', '05KK-khbs-decrease-Q3-2026', '05KK-TT89-khbs-increase-Q4-2026', '05KK-PBT-khbs-Q3-2026')
+CASES = ('05KK-khbs-increase-Q3-2026', '05KK-khbs-lan2-Q3-2026', '05KK-khbs-decrease-Q3-2026', '05KK-TT89-khbs-increase-Q4-2026', '05KK-khbs-increase-M03-2026', '05KK-PBT-khbs-Q3-2026')
+MONTH = '05KK-khbs-increase-M03-2026'
 PBT = '05KK-PBT-khbs-Q3-2026'
 
 
@@ -43,6 +44,9 @@ class Kk05KhbsWebCases(unittest.TestCase):
         self.assertEqual((m.MENUS['L7'], m.MENUS['Z8']), (('864', '2.9.3'), ('2036', '3.0.9')))
         self.assertEqual(m.PERIODS['L7'], ('Q', '3/2026', '01/07/2026', '30/09/2026'))
         self.assertEqual(m.PERIODS['Z8'], ('Q', '4/2026', '01/10/2026', '31/12/2026'))
+        # The kỳ tháng case carries its own period; every other case takes its menu's.
+        self.assertEqual(m.period_of(m.CASES[MONTH]), ('M', '03/2026', '01/03/2026', '31/03/2026'))
+        self.assertEqual({m.period_of(m.CASES[c]) for c in CASES if c != MONTH and m.CASES[c]['menuId'] == 'L7'}, {m.PERIODS['L7']})
         for case_id in CASES:
             c = m.CASES[case_id]
             self.assertEqual(m.producer(case_id), 'scripts/generate-htkk-web-kk05-khbs-reference.mjs')
@@ -53,7 +57,7 @@ class Kk05KhbsWebCases(unittest.TestCase):
             self.assertEqual(m.validate_manifest(manifest(case_id, m))['caseId'], case_id)
         # Lần 2 starts from the lần-1 file of the increase case; every plain L7 case from the same lần đầu.
         self.assertEqual(m.CASES['05KK-khbs-lan2-Q3-2026']['prior'], m.CASES['05KK-khbs-increase-Q3-2026']['web'])
-        self.assertEqual(len({m.CASES[c]['original'] for c in CASES if m.CASES[c]['menuId'] == 'L7' and c != PBT}), 1)
+        self.assertEqual(len({m.CASES[c]['original'] for c in CASES if m.CASES[c]['menuId'] == 'L7' and c not in (PBT, MONTH)}), 1)
         # The NTNN cases keep their own producer and input modes.
         self.assertEqual({m.producer(c) for c in m.NTNN_CASES}, {'scripts/generate-htkk-web-ntnn-khbs-reference.mjs'})
         self.assertEqual({m.input_mode(c) for c in m.NTNN_CASES}, {'khbs-web-xml-import-reexport', 'khbs-original-entry-export'})
@@ -66,7 +70,7 @@ class Kk05KhbsWebCases(unittest.TestCase):
             self.assertEqual(registry.driver(case_id), 'declaration-amendment-khbs-inspect')
             self.assertEqual(row['format'], m.manifest_fields(case_id)['format'])
             self.assertEqual(row['unit']['amendmentOrder'], m.CASES[case_id]['soLan'])
-            self.assertEqual(row['unit']['periodType'], 'quarter')
+            self.assertEqual((row['unit']['periodType'], row['unit']['periodValue']), ('month', '03/2026') if case_id == MONTH else ('quarter', '4/2026' if row['unit']['menuId'] == 'Z8' else '3/2026'))
             self.assertEqual(row['unit']['annexes'], ['01-1'] if case_id == PBT else [])
         self.assertTrue(set(CASES) <= set(registry.NTNN_KHBS_CASES))
         self.assertEqual(registry.NTNN_KHBS_TICK_CASES, (PBT,))
@@ -100,10 +104,12 @@ class Kk05KhbsDriverWiring(unittest.TestCase):
         ids = re.search(r'KhbsCaseIds=new string\[\]\{(.*?)\};', plans, re.S).group(1)
         self.assertEqual(set(re.findall('"([^"]+)"', ids)), set(registry.NTNN_KHBS_CASES))
         self.assertIn('caseId=="05KK-khbs-lan2-Q3-2026"?2', plans)
-        counts = re.search(r'int leaves=caseId=="05KK-khbs-increase-Q3-2026"\?(\d+):caseId=="05KK-TT89-khbs-increase-Q4-2026"\?(\d+):caseId=="05KK-PBT-khbs-Q3-2026"\?(\d+):(\d+);', plans)
+        counts = re.search(r'int leaves=caseId=="05KK-khbs-increase-Q3-2026"\|\|caseId=="05KK-khbs-increase-M03-2026"\?(\d+):caseId=="05KK-TT89-khbs-increase-Q4-2026"\?(\d+):caseId=="05KK-PBT-khbs-Q3-2026"\?(\d+):(\d+);', plans)
         self.assertIsNotNone(counts)
         expected = [m.tax_leaf_count(c) + 4 for c in ('05KK-khbs-increase-Q3-2026', '05KK-TT89-khbs-increase-Q4-2026', PBT)]
         self.assertEqual([int(x) for x in counts.groups()[:3]], expected)
+        self.assertEqual(m.tax_leaf_count(MONTH) + 4, int(counts.group(1)))
+        self.assertIn('month?"month":"quarter","19","2026",month?"03":"3",month?"01/03/2026":"01/07/2026",month?"31/03/2026":"30/09/2026"', plans)
         self.assertEqual({m.tax_leaf_count(c) + 4 for c in ('05KK-khbs-lan2-Q3-2026', '05KK-khbs-decrease-Q3-2026')}, {int(counts.group(4))})
         self.assertIn('"Validate/KHBS_05_KK_TNCN_TT80_293.xsd","91a2d625d1ddeaf5fe71fb5ca0413d25d063d3adb99e9b975e322d95a56d8ec4"', plans)
         self.assertIn('"Validate/KHBS_05_KK_TNCN_TT89_309.xsd","619a2ecf3228d80742e9dbea5c3939308f74fea55a94073e33bbc7efb23bdf97"', plans)

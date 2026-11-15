@@ -38,9 +38,9 @@ CODES = frozenset(('CASE', 'NAMES', 'MANIFEST', 'SIZE', 'HASH', 'ENCODING', 'DEC
 # kieuKy, kyKKhai, kyKKhaiTuNgay, kyKKhaiDenNgay of every file of a menu's cases.
 PERIODS = {'I9': ('M', '09/2026', '01/09/2026', '30/09/2026'), 'Y8': ('M', '10/2026', '01/10/2026', '31/10/2026')}
 CASES = {
-    '01NTNN-khbs-grossup-lan1-M09-2026': {'producerCase': 'ntnn01-khbs-grossup-lan1-m09-2026', 'menuId': 'I9', 'soLan': 1, 'web': (7582, '412889221ab533e07874e40de04c1fc8789568eeddf6d8184d9429c739bc0e6a'), 'original': (2256, '98ff814c3aa9d0449b3fd5d9f6c69877d9f0a3433916003bb45034d8d7fb6ff4'), 'prior': None,
-        'leafTarget': 216, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '540166'], ['1052', '540166']], 'ct10': '1080332', 'ct3a_1': '2026-11-13', 'ct3a_2': '24', 'ct3b': '0'}},
-    '01NTNN-khbs-lan2-M09-2026': {'producerCase': 'ntnn01-khbs-lan2-m09-2026', 'menuId': 'I9', 'soLan': 2, 'web': (6135, '4a9895019abed4cba91715765dffe258c58462892652303328bafe4e6bcc8a6a'), 'original': (2256, '98ff814c3aa9d0449b3fd5d9f6c69877d9f0a3433916003bb45034d8d7fb6ff4'), 'prior': (7582, '412889221ab533e07874e40de04c1fc8789568eeddf6d8184d9429c739bc0e6a'),
+    '01NTNN-khbs-grossup-lan1-M09-2026': {'producerCase': 'ntnn01-khbs-grossup-lan1-m09-2026', 'menuId': 'I9', 'soLan': 1, 'web': (7585, 'd91fa8e927d1fe263b3cdaeab60c75ea776c9f46d42bd4baf2fbed2be547b6b6'), 'original': (2256, '98ff814c3aa9d0449b3fd5d9f6c69877d9f0a3433916003bb45034d8d7fb6ff4'), 'prior': None,
+        'leafTarget': 216, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '540166'], ['1052', '540166']], 'ct10': '1080332', 'ct3a_1': '2026-11-13', 'ct3a_2': '24', 'ct3b': '7778'}},
+    '01NTNN-khbs-lan2-M09-2026': {'producerCase': 'ntnn01-khbs-lan2-m09-2026', 'menuId': 'I9', 'soLan': 2, 'web': (6135, '4a9895019abed4cba91715765dffe258c58462892652303328bafe4e6bcc8a6a'), 'original': (2256, '98ff814c3aa9d0449b3fd5d9f6c69877d9f0a3433916003bb45034d8d7fb6ff4'), 'prior': (7585, 'd91fa8e927d1fe263b3cdaeab60c75ea776c9f46d42bd4baf2fbed2be547b6b6'),
         'leafTarget': 174, 'expected': {'rows': ['(10)', '(13)', '(14)'], 'subitems': [['1052', '459834']], 'ct10': '459834', 'ct3a_1': '2026-11-13', 'ct3a_2': '24', 'ct3b': '3311'}},
     '01NTNN-khbs-decrease-M09-2026': {'producerCase': 'ntnn01-khbs-decrease-m09-2026', 'menuId': 'I9', 'soLan': 1, 'web': (6173, 'db4660ab21a6d56084e17aba8b9599584ba820d8851e4f5c456f8bf96635588e'), 'original': (2256, '98ff814c3aa9d0449b3fd5d9f6c69877d9f0a3433916003bb45034d8d7fb6ff4'), 'prior': None,
         'leafTarget': 174, 'expected': {'rows': ['(12)', '(13)', '(14)'], 'subitems': [['1052', '-1000000']], 'ct10': '-1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '24', 'ct3b': '-7200'}},
@@ -172,7 +172,7 @@ def validate_xml(body, case_id, role):
         reject('IDENTITY')
     if (_leaf(root, tk + 'maTKhai'), _leaf(root, tk + 'pbanTKhaiXML')) != MENUS[spec['menuId']] or _leaf(root, tk + 'ngayLapTKhai') != FIXED_DATE:
         reject('IDENTITY')
-    if tuple(_leaf(root, tk + 'KyKKhaiThue/' + name) for name in ('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay')) != PERIODS[spec['menuId']]:
+    if tuple(_leaf(root, tk + 'KyKKhaiThue/' + name) for name in ('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay')) != period_of(spec):
         reject('IDENTITY')
     expected = ('C', '0') if role == 'original' else ('B', str(spec['soLan'] - (1 if role == 'prior' else 0)))
     if (_leaf(root, tk + 'loaiTKhai'), _leaf(root, tk + 'soLan')) != expected:
@@ -222,6 +222,12 @@ def input_texts(files):
     return frozenset(value for name in (ORIGINAL_NAME, PRIOR_NAME, WEB_NAME) if name in files for _, value in d.leaves(d._parse(files[name], True)))
 
 
+def period_of(spec):
+    """kieuKy, kyKKhai, kyKKhaiTuNgay, kyKKhaiDenNgay of a case's files: its own period when it has one (05/KK-TNCN kỳ tháng),
+    else its menu's."""
+    return spec.get('period') or PERIODS[spec['menuId']]
+
+
 def producer(case_id):
     """The reviewed htkk_web producer of a case."""
     return case(case_id)['producer']
@@ -258,7 +264,7 @@ def validate_native_output(body, case_id, today=None, service_version=None, file
     for name, expected in (('maTKhai', ma), ('pbanTKhaiXML', version), ('loaiTKhai', 'B'), ('soLan', str(spec['soLan']))):
         if d._one(items, d.TK + name) != expected:
             d.reject('IDENTITY', d._where(items, d.TK + name, d._one(items, d.TK + name)))
-    for name, expected in zip(('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay'), PERIODS[spec['menuId']]):
+    for name, expected in zip(('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay'), period_of(spec)):
         path = d.TK + 'KyKKhaiThue/' + name
         if d._one(items, path) != expected:
             d.reject('PERIOD', d._where(items, path, d._one(items, path)))

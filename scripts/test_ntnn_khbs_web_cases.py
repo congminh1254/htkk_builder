@@ -265,6 +265,24 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         self.assertIn("(inputs.gui_automation == 'declaration-web-import-inspect' || inputs.gui_automation == 'declaration-amendment-khbs-inspect') && inputs.web_artifact_commit != ''", workflow)
         self.assertIn("'declaration-web-import-inspect','declaration-amendment-khbs-inspect')){", host)
 
+    def test_lan2_menu_clicks_and_bo_sung_entry_rounds(self):
+        # Cohort 1019e5f: the lần-2 runs (43686713666, and 05/KK 43686730343) had every result refused once round 2 clicked the
+        # menu a fourth time (menuClickCount maximum 3); the Y8 runs (43686717364, 43686719047) failed at entry 0 of round 1
+        # (code 12) because the B sheet already held the C0 text.
+        registry = json.loads((ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8'))
+        self.assertEqual(registry['resultFields']['menuClickCount']['modeMaximums']['declaration-amendment-khbs-inspect'], 9)
+        reader = (ROOT / 'Get-HtkkSafeGuiReferenceResult.ps1').read_text(encoding='utf-8')
+        self.assertIn("$(if($ExpectedMode -ceq 'declaration-amendment-khbs-inspect'){9}", reader)
+        entry = (ROOT / 'HtkkDeclarationOriginalEntry.cs').read_text(encoding='utf-8')
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        self.assertIn('if(DeclarationKhbsEntryHeld(sheet,cell,kind,parts,row,column)){declarationEntryActionCount++;Record();return;}\n  DeclarationEntrySelect(grid,sheet,row,column);', entry)
+        held = khbs[khbs.index('private bool DeclarationKhbsEntryHeld('):]
+        held = held[:held.index('\n }\n')]
+        self.assertIn('if(!DeclarationKhbsMode()||declarationKhbsRound==0)return false;', held)
+        for forbidden in ('PerformClick', 'SendKeys', 'Value=', '.Text='):
+            self.assertNotIn(forbidden, held)
+        self.assertIn('declarationEntryActionCount=0;declarationEntryComboCount=0;', khbs)
+
     def test_profile_save_wait_is_observed_and_stale_results_are_counted(self):
         # Cohort 1a6f600: the KHBS runs stopped at original-save-invoking / waiting-profile-close-ready with no later valid result.
         automation = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
