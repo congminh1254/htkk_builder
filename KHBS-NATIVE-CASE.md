@@ -441,6 +441,14 @@ timeout before the probe's 420 s. The logs cannot tell a stalled save from resul
 `guiReferenceResultReads` (refused reads after a valid one, age of the last write) and, in this mode only, the profile-save
 wait every 2 s in `declarationUiWaitSeconds` / `declarationUiVisibleForms` / `declarationUiForegroundKind`.
 
+Cohort cbff9e0 (runs 43681376802-43681386953, and the five 05/KK KHBS cases): about 816 refused reads after the last valid
+result in every run. Cause: the reader's `webCaseId` allowlist (registry `resultFields.webCaseId.values`) had none of the ten
+KHBS case ids, so every result written after `VerifyDeclarationWebInput` set the case id was refused; the probe kept the
+last result from before it (`original-save-invoking` / `success-modal-acknowledged` / `waiting-profile-close-ready`,
+whichever read came last). Offline, a result built by the helper itself (mono) right after that step fails exactly on that
+line and passes once the ids are listed. The ids are now listed, a test pins the allowlist to every registered case, and
+`guiReferenceResultReads` counts refused (`invalidAfterValid`) and absent (`missingAfterValid`) results apart.
+
 What only these runs decide (web predictions in its golden): the text of the row key `ct3_2_ten` (dates dd/MM/yyyy, rates "5"),
 `ct04`/`ct05` of amounts ("1.000.000"), ct3b 0 when Muc_I.1 has two rows (gross-up case: 24 late days), negative ct3b −7.200
 (decrease case) and 3.311 (lần 2), and the Y8 part II tiểu mục 1052.
