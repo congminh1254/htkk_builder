@@ -2434,7 +2434,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 4095,
+      "maximum": 16383,
       "activeModes": [
         "gtgt-web-import-inspect"
       ]

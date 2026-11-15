@@ -52,6 +52,12 @@ dòng II.2, bit 1 Value = −400002, bit 2 Value = 0 (bị chặn MinValue), bit
   xoá), sang K, chờ có giới hạn; đọc lại H/I/U/R/X, không ghi ô. Kết quả có giới hạn: `annex16HeadOfficeRepairCount` (0..64),
   `annex16HeadOfficeFailureMask` (0..4095: bit 0–4 H, I, U, R, X chưa đạt; bit 5 mã T trống sau khi chọn (chỉ quan sát);
   bit 6–8 thứ tự dòng + 1; bit 9/10 combo H/I lỗi; bit 11 phải chọn lại I). Chưa chạy Windows: hiệu quả chưa được chứng minh.
+- Runs 43683942253 (formula) / 43683944987 (ratio): cả hai nhập XML gốc đạt (27 ô tiền tờ khai chính khớp), dừng ở bước
+  chọn lại H với `annex16HeadOfficeRepairCount` 2, `annex16HeadOfficeFailureMask` 2688 = 2048 (phải chọn lại I ở dòng 1) | 512
+  (combo H lỗi) | dòng 2. Dòng 1 đạt; dòng 2 (Hải Phòng) không chọn được vì danh sách combo H/I chỉ được dựng lại trong
+  `winFpSpread_EnterCell`, mà `SetActiveCell` không phát sự kiện này (như R của 01-2, release 216): dòng 2 còn danh sách Hà Nội.
+  Driver nay vào H bằng một phím Left thật từ I và vào I bằng một phím Right thật từ H trước mỗi lần chọn; mặt nạ thêm bit 12/13
+  (danh sách H/I có mục cần chọn), giới hạn 0..16383. Chưa có run mới.
 - So cả cây với tệp web: **131 lá thuế** (74 lá tờ khai chính + 61 lá phụ lục − 4 lá dịch vụ); re-export được khác baseline.
 
 ## Allowlist privacy/số tiền

@@ -64,11 +64,14 @@ class Driver(unittest.TestCase):
   source=(ROOT/'HtkkGtgtRoundtripInspection.cs').read_text(encoding='utf-8')
   self.assertIn('if(Annex16WebCase()&&!annex16HeadOfficeRestored){RestoreImportedAnnex16HeadOffices();return;}',source)
   body=source[source.index(' private static readonly string[][] Annex16ExpectedRows'):source.index(' private static XmlDocument ReadBoundedOriginalXml(')]
-  for forbidden in ('set_Value','"Value",','SendKeys','PerformClick','"Formula"','InsertTable'):self.assertNotIn(forbidden,body)
+  for forbidden in ('set_Value','"Value",','PerformClick','"Formula"','InsertTable'):self.assertNotIn(forbidden,body)
+  # Only one real arrow key between H and I (EnterCell rebuilds the list, runs 43683942253/43683944987); nothing is typed.
+  self.assertEqual(body.count('SendKeys'),1);self.assertIn('SendKeys.SendWait(column==Annex16ColumnH?"{LEFT}":"{RIGHT}");',body)
+  self.assertIn('EnterImportedAnnex16CellByKey(grid,annex,row,Annex16ColumnH);',body);self.assertIn('EnterImportedAnnex16CellByKey(grid,annex,row,Annex16ColumnI);',body)
   for row in contract.CASES[contract.FORMULA_CASE]['rows']:self.assertIn('"'+row[1][9]+'"',body)
   reference=(ROOT/'HtkkWebInputReference.cs').read_text(encoding='utf-8')
   for case in CASES:self.assertIn('"'+case+'"',reference)
   registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())['resultFields']
-  self.assertEqual([registry[k]['maximum'] for k in ('annex16HeadOfficeRepairCount','annex16HeadOfficeFailureMask')],[64,4095])
+  self.assertEqual([registry[k]['maximum'] for k in ('annex16HeadOfficeRepairCount','annex16HeadOfficeFailureMask')],[64,16383])
 
 if __name__=='__main__':unittest.main()
