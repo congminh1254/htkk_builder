@@ -275,7 +275,7 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         body = body[:body.index('\n }\n')]
         self.assertIn('if(!DeclarationKhbsMode())return;', body)
         self.assertNotIn('PerformClick', body)
-        self.assertIn('$report.guiReferenceResultReads=[ordered]@{invalidAfterValid=[int]$guiInvalidAfterValid;lastWriteAgeSeconds=$guiResultAge}', probe)
+        self.assertIn('$report.guiReferenceResultReads=[ordered]@{invalidAfterValid=[int]$guiInvalidAfterValid;missingAfterValid=[int]$guiMissingAfterValid;lastWriteAgeSeconds=$guiResultAge}', probe)
 
 
 if __name__ == '__main__':
