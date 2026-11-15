@@ -434,6 +434,11 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort 455ecc7 (Y8 runs 43727202330, 43727204841): shape 23305: the FIRST character was missing and a select-all retype lost
+it again. A bổ sung round now repairs only that: with the editor holding the typed text minus its first character, {HOME} and
+the first character are typed (same keyboard path), for text, number and date-text entries; 16384/32768 record it. (Importing
+the B file instead is not available for Y8: its original import resets the tables, release 238.)
+
 Cohort f3b64d4 (Y8 runs 43705699385, 43705701482): round-1 entry 0 still code 12 with `declarationKhbsEntryShape` 2825 (cell
 empty, editor = cell when opened, focus kept, own foreground) and lengths 30 / 34 for 31- / 35-character texts: one character of
 the planned text did not land. A bổ sung round now selects with {END}+{HOME} only over a non-empty cell, lets the editor settle

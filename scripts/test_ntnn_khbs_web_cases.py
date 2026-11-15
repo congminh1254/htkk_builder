@@ -293,8 +293,16 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         # Cohort f3b64d4 (runs 43705699385, 43705701482): shape 2825, one character missing from an empty cell's text; a bổ sung
         # round now settles before typing and retypes once, recording both (16384, 32768).
         self.assertIn('if(khbsRound&&khbsBefore.Length>0)SendKeys.SendWait("{END}+{HOME}");', entry)
-        self.assertIn('if(editor.Text!=value&&khbsRound&&(declarationKhbsEntryShape&2048)==0){', entry)
-        self.assertEqual(entry.count('if(khbsRound)DeclarationKhbsSettle();'), 1)
+        # Cohort 455ecc7 (runs 43727202330, 43727204841): shape 23305, the FIRST character was dropped again by a select-all
+        # retype. A bổ sung round now puts the caret at the start and types only that character again (text, number, date text).
+        self.assertEqual(entry.count('if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;'), 3)
+        self.assertNotIn('SendKeys.SendWait("^a");SendKeys.SendWait("{END}+{HOME}");DeclarationKhbsSettle();', entry)
+        repair = khbs[khbs.index('private bool DeclarationKhbsFirstKeyRepair('):]
+        repair = repair[:repair.index('\n }\n')]
+        self.assertIn('if(editor.Text==typed||typed.Length<2||editor.Text!=typed.Substring(1))return true;', repair)
+        self.assertIn('SendKeys.SendWait("{HOME}");', repair)
+        for forbidden in ('PerformClick', '.Text=t', '.Text= ', 'SetValue'):
+            self.assertNotIn(forbidden, repair)
         self.assertEqual(registry['resultFields']['declarationKhbsEntryLengths']['maximum'], 65535)
 
     def test_profile_save_wait_is_observed_and_stale_results_are_counted(self):

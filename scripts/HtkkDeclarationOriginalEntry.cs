@@ -232,19 +232,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(khbsRound)DeclarationKhbsSettle();
    if(DeclarationEntryAscii(value))SendKeys.SendWait(EscapeSendKeys(value));else if(!TypeDeclarationEntryUnicode(grid,editor,value)){DeclarationEntryFail(10);return;}
    Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=value&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-   // One bounded retype in a bổ sung round: select the editor's text with the keyboard and type the planned text again.
-   if(editor.Text!=value&&khbsRound&&(declarationKhbsEntryShape&2048)==0){
-    ObserveDeclarationKhbsEntry(khbsBefore,khbsOpened,editor,value);declarationKhbsEntryShape|=16384;
-    if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return;}
-    SendKeys.SendWait("^a");SendKeys.SendWait("{END}+{HOME}");DeclarationKhbsSettle();
-    if(DeclarationEntryAscii(value))SendKeys.SendWait(EscapeSendKeys(value));else if(!TypeDeclarationEntryUnicode(grid,editor,value)){DeclarationEntryFail(10);return;}
-    clock=Stopwatch.StartNew();while(editor.Text!=value&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-    if(String.Equals(editor.Text,value,StringComparison.Ordinal))declarationKhbsEntryShape|=32768;
-   }
+   if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;
    if(editor.Text!=value){ObserveDeclarationKhbsEntry(khbsBefore,khbsOpened,editor,value);declarationEntryMismatchMask|=1<<index;DeclarationEntryFail(12);return;}
-  }else if(kind=="number")SendKeys.SendWait(value);
+  }else if(kind=="number"){if(khbsRound)DeclarationKhbsSettle();SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
   else if(dateMask)SendKeys.SendWait(DateTime.ParseExact(value,"dd/MM/yyyy",CultureInfo.InvariantCulture).ToString("ddMMyyyy",CultureInfo.InvariantCulture));
-  else SendKeys.SendWait(value);
+  else{if(khbsRound)DeclarationKhbsSettle();SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
   if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return;}
   SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
   if(OriginalMessageVisible()){DeclarationEntryFail(17);return;}
