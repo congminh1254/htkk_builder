@@ -682,3 +682,28 @@ TAB của I44, ô hiện hành đã sang ô kế tiếp như với người dùn
 danh sách của dòng (có mã; chỉ `winFpSpread_EnterCell`/`InsertCombobox` tạo) thì dùng luôn, không bấm phím (bit 32768); nếu không,
 vào ô bằng một phím như trước. Chẩn đoán mới: `declarationTickEntryStartOffset` / `declarationTickEntryKeyOffset` = 128 + (cột
 hiện hành − cột đích), kẹp 1..255, lúc bắt đầu thao tác combo / ngay sau phím (0 = chưa tới).
+
+## 01/TTS TT40 (G7, 2.8.3) — bốn ca không chặn phát hành, oracle HTKK 5.8.2
+
+Nhà sản xuất `htkk_web` nhánh `work/tts-01` (`scripts/generate-htkk-declaration-reference.mjs`, thiết kế trong
+`scripts/generate-htkk-descriptor-reference.mjs`). HTKK 5.8.2 chỉ có một 01/TTS cho mọi kỳ: menu G7 (`Tts01TT40`, maTKhai 470,
+KieuKy 42, Validity từ 01/01/1900); mọi tệp `01_*TTS_TT40_283` giống hệt 5.8.1. Menu 101 → 101_15 → G7; KieuKy 42 =
+`frmHTKKPeriod.SetLayoutToQDDSThueMSTToChucCaNhanNamThangQuy` (Năm tích sẵn, Tháng, Quý, Kỳ thanh toán; danh sách phụ lục hiện).
+
+| Ca | Adapter | Kỳ | Bảng kê | Kiểm tra chính |
+|---|---|---|---|---|
+| `01TTS-individual-one-contract-Y2025` | `01-tts-tt40-2.8.3-bk1` | năm 2025 | 01-1/BK-TTS, 1 hợp đồng, 2 kỳ | [23] = [24] 120.000.000, [25] = [26] 6.000.000, [27] 10.000.010 → [28] 500.001 |
+| `01TTS-individual-two-contracts-Y2025` | `01-tts-tt40-2.8.3-bk1` | năm 2025 | 01-1/BK-TTS, 2 hợp đồng (trả 1 lần; động sản 2 kỳ) | dưới ngưỡng 100 triệu: [23] 78.000.000, [24] 0 |
+| `01TTS-organization-two-individuals-Q3-2026` | `01-tts-tt40-2.8.3-bk2` | quý 3/2026 | 01-2/BK-TTS, 2 cá nhân | chỉ kỳ bắt đầu trong quý: [24] 45.000.030, [25] ROUND(2.250.001,5) = 2.250.002 |
+| `01TTS-organization-monthly-M10-2026` | `01-tts-tt40-2.8.3-bk2` | tháng 10/2026 | 01-2/BK-TTS, 1 cá nhân | DT bình quân Math.Round(50.000.000,5) = 50.000.000 (về số chẵn) |
+
+Oracle độc lập `TTS_ROWS`/`tts_expected` (htkk_declaration_web_cases.py) tính lại mọi dòng bảng kê và CaNhanKeKhai bằng
+Decimal từ dữ liệu giả lập đã duyệt (không dùng engine TypeScript): số tháng tròn tháng, giá trị = số tháng × giá, dòng hợp
+đồng = tổng, bình quân làm tròn về số chẵn, doanh thu trong năm theo năm (01-2 theo MST cá nhân), > 100.000.000 thì tính thuế,
+GTGT = TNCN = ROUND(× 5%) làm tròn ra xa 0, [23]/[24] theo kỳ bắt đầu trong kỳ khai, [25] = [26] = ROUND([24] × 5%). Mã hợp
+đồng `10129_9999999997000_<ddMMyyyy>_<NN>` (TinhMaHopDong) nằm trong danh sách chữ cho phép của từng ca.
+
+Câu hỏi cho lần chạy: `FinishImportXML` chỉ khóa/xóa (`LockUnLockDongHopDongHoacKy` xóa thông tin hợp đồng ở dòng kỳ thanh toán,
+web để trống sẵn) và không tính lại; công thức XLS của GTGT/TNCN, [28], [29] được FarPoint tính lại sau khi nhập. Với tổ chức khai
+thay, `LockUnlockTheoLoaiNopThue` để trống các ô NNT của sheet 01 — TTinChung/NNT khi kết xuất lại có còn như hồ sơ không? Ca
+tháng/quý: `AutoBindData_0` bỏ tích và khóa [cá nhân trực tiếp khai].
