@@ -158,9 +158,13 @@ TRUSTED_ADAPTERS={
  # Z3 04/GTGT TT89 3.0.9 (non-gating, HTKK 5.8.2 only: Menu.xml Z3, Gtgt04TT89Nckt309, StartDate 01/10/2026). KieuKy 21 with
  # the Z3 branch of SetLayoutToKhaiThangQuyLanPhatSinh (pnThuHo "Hoạt động kê khai riêng" and pnChuyenNhuong shown, unticked by
  # default: the cases keep them unticked). CheckToKhaiBatDauCoHieuLuc refuses periods before tháng 10 / quý 4/2026. The annex
- # adapter ticks sheet 01-1 "PL 204/2025/QH15" (workbook sheet 01_2).
+ # adapter ticks sheet 01-1 "PL 204/2025/QH15" (workbook sheet 01_2). Run 43772871198 (mode IMPORT_MODE): after the original
+ # import every checked cell was different and all but [32] (K105) empty or 0 (declarationCellZeroMask 4031):
+ # Gtgt04TT89Nckt309.FinishImportXML rewrites column E (thuế suất) from the still-empty code column I, so the rates are lost.
+ # Mode IMPORT_TICK_MODE: the original import, then the thuế suất of each sale row chosen again in the original combobox
+ # (HtkkDeclarationCasePlans.ImportTick), as a user corrects it; CellChange_1 recomputes [22]..[29] from the annex.
  '04-gtgt-tt89-3.0.9':{**_declaration('Z3','3.0.9',{'month':('10/2026',),'quarter':('4/2026',)},[]),'htkkVersion':'5.8.2'},
- '04-gtgt-tt89-3.0.9-pl011':{**_declaration('Z3','3.0.9',{'month':('10/2026',)},['01-1']),'htkkVersion':'5.8.2'},
+ '04-gtgt-tt89-3.0.9-pl011':{**_declaration('Z3','3.0.9',{'month':('10/2026',)},['01-1'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))

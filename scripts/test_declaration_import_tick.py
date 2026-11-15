@@ -33,6 +33,9 @@ PL03 = '01CNKD-TT50-310-pl03-two-groups-Q3-2026'
 MODE = 'declaration-web-import-inspect'
 # The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
 KHBS_MODE = 'declaration-amendment-khbs-inspect'
+# Z3 04/GTGT TT89 PL 01-1 (HTKK 5.8.2 only): the import clears the thuế suất (FinishImportXML, run 43772871198); combo edits.
+Z3 = '04GTGT-TT89-reduction-annex-M10-2026'
+Z3_EDITS = ['combo|01_2|E30|1|I30|1', 'combo|01_2|E31|5|I31|5', 'combo|01_2|E32|3|I32|3', 'combo|01_2|E33|2|I33|2', 'combo|01_2|E34|1|I34|1']
 FIRST_ROW = 291  # 01_CNKD_HKD_TT50_310.xml table_1 DataLocationTemplateRowStart
 
 
@@ -57,7 +60,7 @@ def plan_block(case_id):
 class Registration(unittest.TestCase):
     def test_u5_310_is_the_only_tick_case_non_gating_on_the_5_8_2_oracle(self):
         # U5 3.1.0 (ticks) and the 05-1/PBT cases of L7/Z8 (combo edits of Thuế tỉnh/CCT and CQT quản lý).
-        self.assertEqual(registry.DECLARATION_TICK_CASES, (CASE, PL03, '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026'))
+        self.assertEqual(registry.DECLARATION_TICK_CASES, (CASE, PL03, '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', Z3))
         self.assertEqual(registry.input_mode(PL03), registry.IMPORT_TICK_MODE); self.assertEqual(registry.htkk_version(PL03), '5.8.2')
         self.assertIs(registry.CASES[PL03]['releaseGate'], False); self.assertEqual(registry.CASES[PL03]['adapterId'], '01-cnkd-hkd-3.1.0-pl03')
         self.assertEqual(registry.input_mode(CASE), registry.IMPORT_TICK_MODE)
@@ -67,7 +70,7 @@ class Registration(unittest.TestCase):
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.DECLARATION_ENTRY_CASES)
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationTickCases=@('" + CASE + "','" + PL03 + "','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026')", formats)
+        self.assertIn("$HtkkDeclarationTickCases=@('" + CASE + "','" + PL03 + "','05KK-PBT-two-provinces-Q3-2026','05KK-TT89-PBT-two-provinces-Q4-2026','" + Z3 + "')", formats)
         # Same adapter, producer case and branches as before: the web input does not change.
         self.assertEqual(registry.CASES[CASE]['adapterId'], '01-cnkd-hkd-3.1.0-pl01')
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'cnkd01-310-pl01-three-groups-q3-2026')
@@ -128,7 +131,7 @@ class Pl03Plan(unittest.TestCase):
         self.assertEqual(readbacks, ['BN%d|%s' % (FIRST_ROW + i, code) for i in range(2)] + ['CA%d|%s' % (FIRST_ROW + i, hkd.FAKE_MST) for i in range(2)])
         self.assertIn('HtkkOracleBaseline.TickMethodPins()', block)
         # The plan may carry no tick, never no edit; a plan without ticks goes straight to the read-back.
-        self.assertIn('if(edits.Length<1||edits.Length>4||ticks.Length>4||', PLANS)
+        self.assertIn('if(edits.Length<1||edits.Length>5||ticks.Length>4||edits.Length+ticks.Length>8||', PLANS)
         self.assertIn('if(declarationTickPlan.Ticks.Length==0){declarationPhase="tick-inspect";declarationTickClock=Stopwatch.StartNew();}else declarationPhase="tick-ticks";', TICK)
         expected = hkd.expected(PL03)
         checks = {c.split('|')[0] + '|' + c.split('|')[1]: c.split('|')[2] for c in string_array(plan_block(PL03), 3)}
@@ -397,3 +400,57 @@ class PbtPlans(unittest.TestCase):
             old = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.1'], capture_output=True, text=True).stdout.split('\n')
         self.assertEqual(new[:2], ['4 0 11 True', '4 0 11 True'])
         self.assertEqual(old[:2], ['HTKK_ORACLE_PBT_UNPINNED', 'HTKK_ORACLE_PBT_UNPINNED'])
+
+
+class Gtgt04Tt89AnnexPlan(unittest.TestCase):
+    def test_registered_non_gating_import_tick_on_the_5_8_2_oracle(self):
+        c = registry.CASES[Z3]
+        self.assertEqual((c['adapterId'], c['unit']['menuId'], c['unit']['annexes'], c['releaseGate']), ('04-gtgt-tt89-3.0.9-pl011', 'Z3', ['01-1'], False))
+        self.assertEqual(registry.input_mode(Z3), registry.IMPORT_TICK_MODE); self.assertEqual(registry.htkk_version(Z3), '5.8.2')
+        self.assertEqual(registry.driver(Z3), MODE)
+        # The other Z3 cases (no annex) keep the plain import.
+        self.assertEqual(registry.input_mode('04GTGT-TT89-one-group-M10-2026'), registry.IMPORT_MODE)
+
+    def test_combo_edits_choose_the_rate_of_each_sale_row_in_sheet_order(self):
+        start = PLANS.index('  if(caseId=="' + Z3 + '")return new HtkkDeclarationTickPlan(')
+        block = PLANS[start:PLANS.index('  // PL 03 (see its case plan)', start)]
+        self.assertEqual(string_array(block, 0), Z3_EDITS)
+        self.assertIn('new string[0],new string[0],new string[0],HtkkOracleBaseline.Gtgt04Tt89AnnexMethodPins()', block)
+        # DC_124 (DM_DUNG_CHUNG.xml): the item name is its code; the code lands in the SelectedValue column I of the same row.
+        for edit in Z3_EDITS:
+            kind, sheet, cell, name, code_cell, code = edit.split('|')
+            self.assertEqual((kind, sheet, name, code_cell, cell[0], code_cell[0]), ('combo', '01_2', code, 'I' + cell[1:], 'E', 'I'))
+        self.assertEqual([e.split('|')[3] for e in Z3_EDITS], ['1', '5', '3', '2', '1'])
+        # The rows and rates of the web case (thueSuatTheoQuyDinh of the five sale rows).
+        self.assertIn('new string[]{"PL 204/2025/QH15"},new string[]{"01|Tờ khai","01_2|PL 204/2025/QH15"}', plan_block(Z3))
+        for check in ('"01_2|G30|246914"', '"01_2|G34|3"', '"01_2|I11|246917"', '"01|Z87|987663"', '"01|K105|285569135"'):
+            self.assertIn(check, plan_block(Z3))
+
+    def test_gtgt04_pins_are_5_8_2_only_added_reviewed_and_complete(self):
+        v1, v2 = BASELINES['versions']['5.8.1']['methods'], BASELINES['versions']['5.8.2']['methods']
+        self.assertFalse([m for m in v1 if m['id'].startswith('gtgt04tt89-582-')])
+        pins = [m for m in v2 if m['id'].startswith('gtgt04tt89-582-')]
+        self.assertEqual(tuple(m['id'] for m in pins), generator.GTGT04_IDS)
+        self.assertTrue(all(m['status'] == 'added-reviewed' and len(m['review']) >= 20 for m in pins))
+        methods = {(m['type'], m['method']) for m in pins}
+        for method in ('FinishImportXML', 'CellChange_1', 'TinhLaiThueSuat_PL01_1', 'TinhLaiChiTieu22_den_28_TK', 'TinhLaiChiTieu23_25_27_29TheoPL01_1'):
+            self.assertIn(('Gtgt04TT89Nckt309', method), methods)
+        self.assertIn(('frmWinToKhai', 'winFpSpread_CellChange'), methods)
+        # Same bodies as the 05-1/PBT plan pins where both rely on one method.
+        pbt = {(m['type'], m['method']): (m['token'], m['ilBytes'], m['ilSha256']) for m in v2 if m['id'].startswith('pbt-582-')}
+        for m in pins:
+            if (m['type'], m['method']) in pbt:
+                self.assertEqual(pbt[(m['type'], m['method'])], (m['token'], m['ilBytes'], m['ilSha256']))
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_plan_needs_the_5_8_2_pins(self):
+        program = ('using System;class P{static void Main(string[] a){HtkkOracleBaseline.Select(a[0]);'
+                   'try{HtkkDeclarationTickPlan t=HtkkDeclarationCasePlans.ImportTick("' + Z3 + '");'
+                   'Console.WriteLine(t.Edits.Length+" "+t.Ticks.Length+" "+t.MethodPins.Length+" "+(HtkkDeclarationCasePlans.Find("' + Z3 + '")!=null));}catch(InvalidOperationException e){Console.WriteLine(e.Message);}}}')
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory); (folder / 'P.cs').write_text(program)
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkOracleBaseline.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
+            new = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.2'], check=True, capture_output=True, text=True).stdout.split('\n')
+            old = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.1'], capture_output=True, text=True).stdout.split('\n')
+        self.assertEqual(new[0], '5 0 10 True')
+        self.assertEqual(old[0], 'HTKK_ORACLE_GTGT04_UNPINNED')

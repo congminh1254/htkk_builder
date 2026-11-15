@@ -34,7 +34,13 @@ TICK_IDS = ('u5-310-tick-autobind', 'u5-310-tick-locks', 'u5-310-tick-cellchange
 PBT_PREFIX = 'pbt-582-'
 PBT_IDS = ('pbt-582-enter-cell', 'pbt-582-cell-change', 'pbt-582-import-selected', 'pbt-582-import-parent-code', 'pbt-582-cuc-items', 'pbt-582-office-items',
            'pbt-582-office-reset', 'pbt-582-combo-items', 'pbt-582-combo-codes', 'pbt-582-validate-tt80', 'pbt-582-validate-tt89')
-LATER = (TICK_PREFIX, PBT_PREFIX)
+# 04/GTGT TT89 PL 01-1 import plan (Z3 on the 5.8.2 oracle): the thuế suất of each imported sale row chosen again through
+# the original combobox editor, because FinishImportXML clears it (run 43772871198). Pinned for 5.8.2 only (Z3 exists only there).
+GTGT04_PREFIX = 'gtgt04tt89-582-'
+GTGT04_IDS = ('gtgt04tt89-582-grid-cellchange', 'gtgt04tt89-582-enter-cell', 'gtgt04tt89-582-dowork-cellchange', 'gtgt04tt89-582-import-selected',
+              'gtgt04tt89-582-finish-import', 'gtgt04tt89-582-rate-name', 'gtgt04tt89-582-cellchange', 'gtgt04tt89-582-rates', 'gtgt04tt89-582-revenue',
+              'gtgt04tt89-582-tax')
+LATER = (TICK_PREFIX, PBT_PREFIX, GTGT04_PREFIX)
 ADDED = 'added-reviewed'
 
 
@@ -112,6 +118,8 @@ def validate(data):
         require(tuple(x['id'] for x in methods if x['id'].startswith(TICK_PREFIX)) in ((), TICK_IDS), version + ' tick pin set')
         require(all(x['status'] == ADDED for x in methods if x['id'].startswith(PBT_PREFIX)), version + ' pbt pins must be added-reviewed')
         require(tuple(x['id'] for x in methods if x['id'].startswith(PBT_PREFIX)) in ((), PBT_IDS), version + ' pbt pin set')
+        require(all(x['status'] == ADDED for x in methods if x['id'].startswith(GTGT04_PREFIX)), version + ' gtgt04 pins must be added-reviewed')
+        require(tuple(x['id'] for x in methods if x['id'].startswith(GTGT04_PREFIX)) in ((), GTGT04_IDS), version + ' gtgt04 pin set')
         require(set(ids) - {x['id'] for x in added} == set(reviewed), version + ' method set')
         for x in methods:
             if x['status'] == ADDED:
@@ -169,6 +177,11 @@ def tick_pins(value):
 def pbt_pins(value):
     """05-1/PBT import-plan pins (asm|type|method|token|ilBytes|ilSha256) of one version; empty for 5.8.1."""
     return ['|'.join((x['assembly'], x['type'], x['method'], x['token'], str(x['ilBytes']), x['ilSha256'])) for x in value['methods'] if x['id'].startswith(PBT_PREFIX)]
+
+
+def gtgt04_pins(value):
+    """04/GTGT TT89 PL 01-1 import-plan pins (asm|type|method|token|ilBytes|ilSha256) of one version; empty for 5.8.1."""
+    return ['|'.join((x['assembly'], x['type'], x['method'], x['token'], str(x['ilBytes']), x['ilSha256'])) for x in value['methods'] if x['id'].startswith(GTGT04_PREFIX)]
 
 
 def render(data):
@@ -234,6 +247,11 @@ def render(data):
     c += [' };',
           ' // 05-1/PBT-KK-TNCN import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.',
           ' internal static string[] PbtMethodPins(){if(Pbt[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_PBT_UNPINNED");return (string[])Pbt[Current].Clone();}',
+          ' private static readonly string[][] Gtgt04=new string[][]{']
+    c.append(',\n'.join(('  new string[]{' + ','.join(cs(p) for p in gtgt04_pins(v)) + '}') if gtgt04_pins(v) else '  new string[0]' for v in data['versions'].values()))
+    c += [' };',
+          ' // 04/GTGT TT89 PL 01-1 import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.',
+          ' internal static string[] Gtgt04Tt89AnnexMethodPins(){if(Gtgt04[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_GTGT04_UNPINNED");return (string[])Gtgt04[Current].Clone();}',
           '}']
     return ps_text, '\n'.join(c) + '\n'
 

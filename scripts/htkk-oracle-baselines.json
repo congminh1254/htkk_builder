@@ -745,6 +745,116 @@
      "ilSha256": "32084716eea4243954b60686caa618c390116577a95b9a786ea999644f7e9d7b",
      "status": "added-reviewed",
      "review": "Z8 05-1/PBT row checks: as L7 plus E_43 (MST required) and a head office MST/CCCD only. The case rows pass them. Reviewed against the 05-1/PBT import plan."
+    },
+    {
+     "id": "gtgt04tt89-582-grid-cellchange",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_CellChange",
+     "token": "0x060003b5",
+     "ilBytes": 25029,
+     "ilSha256": "11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d",
+     "status": "added-reviewed",
+     "review": "Table branch: a DC_ combobox cell (PL 01-1 column E, Controltype DC_124, SelectedValue I) maps the chosen name to its DM_DUNG_CHUNG code (GetDMFromCombobox) into column I, then WinDoWorkEvent.CellChange runs the sheet's CellChange_1. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-enter-cell",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_EnterCell",
+     "token": "0x060003b9",
+     "ilBytes": 6197,
+     "ilSha256": "ef8bb59c9b33e7c672e2b5a0f2a0d42b7066fc46f10f31dbbdf044dc78dbcdc4",
+     "status": "added-reviewed",
+     "review": "Entering the PL 01-1 thuế suất cell by an arrow key gives the editor the DC_124 list (1, 2, 3, 5 with their codes); no other branch applies to menu Z3. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-dowork-cellchange",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "CellChange",
+     "token": "0x06000063",
+     "ilBytes": 291,
+     "ilSha256": "45a40a1819c94b7ad5ad5a7153092d368b3884faf585325431ac7c59aefce33f",
+     "status": "added-reviewed",
+     "review": "Calls CellChange_<sheet index> of the business class by reflection with the 1-based row and column: CellChange_1 for the PL 01-1 sheet of Z3. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-import-selected",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "GetValueFromSelectedCell",
+     "token": "0x06000085",
+     "ilBytes": 5938,
+     "ilSha256": "7a213d943a1ef33d6a8b21108d1fe7247c85bc26bc3ca9aaf67bd79af5258ece",
+     "status": "added-reviewed",
+     "review": "Fills combobox cells of an imported table row from their XML values (the PL 01-1 thuế suất cell E with SelectedValue I); pinned so that a changed import path is detected before the plan runs. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-finish-import",
+     "assembly": "B",
+     "type": "Gtgt04TT89Nckt309",
+     "method": "FinishImportXML",
+     "token": "0x06001a08",
+     "ilBytes": 344,
+     "ilSha256": "6478c4a1a1134104a0935840d95e7c7858fdaa56b2daa109ead790b27fe09bfd",
+     "status": "added-reviewed",
+     "review": "After the import, sets column E of every PL 01-1 row to getTenThueSuat(column I) and then runs TinhLaiThueSuat_PL01_1; with I still empty, E is cleared before it can be copied to I (run 43772871198, zero mask 4031). Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-rate-name",
+     "assembly": "B",
+     "type": "Gtgt04TT89Nckt309",
+     "method": "getTenThueSuat",
+     "token": "0x06001a09",
+     "ilBytes": 223,
+     "ilSha256": "ffbb77ea430f8cd31680d6e799b430b96d0cd6aff0c770fb791bbd0094693350",
+     "status": "added-reviewed",
+     "review": "Reads InterfaceIni/DM_thue_suat_GTGT.xml and returns the name of a rate code (1 -> 1%), an empty string for an empty or unknown code. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-cellchange",
+     "assembly": "B",
+     "type": "Gtgt04TT89Nckt309",
+     "method": "CellChange_1",
+     "token": "0x06001a07",
+     "ilBytes": 468,
+     "ilSha256": "6a4b358a53c2fbc53bbc9ac98c70612aaf118bf70b7067178443c0417801b048",
+     "status": "added-reviewed",
+     "review": "Without thu ho: a change of column E with a code in I runs TinhLaiChiTieu22_den_28_TK for every rate, then TinhLaiChiTieu23_25_27_29TheoPL01_1 copies AW87:AW90 into [23]..[29]. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-rates",
+     "assembly": "B",
+     "type": "Gtgt04TT89Nckt309",
+     "method": "TinhLaiThueSuat_PL01_1",
+     "token": "0x06001a0f",
+     "ilBytes": 299,
+     "ilSha256": "c7c98dd12074fb45bc3f26d53f458366b7e9544035773a31a00a56b92ea59621",
+     "status": "added-reviewed",
+     "review": "Copies column E into an empty column I of each sale row, then recomputes [22]..[28] and [23]..[29] from the annex. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-revenue",
+     "assembly": "B",
+     "type": "Gtgt04TT89Nckt309",
+     "method": "TinhLaiChiTieu22_den_28_TK",
+     "token": "0x06001a10",
+     "ilBytes": 706,
+     "ilSha256": "6e249059aa6b4996d3733ac5bc7a307cde3564d23a9daf0a2d4a9ab7a954c3bc",
+     "status": "added-reviewed",
+     "review": "Writes [22], [24], [26], [28] of the tờ khai from the annex totals I9 (1%), L9 (5%), K9 (3%), J9 (2%) when the PL 01-1 sheet is attached. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "gtgt04tt89-582-tax",
+     "assembly": "B",
+     "type": "Gtgt04TT89Nckt309",
+     "method": "TinhLaiChiTieu23_25_27_29TheoPL01_1",
+     "token": "0x06001a0e",
+     "ilBytes": 624,
+     "ilSha256": "f2a3c75c6e3ba5d82753f0d9312f0460181c492dc0a02dad3cc3163593cdfa6b",
+     "status": "added-reviewed",
+     "review": "Copies the hidden formulas AW87:AW90 (ROUND(revenue x rate - reduction)) into [23], [25], [27], [29]. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
     }
    ]
   }

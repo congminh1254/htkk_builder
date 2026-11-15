@@ -43,4 +43,10 @@ internal static class HtkkOracleBaseline {
  };
  // 05-1/PBT-KK-TNCN import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.
  internal static string[] PbtMethodPins(){if(Pbt[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_PBT_UNPINNED");return (string[])Pbt[Current].Clone();}
+ private static readonly string[][] Gtgt04=new string[][]{
+  new string[0],
+  new string[]{"H|frmWinToKhai|winFpSpread_CellChange|0x060003b5|25029|11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d","H|frmWinToKhai|winFpSpread_EnterCell|0x060003b9|6197|ef8bb59c9b33e7c672e2b5a0f2a0d42b7066fc46f10f31dbbdf044dc78dbcdc4","H|WinDoWorkEvent|CellChange|0x06000063|291|45a40a1819c94b7ad5ad5a7153092d368b3884faf585325431ac7c59aefce33f","H|WinDoWorkEvent|GetValueFromSelectedCell|0x06000085|5938|7a213d943a1ef33d6a8b21108d1fe7247c85bc26bc3ca9aaf67bd79af5258ece","B|Gtgt04TT89Nckt309|FinishImportXML|0x06001a08|344|6478c4a1a1134104a0935840d95e7c7858fdaa56b2daa109ead790b27fe09bfd","B|Gtgt04TT89Nckt309|getTenThueSuat|0x06001a09|223|ffbb77ea430f8cd31680d6e799b430b96d0cd6aff0c770fb791bbd0094693350","B|Gtgt04TT89Nckt309|CellChange_1|0x06001a07|468|6a4b358a53c2fbc53bbc9ac98c70612aaf118bf70b7067178443c0417801b048","B|Gtgt04TT89Nckt309|TinhLaiThueSuat_PL01_1|0x06001a0f|299|c7c98dd12074fb45bc3f26d53f458366b7e9544035773a31a00a56b92ea59621","B|Gtgt04TT89Nckt309|TinhLaiChiTieu22_den_28_TK|0x06001a10|706|6e249059aa6b4996d3733ac5bc7a307cde3564d23a9daf0a2d4a9ab7a954c3bc","B|Gtgt04TT89Nckt309|TinhLaiChiTieu23_25_27_29TheoPL01_1|0x06001a0e|624|f2a3c75c6e3ba5d82753f0d9312f0460181c492dc0a02dad3cc3163593cdfa6b"}
+ };
+ // 04/GTGT TT89 PL 01-1 import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.
+ internal static string[] Gtgt04Tt89AnnexMethodPins(){if(Gtgt04[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_GTGT04_UNPINNED");return (string[])Gtgt04[Current].Clone();}
 }

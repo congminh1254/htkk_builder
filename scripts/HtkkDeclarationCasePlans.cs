@@ -46,7 +46,7 @@ internal sealed class HtkkDeclarationTickPlan {
  internal HtkkDeclarationTickPlan(string[] edits,string[] ticks,string[] unticked,string[] readbacks,string[] methodPins){
   Edits=edits;Ticks=ticks;Unticked=unticked;Readbacks=readbacks;MethodPins=methodPins;
   // A plan may have no tick (PL 03: the edit alone runs capNhatToKhai); it always has an edit.
-  if(edits.Length<1||edits.Length>4||ticks.Length>4||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
+  if(edits.Length<1||edits.Length>5||ticks.Length>4||edits.Length+ticks.Length>8||unticked.Length>4||readbacks.Length>8||methodPins.Length<1||methodPins.Length>30)throw new InvalidOperationException();
   // number|cell|value on sheet 01; combo|sheet|cell|item name|code cell|item code: an original combobox of another
   // sheet (05-1/PBT Thuế tỉnh/CCT and CQT quản lý), the item chosen from the original list by keys, the code written by
   // frmWinToKhai.winFpSpread_CellChange (GetDMFromCombobox) read back.
@@ -671,12 +671,29 @@ internal static class HtkkDeclarationCasePlans {
  //    rows are discarded), CD of each ticked row := PL 01 H (= G x 30%, XLS H20), then capNhatToKhai (CF = 0 without
  //    PL 03), so AE = CE - CD is HTKK's own result. AJ293 (group 02, not reduced, last row) stays clear.
  //  * Readbacks (diagnostic): BN = ma_diaDiemKD 00001 and CA = the profile MST on the rows, written by SetCacDongCon.
+ // Z3 04/GTGT TT89 PL 01-1 (mode web-xml-import-tick-reexport, HTKK 5.8.2 only). Source: TAX.HTKK.Business.dll and HTKK.exe 5.8.2,
+ // read statically (pins: htkk-oracle-baselines.json gtgt04tt89-582-*).
+ //  * Run 43762065235 / 43772871198 (import only): every checked cell differed; all but [32] (K105 = [21a] alone) were empty or 0
+ //    (declarationCellZeroMask 4031). Gtgt04TT89Nckt309.FinishImportXML loops over the PL 01-1 rows and sets column E (thuế
+ //    suất, Controltype DC_124, SelectedValue I) to getTenThueSuat(column I) BEFORE TinhLaiThueSuat_PL01_1 copies E into an
+ //    empty I; I is still empty after the import, so E is cleared, I stays empty and the SUMIF totals I9:L11, G30 = ROUND(D30 x
+ //    (I30 - F30) / 100) and [22]..[32] fall to 0. (Gtgt04TT80Nckt274 runs that loop on sheet 1, which the TT80 case does not
+ //    attach, and its PL 01-3 kept the rates: run 43742176321.)
+ //  * The plan chooses the thuế suất of each sale row again through the original combobox editor, as a user corrects the
+ //    imported annex: winFpSpread_CellChange writes the DC_124 code into I (DM_DUNG_CHUNG.xml items 1, 2, 3, 5: name = code),
+ //    WinDoWorkEvent.CellChange runs CellChange_1, whose E branch (I not empty, no thu hộ) runs TinhLaiChiTieu22_den_28_TK for
+ //    every rate and TinhLaiChiTieu23_25_27_29TheoPL01_1. Rows in sheet order 30..34 (1%, 5%, 3%, 2%, 1%); the cell checks of
+ //    the case plan then read the recomputed sheet, and the export is compared leaf by leaf with the web XML.
  internal static HtkkDeclarationTickPlan ImportTick(string caseId){
   // 05-1/PBT (L7, Z8): Thuế tỉnh/CCT then CQT quản lý of each row through the original combobox editor (see the case plans).
   if(caseId=="05KK-PBT-two-provinces-Q3-2026"||caseId=="05KK-TT89-PBT-two-provinces-Q4-2026")return new HtkkDeclarationTickPlan(
    new string[]{"combo|01-1|I44|Thuế Thành phố Hà Nội|T44|10100","combo|01-1|J44|Thuế cơ sở 16 Thành phố Hà Nội|U44|10129",
     "combo|01-1|I45|Thuế Thành phố Hải Phòng|T45|10300","combo|01-1|J45|Thuế cơ sở 6 Thành phố Hải Phòng|U45|10309"},
    new string[0],new string[0],new string[0],HtkkOracleBaseline.PbtMethodPins());
+  // Z3 PL 01-1 (see the comment above ImportTick): the thuế suất of each imported sale row chosen again.
+  if(caseId=="04GTGT-TT89-reduction-annex-M10-2026")return new HtkkDeclarationTickPlan(
+   new string[]{"combo|01_2|E30|1|I30|1","combo|01_2|E31|5|I31|5","combo|01_2|E32|3|I32|3","combo|01_2|E33|2|I33|2","combo|01_2|E34|1|I34|1"},
+   new string[0],new string[0],new string[0],HtkkOracleBaseline.Gtgt04Tt89AnnexMethodPins());
   // PL 03 (see its case plan): the original L291 edit fills BN/CA (SetCacDongCon) and runs capNhatToKhai (CF from PL 03);
   // no checkbox is ticked. Same pinned methods (u5-310-tick-*: CellChange_0, SetCacDongCon, capNhatToKhai, ...).
   if(caseId=="01CNKD-TT50-310-pl03-two-groups-Q3-2026")return new HtkkDeclarationTickPlan(
