@@ -498,3 +498,8 @@ the pinned web file of the PBT case changed accordingly (7460 bytes, f27e9cf3…
 missing): the reader caps `menuClickCount` at 3 for this mode while a third round clicks again, the shared lần-2 path of the
 01/NTNN lần-2 case.
 
+
+`05KK-khbs-increase-M03-2026` (observation, adapter `05-kk-tncn-2.9.3-khbs` now also takes month 03/2026): the increase case on L7
+kỳ tháng 3/2026 (HTKK takes monthly 05/KK-TNCN until tháng 3/2026), its own period in the contract (`period_of`), plan month
+03/2026 (`chkTkhaiThang`, KieuKy 19). Web prediction: hạn 20/04/2026, 207 late days, ct3b 62.100; 213 leaves. htkk_web released
+KHBS 05/KK lần 1 without 05-1/PBT for L7 kỳ quý and Z8 only (runs 43686728548, 43686732231, 43686734447); kỳ tháng waits for this case.
