@@ -563,3 +563,14 @@ sheets are still checked). The PL 01 case makes the giảm thuế ticks again af
 
 What only these runs decide: whether HTKK accepts the import of a loaiTKhai B file into the Bổ sung form; whether it writes anything
 the web file does not (mục D `soTienChenhLech`, `ct46`); whether the PL 01 bổ sung reopens with the saved PL 01 sheet.
+
+Cohort 9d45beb (HTKK 5.8.2), the four U5 cases: `01CNKD-khbs-increase-Q3-2026` (run 43733536472), `-decrease-` (43733539063) and
+`-lan2-` (43733541969) got through every round: HTKK imported the loaiTKhai B files into the Bổ sung form, showed no "Tổng hợp KHBS"
+(step bit 2048 set; masks 2583, lần 2 2783), saved the intermediate bổ sung, then stopped at the pinned-schema gate before Kết xuất
+(`exportSchemaPinnedVerified` false, `declaration-export-not-matched`): `WinFnProcess.GetToKhaiInfo` sets `ToKhaiInfo.XsdFileName` to
+`KHBS_<XsdSchema>_<VersionKBSXML>.xsd` only for LoaiToKhai B with a non-empty KieuKHBS, so for U5 it is the MAIN schema
+`01_CNKD_HKD_TT50_310.xsd`. `CnkdKhbsPlan` now pins that path (same SHA-256 as before). `01CNKD-PL01-khbs-Q3-2026` (run 43733544586)
+stopped in its bổ sung round at the first giảm thuế tick (`declaration-import-tick-not-matched`, code 7 = tick cell locked, mismatch
+16 = AJ291) after the four edits matched: `CnkdHkd01TT50Nckt310.lockUnLockA_TK` sets `AJ.Locked = !(CE > 0)` for every row, and runs
+only from `AutoBindData_0` and `ButtonClick_0`. The tick now records `declarationTickLockShape` (1 CE > 0, 2 U > 0, 4 L > 0, 8 ticked,
+16 bổ sung round, 128 recorded) so the next run says whether the lock follows a zero CE or a refresh that did not run after the import.

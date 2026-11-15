@@ -244,8 +244,9 @@ class Driver(unittest.TestCase):
         fields = automation['resultFields']
         names = re.findall(r'"(declarationTick[A-Za-z0-9]+)"', TICK[TICK.index('private string DeclarationTickJson(){'):TICK.index('private void DeclarationTickFail(')])
         # 10 tick fields plus the five 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount,
-        # declarationTickEntryMask, declarationTickEntryStartOffset, declarationTickEntryKeyOffset).
-        self.assertEqual(len(names), 15)
+        # declarationTickEntryMask, declarationTickEntryStartOffset, declarationTickEntryKeyOffset), plus declarationTickLockShape
+        # (the value-free shape of a locked tick cell, 01/CNKD PL 01 bổ sung).
+        self.assertEqual(len(names), 16)
         for name in names:
             self.assertIn(name, automation['keys'])
             self.assertEqual(fields[name]['activeModes'], [MODE, KHBS_MODE])

@@ -379,7 +379,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -405,6 +405,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 32768 the target was already the active cell with its row list (reached by the previous edit's TAB): no key sent.
  // declarationTickEntryStartOffset / declarationTickEntryKeyOffset: 128 + (active column - target column), clamped to 1..255,
  // when the combo edit starts / right after the arrow key (0 = not reached); the active row is reported by bit 64.
+ // declarationTickLockShape (value-free, set when a tick cell is locked, code 7): 1 CE (thuế TNCN của dòng) > 0, 2 U ([15]) > 0,
+ // 4 L ([11]) > 0, 8 the cell is ticked, 16 a bổ sung round (KHBS mode, round > 0), 128 recorded. CnkdHkd01TT50Nckt310.lockUnLockA_TK
+ // sets AJ.Locked = !(CE > 0) for every row (AutoBindData_0, ButtonClick_0); 01CNKD-PL01-khbs-Q3-2026 run 43733544586 stopped there
+ // in its bổ sung round (mismatch 16 = AJ291).
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -412,11 +416,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
+ private bool DeclarationTickPositive(object sheet,string a1){int[] at=DeclarationEntryCell(a1);double value;return Double.TryParse(Convert.ToString(Get(Cell(sheet,at[0],at[1]),"Value"),CultureInfo.InvariantCulture),NumberStyles.Float,CultureInfo.InvariantCulture,out value)&&value>0;}
  private void DeclarationTickFail(int code){if(declarationTickFailureCode==0)declarationTickFailureCode=code;DeclarationTerminal(HtkkAutomationStage.DeclarationImportTickNotMatched);}
  private bool DeclarationTickSucceeded(){return declarationTickMethodPinsMatched&&declarationTickEditsMatched&&declarationTickTicksMatched&&declarationTickFailureCode==0&&declarationTickMismatchMask==0&&declarationTickPlannedCount>0&&declarationTickActionCount==declarationTickPlannedCount;}
  private void VerifyDeclarationTickPins(){
@@ -607,6 +612,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
   object cell=Cell(sheet,at[0],at[1]);
   // Distinct value-free codes for the four preconditions (release run 43136692872 could only report code 3).
   int precondition=DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"?3:Convert.ToBoolean(Get(cell,"Locked"))?7:Selected(Get(cell,"Value"))?12:!RowVisible(sheet,at[0])?14:0;
+  if(precondition==7){
+   int shape=128;string row=(at[0]+1).ToString(CultureInfo.InvariantCulture);
+   if(DeclarationTickPositive(sheet,"CE"+row))shape|=1;if(DeclarationTickPositive(sheet,"U"+row))shape|=2;if(DeclarationTickPositive(sheet,"L"+row))shape|=4;if(Selected(Get(cell,"Value")))shape|=8;if(DeclarationKhbsMode()&&declarationKhbsRound>0)shape|=16;
+   declarationTickLockShape=shape;
+  }
   if(precondition!=0){declarationTickMismatchMask|=1<<action;DeclarationTickFail(precondition);return;}
   DeclarationEntrySelect(grid,sheet,at[0],at[1]);
   if(!DeclarationEntryActive(sheet,at[0],at[1])||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}

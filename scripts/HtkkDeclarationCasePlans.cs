@@ -172,15 +172,18 @@ internal static class HtkkDeclarationCasePlans {
    "Validate/KHBS_05_KK_TNCN_TT80_293.xsd","91a2d625d1ddeaf5fe71fb5ca0413d25d063d3adb99e9b975e322d95a56d8ec4",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,leaves,new string[0],new string[0]);
  }
  // 01/CNKD KHBS (U5 3.1.0 quý 3/2026; htkk_web docs/KE-KHAI-BO-SUNG-01-CNKD.md, KHBS-NATIVE-CASE.md "01/CNKD"): the plan of
- // the lần đầu case 01CNKD-TT50-310-pl01-three-groups-Q3-2026 (with PL 01 for the PL 01 case, without it otherwise), the KHBS
- // schema KHBS_01_CNKD_HKD_TT50_310.xsd (the same bytes as the main schema), no cell or XML checks, and the web B file leaf count
- // (contract leafTarget + 4 service leaves).
+ // the lần đầu case 01CNKD-TT50-310-pl01-three-groups-Q3-2026 (with PL 01 for the PL 01 case, without it otherwise), no cell or
+ // XML checks, and the web B file leaf count (contract leafTarget + 4 service leaves). Schema: the MAIN one, 01_CNKD_HKD_TT50_310.xsd.
+ // WinFnProcess.GetToKhaiInfo sets ToKhaiInfo.XsdFileName to KHBS_<XsdSchema>_<VersionKBSXML>.xsd only for LoaiToKhai B with a
+ // non-empty KieuKHBS (menus 31;30;39;33;28;M2 excepted), else <XsdSchema>_<VersionXML>.xsd; U5 has KieuKHBS "", so its B export
+ // validates against the main schema (the KHBS one has the same bytes). Runs 43733536472/43733539063/43733541969 stopped at the
+ // pinned-schema gate (exportSchemaPinnedVerified false) with the KHBS path.
  private static HtkkDeclarationCasePlan CnkdKhbsPlan(string caseId){
   bool pl01=caseId=="01CNKD-PL01-khbs-Q3-2026";
   return new HtkkDeclarationCasePlan(caseId,"U5","3.1.0","1266","CnkdHkd01TT50Nckt310",new string[]{"101","101_37","U5"},"quarter","21","2026","3","01/07/2026","30/09/2026",false,
    pl01?new string[]{"PL 01 43/2026/QH16"}:new string[0],pl01?new string[]{"01|Tờ khai","01-4|PL 01 43/2026/QH16"}:new string[]{"01|Tờ khai"},
    "InterfaceTemplates/excel/01_CNKD_HKD_TT50_310.xls","864ef2c1c28f4f0c807265fa2497264ec72283912dda1f3f6294b6b9aa8a3c56","InterfaceTemplates/xml/01_CNKD_HKD_TT50_310.xml","30f4d3162d6179ce8c233c977898b86f63756e741bda1a423c15e45babea0d86",
-   "Validate/KHBS_01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,pl01?299:275,new string[0],new string[0]);
+   "Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff",TKhaiThue,TKhaiThueSha256,CnkdService,pl01?299:275,new string[0],new string[0]);
  }
  // 05/KK-TNCN with 05-1/PBT: every imported round leaves Thuế tỉnh/CCT empty (no XML leaf), so the import is completed with the
  // reviewed combo edits of 05KK-PBT-two-provinces-Q3-2026 (the same two rows, offices unchanged between the versions).
