@@ -424,9 +424,10 @@ Driver (`scripts/HtkkDeclarationKhbs.cs` on the declaration driver; step mask bi
 5. Original "Tổng hợp KHBS" (0222), original export (schema pinned: the two KHBS XSDs above), whole-tree comparison
    with the web B file (C# leaf counts = targets above + 4 service leaves); the shared export readiness gate applies.
 
-Probe (`probe-htkk-windows.ps1`): stages `declaration-original.xml` as `<host>.web-original.xml/.sha256` and, for the lần-2 case,
-`declaration-prior.xml` as `<host>.web-prior.xml/.sha256` (manifest `originalXmlSha256`/`priorXmlSha256`); limit 300 s (lần 2:
-420 s); success = stage `declaration-khbs-inspected`, the last round (1, or 2), step mask 1591 (lần 2: 1791), entry (Y8) or
+Probe (`probe-htkk-windows.ps1`): writes the profile-save permit for this mode like every mode whose registry `permit` is
+`profile-save` (test_native_automation_registry pins the probe list to the registry); stages `declaration-original.xml` as `<host>.web-original.xml/.sha256` and, for the lần-2 case,
+`declaration-prior.xml` as `<host>.web-prior.xml/.sha256` (manifest `originalXmlSha256`/`priorXmlSha256`); limit 420 s (above the
+driver's own 400 s; release b352279 waited 300 s for a permit the probe never wrote, runs 43671647120-43671657019); success = stage `declaration-khbs-inspected`, the last round (1, or 2), step mask 1591 (lần 2: 1791), entry (Y8) or
 import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaration-khbs-inspected` or
 `declaration-export-not-matched` the original export is staged and `publish-htkk-declaration-native-output.py` retains it
 (inputMode `khbs-web-xml-import-reexport` / `khbs-original-entry-export`) after `htkk_ntnn_khbs_web_cases.validate_native_output`:
