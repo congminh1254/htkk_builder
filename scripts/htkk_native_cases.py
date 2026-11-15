@@ -142,6 +142,12 @@ TRUSTED_ADAPTERS={
  # Quý, Kỳ thanh toán). CheckChonLoaiNopThue: cá nhân trực tiếp khai = 01-1/BK-TTS (năm), tổ chức khai thay = 01-2/BK-TTS.
  '01-tts-tt40-2.8.3-bk1':{**_declaration('G7','2.8.3',{'year':('2025',)},['01-1']),'htkkVersion':'5.8.2'},
  '01-tts-tt40-2.8.3-bk2':{**_declaration('G7','2.8.3',{'quarter':('3/2026',),'month':('10/2026',)},['01-2']),'htkkVersion':'5.8.2'},
+ # D4 04/GTGT TT80 2.7.4 (non-gating, cases on the HTKK 5.8.2 oracle; the menu node and every 04_*GTGT_TT80_274 resource are
+ # byte-identical in 5.8.1). KieuKy 21 = SetLayoutToKhaiThangQuyLanPhatSinh (month, quarter). HTKK 5.8.2 ends D4 at
+ # 30/09/2026 (CheckToKhaiHetHieuLuc; Z3 TT89 from 01/10/2026), so the periods end at tháng 9 / quý 3/2026. The annex
+ # adapter ticks sheet 01-3 "PL 142/2024/QH15-174/2024/QH15-204/2025/QH15" (giảm thuế NQ 204/2025 in 2026).
+ '04-gtgt-tt80-2.7.4':{**_declaration('D4','2.7.4',{'month':('08/2026','09/2026'),'quarter':('3/2026',)},[]),'htkkVersion':'5.8.2'},
+ '04-gtgt-tt80-2.7.4-pl013':{**_declaration('D4','2.7.4',{'quarter':('2/2026',)},['01-3']),'htkkVersion':'5.8.2'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))
