@@ -24,6 +24,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationKhbsPromptAnswered=false;
  private string webOriginalPath="",webOriginalSha256="",webPriorFilePath="",webPriorFileSha256="";
  private Stopwatch declarationKhbsClock=null;
+ // Profile Ghi of a KHBS run (cohort 1a6f600: four of five cases never saw the original success message, the fifth stopped
+ // after it): every 2 s while the original save has not been acknowledged, the shared bounded wait fields record the seconds
+ // since the click, the visible own forms and the foreground kind (declarationUiForegroundKind codes; 3 = an original
+ // message, 4 = another own managed form, 5 = an own native #32770 dialog). Observation only; nothing is clicked here.
+ private Stopwatch declarationKhbsSaveClock=null;private int declarationKhbsSaveRecorded=-1;
+ private void ObserveDeclarationKhbsProfileSave(){
+  if(!DeclarationKhbsMode())return;
+  if(declarationKhbsSaveClock==null)declarationKhbsSaveClock=Stopwatch.StartNew();
+  int seconds=Math.Min(255,(int)declarationKhbsSaveClock.Elapsed.TotalSeconds);
+  if(seconds<2||seconds/2==declarationKhbsSaveRecorded)return;declarationKhbsSaveRecorded=seconds/2;
+  int kind=NativeForegroundKind();
+  if(kind==6){Form form=Control.FromHandle(GetForegroundWindow()) as Form;if(form!=null)kind=form.GetType().FullName=="TAX.HTKK.Utilities.Control.frmMessage"?3:4;}
+  declarationUiWaitSeconds=seconds;declarationUiVisibleForms=VisibleFormCount();declarationUiForegroundKind=kind;Record();
+ }
  private bool DeclarationKhbsMode(){return modeEnum==HtkkAutomationMode.DeclarationAmendmentKhbsInspect;}
  private string DeclarationKhbsJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();

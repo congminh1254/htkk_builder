@@ -265,6 +265,18 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         self.assertIn("(inputs.gui_automation == 'declaration-web-import-inspect' || inputs.gui_automation == 'declaration-amendment-khbs-inspect') && inputs.web_artifact_commit != ''", workflow)
         self.assertIn("'declaration-web-import-inspect','declaration-amendment-khbs-inspect')){", host)
 
+    def test_profile_save_wait_is_observed_and_stale_results_are_counted(self):
+        # Cohort 1a6f600: the KHBS runs stopped at original-save-invoking / waiting-profile-close-ready with no later valid result.
+        automation = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
+        self.assertIn('  if(successAcknowledged||!saveInvoked)return;\n  ObserveDeclarationKhbsProfileSave();\n  ReadSavedHeader();', automation)
+        body = khbs[khbs.index('private void ObserveDeclarationKhbsProfileSave(){'):]
+        body = body[:body.index('\n }\n')]
+        self.assertIn('if(!DeclarationKhbsMode())return;', body)
+        self.assertNotIn('PerformClick', body)
+        self.assertIn('$report.guiReferenceResultReads=[ordered]@{invalidAfterValid=[int]$guiInvalidAfterValid;lastWriteAgeSeconds=$guiResultAge}', probe)
+
 
 if __name__ == '__main__':
     unittest.main()

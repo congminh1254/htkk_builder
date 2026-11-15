@@ -434,6 +434,13 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort 1a6f600 (runs 43676048794, 43676050610, 43676052218, 43676054472, 43676056452): permit written, the seven profile
+inputs typed and the original profile Ghi clicked; four cases then never showed a valid result past `original-save-invoking`
+(no success message, no HEADER.xml), part1 stopped after `waiting-profile-close-ready`, and none showed the driver's own 400 s
+timeout before the probe's 420 s. The logs cannot tell a stalled save from results the reader refused, so the next run reports
+`guiReferenceResultReads` (refused reads after a valid one, age of the last write) and, in this mode only, the profile-save
+wait every 2 s in `declarationUiWaitSeconds` / `declarationUiVisibleForms` / `declarationUiForegroundKind`.
+
 What only these runs decide (web predictions in its golden): the text of the row key `ct3_2_ten` (dates dd/MM/yyyy, rates "5"),
 `ct04`/`ct05` of amounts ("1.000.000"), ct3b 0 when Muc_I.1 has two rows (gross-up case: 24 late days), negative ct3b −7.200
 (decrease case) and 3.311 (lần 2), and the Y8 part II tiểu mục 1052.

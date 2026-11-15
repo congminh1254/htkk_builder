@@ -157,6 +157,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
  private static Control FindVendorCombo(Control root,int depth){return HtkkNativeUiHarness.FindVendorCombo(root,depth);}
  private void AcknowledgeVerifiedSuccess(){
   if(successAcknowledged||!saveInvoked)return;
+  ObserveDeclarationKhbsProfileSave();
   ReadSavedHeader();
   foreach(Form form in Application.OpenForms){
    if(!form.Visible||form.GetType().FullName!="TAX.HTKK.Utilities.Control.frmMessage"||form.Text.Trim()!="Thông Báo")continue;
