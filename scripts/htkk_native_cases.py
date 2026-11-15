@@ -148,6 +148,12 @@ TRUSTED_ADAPTERS={
  # adapter ticks sheet 01-3 "PL 142/2024/QH15-174/2024/QH15-204/2025/QH15" (giảm thuế NQ 204/2025 in 2026).
  '04-gtgt-tt80-2.7.4':{**_declaration('D4','2.7.4',{'month':('08/2026','09/2026'),'quarter':('3/2026',)},[]),'htkkVersion':'5.8.2'},
  '04-gtgt-tt80-2.7.4-pl013':{**_declaration('D4','2.7.4',{'quarter':('2/2026',)},['01-3']),'htkkVersion':'5.8.2'},
+ # Z3 04/GTGT TT89 3.0.9 (non-gating, HTKK 5.8.2 only: Menu.xml Z3, Gtgt04TT89Nckt309, StartDate 01/10/2026). KieuKy 21 with
+ # the Z3 branch of SetLayoutToKhaiThangQuyLanPhatSinh (pnThuHo "Hoạt động kê khai riêng" and pnChuyenNhuong shown, unticked by
+ # default: the cases keep them unticked). CheckToKhaiBatDauCoHieuLuc refuses periods before tháng 10 / quý 4/2026. The annex
+ # adapter ticks sheet 01-1 "PL 204/2025/QH15" (workbook sheet 01_2).
+ '04-gtgt-tt89-3.0.9':{**_declaration('Z3','3.0.9',{'month':('10/2026',),'quarter':('4/2026',)},[]),'htkkVersion':'5.8.2'},
+ '04-gtgt-tt89-3.0.9-pl011':{**_declaration('Z3','3.0.9',{'month':('10/2026',)},['01-1']),'htkkVersion':'5.8.2'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))

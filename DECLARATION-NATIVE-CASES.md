@@ -734,3 +734,27 @@ duyệt (không dùng engine TypeScript): không có PL 01-3 thì [23]/[25]/[27]
 Câu hỏi cho lần chạy: kỳ quý của KieuKy 21 có ghi `kyKKhaiTuThang`/`kyKKhaiDenThang` không (web để trống); `thueSuatSauGiam`
 HTKK ghi `4.0` hay `4`; Menu.xml ghi XMLnode của sheet 01-3 là `PL_NQ101_GTGT` còn tệp điều khiển là `PL_NQ142_GTGT` — HTKK
 nhập và kết xuất lại phụ lục dưới nút nào.
+
+## 04/GTGT TT89 (Z3, 3.0.9) — bốn ca không chặn phát hành, chỉ có trên HTKK 5.8.2
+
+Nhà sản xuất `htkk_web` nhánh `work/gtgt04-tt89` (thiết kế trong `scripts/generate-htkk-descriptor-reference.mjs`). Menu Z3
+(`Gtgt04TT89`, maTKhai 2035, KieuKy 21, Validity từ 01/10/2026) chỉ có trong Menu.xml 5.8.2; tệp `04_*GTGT_TT89_309` của 5.8.2
+khác bản 5.8.1 (XSD 5.8.2 thêm `Header/DiaChiBds`), nên web công bố XSD 5.8.2 dưới id `Validate/04_GTGT_TT89_309_htkk582.xsd`
+còn kế hoạch biên dịch ghim tệp gốc `Validate/04_GTGT_TT89_309.xsd` (`SCHEMA_SOURCES`). Menu 101 → 101_1 → Z3. Nhánh Z3 của
+`SetLayoutToKhaiThangQuyLanPhatSinh` hiện thêm "Hoạt động kê khai riêng" và bất động sản/tài sản khác; các ca để bỏ tích.
+`CheckToKhaiBatDauCoHieuLuc` (Z3 trong danh sách) từ chối kỳ trước tháng 10 / quý 4/2026.
+
+| Ca | Adapter | Kỳ | Phụ lục | Kiểm tra chính |
+|---|---|---|---|---|
+| `04GTGT-TT89-one-group-M10-2026` | `04-gtgt-tt89-3.0.9` | tháng 10/2026 | — | [21a] 5.000.000, [22] 200.000.000 → [23] 2.000.000, [32] 205.000.000 |
+| `04GTGT-TT89-quarter-Q4-2026` | `04-gtgt-tt89-3.0.9` | quý 4/2026 | — | [21b] 10.000.000, [25] 7.500.000, [29] 600.000, [30a] 190.000.000 |
+| `04GTGT-TT89-four-groups-rounding-M10-2026` | `04-gtgt-tt89-3.0.9` | tháng 10/2026 | — | bốn nhóm lẻ nửa đồng: [23] 1.234.568, [25] 2.500.001, [27] 1.000.001, [29] 1.555.556 |
+| `04GTGT-TT89-reduction-annex-M10-2026` | `04-gtgt-tt89-3.0.9-pl011` | tháng 10/2026 | PL 01-1 (NQ 204/2025, sheet 01_2), 5 dòng | [22] 123.458.000, [23] = ROUND(1.234.580 − 246.917) = 987.663, ct9 1.258.028 |
+
+Ca thiết kế `04GTGT-TT89-zero-M10-2026` chỉ nằm trong `htkk-descriptor-native-cases.json`. Oracle độc lập: `GTGT04_ROWS` /
+`gtgt04_expected` như D4, với [21a]/[21b] thay [21], [30a] = [21b] + [30], [32] = [21a] + [30a]; Header `hdKhaiRieng`,
+`batDongSan`, `taiSanKhac` = 0; phụ lục dưới `PL_NQ204_GTGT`.
+
+Câu hỏi cho lần chạy: hộp kỳ Z3 ghi `nganhNgheKD` gì khi để trống "Tên hoạt động kê khai riêng"; bảng địa chỉ bất động sản
+(`DiaChiBds`, khóa khi không chọn bất động sản) kết xuất một dòng `stt` 1 như web không; không kèm PL thì `FinishImportXML` không
+tính lại [23]..[29] (giữ số trong tệp); `ct10` rỗng web ghi `xsi:nil`.

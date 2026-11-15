@@ -264,6 +264,9 @@ DATE = re.compile(r'([0-9]{2}/[0-9]{2}/[0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]
 CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
 GTGT04_NAME = 'TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 04/GTGT)'
+GTGT04_TT89_SCHEMA = 'Validate/04_GTGT_TT89_309_htkk582.xsd'
+# Web schema ids that publish an HTKK file under another name (the compiled plans pin the HTKK file itself).
+SCHEMA_SOURCES = {GTGT04_TT89_SCHEMA: 'Validate/04_GTGT_TT89_309.xsd'}
 TEMPLATE_TT40 = '(Ban hành kèm theo Thông tư số 40/2021/TT-BTC ngày 01/6/2021 của Bộ trưởng Bộ Tài Chính)'
 # 01/TTS mã hợp đồng (TinhMaHopDong): maCQT_MST(000)_ddMMyyyy(từ ngày)_NN of the synthetic profile.
 TTS_CODE = '10129_9999999997000_'
@@ -451,6 +454,16 @@ CASES = {
                                                        [GTGT04_NAME, TEMPLATE_TT80, ADDRESS]),
     '04GTGT-TT80-reduction-annex-Q2-2026': _case('gtgt04-tt80-reduction-annex-q2-2026', 'D4', '847', '2.7.4', 'Validate/04_GTGT_TT80_274.xsd', ('Q', '2/2026', '01/04/2026', '30/06/2026'), None, '2026-10-27', '2026-10-27', 96, ['PL_NQ142_GTGT'], WORKBOOK_SERVICE,
                                                  [GTGT04_NAME, TEMPLATE_TT80, ADDRESS, 'HANG HOA A - GIẢ LẬP', 'DICH VU B - GIẢ LẬP', 'SAN XUAT C - GIẢ LẬP', 'HOAT DONG D - GIẢ LẬP', 'HANG HOA E - GIẢ LẬP']),
+    # Z3 04/GTGT TT89 3.0.9 (non-gating, HTKK 5.8.2 only): KieuKy 21, tháng/quý từ 10/2026; PL 01-1 = PL_NQ204_GTGT. The
+    # web publishes the 5.8.2 schema under its own id (the 5.8.1 file of the same name differs: no Header/DiaChiBds).
+    '04GTGT-TT89-one-group-M10-2026': _case('gtgt04-tt89-one-group-m10-2026', 'Z3', '2035', '3.0.9', GTGT04_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+                                            [GTGT04_NAME, TEMPLATE_TT89, ADDRESS]),
+    '04GTGT-TT89-quarter-Q4-2026': _case('gtgt04-tt89-quarter-q4-2026', 'Z3', '2035', '3.0.9', GTGT04_TT89_SCHEMA, ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+                                         [GTGT04_NAME, TEMPLATE_TT89, ADDRESS]),
+    '04GTGT-TT89-four-groups-rounding-M10-2026': _case('gtgt04-tt89-four-groups-rounding-m10-2026', 'Z3', '2035', '3.0.9', GTGT04_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 74, [], WORKBOOK_SERVICE,
+                                                       [GTGT04_NAME, TEMPLATE_TT89, ADDRESS]),
+    '04GTGT-TT89-reduction-annex-M10-2026': _case('gtgt04-tt89-reduction-annex-m10-2026', 'Z3', '2035', '3.0.9', GTGT04_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, ['PL_NQ204_GTGT'], WORKBOOK_SERVICE,
+                                                  [GTGT04_NAME, TEMPLATE_TT89, ADDRESS, 'HANG HOA A - GIẢ LẬP', 'DICH VU B - GIẢ LẬP', 'SAN XUAT C - GIẢ LẬP', 'HOAT DONG D - GIẢ LẬP', 'HANG HOA E - GIẢ LẬP']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases'] + workbook_design.PLAN_582['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
@@ -467,7 +480,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026'})
 
 
 def is_case(case_id):
@@ -913,7 +926,23 @@ GTGT04_ROWS = {
     '04GTGT-TT80-reduction-annex-Q2-2026': ('1000000', None, (('HANG HOA A - GIẢ LẬP', '123456750', '1'), ('DICH VU B - GIẢ LẬP', '50000010', '5'),
                                                               ('SAN XUAT C - GIẢ LẬP', '33333350', '3'), ('HOAT DONG D - GIẢ LẬP', '77777775', '2'),
                                                               ('HANG HOA E - GIẢ LẬP', '1250', '1'))),
+    # Z3 (TT89): ([21a] không chịu thuế, [21b] thuế suất 0%) instead of [21]; [30a] = [21b] + [30], [32] = [21a] + [30a].
+    '04GTGT-TT89-one-group-M10-2026': (('5000000', '0'), {'1': '200000000'}, None),
+    '04GTGT-TT89-quarter-Q4-2026': (('0', '10000000'), {'5': '150000000', '2': '30000000'}, None),
+    '04GTGT-TT89-four-groups-rounding-M10-2026': (('1000000', '0'), {'1': '123456750', '5': '50000010', '3': '33333350', '2': '77777775'}, None),
+    '04GTGT-TT89-reduction-annex-M10-2026': (('1000000', '0'), None, (('HANG HOA A - GIẢ LẬP', '123456750', '1'), ('DICH VU B - GIẢ LẬP', '50000010', '5'),
+                                                               ('SAN XUAT C - GIẢ LẬP', '33333350', '3'), ('HOAT DONG D - GIẢ LẬP', '77777775', '2'),
+                                                               ('HANG HOA E - GIẢ LẬP', '1250', '1'))),
 }
+
+
+def gtgt04_tt89(case_id):
+    return isinstance(GTGT04_ROWS[case_id][0], tuple)
+
+
+def gtgt04_annex(case_id):
+    """PLuc element of the reduction annex: PL 01-3 of D4 (NQ 142/174/204), PL 01-1 of Z3 (NQ 204/2025)."""
+    return 'PL_NQ204_GTGT' if gtgt04_tt89(case_id) else 'PL_NQ142_GTGT'
 
 
 def gtgt04_expected(case_id):
@@ -930,13 +959,19 @@ def gtgt04_expected(case_id):
             reduced[rate] = reduced.get(rate, D(0)) + cut
     else:
         revenue = {rate: D(value) for rate, value in groups.items()}
-    main, total, tax = {'ct21': ct21}, D(0), D(0)
+    tt89 = isinstance(ct21, tuple)
+    main, total, tax = ({'ct21a': ct21[0], 'ct21b': ct21[1]} if tt89 else {'ct21': ct21}), D(0), D(0)
     for group, rev_leaf, tax_leaf, rate in GTGT04_GROUPS:
         value = revenue.get(rate, D(0))
         amount = _round(value * D(rate) / 100 - reduced.get(rate, D(0)))
         main[group + '/' + rev_leaf], main[group + '/' + tax_leaf] = str(value), str(amount)
         total, tax = total + value, tax + amount
-    main['DoanhThuVaSoThuePNop/ct30'], main['DoanhThuVaSoThuePNop/ct31'], main['ct32'] = str(total), str(tax), str(D(ct21) + total)
+    main['DoanhThuVaSoThuePNop/ct30'], main['DoanhThuVaSoThuePNop/ct31'] = str(total), str(tax)
+    if tt89:
+        main['ct30a'] = str(D(ct21[1]) + total)
+        main['ct32'] = str(D(ct21[0]) + D(ct21[1]) + total)
+    else:
+        main['ct32'] = str(D(ct21) + total)
     totals = {'tongCongGiaTriHHDV': str(sum((D(r['giaTriHHDV']) for r in rows), D(0))), 'tongCongThueGTGTDuocGiam': str(sum((D(r['thueGTGTDuocGiam']) for r in rows), D(0)))} if rows else {}
     return main, rows, totals
 
@@ -949,12 +984,14 @@ def _gtgt04(case_id, root):
     for path, value in main.items():
         if [(n.text or '') for n in block.findall(_xpath('KhaiThueTPPTTTDT/' + path))] != [value]:
             reject('VALUE')
-    if [(n.text or '') for n in block.findall(_xpath('Header/khaiRiengThuHo'))] != ['0']:
-        reject('VALUE')
+    flags = ('hdKhaiRieng', 'batDongSan', 'taiSanKhac') if gtgt04_tt89(case_id) else ('khaiRiengThuHo',)
+    for flag in flags:  # D4 khai riêng thu hộ; Z3 kê khai riêng, bất động sản, tài sản khác: unticked in the period dialog
+        if [(n.text or '') for n in block.findall(_xpath('Header/' + flag))] != ['0']:
+            reject('VALUE')
     thu_ho = block.findall(_xpath('KhaiRiengDoiVoiKhoanThuHo/KhoanThuHoCTGTGT'))
     if len(thu_ho) != 1 or [(n.text or '') for n in thu_ho[0]] != ['', '0', '0', '0']:
         reject('VALUE')
-    sale = root.findall(_xpath('HSoKhaiThue/PLuc/PL_NQ142_GTGT/HH_DV_BanRaTrongKy/BangKeTenHHDV'))
+    sale = root.findall(_xpath('HSoKhaiThue/PLuc/%s/HH_DV_BanRaTrongKy/BangKeTenHHDV' % gtgt04_annex(case_id)))
     if len(sale) != len(rows):
         reject('VALUE')
     for node, row in zip(sale, rows):
@@ -962,7 +999,7 @@ def _gtgt04(case_id, root):
             if [(n.text or '') for n in node.findall('{%s}%s' % (NS, name))] != [value]:
                 reject('VALUE')
     if rows:
-        part = root.find(_xpath('HSoKhaiThue/PLuc/PL_NQ142_GTGT'))
+        part = root.find(_xpath('HSoKhaiThue/PLuc/' + gtgt04_annex(case_id)))
         for name, value in totals.items():
             if [(n.text or '') for n in part.findall(_xpath('HH_DV_BanRaTrongKy/' + name))] != [value]:
                 reject('VALUE')

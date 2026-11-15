@@ -70,7 +70,8 @@ def _tree(case_id, native=False, created=None):
                 _path(main, 'CTieuTKhaiChinh/' + path).text = value
         if case_id in d.GTGT04_ROWS:  # 04/GTGT: the oracle leaves under KhaiThueTPPTTTDT, Mục B locked (one row, zeros)
             owned = set(values)
-            _add(_path(main, 'CTieuTKhaiChinh/Header'), 'khaiRiengThuHo', '0')
+            for flag in (('hdKhaiRieng', 'batDongSan', 'taiSanKhac') if d.gtgt04_tt89(case_id) else ('khaiRiengThuHo',)):
+                _add(_path(main, 'CTieuTKhaiChinh/Header'), flag, '0')
             for path, value in d.gtgt04_expected(case_id)[0].items():
                 _path(main, 'CTieuTKhaiChinh/KhaiThueTPPTTTDT/' + path).text = value
             row = _add(_path(main, 'CTieuTKhaiChinh/KhaiRiengDoiVoiKhoanThuHo'), 'KhoanThuHoCTGTGT', attrib={'id': 'ID_1'})
