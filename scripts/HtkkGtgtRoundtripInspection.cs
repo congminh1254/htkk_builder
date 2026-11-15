@@ -143,7 +143,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    int start=Convert.ToInt32(Get(Get(tables[0],"Location"),"DataLocationTemplateRowStart"))-1;if(start!=21)throw new InvalidOperationException();
    for(int ordinal=0;ordinal<rows.Count;ordinal++){
     int row=start+ordinal;string[] expected=Annex16ExpectedRows[ordinal];
-    annex16HeadOfficeFailureMask=(annex16HeadOfficeFailureMask&(2048|4096|8192))|((ordinal+1)<<6);Record();
+    annex16HeadOfficeFailureMask=(annex16HeadOfficeFailureMask&(2048|4096|8192|Annex16DiagnosticBits))|((ordinal+1)<<6);Record();
     // Runs 43683942253/43683944987 (both cases, mask 2688 = 2048|512|row 2): row 1 passed, the H combo of row 2 failed. The
     // combo lists of H (Controltype 8, loadCqtCapCucTheoDiaBanXa by the row's ward) and I (Controltype 9, by T) are
     // installed by frmWinToKhai.winFpSpread_EnterCell, which the vendor raises for a user's move into the cell, not for
@@ -151,13 +151,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
     // I with one real Right key from H, as a user does, before each pick. Bits 12/13: the H/I list held the expected
     // entry when the pick was attempted.
     if(CellText(annex,row,Annex16ColumnH)!=expected[0]){
-     EnterImportedAnnex16CellByKey(grid,annex,row,Annex16ColumnH);
+     TryEnterImportedAnnex16CellByKey(grid,annex,row,Annex16ColumnH);
      if(Annex16ComboHasEntry(annex,row,Annex16ColumnH,expected[0]))annex16HeadOfficeFailureMask|=4096;
      try{SelectImportedAnnex16Combo(grid,annex,row,Annex16ColumnH,expected[0]);}catch{annex16HeadOfficeFailureMask|=512;Record();throw;}
      annex16HeadOfficeRepairCount++;Record();
     }
     // The original handlers may act when the user leaves a cell (01-2 runs 42206910531/42206915586): move to I first.
-    EnterImportedAnnex16CellByKey(grid,annex,row,Annex16ColumnI);
+    TryEnterImportedAnnex16CellByKey(grid,annex,row,Annex16ColumnI);
     if(CellText(annex,row,Annex16ColumnI)!=expected[1]){
      if(Annex16ComboHasEntry(annex,row,Annex16ColumnI,expected[1]))annex16HeadOfficeFailureMask|=8192;
      annex16HeadOfficeFailureMask|=2048;
@@ -170,7 +170,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(unmet!=0){annex16HeadOfficeFailureMask|=unmet;Record();throw new InvalidOperationException();}
    }
    if(annex16HeadOfficeRepairCount<1||annex16HeadOfficeRepairCount>2*rows.Count)throw new InvalidOperationException();
-   annex16HeadOfficeFailureMask&=2048|32|4096|8192;annex16HeadOfficeRestored=true;Record();
+   annex16HeadOfficeFailureMask&=2048|32|4096|8192|Annex16DiagnosticBits;annex16HeadOfficeRestored=true;Record();
   }finally{annex12NonzeroBusy=false;if(!finished)exportWatcher.Start();}
  }
  private int ImportedAnnex16HeadOfficeUnmet(object annex,int row,string[] expected){
@@ -206,15 +206,40 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  // One real arrow key between H and I (not editing): the vendor raises EnterCell and the original handler rebuilds the
  // entered cell's list; nothing is typed or written.
+ // Runs 43698709808/43698711958 (both cases, mask 64): the first keyed entry (row 1, H) threw before any pick, at a check
+ // the mask could not name. Bits 14-17 now name the first failed step of a keyed entry (1 move to the start cell, 2 an
+ // editor already open or the cell locked, 3 focus/foreground, 4 active row after the key, 5 active column after the key,
+ // 6 text changed by the key, 7 an original message, 8 another sheet active), bit 18/19 the H/I keyed entry fell back to
+ // the earlier direct pick (row 1 of runs 43683942253/43683944987 picked H and I that way), bit 20 an open editor was closed
+ // unchanged before the fallback.
+ private const int Annex16DiagnosticBits=(15<<14)|(1<<18)|(1<<19)|(1<<20);
+ private int annex16KeyStep=0;
+ private void TryEnterImportedAnnex16CellByKey(Control grid,object annex,int row,int column){
+  try{EnterImportedAnnex16CellByKey(grid,annex,row,column);}
+  catch(InvalidOperationException){
+   if((annex16HeadOfficeFailureMask&(15<<14))==0)annex16HeadOfficeFailureMask|=(annex16KeyStep&15)<<14;
+   annex16HeadOfficeFailureMask|=column==Annex16ColumnH?(1<<18):(1<<19);
+   Control editor=Get(grid,"EditingControl") as Control;
+   if(editor!=null){string before=CellText(annex,row,column);grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();if(CellText(annex,row,column)!=before)throw;annex16HeadOfficeFailureMask|=1<<20;}
+   if(OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw;
+   Record();
+  }
+ }
  private void EnterImportedAnnex16CellByKey(Control grid,object annex,int row,int column){
   int from=column==Annex16ColumnH?Annex16ColumnI:Annex16ColumnH;if(column!=Annex16ColumnH&&column!=Annex16ColumnI)throw new InvalidOperationException();
+  annex16KeyStep=1;
   if(from==Annex16ColumnI)MoveImportedAnnex16Cell(grid,annex,row,Annex16ColumnI);
   else if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=Annex16ColumnH)MoveImportedAnnex16Cell(grid,annex,row,Annex16ColumnH);
   Form owner=grid.FindForm();uint pid;
-  if(owner==null||owner!=roundtripOwner||Get(grid,"EditingControl")!=null||Annex12CellLocked(annex,row,column))throw new InvalidOperationException();
-  grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)System.Diagnostics.Process.GetCurrentProcess().Id||!grid.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();
+  annex16KeyStep=2;if(owner==null||owner!=roundtripOwner||Get(grid,"EditingControl")!=null||Annex12CellLocked(annex,row,column))throw new InvalidOperationException();
+  annex16KeyStep=3;grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)System.Diagnostics.Process.GetCurrentProcess().Id||!grid.ContainsFocus||OriginalMessageVisible())throw new InvalidOperationException();
   string before=CellText(annex,row,column);SendKeys.SendWait(column==Annex16ColumnH?"{LEFT}":"{RIGHT}");Application.DoEvents();grid.Focus();
-  if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row||Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=column||CellText(annex,row,column)!=before||OriginalMessageVisible()||Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
+  annex16KeyStep=4;if(Convert.ToInt32(Get(annex,"ActiveRowIndex"))!=row)throw new InvalidOperationException();
+  annex16KeyStep=5;if(Convert.ToInt32(Get(annex,"ActiveColumnIndex"))!=column)throw new InvalidOperationException();
+  annex16KeyStep=6;if(CellText(annex,row,column)!=before)throw new InvalidOperationException();
+  annex16KeyStep=7;if(OriginalMessageVisible())throw new InvalidOperationException();
+  annex16KeyStep=8;if(Get(grid,"ActiveSheet")!=annex)throw new InvalidOperationException();
+  annex16KeyStep=0;
  }
  // Read-only: whether the cell's original combo type lists the entry once.
  private bool Annex16ComboHasEntry(object annex,int row,int column,string value){

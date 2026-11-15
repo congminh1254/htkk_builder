@@ -98,7 +98,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex10NegativeDisplayMask'] -cne 0){throw 'invalid'}
   if(($value['annex16HeadOfficeRepairCount'] -isnot [int] -and $value['annex16HeadOfficeRepairCount'] -isnot [long]) -or $value['annex16HeadOfficeRepairCount'] -lt 0 -or $value['annex16HeadOfficeRepairCount'] -gt 64){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex16HeadOfficeRepairCount'] -cne 0){throw 'invalid'}
-  if(($value['annex16HeadOfficeFailureMask'] -isnot [int] -and $value['annex16HeadOfficeFailureMask'] -isnot [long]) -or $value['annex16HeadOfficeFailureMask'] -lt 0 -or $value['annex16HeadOfficeFailureMask'] -gt 16383){throw 'invalid'}
+  if(($value['annex16HeadOfficeFailureMask'] -isnot [int] -and $value['annex16HeadOfficeFailureMask'] -isnot [long]) -or $value['annex16HeadOfficeFailureMask'] -lt 0 -or $value['annex16HeadOfficeFailureMask'] -gt 2097151){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-web-import-inspect')) -and $value['annex16HeadOfficeFailureMask'] -cne 0){throw 'invalid'}
   if($value['annex12InputReadOnlyIdentityMatched'] -isnot [bool]){throw 'invalid'}
   if(($ExpectedMode -cnotin @('gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-web-import-inspect')) -and $value['annex12InputReadOnlyIdentityMatched'] -cne $false){throw 'invalid'}

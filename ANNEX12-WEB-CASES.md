@@ -58,6 +58,11 @@ dòng II.2, bit 1 Value = −400002, bit 2 Value = 0 (bị chặn MinValue), bit
   `winFpSpread_EnterCell`, mà `SetActiveCell` không phát sự kiện này (như R của 01-2, release 216): dòng 2 còn danh sách Hà Nội.
   Driver nay vào H bằng một phím Left thật từ I và vào I bằng một phím Right thật từ H trước mỗi lần chọn; mặt nạ thêm bit 12/13
   (danh sách H/I có mục cần chọn), giới hạn 0..16383. Chưa có run mới.
+- Runs 43698709808 / 43698711958 (driver có phím mũi tên): `annex16HeadOfficeFailureMask` 64, `RepairCount` 0: dừng ở lần vào
+  H bằng phím đầu tiên (dòng 1), trước khi chọn, ở một kiểm tra mặt nạ chưa gọi tên được. Driver nay ghi bước hỏng đầu tiên
+  (bit 14–17: 1 di chuyển tới ô xuất phát, 2 editor đang mở hoặc ô khóa, 3 focus, 4 dòng hiện hành sau phím, 5 cột hiện hành
+  sau phím, 6 chữ trong ô đổi, 7 thông báo gốc, 8 sheet khác), rồi quay về cách chọn trực tiếp đã chạy được ở dòng 1 của run
+  trước (bit 18/19: H/I phải quay về; bit 20: đóng editor đang mở mà không đổi giá trị). Giới hạn 0..2097151. Chưa có run mới.
 - So cả cây với tệp web: **131 lá thuế** (74 lá tờ khai chính + 61 lá phụ lục − 4 lá dịch vụ); re-export được khác baseline.
 
 ## Allowlist privacy/số tiền

@@ -1128,7 +1128,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.Annex16HeadOfficeRepairCount:
     return 64;
    case HtkkNativeResultCounter.Annex16HeadOfficeFailureMask:
-    return 16383;
+    return 2097151;
    case HtkkNativeResultCounter.Annex12InputActionCount:
     return 14;
    case HtkkNativeResultCounter.AmendmentPriorFileBytes:
