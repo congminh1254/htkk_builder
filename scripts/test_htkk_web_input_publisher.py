@@ -9,7 +9,7 @@ spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk
 f.ntnn_fx.pin(p.reader.ntnn)
 SHA='a'*40
 # One distinct fake orphan commit per registered case (21 = 15 GTGT + 6 declaration).
-COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','3','4','5','6','9','a','b','c','d','b','c','e','1','2','4','6','d','7','8','9','a','b','c','d','e')
+COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','3','4','5','6','9','a','b','c','d','b','c','e','1','2','4','6','d','7','8','9','a','b','c','d','e','7','8','9','a')
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
 ANNEX10_PRODUCER=b'// Fixed synthetic 01-10 annex test producer, never executed.\n'
@@ -19,8 +19,9 @@ KHBS_PRODUCER=b'// Fixed synthetic KHBS test producer, never executed.\n'
 NTNN_KHBS_PRODUCER=b'// Fixed synthetic 01/NTNN KHBS test producer, never executed.\n'
 KK05_KHBS_PRODUCER=b'// Fixed synthetic 05/KK-TNCN KHBS test producer, never executed.\n'
 CNKD_KHBS_PRODUCER=b'// Fixed synthetic 01/CNKD KHBS test producer, never executed.\n'
+QTT02_KHBS_PRODUCER=b'// Fixed synthetic 02/QTT-TNCN KHBS test producer, never executed.\n'
 DECLARATION_PRODUCER=f.dfx.PRODUCER
-PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-web-annex10-reference.mjs':ANNEX10_PRODUCER,'scripts/generate-htkk-web-annex16-cssx-reference.mjs':ANNEX16_PRODUCER,'scripts/generate-htkk-web-annex16-dvvt-reference.mjs':ANNEX16_DVVT_PRODUCER,'scripts/generate-htkk-web-khbs-reference.mjs':KHBS_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER,'scripts/generate-htkk-web-ntnn-khbs-reference.mjs':NTNN_KHBS_PRODUCER,'scripts/generate-htkk-web-kk05-khbs-reference.mjs':KK05_KHBS_PRODUCER,'scripts/generate-htkk-web-cnkd-khbs-reference.mjs':CNKD_KHBS_PRODUCER}
+PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-web-annex10-reference.mjs':ANNEX10_PRODUCER,'scripts/generate-htkk-web-annex16-cssx-reference.mjs':ANNEX16_PRODUCER,'scripts/generate-htkk-web-annex16-dvvt-reference.mjs':ANNEX16_DVVT_PRODUCER,'scripts/generate-htkk-web-khbs-reference.mjs':KHBS_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER,'scripts/generate-htkk-web-ntnn-khbs-reference.mjs':NTNN_KHBS_PRODUCER,'scripts/generate-htkk-web-kk05-khbs-reference.mjs':KK05_KHBS_PRODUCER,'scripts/generate-htkk-web-cnkd-khbs-reference.mjs':CNKD_KHBS_PRODUCER,'scripts/generate-htkk-web-qtt02-khbs-reference.mjs':QTT02_KHBS_PRODUCER}
 
 def fixtures():
  result=[]
@@ -57,6 +58,7 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/contents/scripts/generate-htkk-web-ntnn-khbs-reference.mjs?ref='+SHA:return contents(NTNN_KHBS_PRODUCER,'generate-htkk-web-ntnn-khbs-reference.mjs','scripts/generate-htkk-web-ntnn-khbs-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-kk05-khbs-reference.mjs?ref='+SHA:return contents(KK05_KHBS_PRODUCER,'generate-htkk-web-kk05-khbs-reference.mjs','scripts/generate-htkk-web-kk05-khbs-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-cnkd-khbs-reference.mjs?ref='+SHA:return contents(CNKD_KHBS_PRODUCER,'generate-htkk-web-cnkd-khbs-reference.mjs','scripts/generate-htkk-web-cnkd-khbs-reference.mjs')
+  if path=='/contents/scripts/generate-htkk-web-qtt02-khbs-reference.mjs?ref='+SHA:return contents(QTT02_KHBS_PRODUCER,'generate-htkk-web-qtt02-khbs-reference.mjs','scripts/generate-htkk-web-qtt02-khbs-reference.mjs')
   if path=='/contents/package.json?ref='+SHA:return contents(b'{"version":"0.9.2"}','package.json')
   if path=='/git/blobs':
    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}

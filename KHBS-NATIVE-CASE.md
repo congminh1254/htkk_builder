@@ -608,3 +608,32 @@ checkbox nor unlocked: the TMĐT table moves down with the rows of table_1 (thre
 cell is now found by scanning column AJ below the target for the first visible, unlocked, unticked CheckBoxCellType whose row has
 CE <= 0 and is not a planned cell (bit 512; `declarationTickRefreshRowOffset` = its row minus the target row). If none is found, or the
 target stays locked (bit 64 clear), PL 01 bổ sung stays with HTKK (web flag false, the app already refuses it).
+
+## 02/QTT-TNCN TT80 (B8 2.7.3): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (docs/KE-KHAI-BO-SUNG-02-QTT-TNCN.md, `lib/htkk-qtt02-khbs.ts`, hidden behind `KHBS_02QTT_RELEASED=false`) read the KHBS of
+B8 statically from HTKK 5.8.2: Menu.xml has `KieuKHBS="3"` (VersionKHBS 2.7.3, sheets 02, 02-1, 01-KHBS, 01-1-KHBS), so
+`btnTongHopKHBS` is shown for a bổ sung; B8 is in neither menu list of `WinFnProcess.WinLoadFromFile` /
+`WinDoWorkEvent.WinDoWorkGetExportSheetXML`, so the workbook is `KHBS_TT80_273.xls` (D1 formulas) and the fragments use
+`KHBS_01_TT80_xml.xml` / `KHBS_01_1_TT80_xml.xml`; schema `Validate/KHBS_02_QTT_TNCN_TT80_273.xsd` (b534fbed…7529). MapMCT: 29 static
+items [20]…[48]; `CollectionStatic01_1_KHBS` writes NopThua into CE, so ct7 is −ct06 for [34], [36], [40], [41], [43]; [45] has
+LoaiThue 2 (Muc_III); tiểu mục 1001. `GetHanNopToKhai` KieuKy Y over a whole year: the last day of the third month after the year
+(năm 2025 → 31/03/2026), so 227 late days to the fixed ngày lập 13/11/2026.
+
+`scripts/htkk_qtt02_khbs_web_cases.py` holds the pins (sizes and SHA-256, never the files) and per-case settings of four cases, merged
+into `htkk_ntnn_khbs_web_cases.py` (annexParts `PLuc_02_1_BK_QTT_TNCN` before the two fragments; `test_qtt02_khbs_web_cases.py`).
+Registered in `htkk-native-cases.json` (adapters `02-qtt-tncn-2.7.3-khbs`, `-khbs-lan2`; HTKK 5.8.2) with `releaseGate: false`.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `02QTT-khbs-increase-Y2025` ([21] 300tr → 330tr; [32] +3tr) | original, web | 272 |
+| `02QTT-khbs-lan2-Y2025` (lần 2 on the increase case, [21] 340tr) | original, prior (= the increase web file), web | 272 |
+| `02QTT-khbs-decrease-Y2025` ([34] 4tr → 5tr; ct7 −1tr) | original, web | 246 |
+| `02QTT-khbs-refund-Y2025` (hoàn qua chuyển khoản on both: [34] 20tr → 22tr, [46] 16,12tr; Muc_III +2tr) | original, web | 272 |
+
+Driver: the rounds of the other KHBS cases with the plan of `02QTT-dependants-Y2025` (menu 101 → 101_11 → B8, năm 2025, KieuKy 12,
+annex 02-1; `cmdImportXML_Click` adds every B8 annex), KHBS schema above, every round imported, "Tổng hợp KHBS" in each bổ sung
+round (no driver change). Năm 2025 only: the period dialog opens on Now.Year − 1, and HTKK refuses đến tháng 12/2026 before
+01/12/2026. What only these runs decide (web predictions in its golden): hạn nộp 31/03/2026 and 227 days; the sign of ct7 for the
+NopThua items; [45] in Muc_III with tongCong_9; negative ct3b; the [33] caption with its double space; whether the Bổ sung period
+dialog shows the B8 annex list (handled by `SelectReviewedVisibleAnnexList` as in the năm 2026 cases).
