@@ -2018,6 +2018,27 @@
         "annexes": ["01-1"],
         "amendmentOrder": 1
       }
+    },
+    {
+      "caseId": "05KK-khbs-increase-M03-2026",
+      "producerCase": "kk05-khbs-increase-m03-2026",
+      "adapterId": "05-kk-tncn-2.9.3-khbs",
+      "format": "htkk-web-kk05-khbs-increase-m03-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-kk05-khbs-increase-m03-2026-input",
+      "inputBranch": "declaration-web-reference-kk05-khbs-increase-m03-2026-input",
+      "outputBranch": "declaration-web-native-kk05-khbs-increase-m03-2026-output",
+      "statusContext": "htkk-native/kk05-khbs-increase-m03-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "L7",
+        "adapterVersion": "2.9.3",
+        "periodType": "month",
+        "periodValue": "03/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
     }
   ]
 }

@@ -172,7 +172,7 @@ def validate_xml(body, case_id, role):
         reject('IDENTITY')
     if (_leaf(root, tk + 'maTKhai'), _leaf(root, tk + 'pbanTKhaiXML')) != MENUS[spec['menuId']] or _leaf(root, tk + 'ngayLapTKhai') != FIXED_DATE:
         reject('IDENTITY')
-    if tuple(_leaf(root, tk + 'KyKKhaiThue/' + name) for name in ('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay')) != PERIODS[spec['menuId']]:
+    if tuple(_leaf(root, tk + 'KyKKhaiThue/' + name) for name in ('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay')) != period_of(spec):
         reject('IDENTITY')
     expected = ('C', '0') if role == 'original' else ('B', str(spec['soLan'] - (1 if role == 'prior' else 0)))
     if (_leaf(root, tk + 'loaiTKhai'), _leaf(root, tk + 'soLan')) != expected:
@@ -222,6 +222,12 @@ def input_texts(files):
     return frozenset(value for name in (ORIGINAL_NAME, PRIOR_NAME, WEB_NAME) if name in files for _, value in d.leaves(d._parse(files[name], True)))
 
 
+def period_of(spec):
+    """kieuKy, kyKKhai, kyKKhaiTuNgay, kyKKhaiDenNgay of a case's files: its own period when it has one (05/KK-TNCN kỳ tháng),
+    else its menu's."""
+    return spec.get('period') or PERIODS[spec['menuId']]
+
+
 def producer(case_id):
     """The reviewed htkk_web producer of a case."""
     return case(case_id)['producer']
@@ -258,7 +264,7 @@ def validate_native_output(body, case_id, today=None, service_version=None, file
     for name, expected in (('maTKhai', ma), ('pbanTKhaiXML', version), ('loaiTKhai', 'B'), ('soLan', str(spec['soLan']))):
         if d._one(items, d.TK + name) != expected:
             d.reject('IDENTITY', d._where(items, d.TK + name, d._one(items, d.TK + name)))
-    for name, expected in zip(('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay'), PERIODS[spec['menuId']]):
+    for name, expected in zip(('kieuKy', 'kyKKhai', 'kyKKhaiTuNgay', 'kyKKhaiDenNgay'), period_of(spec)):
         path = d.TK + 'KyKKhaiThue/' + name
         if d._one(items, path) != expected:
             d.reject('PERIOD', d._where(items, path, d._one(items, path)))
