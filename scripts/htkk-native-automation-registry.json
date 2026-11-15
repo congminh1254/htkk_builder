@@ -1968,6 +1968,7 @@
     "declarationTreeMismatch2",
     "declarationTreeMismatch3",
     "declarationTreeMismatch4",
+    "declarationTreeFirstTextShape",
     "declarationUiWaitMask",
     "declarationUiWaitSeconds",
     "declarationUiForegroundKind",
@@ -4122,6 +4123,16 @@
       "default": 0,
       "minimum": 0,
       "maximum": 6553599,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationTreeFirstTextShape": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16383,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

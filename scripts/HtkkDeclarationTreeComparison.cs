@@ -49,7 +49,11 @@ public static class HtkkDeclarationTreeComparison {
  // Codes[0..3]: the first four differing elements (one per element), each ordinal*100 + kind*10 + native-text class
  // (run 43144854648: one xsi:nil difference at the location mst_diaDiemKD and 3 text differences). Text class of the
  // NATIVE element: 0 not a leaf, 1 empty, 2 the synthetic profile MST, 3 equal to the web text, 4 other text. No value.
- public sealed class Diagnostics {public int AttributeMask,TextMismatches,FirstOrdinal,FirstKind,Ordinal,CodeCount;public int[] Codes=new int[4];}
+ // FirstTextShape: the first leaf whose text differs, value-free: min(native length,4095)*4, +1 when the native text is a
+ // proper prefix of the web text, +2 when the web text is a proper prefix of the native one (run 43686726527: 01/TTS [18]
+ // differed with every other leaf matched; a cut at the control MaxLength reads as length 50 + 1).
+ public sealed class Diagnostics {public int AttributeMask,TextMismatches,FirstOrdinal,FirstKind,Ordinal,CodeCount,FirstTextShape;public int[] Codes=new int[4];}
+ private static int TextShape(string web,string native){int shape=Math.Min(native.Length,4095)*4;if(native.Length<web.Length&&web.StartsWith(native,StringComparison.Ordinal))shape|=1;if(web.Length<native.Length&&native.StartsWith(web,StringComparison.Ordinal))shape|=2;return shape;}
  public const string SyntheticMst="9999999997";
  private static int TextClass(XmlElement a,XmlElement b){
   foreach(XmlNode child in b.ChildNodes)if(child is XmlElement)return 0;
@@ -89,7 +93,7 @@ public static class HtkkDeclarationTreeComparison {
    if(path.StartsWith(ServicePath,StringComparison.Ordinal)){string name=path.Substring(ServicePath.Length);if(name!="maDVu"&&name!="tenDVu"&&name!="pbanDVu"&&name!="ttinNhaCCapDVu"){mask|=StructureBit;Note(d,6,a,b);}return;}
    leaves++;
    if(Array.IndexOf(exportDatePaths,path)>=0){if(inputDate==null||outputDate==null||a.InnerText!=inputDate||b.InnerText!=outputDate){mask|=Section(path);Note(d,7,a,b);}return;}
-   if(path!=DatePath&&a.InnerText!=b.InnerText){mask|=Section(path);Note(d,5,a,b);if(d.TextMismatches<4096)d.TextMismatches++;}return;
+   if(path!=DatePath&&a.InnerText!=b.InnerText){mask|=Section(path);if(d!=null&&d.TextMismatches==0)d.FirstTextShape=TextShape(a.InnerText,b.InnerText);Note(d,5,a,b);if(d!=null&&d.TextMismatches<4096)d.TextMismatches++;}return;
   }
   if(mixedA||mixedB){mask|=StructureBit|Section(path);Note(d,4,a,b);return;}
   for(int index=0;index<x.Count;index++)Walk(x[index],y[index],path+"/"+x[index].LocalName,exportDatePaths,inputDate,outputDate,ref leaves,ref mask,d);

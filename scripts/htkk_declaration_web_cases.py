@@ -268,6 +268,9 @@ TEMPLATE_TT40 = '(Ban hành kèm theo Thông tư số 40/2021/TT-BTC ngày 01/6/
 TTS_CODE = '10129_9999999997000_'
 # 01/TTS row and hidden-header texts that every G7 case carries.
 # The control XML spells three of the hidden header defaults with combining marks (not NFC); kept exactly.
+# 01/TTS [18] (E190, text control MaxLength 50, exported as Cell.Text): address - ward - province kept within 50
+# characters (runs 43678758282, 43686726527: the full 74-character text differed from the original re-export).
+TTS_ORGANIZATION_ADDRESS = (ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội')[:50]
 TTS_TEXTS = ('Hợp đồng', 'Kỳ thanh toán', 'Kỳ thanh toán cuối cùng', 'Hợp đồng khai lần đầu', 'Phường Sơn Tây', 'H\xf4\u0323 chi\xea\u0301u', 'Gi\xe2\u0301y th\xf4ng ha\u0300nh', 'CMT biên giới', 'Gi\xe2\u0301y t\u01a1\u0300 kh\xe1c')
 TEMPLATE_TT89 = '(Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
@@ -434,9 +437,9 @@ CASES = {
                                                   ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, 'BEN THUE TAI SAN B - GIẢ LẬP', 'BEN THUE TAI SAN C - GIẢ LẬP', 'HD-TTS-GL-02', 'HD-TTS-GL-03', TTS_CODE + '01012025_01', TTS_CODE + '01072025_02', 'SO 2 DUONG GIA LAP', 'Cửa hàng', 'Trả tiền 1 lần cho cả hợp đồng']),
     # Tổ chức khai thay: [16]–[21] are the profile (LockUnlockTheoLoaiNopThue: name, MST, "địa chỉ - huyện - tỉnh").
     '01TTS-organization-two-individuals-Q3-2026': _case('tts01-organization-two-individuals-q3-2026', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 386, ['PLuc_02_BK_TTS'], WORKBOOK_SERVICE,
-                                                        ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'BEN THUE TAI SAN D - GIẢ LẬP', 'BEN THUE TAI SAN E - GIẢ LẬP', 'HD-TTS-GL-04', 'HD-TTS-GL-05', TTS_CODE + '01012026_01', TTS_CODE + '01072026_02', 'SO 4 DUONG GIA LAP', 'Văn phòng']),
+                                                        ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, TTS_ORGANIZATION_ADDRESS, 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'BEN THUE TAI SAN D - GIẢ LẬP', 'BEN THUE TAI SAN E - GIẢ LẬP', 'HD-TTS-GL-04', 'HD-TTS-GL-05', TTS_CODE + '01012026_01', TTS_CODE + '01072026_02', 'SO 4 DUONG GIA LAP', 'Văn phòng']),
     '01TTS-organization-monthly-M10-2026': _case('tts01-organization-monthly-m10-2026', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 216, ['PLuc_02_BK_TTS'], WORKBOOK_SERVICE,
-                                                 ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'BEN THUE TAI SAN F - GIẢ LẬP', 'HD-TTS-GL-06', TTS_CODE + '01102026_01', 'SO 6 DUONG GIA LAP', 'Để ở']),
+                                                 ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, TTS_ORGANIZATION_ADDRESS, 'CA NHAN CHO THUE A - GIẢ LẬP', 'BEN THUE TAI SAN F - GIẢ LẬP', 'HD-TTS-GL-06', TTS_CODE + '01102026_01', 'SO 6 DUONG GIA LAP', 'Để ở']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases'] + workbook_design.PLAN_582['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
