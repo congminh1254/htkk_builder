@@ -1979,6 +1979,7 @@
     "declarationAnnexListLockedBefore",
     "declarationAnnexListTickedAfter",
     "declarationAnnexListActions",
+    "declarationPeriodShapeMask",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -3379,7 +3380,17 @@
         "01TTS-individual-one-contract-Y2025",
         "01TTS-individual-two-contracts-Y2025",
         "01TTS-organization-two-individuals-Q3-2026",
-        "01TTS-organization-monthly-M10-2026"
+        "01TTS-organization-monthly-M10-2026",
+        "01NTNN-khbs-grossup-lan1-M09-2026",
+        "01NTNN-khbs-lan2-M09-2026",
+        "01NTNN-khbs-decrease-M09-2026",
+        "01NTNN-NCCNN-khbs-part1-M10-2026",
+        "01NTNN-NCCNN-khbs-part2-M10-2026",
+        "05KK-khbs-increase-Q3-2026",
+        "05KK-khbs-lan2-Q3-2026",
+        "05KK-khbs-decrease-Q3-2026",
+        "05KK-TT89-khbs-increase-Q4-2026",
+        "05KK-PBT-khbs-Q3-2026"
       ]
     },
     "webCaseEditCount": {
@@ -4221,6 +4232,16 @@
       "default": 0,
       "minimum": 0,
       "maximum": 16,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationPeriodShapeMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 32767,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

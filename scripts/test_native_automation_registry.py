@@ -26,6 +26,19 @@ class NativeAutomationRegistrySyncTests(unittest.TestCase):
         cls.keys = cls.registry["keys"]
         cls.dynamic = cls.registry["dynamicStageMappings"]
 
+    def test_result_web_case_ids_cover_every_registered_case(self):
+        # Cohort cbff9e0: webCaseId lacked the ten declaration-amendment-khbs-inspect case ids, so the reader refused every
+        # result once the driver had verified its web input (guiReferenceResultReads: ~816 refused reads per run).
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("registry_cases_for_web_case_ids", ROOT / "htkk_native_cases.py")
+        cases = importlib.util.module_from_spec(spec); spec.loader.exec_module(cases)
+        values = self.registry["resultFields"]["webCaseId"]["values"]
+        self.assertEqual(len(values), len(set(values)))
+        self.assertEqual(set(cases.CASES) - set(values), set())
+        reader = (ROOT / "Get-HtkkSafeGuiReferenceResult.ps1").read_text(encoding="utf-8")
+        line = next(l for l in reader.splitlines() if l.startswith("  if($value['webCaseId'] -isnot [string]"))
+        self.assertEqual(set(re.findall(r"'([^']+)'", line.split("-cnotin @(")[1].split(")")[0])), set(values))
+
     def test_probe_writes_the_profile_save_permit_for_exactly_the_permit_modes(self):
         # Release b352279: declaration-amendment-khbs-inspect (permit profile-save) was missing from this hand-written list, so
         # the driver waited at waiting-for-profile-save-permit until the probe limit (runs 43671647120-43671657019).
