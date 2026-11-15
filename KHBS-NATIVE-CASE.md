@@ -434,6 +434,15 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort c741595 (Y8 runs 43742154547, 43742157400): `declarationKhbsEntryLengths` high byte 0x33: attempt A ({HOME} + first
+character) and C (select all, first character doubled) both left another text, B was skipped. Read: {HOME} does not put the
+caret at the start of this editor, and a second typing keeps every key, so only the very first key typed into the freshly
+opened editor of a bổ sung round is lost. HTKK 5.8.2 itself does not drop it (static read: frmWinToKhai.winFpSpread_EditModeOn
+adds winFpSpread_KeyPress, which only turns Enter into Tab and checks date-type keys; WinDoWorkEvent.KeyPress finds no KeyPress
+on Ntnn01TT89Nckt309). Each bổ sung entry (text, number, date text) now first types one space by the value's own keyboard path
+and erases it with BACKSPACE; the editor must be empty again; the fallback is one select-all retype. High byte bits: 4 space
+lost, 8 space landed and erased, 16 not empty after, 1/2/3 the fallback outcome.
+
 Cohort 9d45beb (Y8 runs 43733503058, 43733506098): shape 23305 again, no 32768: {HOME} and the first character (SendKeys) did
 not take. The repair now makes up to three bounded keyboard attempts and records each outcome in the high byte of
 `declarationKhbsEntryLengths` (2 bits each: 1 took, 2 still without the first character, 3 other): A {HOME} + SendKeys,
@@ -574,3 +583,22 @@ stopped in its bổ sung round at the first giảm thuế tick (`declaration-imp
 16 = AJ291) after the four edits matched: `CnkdHkd01TT50Nckt310.lockUnLockA_TK` sets `AJ.Locked = !(CE > 0)` for every row, and runs
 only from `AutoBindData_0` and `ButtonClick_0`. The tick now records `declarationTickLockShape` (1 CE > 0, 2 U > 0, 4 L > 0, 8 ticked,
 16 bổ sung round, 128 recorded) so the next run says whether the lock follows a zero CE or a refresh that did not run after the import.
+
+PL 01 refresh (work/cnkd-khbs-4): the "Thêm phụ lục" route cannot re-run `lockUnLockA_TK`: `frmWinSelectPhuLuc.btnDongY_Click` calls
+`ProcessSheet` (hence `AutoBindData_<index>`) only for annex sheets newly ticked there, never `AutoBindData_0`. The other caller is
+`ButtonClick_0`, reached through `frmWinToKhai.winFpSpread_ButtonClicked` for a click on any button or checkbox cell of sheet 0; it
+runs `lockUnLockA_TK` first. So when a tick cell is locked in a bổ sung round with CE > 0 (lock shape bits 1 and 16), the driver
+makes ONE original SPACE on `AJ341`, the giảm thuế checkbox of the empty TMĐT row (`HtkkDeclarationCasePlans.KhbsTickRefresh`), only if
+it is an unlocked, unticked checkbox; `ButtonClick_0` then clears and locks it again (its CE is 0; not table_1, so no
+`daySangPLGiamThue`). The tick is retried once; `declarationTickRefreshMask` records each step (1 attempted, 2 checkbox, 4 unlocked,
+8 unticked, 16 SPACE sent, 32 refresh cell unticked afterwards, 64 target unlocked afterwards, 128 original message, 256 recorded).
+Cohort c741595 (HTKK 5.8.2): with the main-schema pin, `01CNKD-khbs-increase-Q3-2026` (run 43742193235),
+`01CNKD-khbs-decrease-Q3-2026` (43742195682) and `01CNKD-khbs-lan2-Q3-2026` (43742197893) matched the whole tree (271 leaves); htkk_web
+keeps the raw exports byte-identical (tests/fixtures/htkk-cnkd-khbs-native-reexport) and released U5 KHBS lần 1 and lần 2+. In those
+runs the Bổ sung period dialog showed its phụ lục list (annex list mask 0, the case's annex ticked like round 0), so the static
+reading of `UpdatePeriodByVerSion` (list hidden) did not hold; the 4096 branch never ran.
+`01CNKD-PL01-khbs-Q3-2026` (run 43742200645) stopped again at AJ291 with `declarationTickLockShape` 151 (CE, U, L > 0, unticked,
+bổ sung round): the lock is stale, set by `lockUnLockA_TK` when the sheet was bound before the import, and nothing re-runs it after
+the import. In HTKK it runs only from `AutoBindData_0` (`WinSpreadProcess.ProcessSheet`: sheet load, the "Đồng ý" of
+`frmWinSelectPhuLuc` behind btnThemPhuLuc, `frmWinToKhai.AddFullPLImportXML`) and `ButtonClick_0`. A candidate original route is the
+"Thêm phụ lục" dialog after the import (not tried; the case stays an observation case and the web keeps PL 01 bổ sung hidden).

@@ -141,6 +141,20 @@ class CnkdKhbsDriverWiring(unittest.TestCase):
         fields = __import__('json').loads((ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8'))
         self.assertIn('declarationTickLockShape', (ROOT / 'Get-HtkkSafeGuiReferenceResult.ps1').read_text(encoding='utf-8'))
 
+    def test_stale_tick_lock_gets_one_original_refresh(self):
+        entry = (ROOT / 'HtkkDeclarationOriginalEntry.cs').read_text(encoding='utf-8')
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        self.assertIn('internal static string KhbsTickRefresh(string caseId){return caseId=="01CNKD-PL01-khbs-Q3-2026"?"AJ341":null;}', plans)
+        tick = entry[entry.index('private void TickDeclarationImport('):entry.index('private bool InspectDeclarationTick(')]
+        self.assertIn('if(refresh!=null&&(shape&17)==17&&declarationTickRefreshMask==0){RefreshDeclarationTickLocks(grid,sheet,refresh,at);if(!finished)return;}', tick)
+        body = entry[entry.index('private void RefreshDeclarationTickLocks('):entry.index('private bool DeclarationTickPositive(')]
+        # Only the original SPACE on an unlocked, unticked checkbox; nothing assigned.
+        self.assertEqual(body.count('SendKeys.SendWait(" ")'), 1)
+        self.assertNotIn('Set(', body)
+        self.assertIn('if((mask&14)!=14||!RowVisible(sheet,at[0]))return;', body)
+        self.assertIn('declarationTickRefreshMask=0;', khbs[khbs.index('private void BeginDeclarationKhbsRound()'):])
+
     def test_probe_lists_and_step_mask(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text(encoding='utf-8')

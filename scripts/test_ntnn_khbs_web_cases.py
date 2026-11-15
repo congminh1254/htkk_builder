@@ -300,10 +300,16 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         repair = khbs[khbs.index('private bool DeclarationKhbsFirstKeyRepair('):]
         repair = repair[:repair.index('\n }\n')]
         self.assertIn('if(editor.Text==typed||typed.Length<2||editor.Text!=typed.Substring(1))return true;', repair)
-        self.assertIn('SendKeys.SendWait("{HOME}");', repair)
-        # Cohort 9d45beb (runs 43733503058, 43733506098): {HOME} + SendKeys did not take; three bounded attempts, outcomes recorded.
-        self.assertIn('outcomes|=outcome<<(2*attempt);declarationKhbsEntryLengths=(declarationKhbsEntryLengths&255)|(outcomes<<8);', repair)
-        self.assertIn('TypeDeclarationEntryUnicode(grid,editor,first+typed)', repair)
+        # Cohort c741595 (runs 43742154547, 43742157400): high byte 0x33, both attempts gave another text: {HOME} does not reach the
+        # start and a doubled first character is kept, so only the editor's very first key is lost. Each bổ sung entry now types
+        # a space and erases it first (same keyboard path), and the fallback is one select-all retype.
+        self.assertEqual(entry.count('DeclarationKhbsPrime('), 3)
+        self.assertNotIn('first+typed', repair)
+        prime = khbs[khbs.index('private bool DeclarationKhbsPrime('):]
+        prime = prime[:prime.index('\n }\n')]
+        self.assertIn('SendKeys.SendWait("{BACKSPACE}");', prime)
+        for forbidden in ('PerformClick', '.Text=t', '.Text= ', 'SetValue', '"{HOME}"'):
+            self.assertNotIn(forbidden, prime)
         for forbidden in ('PerformClick', '.Text=t', '.Text= ', 'SetValue'):
             self.assertNotIn(forbidden, repair)
         self.assertEqual(registry['resultFields']['declarationKhbsEntryLengths']['maximum'], 65535)

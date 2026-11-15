@@ -31,8 +31,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // cell's previous text, 128 editor empty after, 256 editor kept focus, 512 the foreground window is this process, 1024 the
  // editor is a TextBoxBase, 2048 recorded, 4096 the editor holds the planned text without its first character, 8192 without
  // its last, 16384 the first character was typed again (DeclarationKhbsFirstKeyRepair), 32768 the editor then held the
- // planned text; declarationKhbsEntryLengths = 256 × length before (≤ 255) + length after (≤ 255), its high byte then replaced
- // by the repair outcomes (DeclarationKhbsFirstKeyRepair). Run 43705699385 (part1): 2825, lengths 30 for a 31-character text.
+ // planned text. declarationKhbsEntryLengths: low byte = length after the first typing (≤ 255); high byte = the priming
+ // bits (DeclarationKhbsPrime) and the repair outcome (DeclarationKhbsFirstKeyRepair); up to c741595 the high byte held the
+ // length before (0 in every Y8 run) and then the three attempt outcomes. Run 43705699385 (part1): 2825, 30 of 31 characters.
  private int declarationKhbsEntryShape=0,declarationKhbsEntryLengths=0;
  private bool declarationKhbsPromptAnswered=false;
  private string webOriginalPath="",webOriginalSha256="",webPriorFilePath="",webPriorFileSha256="";
@@ -158,28 +159,37 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 23305 = first character missing, and a select-all retype dropped it again). When the editor holds the typed text without
  // its first character, the caret goes to the start ({HOME}) and that one character is typed there, by the same keyboard path;
  // the editor must then hold exactly the typed text. Returns false only after a failure was already recorded.
+ // Runs 43742154547/43742157400: the high byte 0x33 showed {HOME} + the first character produced another text (the caret does
+ // not go to the start of this editor) and a select-all retype with the first character doubled kept both: only the FIRST
+ // key typed into the freshly opened editor of a bổ sung round is lost. So each bổ sung entry first types one space by the
+ // value's own keyboard path and erases it with BACKSPACE (if the space was the lost key, BACKSPACE meets an empty editor); the
+ // editor must be empty again before the value is typed. High byte of declarationKhbsEntryLengths: 4 the space was lost,
+ // 8 the space landed and was erased, 16 the editor was not empty after (the entry then fails with code 12 as before).
+ private bool DeclarationKhbsPrime(Control grid,Control editor,bool unicode){
+  DeclarationKhbsSettle();
+  if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return false;}
+  string start=editor.Text??String.Empty;
+  if(unicode){if(!TypeDeclarationEntryUnicode(grid,editor," ")){DeclarationEntryFail(10);return false;}}else SendKeys.SendWait(" ");
+  Stopwatch clock=Stopwatch.StartNew();while(editor.Text==start&&clock.Elapsed.TotalSeconds<0.5){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+  int bit=editor.Text==start?4:8;
+  if(bit==8){SendKeys.SendWait("{BACKSPACE}");clock=Stopwatch.StartNew();while(editor.Text!=start&&clock.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}}
+  if(editor.Text!=start)bit|=16;
+  declarationKhbsEntryLengths|=bit<<8;DeclarationKhbsSettle();
+  return true;
+ }
+ // Fallback when the value still lacks its first character: select the editor's text with the keyboard and type the value
+ // once more (high byte bits 1 took, 2 still without the first character, 3 other).
  private bool DeclarationKhbsFirstKeyRepair(Control grid,Control editor,string typed,string before,string opened){
   Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
   if(editor.Text==typed||typed.Length<2||editor.Text!=typed.Substring(1))return true;
   ObserveDeclarationKhbsEntry(before,opened,editor,typed);declarationKhbsEntryShape|=16384;
-  // Run 43733503058/43733506098: {HOME} + the first character by SendKeys did not take either. Up to three bounded keyboard
-  // attempts, stopping at the first that leaves exactly the typed text; each outcome is recorded in the high byte of
-  // declarationKhbsEntryLengths (2 bits per attempt: 1 took, 2 still without the first character, 3 other text):
-  // A {HOME} + the first character by SendKeys; B {HOME} + the first character as KEYEVENTF_UNICODE input;
-  // C select the editor's text with the keyboard and type the first character twice, then the rest (a dropped first key
-  // leaves exactly the typed text).
-  string first=typed.Substring(0,1);int outcomes=0;
-  for(int attempt=0;attempt<3;attempt++){
-   if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return false;}
-   if(attempt<2){SendKeys.SendWait("{HOME}");DeclarationKhbsSettle();
-    if(attempt==0&&DeclarationEntryAscii(first))SendKeys.SendWait(EscapeSendKeys(first));else if(!TypeDeclarationEntryUnicode(grid,editor,first)){DeclarationEntryFail(10);return false;}}
-   else{SendKeys.SendWait("^a");SendKeys.SendWait("{END}+{HOME}");DeclarationKhbsSettle();if(!TypeDeclarationEntryUnicode(grid,editor,first+typed)){DeclarationEntryFail(10);return false;}}
-   clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-   int outcome=String.Equals(editor.Text,typed,StringComparison.Ordinal)?1:editor.Text==typed.Substring(1)?2:3;
-   outcomes|=outcome<<(2*attempt);declarationKhbsEntryLengths=(declarationKhbsEntryLengths&255)|(outcomes<<8);
-   if(outcome==1){declarationKhbsEntryShape|=32768;return true;}
-   if(outcome==3&&attempt==0)attempt=1;
-  }
+  if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return false;}
+  SendKeys.SendWait("^a");SendKeys.SendWait("{END}+{HOME}");DeclarationKhbsSettle();
+  if(DeclarationEntryAscii(typed))SendKeys.SendWait(EscapeSendKeys(typed));else if(!TypeDeclarationEntryUnicode(grid,editor,typed)){DeclarationEntryFail(10);return false;}
+  clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+  int outcome=String.Equals(editor.Text,typed,StringComparison.Ordinal)?1:editor.Text==typed.Substring(1)?2:3;
+  declarationKhbsEntryLengths=(declarationKhbsEntryLengths&~(3<<8))|(outcome<<8);
+  if(outcome==1)declarationKhbsEntryShape|=32768;
   return true;
  }
  private static void DeclarationKhbsSettle(){for(int turn=0;turn<5;turn++){Application.DoEvents();System.Threading.Thread.Sleep(20);}}
@@ -190,7 +200,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(after==value)shape|=16;if(after.EndsWith(value,StringComparison.Ordinal))shape|=32;if(before.Length>0&&after.StartsWith(before,StringComparison.Ordinal))shape|=64;
   if(after.Length==0)shape|=128;if(editor.ContainsFocus)shape|=256;int kind=NativeForegroundKind();if(kind!=7&&kind!=8)shape|=512;if(editor is TextBoxBase)shape|=1024;
   if(value.Length>1&&after==value.Substring(1))shape|=4096;if(value.Length>1&&after==value.Substring(0,value.Length-1))shape|=8192;
-  declarationKhbsEntryShape=shape;declarationKhbsEntryLengths=Math.Min(255,before.Length)*256+Math.Min(255,after.Length);
+  declarationKhbsEntryShape=shape;declarationKhbsEntryLengths=(declarationKhbsEntryLengths&0xFF00)|Math.Min(255,after.Length);
  }
  // The saved round is closed: the original menu, period dialog (Bổ sung) and sheet steps run again for the next round.
  private void BeginDeclarationKhbsRound(){
@@ -202,7 +212,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   declarationEntryActionCount=0;declarationEntryComboCount=0;declarationEntryMismatchMask=0;declarationEntryLockedMask=0;declarationEntryCellTypeMismatchMask=0;declarationEntryRowInsertCount=0;
   // A 05-1/PBT round (KhbsImportTick) chooses its Thuế tỉnh/CCT again after each import: the tick state starts afresh.
   declarationTickClock=null;declarationTickMethodPinsMatched=false;declarationTickEditsMatched=false;declarationTickTicksMatched=false;declarationTickReadbackMatched=false;
-  declarationTickPlannedCount=0;declarationTickActionCount=0;declarationTickMethodPinMask=0;declarationTickReadbackMask=0;declarationTickComboMask=0;declarationTickComboListCount=0;declarationTickEntryMask=0;declarationTickEntryStartOffset=0;declarationTickEntryKeyOffset=0;declarationTickLockShape=0;
+  declarationTickPlannedCount=0;declarationTickActionCount=0;declarationTickMethodPinMask=0;declarationTickReadbackMask=0;declarationTickComboMask=0;declarationTickComboListCount=0;declarationTickEntryMask=0;declarationTickEntryStartOffset=0;declarationTickEntryKeyOffset=0;declarationTickLockShape=0;declarationTickRefreshMask=0;
   declarationFlowStarted=false;declarationPhase="not-started";navigationPhase="decl-main-menu-again";menuStep=0;
   SetStage(HtkkAutomationStage.DeclarationKhbsReopening);Record();
  }

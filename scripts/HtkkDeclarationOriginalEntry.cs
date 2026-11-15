@@ -229,14 +229,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="text"){
    // Bổ sung round: let the just-opened editor settle before the first key (runs 43705699385/43705701482: one character of
    // the planned text was missing, cell empty, editor focused, own foreground).
-   if(khbsRound)DeclarationKhbsSettle();
+   if(khbsRound&&!DeclarationKhbsPrime(grid,editor,!DeclarationEntryAscii(value)))return;
    if(DeclarationEntryAscii(value))SendKeys.SendWait(EscapeSendKeys(value));else if(!TypeDeclarationEntryUnicode(grid,editor,value)){DeclarationEntryFail(10);return;}
    Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=value&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
    if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;
    if(editor.Text!=value){ObserveDeclarationKhbsEntry(khbsBefore,khbsOpened,editor,value);declarationEntryMismatchMask|=1<<index;DeclarationEntryFail(12);return;}
-  }else if(kind=="number"){if(khbsRound)DeclarationKhbsSettle();SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
+  }else if(kind=="number"){if(khbsRound&&!DeclarationKhbsPrime(grid,editor,false))return;SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
   else if(dateMask)SendKeys.SendWait(DateTime.ParseExact(value,"dd/MM/yyyy",CultureInfo.InvariantCulture).ToString("ddMMyyyy",CultureInfo.InvariantCulture));
-  else{if(khbsRound)DeclarationKhbsSettle();SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
+  else{if(khbsRound&&!DeclarationKhbsPrime(grid,editor,false))return;SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
   if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return;}
   SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
   if(OriginalMessageVisible()){DeclarationEntryFail(17);return;}
@@ -379,7 +379,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -409,6 +409,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 4 L ([11]) > 0, 8 the cell is ticked, 16 a bổ sung round (KHBS mode, round > 0), 128 recorded. CnkdHkd01TT50Nckt310.lockUnLockA_TK
  // sets AJ.Locked = !(CE > 0) for every row (AutoBindData_0, ButtonClick_0); 01CNKD-PL01-khbs-Q3-2026 run 43733544586 stopped there
  // in its bổ sung round (mismatch 16 = AJ291).
+ // declarationTickRefreshMask (value-free; 01/CNKD PL 01 bổ sung, HtkkDeclarationCasePlans.KhbsTickRefresh): a tick cell found locked
+ // in a bổ sung round although its CE > 0 (stale lock of lockUnLockA_TK) gets ONE refresh: the original SPACE on the planned
+ // refresh checkbox (AJ of the empty TMĐT row). frmWinToKhai.winFpSpread_ButtonClicked -> WinDoWorkEvent.ButtonClick ->
+ // CnkdHkd01TT50Nckt310.ButtonClick_0 runs lockUnLockA_TK first (AJ.Locked = !(CE > 0) for the rows of table_1), then clears and
+ // locks the clicked AJ because its CE is 0; that row is not in table_1, so daySangPLGiamThue does not run for it. (The "Thêm phụ
+ // lục" route does not reach AutoBindData_0: frmWinSelectPhuLuc.btnDongY_Click only processes newly ticked annex sheets.)
+ // Bits: 1 attempted, 2 refresh cell is a CheckBoxCellType, 4 it was unlocked, 8 it was unticked, 16 SPACE sent, 32 refresh cell
+ // unticked again afterwards, 64 the target tick cell unlocked afterwards, 128 an original message appeared, 256 recorded.
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -416,10 +424,28 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
+ }
+ private void RefreshDeclarationTickLocks(Control grid,object sheet,string refresh,int[] target){
+  int mask=256|1;int[] at=DeclarationEntryCell(refresh);declarationTickRefreshMask=mask;Record();
+  if(at[0]>=Convert.ToInt32(Get(sheet,"RowCount"))||at[1]>=Convert.ToInt32(Get(sheet,"ColumnCount"))){DeclarationTickFail(6);return;}
+  object cell=Cell(sheet,at[0],at[1]);
+  if(DeclarationEntryCellKind(cell)=="FarPoint.Win.Spread.CellType.CheckBoxCellType")mask|=2;if(!Convert.ToBoolean(Get(cell,"Locked")))mask|=4;if(!Selected(Get(cell,"Value")))mask|=8;
+  declarationTickRefreshMask=mask;Record();
+  if((mask&14)!=14||!RowVisible(sheet,at[0]))return;
+  DeclarationEntrySelect(grid,sheet,at[0],at[1]);
+  if(!DeclarationEntryActive(sheet,at[0],at[1])||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  SendKeys.SendWait(" ");mask|=16;Stopwatch clock=Stopwatch.StartNew();
+  do{
+   if(OriginalMessageVisible()){mask|=128;declarationTickRefreshMask=mask;DeclarationTickFail(17);return;}
+   if(!Convert.ToBoolean(Get(Cell(sheet,target[0],target[1]),"Locked")))break;
+   Application.DoEvents();System.Threading.Thread.Sleep(10);
+  }while(clock.Elapsed.TotalSeconds<3);
+  if(!Selected(Get(Cell(sheet,at[0],at[1]),"Value")))mask|=32;if(!Convert.ToBoolean(Get(Cell(sheet,target[0],target[1]),"Locked")))mask|=64;
+  declarationTickRefreshMask=mask;Record();
  }
  private bool DeclarationTickPositive(object sheet,string a1){int[] at=DeclarationEntryCell(a1);double value;return Double.TryParse(Convert.ToString(Get(Cell(sheet,at[0],at[1]),"Value"),CultureInfo.InvariantCulture),NumberStyles.Float,CultureInfo.InvariantCulture,out value)&&value>0;}
  private void DeclarationTickFail(int code){if(declarationTickFailureCode==0)declarationTickFailureCode=code;DeclarationTerminal(HtkkAutomationStage.DeclarationImportTickNotMatched);}
@@ -616,6 +642,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
    int shape=128;string row=(at[0]+1).ToString(CultureInfo.InvariantCulture);
    if(DeclarationTickPositive(sheet,"CE"+row))shape|=1;if(DeclarationTickPositive(sheet,"U"+row))shape|=2;if(DeclarationTickPositive(sheet,"L"+row))shape|=4;if(Selected(Get(cell,"Value")))shape|=8;if(DeclarationKhbsMode()&&declarationKhbsRound>0)shape|=16;
    declarationTickLockShape=shape;
+   // One original refresh of the stale locks (bổ sung round only, CE > 0, a reviewed refresh cell), then this tick is retried.
+   string refresh=HtkkDeclarationCasePlans.KhbsTickRefresh(declarationPlan.CaseId);
+   if(refresh!=null&&(shape&17)==17&&declarationTickRefreshMask==0){RefreshDeclarationTickLocks(grid,sheet,refresh,at);if(!finished)return;}
   }
   if(precondition!=0){declarationTickMismatchMask|=1<<action;DeclarationTickFail(precondition);return;}
   DeclarationEntrySelect(grid,sheet,at[0],at[1]);
