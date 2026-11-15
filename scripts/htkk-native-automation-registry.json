@@ -1961,6 +1961,7 @@
     "declarationTickEntryStartOffset",
     "declarationTickEntryKeyOffset",
     "declarationTickLockShape",
+    "declarationTickRefreshMask",
     "declarationTreeAttributeMask",
     "declarationTreeTextMismatchCount",
     "declarationTreeFirstMismatchOrdinal",
@@ -4067,6 +4068,16 @@
       "default": 0,
       "minimum": 0,
       "maximum": 255,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationTickRefreshMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 511,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

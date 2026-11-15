@@ -583,3 +583,12 @@ stopped in its bổ sung round at the first giảm thuế tick (`declaration-imp
 16 = AJ291) after the four edits matched: `CnkdHkd01TT50Nckt310.lockUnLockA_TK` sets `AJ.Locked = !(CE > 0)` for every row, and runs
 only from `AutoBindData_0` and `ButtonClick_0`. The tick now records `declarationTickLockShape` (1 CE > 0, 2 U > 0, 4 L > 0, 8 ticked,
 16 bổ sung round, 128 recorded) so the next run says whether the lock follows a zero CE or a refresh that did not run after the import.
+
+PL 01 refresh (work/cnkd-khbs-4): the "Thêm phụ lục" route cannot re-run `lockUnLockA_TK`: `frmWinSelectPhuLuc.btnDongY_Click` calls
+`ProcessSheet` (hence `AutoBindData_<index>`) only for annex sheets newly ticked there, never `AutoBindData_0`. The other caller is
+`ButtonClick_0`, reached through `frmWinToKhai.winFpSpread_ButtonClicked` for a click on any button or checkbox cell of sheet 0; it
+runs `lockUnLockA_TK` first. So when a tick cell is locked in a bổ sung round with CE > 0 (lock shape bits 1 and 16), the driver
+makes ONE original SPACE on `AJ341`, the giảm thuế checkbox of the empty TMĐT row (`HtkkDeclarationCasePlans.KhbsTickRefresh`), only if
+it is an unlocked, unticked checkbox; `ButtonClick_0` then clears and locks it again (its CE is 0; not table_1, so no
+`daySangPLGiamThue`). The tick is retried once; `declarationTickRefreshMask` records each step (1 attempted, 2 checkbox, 4 unlocked,
+8 unticked, 16 SPACE sent, 32 refresh cell unticked afterwards, 64 target unlocked afterwards, 128 original message, 256 recorded).
