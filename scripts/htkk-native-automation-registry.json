@@ -2796,7 +2796,8 @@
       "maximum": 3,
       "modeMaximums": {
         "gtgt-amendment-open-inspect": 6,
-        "gtgt-amendment-khbs-inspect": 9
+        "gtgt-amendment-khbs-inspect": 9,
+        "declaration-amendment-khbs-inspect": 9
       }
     },
     "periodControlCount": {
