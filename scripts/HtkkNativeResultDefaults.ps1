@@ -275,6 +275,7 @@ function New-HtkkNativeResultDefaults {
   declarationTickEntryMask=0
   declarationTickEntryStartOffset=0
   declarationTickEntryKeyOffset=0
+  declarationTickLockShape=0
   declarationTreeAttributeMask=0
   declarationTreeTextMismatchCount=0
   declarationTreeFirstMismatchOrdinal=0

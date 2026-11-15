@@ -112,7 +112,8 @@ class CnkdKhbsDriverWiring(unittest.TestCase):
         self.assertIn('internal static bool KhbsSummary(string caseId){return Array.IndexOf(KhbsCaseIds,caseId)>=0&&!caseId.StartsWith("01CNKD-",StringComparison.Ordinal);}', plans)
         body = plans[plans.index('private static HtkkDeclarationCasePlan CnkdKhbsPlan('):]
         body = body[:body.index('\n }\n')]
-        self.assertIn('"Validate/KHBS_01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff"', body)
+        self.assertIn('"Validate/01_CNKD_HKD_TT50_310.xsd","c55ba118b03c859ed20f6bcf2cadfde89c2450a9869b00a36e075af917f75aff"', body)
+        self.assertNotIn('KHBS_01_CNKD', body.split('return new')[1])
         self.assertIn('CnkdService,pl01?%d:%d,new string[0],new string[0]' % (m.tax_leaf_count(PL01) + 4, m.tax_leaf_count(CASES[0]) + 4), body)
         self.assertIn('pl01?new string[]{"PL 01 43/2026/QH16"}:new string[0]', body)
         self.assertIn('caseId=="01CNKD-PL01-khbs-Q3-2026"?ImportTick("01CNKD-TT50-310-pl01-three-groups-Q3-2026")', plans)
@@ -127,6 +128,18 @@ class CnkdKhbsDriverWiring(unittest.TestCase):
         self.assertIn('declarationKhbsStepMask|=2048', done)
         self.assertNotIn('PerformClick', done)
         self.assertIn('if(!grid.Visible&&DeclarationKhbsMode()&&declarationKhbsRound>0&&!HtkkDeclarationCasePlans.KhbsSummary(webCaseId)){declarationAnnexListMask|=4096;declarationAnnexMatched=true;Record();return;}', web)
+
+    def test_locked_tick_records_its_value_free_shape(self):
+        entry = (ROOT / 'HtkkDeclarationOriginalEntry.cs').read_text(encoding='utf-8')
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        body = entry[entry.index('private void TickDeclarationImport('):entry.index('private bool InspectDeclarationTick(')]
+        self.assertLess(body.index('if(precondition==7){'), body.index('if(precondition!=0){'))
+        for check in ('DeclarationTickPositive(sheet,"CE"+row)', 'DeclarationTickPositive(sheet,"U"+row)', 'DeclarationTickPositive(sheet,"L"+row)', 'declarationTickLockShape=shape;'):
+            self.assertIn(check, body)
+        self.assertNotIn('Set(', body[body.index('if(precondition==7){'):body.index('if(precondition!=0){')])
+        self.assertIn('declarationTickLockShape=0;', khbs[khbs.index('private void BeginDeclarationKhbsRound()'):])
+        fields = __import__('json').loads((ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8'))
+        self.assertIn('declarationTickLockShape', (ROOT / 'Get-HtkkSafeGuiReferenceResult.ps1').read_text(encoding='utf-8'))
 
     def test_probe_lists_and_step_mask(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
