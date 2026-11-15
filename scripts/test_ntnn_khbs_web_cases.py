@@ -30,7 +30,9 @@ def manifest(case_id, module=m):
 
 class NtnnKhbsWebCases(unittest.TestCase):
     def test_five_cases_with_exact_staged_names(self):
-        self.assertEqual(sorted(m.CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
+        # The 05/KK-TNCN cases are merged from htkk_kk05_khbs_web_cases.py (test_kk05_khbs_web_cases.py).
+        self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES))
+        self.assertEqual(sorted(m.NTNN_CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
                                                   '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026']))
         for case_id, c in m.CASES.items():
             self.assertEqual(m.names(case_id)[-2:], (m.WEB_NAME, m.MANIFEST_NAME))
@@ -60,7 +62,7 @@ class NtnnKhbsWebCases(unittest.TestCase):
             self.assertEqual(row['format'], m.manifest_fields(case_id)['format'])
             self.assertEqual(row['unit']['amendmentOrder'], m.CASES[case_id]['soLan'])
             self.assertEqual(adapters[row['adapterId']]['driver'], 'declaration-amendment-khbs-inspect')
-            self.assertEqual(adapters[row['adapterId']]['producer'], m.PRODUCER)
+            self.assertEqual(adapters[row['adapterId']]['producer'], m.producer(case_id))
 
     def test_pinned_files_validate_and_one_changed_byte_does_not(self):
         for case_id in sm.CASES:
@@ -177,11 +179,11 @@ class NtnnKhbsNativePublisher(unittest.TestCase):
         support.pin(cls.out.ntnn)
 
     def provenance(self, case_id, native, matched=True):
-        entry = sm.CASES[case_id]['menuId'] == 'Y8'
+        mode = sm.input_mode(case_id)
         return {'format': 'htkk-declaration-native-output-staging-v1', 'builderRepository': self.out.BUILDER, 'builderCommit': self.BUILDER, 'runId': '123', 'runAttempt': 1,
                 'sourceRepository': self.out.REPO, 'sourceCommit': self.SOURCE, 'sourceVersion': '5.8.2', 'runtimeHost': 'clr2-x86-reference', 'caseId': case_id, 'artifactCommit': self.ARTIFACT,
                 'inputsSynthetic': True, 'originalProcessStopped': True, 'originalSourcesUnmodified': True,
-                'inputMode': 'khbs-original-entry-export' if entry else 'khbs-web-xml-import-reexport', 'originalImportSucceeded': not entry, 'originalExportSucceeded': True, 'originalExporterValidatedSchema': True,
+                'inputMode': mode, 'originalImportSucceeded': mode != 'khbs-original-entry-export', 'originalExportSucceeded': True, 'originalExporterValidatedSchema': True,
                 'webImportInputSha256': sm.CASES[case_id]['web'][1], 'originalOutputSha256': __import__('hashlib').sha256(native).hexdigest(), 'originalOutputBytes': len(native),
                 'harnessSchemaValid': True, 'harnessTreeMatched': matched, 'harnessTreeMismatchMask': 0 if matched else 8, 'harnessTreeLeafCount': sm.tax_leaf_count(case_id), 'harnessXmlMismatchMask': 0, 'harnessCellMismatchMask': 0,
                 'creationDateRule': 'native-export-current-date', 'fullRoundTrip': False}
@@ -262,6 +264,18 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         self.assertIn("'declaration-khbs-step-rejected','declaration-khbs-timeout'", probe)
         self.assertIn("(inputs.gui_automation == 'declaration-web-import-inspect' || inputs.gui_automation == 'declaration-amendment-khbs-inspect') && inputs.web_artifact_commit != ''", workflow)
         self.assertIn("'declaration-web-import-inspect','declaration-amendment-khbs-inspect')){", host)
+
+    def test_profile_save_wait_is_observed_and_stale_results_are_counted(self):
+        # Cohort 1a6f600: the KHBS runs stopped at original-save-invoking / waiting-profile-close-ready with no later valid result.
+        automation = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
+        self.assertIn('  if(successAcknowledged||!saveInvoked)return;\n  ObserveDeclarationKhbsProfileSave();\n  ReadSavedHeader();', automation)
+        body = khbs[khbs.index('private void ObserveDeclarationKhbsProfileSave(){'):]
+        body = body[:body.index('\n }\n')]
+        self.assertIn('if(!DeclarationKhbsMode())return;', body)
+        self.assertNotIn('PerformClick', body)
+        self.assertIn('$report.guiReferenceResultReads=[ordered]@{invalidAfterValid=[int]$guiInvalidAfterValid;lastWriteAgeSeconds=$guiResultAge}', probe)
 
 
 if __name__ == '__main__':

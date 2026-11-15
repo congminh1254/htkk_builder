@@ -434,6 +434,49 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort 1a6f600 (runs 43676048794, 43676050610, 43676052218, 43676054472, 43676056452): permit written, the seven profile
+inputs typed and the original profile Ghi clicked; four cases then never showed a valid result past `original-save-invoking`
+(no success message, no HEADER.xml), part1 stopped after `waiting-profile-close-ready`, and none showed the driver's own 400 s
+timeout before the probe's 420 s. The logs cannot tell a stalled save from results the reader refused, so the next run reports
+`guiReferenceResultReads` (refused reads after a valid one, age of the last write) and, in this mode only, the profile-save
+wait every 2 s in `declarationUiWaitSeconds` / `declarationUiVisibleForms` / `declarationUiForegroundKind`.
+
 What only these runs decide (web predictions in its golden): the text of the row key `ct3_2_ten` (dates dd/MM/yyyy, rates "5"),
 `ct04`/`ct05` of amounts ("1.000.000"), ct3b 0 when Muc_I.1 has two rows (gross-up case: 24 late days), negative ct3b −7.200
 (decrease case) and 3.311 (lần 2), and the Y8 part II tiểu mục 1052.
+
+## 05/KK-TNCN (L7) and 05/KK-TNCN TT89 (Z8): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (docs/KE-KHAI-BO-SUNG-05-KK-TNCN.md, `lib/htkk-kk05-khbs.ts`, hidden behind `KHBS_05KK_*_RELEASED=false`) ports the
+KHBS of both menus statically from HTKK 5.8.2: KieuKHBS 3, and both menus are in the menu list of `WinFnProcess.WinLoadFromFile`
+and `WinDoWorkEvent.WinDoWorkGetExportSheetXML` that D1 is in, so the KHBS workbook is `KHBS_DIA_BAN_293.xls` / `_309.xls` (same
+formulas as D1, AA38 included) and 01/KHBS is written with `KHBS_01_DIA_BAN_xml.xml` (Muc_I.2 with ma_Xa/ten_Xa). The main-sheet
+items are static (`CollectionStatic01_1_KHBS`), tiểu mục 1001 for [29] (L7) / [42] (Z8); the 05-1/PBT-KK-TNCN items [10]…[14] are
+dynamic (key MST - xã - tỉnh - CQT) and [14] feeds Muc_I.2 (`CollectionDetailSoThuePhaiNopTungTinh_01_KHBS`). Schemas
+`KHBS_05_KK_TNCN_TT80_293.xsd` / `KHBS_05_KK_TNCN_TT89_309.xsd`.
+
+`scripts/htkk_kk05_khbs_web_cases.py` holds the pins (sizes and SHA-256 of every staged file, never the files) and per-case
+settings of five cases; `htkk_ntnn_khbs_web_cases.py` merges them, so fetch, publishers and the probe lists check them exactly like
+the 01/NTNN cases (`test_kk05_khbs_web_cases.py`). Registered in `htkk-native-cases.json` (adapters `05-kk-tncn-2.9.3-khbs`,
+`-khbs-lan2`, `-khbs-pbt`, `05-kk-tncn-tt89-3.0.9-khbs`; HTKK 5.8.2) with `releaseGate: false`.
+
+| Case | Menu | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- | --- |
+| `05KK-khbs-increase-Q3-2026` | L7 | original, web | 213 |
+| `05KK-khbs-lan2-Q3-2026` | L7 | original, prior (= the case above's web file), web | 161 |
+| `05KK-khbs-decrease-Q3-2026` | L7 | original, web | 161 |
+| `05KK-TT89-khbs-increase-Q4-2026` | Z8 | original, web | 174 |
+| `05KK-PBT-khbs-Q3-2026` | L7 + 05-1/PBT | original, web | 230 |
+
+Driver: the rounds of the 01/NTNN cases with the plans of `05KK-withheld-Q3-2026` / `05KK-TT89-withheld-Q4-2026` (menu 101 →
+101_11 → L7/Z8, quý 3/2026 or quý 4/2026), every round imported. The PBT case ticks 05-1/PBT-KK-TNCN in the period dialog and, after
+EACH import (C0 and bổ sung), chooses Thuế tỉnh/CCT and CQT quản lý again with the reviewed combo edits of
+`05KK-PBT-two-provinces-Q3-2026` (`HtkkDeclarationCasePlans.KhbsImportTick`; path_15 has no XML leaf, Header B37 would refuse Ghi
+and Kết xuất); the tick state is reset in `BeginDeclarationKhbsRound`. Probe: the success
+predicate of the 01/NTNN cases (limit 420 s, as for them), with the tick flags for `$HtkkNtnnKhbsTickCases`; raw export retained with inputMode
+`khbs-web-xml-import-reexport` or `khbs-web-xml-import-tick-reexport`.
+
+What only these runs decide (web predictions in its golden): hạn nộp quý 30/10/2026 (14 late days, ct3b 4.200 / −4.200 / 2.100)
+and Z8 quý 4/2026 30/01/2027 moved to 01/02/2027 (0 days, ct3a_1 still written); the 05-1/PBT hồ sơ group 000101 and its key text;
+Muc_I.2 with ct04 = Thuế tỉnh/CCT of the row (path_24, saved by HTKK in its Sections file) and ct3 = the unit's MST; tongCong_7
+adding the [14] row; ct3b kept with one Muc_I.2 row.

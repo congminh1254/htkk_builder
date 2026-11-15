@@ -358,7 +358,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Native-case mode original-entry-export: no original import, the fixed entry plan is typed instead.
   declarationEntryPlan=DeclarationKhbsMode()?HtkkDeclarationCasePlans.KhbsEntry(declarationPlan.CaseId,declarationKhbsRound):HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);
   // Native-case mode web-xml-import-tick-reexport: the original import, then the fixed original edits and ticks.
-  declarationTickPlan=DeclarationKhbsMode()?null:HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();
+  declarationTickPlan=DeclarationKhbsMode()?HtkkDeclarationCasePlans.KhbsImportTick(declarationPlan.CaseId):HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();
   declarationFlowStarted=true;exportStarted=true;roundtripOwner=forms[0];declarationPhase=declarationEntryPlan!=null?"entry-ready":"import-ready";SetStage(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationEntryReadyWaiting:HtkkAutomationStage.DeclarationImportReadyWaiting);Record();
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ContinueDeclarationFlow();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();
  }

@@ -70,7 +70,10 @@ def _tree(case_id, native=False, created=None):
                 _path(main, 'CTieuTKhaiChinh/' + path).text = value
         for name, value in values.items():
             if name not in owned:
-                _add(main, name, value)
+                if '/' in name:  # 'Group/leaf' (01/TTS CaNhanKeKhai/ctNN)
+                    _path(main, 'CTieuTKhaiChinh/' + name).text = value
+                else:
+                    _add(main, name, value)
         if case_id in d.NTNN_ROWS:  # 01/NTNN tables of the reviewed design (row id attribute as in the template)
             for row_path, parent_path, rows, totals in d.ntnn_tables(case_id):
                 parent = _path(root, 'HSoThueDTu/' + parent_path)
@@ -96,6 +99,13 @@ def _tree(case_id, native=False, created=None):
                             _add(row, leaf, value)
                     for leaf, value in totals.items():
                         _add(node, leaf, value)
+                continue
+            if case_id in d.TTS_ROWS:  # 01/TTS contract rows of the independent oracle (01-2 numbers the leaves later)
+                names = d.TTS_02_LEAVES if annex == 'PLuc_02_BK_TTS' else {}
+                for index, row in enumerate(d.tts_expected(case_id)[0]):
+                    node_ = _add(node, 'CTietBKeHDongTTS', attrib={'id': 'ID_%d' % (index + 1)})
+                    for leaf, value in row.items():
+                        _add(node_, names.get(leaf, leaf), value)
                 continue
             for key, count in rows.items():
                 parts = key.split('/')

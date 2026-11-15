@@ -3375,7 +3375,11 @@
         "05KK-TT89-PBT-two-provinces-Q4-2026",
         "02QTT-refund-transfer-Y2025",
         "02QTT-dependants-Y2026",
-        "02QTT-refund-transfer-Y2026"
+        "02QTT-refund-transfer-Y2026",
+        "01TTS-individual-one-contract-Y2025",
+        "01TTS-individual-two-contracts-Y2025",
+        "01TTS-organization-two-individuals-Q3-2026",
+        "01TTS-organization-monthly-M10-2026"
       ]
     },
     "webCaseEditCount": {

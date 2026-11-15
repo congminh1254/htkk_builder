@@ -9,9 +9,11 @@ text+='$HtkkDeclarationCases=@('+','.join("'"+id+"'" for id in r.DECLARATION_CAS
 text+='$HtkkDeclarationEntryCases=@('+','.join("'"+id+"'" for id in r.DECLARATION_ENTRY_CASES)+')\n'
 # Declaration cases of native-case mode web-xml-import-tick-reexport (original import, then fixed original edits/ticks).
 text+='$HtkkDeclarationTickCases=@('+','.join("'"+id+"'" for id in r.DECLARATION_TICK_CASES)+')\n'
-# Kê khai bổ sung 01/NTNN cases (mode declaration-amendment-khbs-inspect): own staged names (lần đầu, previous bổ sung, bổ sung).
+# Kê khai bổ sung 01/NTNN and 05/KK-TNCN cases (mode declaration-amendment-khbs-inspect): own staged names (lần đầu, previous bổ sung, bổ sung).
 text+='$HtkkNtnnKhbsCases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_CASES)+')\n'
 text+='$HtkkNtnnKhbsLan2Cases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_CASES if r.CASES[id]['unit']['amendmentOrder']==2)+')\n'
+# Those whose import is completed by fixed original grid edits (05/KK-TNCN 05-1/PBT: Thuế tỉnh/CCT has no XML leaf).
+text+='$HtkkNtnnKhbsTickCases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_TICK_CASES)+')\n'
 file=ROOT/'HtkkNativeCaseFormats.ps1';workflow=ROOT.parent/'.github/workflows/probe-htkk-windows.yml';body=workflow.read_text();updated=re.sub(r'(      web_case_id:\n.*?        options: )\[[^\n]*\]',lambda m:m[1]+'['+', '.join(r.CASES)+']',body,flags=re.S)
 if '--check'in sys.argv:
  if file.read_text()!=text or body!=updated:raise SystemExit('Native case metadata stale.')
