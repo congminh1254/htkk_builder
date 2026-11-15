@@ -30,7 +30,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // cell text when the editor opened, 16 editor = planned after typing, 32 editor ends with planned, 64 editor starts with the
  // cell's previous text, 128 editor empty after, 256 editor kept focus, 512 the foreground window is this process, 1024 the
  // editor is a TextBoxBase, 2048 recorded, 4096 the editor holds the planned text without its first character, 8192 without
- // its last, 16384 one bounded retype was made, 32768 the retype took; declarationKhbsEntryLengths = 256 × length before
+ // its last, 16384 the first character was typed again at the start, 32768 the editor then held the planned text; declarationKhbsEntryLengths = 256 × length before
  // (≤ 255) + length after (≤ 255). Run 43705699385 (part1): 2825, lengths 30 for a 31-character text (part2: 34 of 35).
  private int declarationKhbsEntryShape=0,declarationKhbsEntryLengths=0;
  private bool declarationKhbsPromptAnswered=false;
@@ -152,6 +152,22 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="date"||kind=="date-optional")return DeclarationEntryDate(cell,parts[2]);
   if(kind=="combo"){int[] code=DeclarationEntryCell(parts[5]);return CellText(sheet,row,column)==parts[4]&&CellText(sheet,code[0],code[1])==parts[6];}
   return false;
+ }
+ // In a bổ sung round HTKK's freshly opened editor drops the FIRST typed character (runs 43727202330/43727204841: shape
+ // 23305 = first character missing, and a select-all retype dropped it again). When the editor holds the typed text without
+ // its first character, the caret goes to the start ({HOME}) and that one character is typed there, by the same keyboard path;
+ // the editor must then hold exactly the typed text. Returns false only after a failure was already recorded.
+ private bool DeclarationKhbsFirstKeyRepair(Control grid,Control editor,string typed,string before,string opened){
+  Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+  if(editor.Text==typed||typed.Length<2||editor.Text!=typed.Substring(1))return true;
+  ObserveDeclarationKhbsEntry(before,opened,editor,typed);declarationKhbsEntryShape|=16384;
+  if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return false;}
+  SendKeys.SendWait("{HOME}");DeclarationKhbsSettle();
+  string first=typed.Substring(0,1);
+  if(DeclarationEntryAscii(first))SendKeys.SendWait(EscapeSendKeys(first));else if(!TypeDeclarationEntryUnicode(grid,editor,first)){DeclarationEntryFail(10);return false;}
+  clock=Stopwatch.StartNew();while(editor.Text!=typed&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+  if(String.Equals(editor.Text,typed,StringComparison.Ordinal))declarationKhbsEntryShape|=32768;
+  return true;
  }
  private static void DeclarationKhbsSettle(){for(int turn=0;turn<5;turn++){Application.DoEvents();System.Threading.Thread.Sleep(20);}}
  private void ObserveDeclarationKhbsEntry(string before,string opened,Control editor,string value){
