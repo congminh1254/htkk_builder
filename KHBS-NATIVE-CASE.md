@@ -608,3 +608,12 @@ checkbox nor unlocked: the TMĐT table moves down with the rows of table_1 (thre
 cell is now found by scanning column AJ below the target for the first visible, unlocked, unticked CheckBoxCellType whose row has
 CE <= 0 and is not a planned cell (bit 512; `declarationTickRefreshRowOffset` = its row minus the target row). If none is found, or the
 target stays locked (bit 64 clear), PL 01 bổ sung stays with HTKK (web flag false, the app already refuses it).
+
+Run 43765180283 (PL 01 with the scan, builder 876871a): `declarationTickRefreshMask` 257 = attempted and recorded only, row offset 0:
+no visible, unlocked, unticked giảm thuế checkbox with CE <= 0 below the target, so nothing was pressed; the target stayed locked
+(lock shape 151, code 7). Every AJ of table_1 carries the stale lock and the other tables' rows are locked by `lockUnLockA_TK` too (no
+TMĐT / LPS activity in the case header). The remaining checkboxes of sheet 0 are declaration data (header B_26…B_35, locked in a bổ sung
+by `AutoBindData_0`; trụ sở chính G_260), and pressing one would change the declaration. Conclusion: with the original import followed by
+original ticks, HTKK 5.8.2 gives no original action that re-runs `lockUnLockA_TK` for sheet 0 in a U5 bổ sung round, so this case
+cannot reach Kết xuất. `01CNKD-PL01-khbs-Q3-2026` stays registered as a non-gating observation case; htkk_web keeps
+`KHBS_01CNKD_PL01_RELEASED` false and refuses a 01/CNKD bổ sung with a phụ lục giảm thuế ("Trường hợp này lập bằng HTKK.").
