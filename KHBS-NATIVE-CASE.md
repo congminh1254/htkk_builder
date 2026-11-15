@@ -499,3 +499,13 @@ What only these runs decide (web predictions in its golden): hạn nộp quý 30
 and Z8 quý 4/2026 30/01/2027 moved to 01/02/2027 (0 days, ct3a_1 still written); the 05-1/PBT hồ sơ group 000101 and its key text;
 Muc_I.2 with ct04 = Thuế tỉnh/CCT of the row (path_24, saved by HTKK in its Sections file) and ct3 = the unit's MST; tongCong_7
 adding the [14] row; ct3b kept with one Muc_I.2 row.
+
+Cohort 1019e5f (HTKK 5.8.2): `05KK-khbs-increase-Q3-2026` (run 43686728548, 213 leaves), `05KK-khbs-decrease-Q3-2026` (run 43686732231,
+161) and `05KK-TT89-khbs-increase-Q4-2026` (run 43686734447, 174) matched the whole tree. `05KK-PBT-khbs-Q3-2026` (run 43686736338)
+got through every round, KhbsImportTick included, and differed only in leaves 141/142: HTKK writes Muc_I.2 `ct04_ma`/`ct04_ten`
+EMPTY (the web had put the row's Thuế tỉnh/CCT there). htkk_web now writes them empty (its raw export reproduces every leaf);
+the pinned web file of the PBT case changed accordingly (7460 bytes, f27e9cf3…b806; leaf target unchanged). `05KK-khbs-lan2-Q3-2026`
+(run 43686730343) stopped in round 2 at `declaration-menu-click` (step mask 767, menuClickCount 3, every later result refused, none
+missing): the reader caps `menuClickCount` at 3 for this mode while a third round clicks again, the shared lần-2 path of the
+01/NTNN lần-2 case.
+
