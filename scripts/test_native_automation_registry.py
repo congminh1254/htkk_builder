@@ -26,6 +26,16 @@ class NativeAutomationRegistrySyncTests(unittest.TestCase):
         cls.keys = cls.registry["keys"]
         cls.dynamic = cls.registry["dynamicStageMappings"]
 
+    def test_probe_writes_the_profile_save_permit_for_exactly_the_permit_modes(self):
+        # Release b352279: declaration-amendment-khbs-inspect (permit profile-save) was missing from this hand-written list, so
+        # the driver waited at waiting-for-profile-save-permit until the probe limit (runs 43671647120-43671657019).
+        probe = (ROOT / "probe-htkk-windows.ps1").read_text(encoding="utf-8")
+        match = re.search(r"    if\(\$GuiAutomation -in @\(([^)]*)\)\) \{\n      # Only now authorize mutation", probe)
+        self.assertIsNotNone(match)
+        listed = re.findall(r"'([a-z0-9-]+)'", match.group(1))
+        self.assertEqual(len(listed), len(set(listed)))
+        self.assertEqual(set(listed), {name for name, mode in self.modes.items() if mode["permit"] == "profile-save"})
+
     def test_generator_check_passes_with_zero_diff(self):
         result = subprocess.run(
             [sys.executable, str(ROOT / "generate-native-automation-registry.py"), "--check"],
