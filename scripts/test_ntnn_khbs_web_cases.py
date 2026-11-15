@@ -282,6 +282,15 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         for forbidden in ('PerformClick', 'SendKeys', 'Value=', '.Text='):
             self.assertNotIn(forbidden, held)
         self.assertIn('declarationEntryActionCount=0;declarationEntryComboCount=0;', khbs)
+        # Cohort c22c37f (runs 43698793633, 43698796274): the Y8 round-1 text entry still failed (code 12); the next run reports
+        # the value-free shape of that cell and editor once (lengths and booleans only, never the text).
+        self.assertIn('ObserveDeclarationKhbsEntry(khbsBefore,khbsOpened,editor,value);declarationEntryMismatchMask|=1<<index;DeclarationEntryFail(12);', entry)
+        observe = khbs[khbs.index('private void ObserveDeclarationKhbsEntry('):]
+        observe = observe[:observe.index('\n }\n')]
+        for forbidden in ('PerformClick', 'SendKeys', 'Record()', '.Text='):
+            self.assertNotIn(forbidden, observe)
+        self.assertEqual(registry['resultFields']['declarationKhbsEntryShape']['maximum'], 4095)
+        self.assertEqual(registry['resultFields']['declarationKhbsEntryLengths']['maximum'], 65535)
 
     def test_profile_save_wait_is_observed_and_stale_results_are_counted(self):
         # Cohort 1a6f600: the KHBS runs stopped at original-save-invoking / waiting-profile-close-ready with no later valid result.

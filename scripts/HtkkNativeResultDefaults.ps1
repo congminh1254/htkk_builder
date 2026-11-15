@@ -344,6 +344,8 @@ function New-HtkkNativeResultDefaults {
   declarationKhbsRound=0
   declarationKhbsStepMask=0
   declarationKhbsMessageId=0
+  declarationKhbsEntryShape=0
+  declarationKhbsEntryLengths=0
  }
  return $result
 }

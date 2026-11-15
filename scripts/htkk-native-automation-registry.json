@@ -2028,7 +2028,9 @@
     "declarationKhbsPromptAnswered",
     "declarationKhbsRound",
     "declarationKhbsStepMask",
-    "declarationKhbsMessageId"
+    "declarationKhbsMessageId",
+    "declarationKhbsEntryShape",
+    "declarationKhbsEntryLengths"
   ],
   "controlKinds": [
     "form",
@@ -4627,6 +4629,24 @@
       "default": 0,
       "minimum": 0,
       "maximum": 9999,
+      "activeModes": [
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationKhbsEntryShape": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4095,
+      "activeModes": [
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationKhbsEntryLengths": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
       "activeModes": [
         "declaration-amendment-khbs-inspect"
       ]
