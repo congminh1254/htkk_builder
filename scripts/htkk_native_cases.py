@@ -107,6 +107,11 @@ TRUSTED_ADAPTERS={
  '02-ntnn-tt89-3.0.9':_declaration('X9','3.0.9',{'range':('01/07/2026-30/09/2026',)},['01-1','01-2']),
  # C9 02/NTNN quyết toán TT80 (non-gating): KieuKy 22 like D6 (Menu.xml EndDate 01/10/2026); annexes as X9.
  '02-ntnn-tt80-2.5.1':_declaration('C9','2.5.1',{'range':('01/01/2026-30/09/2026',)},['01-1','01-2']),
+ # G7 01/TTS TT40 2.8.3 (non-gating, cases on the HTKK 5.8.2 oracle; the menu and every 01_TTS_TT40_283 resource are
+ # byte-identical in 5.8.1). KieuKy 42 = SetLayoutToQDDSThueMSTToChucCaNhanNamThangQuy (Năm ticked by default, Tháng,
+ # Quý, Kỳ thanh toán). CheckChonLoaiNopThue: cá nhân trực tiếp khai = 01-1/BK-TTS (năm), tổ chức khai thay = 01-2/BK-TTS.
+ '01-tts-tt40-2.8.3-bk1':{**_declaration('G7','2.8.3',{'year':('2025',)},['01-1']),'htkkVersion':'5.8.2'},
+ '01-tts-tt40-2.8.3-bk2':{**_declaration('G7','2.8.3',{'quarter':('3/2026',),'month':('10/2026',)},['01-2']),'htkkVersion':'5.8.2'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))
