@@ -283,6 +283,7 @@ function New-HtkkNativeResultDefaults {
   declarationTreeMismatch2=0
   declarationTreeMismatch3=0
   declarationTreeMismatch4=0
+  declarationTreeFirstTextShape=0
   declarationUiWaitMask=0
   declarationUiWaitSeconds=0
   declarationUiForegroundKind=0
