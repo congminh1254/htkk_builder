@@ -124,20 +124,29 @@ public sealed partial class HtkkGuiReferenceAutomation {
   new string[]{"Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","10129","101","10129087"},
   new string[]{"Thuế Thành phố Hải Phòng","Thuế cơ sở 6 Thành phố Hải Phòng","10309","103","10309019"},
   new string[]{"Thuế Thành phố Hà Nội","Thuế cơ sở 16 Thành phố Hà Nội","10129","101","10129087"}};
- private const int Annex16ColumnH=7,Annex16ColumnI=8,Annex16ColumnK=10,Annex16ColumnR=17,Annex16ColumnT=19,Annex16ColumnU=20,Annex16ColumnX=23;
+ private const int Annex16ColumnH=7,Annex16ColumnI=8;
+ // Hidden code columns differ by sheet: CSSX R (province) 17, T (head office) 19, U (tax office) 20, X (ward) 23, next
+ // field K (10); ĐTVT Q 16, S 18, T 19, W 22, next field L (11) since K ([14]) is locked there.
+ private int Annex16ColumnK{get{return Annex16DvvtWebCaseId()?11:10;}}
+ private int Annex16ColumnR{get{return Annex16DvvtWebCaseId()?16:17;}}
+ private int Annex16ColumnT{get{return Annex16DvvtWebCaseId()?18:19;}}
+ private int Annex16ColumnU{get{return Annex16DvvtWebCaseId()?19:20;}}
+ private int Annex16ColumnX{get{return Annex16DvvtWebCaseId()?22:23;}}
+ private string Annex16SheetId{get{return Annex16DvvtWebCaseId()?"01_6_2":"01_6";}}
+ private string Annex16SheetName{get{return Annex16DvvtWebCaseId()?"01-6/GTGT (ĐTVT)":"01-6/GTGT (CSSX)";}}
  private void RestoreImportedAnnex16HeadOffices(){
   if(!Annex16WebCase()||annex16HeadOfficeRestored||!roundtripImportSucceeded)throw new InvalidOperationException();
   List<Control> grids=new List<Control>();int visited=0;GatherSpreads(roundtripOwner,grids,ref visited);if(grids.Count!=1)throw new InvalidOperationException();Control grid=grids[0];
   object sheets=Get(grid,"Sheets");if(Convert.ToInt32(Get(sheets,"Count"))!=11)throw new InvalidOperationException();PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null)throw new InvalidOperationException();
   object annex=null;int found=-1;
-  for(int index=0;index<11;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name=="01_6"||name=="01-6/GTGT (CSSX)"){if(annex!=null)throw new InvalidOperationException();annex=candidate;found=index;}}
+  for(int index=0;index<11;index++){object candidate=item.GetValue(sheets,new object[]{index});string name=Convert.ToString(Get(candidate,"SheetName"),CultureInfo.InvariantCulture);if(name==Annex16SheetId||name==Annex16SheetName){if(annex!=null)throw new InvalidOperationException();annex=candidate;found=index;}}
   if(annex==null)throw new InvalidOperationException();
   annex12NonzeroBusy=true;exportWatcher.Stop();
   try{
    if(Get(grid,"ActiveSheet")!=annex){PropertyInfo active=grid.GetType().GetProperty("ActiveSheetIndex");if(active==null||!active.CanWrite)throw new InvalidOperationException();active.SetValue(grid,found,null);}
    if(Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible())throw new InvalidOperationException();
    System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;object info=null;if(infos==null||infos.Count>32)throw new InvalidOperationException();
-   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_6"){if(info!=null)throw new InvalidOperationException();info=candidate;}
+   foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Get(candidate,"SheetID"),CultureInfo.InvariantCulture)==Annex16SheetId){if(info!=null)throw new InvalidOperationException();info=candidate;}
    System.Collections.IList tables=info==null?null:Get(info,"Tables") as System.Collections.IList;if(tables==null||tables.Count!=2)throw new InvalidOperationException();
    System.Collections.IList rows=Get(tables[0],"RowsValues") as System.Collections.IList;if(rows==null||rows.Count!=Annex16ExpectedRows.Length)throw new InvalidOperationException();
    int start=Convert.ToInt32(Get(Get(tables[0],"Location"),"DataLocationTemplateRowStart"))-1;if(start!=21)throw new InvalidOperationException();

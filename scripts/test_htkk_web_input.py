@@ -62,7 +62,7 @@ def annex16_fixture(case):
  pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
  for child in list(pluc):pluc.remove(child)
- pluc.text=None;annex=ET.SubElement(pluc,ns+'Pluc_01_6_GTGT_CSSX')
+ pluc.text=None;annex=ET.SubElement(pluc,ns+spec.get('node','Pluc_01_6_GTGT_CSSX'))
  for name,value in zip(w.annex16.SECTION_HEAD,spec['head']):ET.SubElement(annex,ns+name).text=value
  for tag,rows,leaves in (('NoiDungBangPhanBo',spec['rows'],w.annex16.ROW_LEAVES),('cong_ct18',spec['provinces'],w.annex16.PROVINCE_LEAVES)):
   for row_id,values in rows:
@@ -108,7 +108,7 @@ def case_manifest(body,case,producer_sha='c'*64):
  if w.annex10.is_case(case):
   value.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=w.ANNEX10_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex10.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex16.is_case(case):
-  value.update(exporter='lib/htkk-gtgt-annex16-cssx-xml.ts',producer=w.ANNEX16_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex16.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
+  value.update(exporter=w.annex16_files(case)[0],producer=w.annex16_files(case)[1],htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex16.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex12.is_case(case):
   compared,nodes=w.ANNEX_NATIVE_NODES[case]
   value.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=w.ANNEX_PRODUCER,nativeAnnexReferenceSha256=w.ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False,expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode().replace(w.COMMENT,''))))

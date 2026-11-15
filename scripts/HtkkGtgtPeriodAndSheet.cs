@@ -582,6 +582,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
    // events give ([32] := [07] = 129999950, [33] := ROUND([32]*10/100-[08],0) = 10399996) carried by the web file.
    if(Annex10WebCaseId()){
     if(roundtripPhase!="not-started"){if(column==9&&(row==44||row==47||row==49))expected=129999950;if(column==11&&(row==44||row==47||row==49||row==50||row==56||row==58))expected=10399996;}
+   }else if(Annex16DvvtWebCaseId()){
+    // 01-6 (ĐTVT): after the import the web file's sales [32] = 600000000 with the 10% tax ([27]/[34]; [28]..[40] 60000000).
+    if(roundtripPhase!="not-started"){if(column==9&&(row==44||row==47||row==49))expected=600000000m;if(column==11&&(row==44||row==47||row==49||row==50||row==56||row==58))expected=60000000m;}
    }else if(Annex16WebCaseId()){
     // 01-6 (CSSX): the zero baseline before the import; after it, the web file's sales [30]/[32] with the 5%/10% tax.
     if(roundtripPhase!="not-started"){bool ratio=webCaseId==Annex16CssxRatioCaseId;

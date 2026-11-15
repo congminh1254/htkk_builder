@@ -42,6 +42,16 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-gtgt-2.8.3-annex16-dvvt",
+      "htkkVersion": "5.8.1",
+      "menuId": "D1",
+      "xmlVersion": "2.8.3",
+      "producer": "scripts/generate-htkk-web-annex16-dvvt-reference.mjs",
+      "driver": "gtgt-web-import-inspect",
+      "privacyValidator": "gtgt-annex16-dvvt-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "01-gtgt-2.8.3-khbs",
       "htkkVersion": "5.8.1",
       "menuId": "D1",
@@ -1153,6 +1163,27 @@
         "periodValue": "10/2026",
         "activityCode": "00",
         "annexes": ["01-6/GTGT (CSSX)"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-annex16-dvvt-M10-2026",
+      "producerCase": "annex16-dvvt",
+      "adapterId": "01-gtgt-2.8.3-annex16-dvvt",
+      "format": "htkk-web-annex16-dvvt-input-v1",
+      "stagingDirectory": "htkk-web-reference-annex16-dvvt-input",
+      "inputBranch": "gtgt-web-reference-annex16-dvvt-input",
+      "outputBranch": "gtgt-web-native-annex16-dvvt-output",
+      "statusContext": "htkk-native/annex16-dvvt",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-6/GTGT (ĐTVT)"],
         "amendmentOrder": 0
       }
     },
