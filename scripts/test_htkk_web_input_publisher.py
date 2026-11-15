@@ -5,15 +5,18 @@ from unittest.mock import patch
 ROOT=pathlib.Path(__file__).parent
 spec=importlib.util.spec_from_file_location('web_publisher',ROOT/'publish-htkk-web-inputs.py');p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
 spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+# 01/NTNN KHBS: the publisher's own reader instance is pinned to the same synthetic in-memory files.
+f.ntnn_fx.pin(p.reader.ntnn)
 SHA='a'*40
 # One distinct fake orphan commit per registered case (21 = 15 GTGT + 6 declaration).
-COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','3','4','5','6')
+COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','3','4','5','6')
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
 ANNEX10_PRODUCER=b'// Fixed synthetic 01-10 annex test producer, never executed.\n'
 KHBS_PRODUCER=b'// Fixed synthetic KHBS test producer, never executed.\n'
+NTNN_KHBS_PRODUCER=b'// Fixed synthetic 01/NTNN KHBS test producer, never executed.\n'
 DECLARATION_PRODUCER=f.dfx.PRODUCER
-PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-web-annex10-reference.mjs':ANNEX10_PRODUCER,'scripts/generate-htkk-web-khbs-reference.mjs':KHBS_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER}
+PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-web-annex10-reference.mjs':ANNEX10_PRODUCER,'scripts/generate-htkk-web-khbs-reference.mjs':KHBS_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER,'scripts/generate-htkk-web-ntnn-khbs-reference.mjs':NTNN_KHBS_PRODUCER}
 
 def fixtures():
  result=[]
@@ -22,6 +25,7 @@ def fixtures():
   metadata=f.case_manifest(body,case,hashlib.sha256(PRODUCERS[p.CASE_PRODUCERS[case]]).hexdigest())
   files={p.reader.xml_name(case):body,'manifest.json':(json.dumps(metadata,ensure_ascii=False)+'\n').encode()}
   if p.reader.khbs.is_case(case) and p.reader.khbs.prior_case(case):files[p.reader.khbs.PRIOR_NAME]=f.sale_fixture(p.reader.khbs.prior_case(case))
+  if p.reader.ntnn.is_case(case):files.update(f.ntnn_fx.files(p.reader.ntnn,case))
   files={name:files[name] for name in p.reader.names(case)}
   result.append((case,branch,files,metadata))
  return result
@@ -44,6 +48,7 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/contents/scripts/generate-htkk-web-annex10-reference.mjs?ref='+SHA:return contents(ANNEX10_PRODUCER,'generate-htkk-web-annex10-reference.mjs','scripts/generate-htkk-web-annex10-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-khbs-reference.mjs?ref='+SHA:return contents(KHBS_PRODUCER,'generate-htkk-web-khbs-reference.mjs','scripts/generate-htkk-web-khbs-reference.mjs')
   if path=='/contents/scripts/generate-htkk-declaration-reference.mjs?ref='+SHA:return contents(DECLARATION_PRODUCER,'generate-htkk-declaration-reference.mjs','scripts/generate-htkk-declaration-reference.mjs')
+  if path=='/contents/scripts/generate-htkk-web-ntnn-khbs-reference.mjs?ref='+SHA:return contents(NTNN_KHBS_PRODUCER,'generate-htkk-web-ntnn-khbs-reference.mjs','scripts/generate-htkk-web-ntnn-khbs-reference.mjs')
   if path=='/contents/package.json?ref='+SHA:return contents(b'{"version":"0.9.2"}','package.json')
   if path=='/git/blobs':
    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}

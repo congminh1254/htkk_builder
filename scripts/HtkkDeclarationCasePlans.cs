@@ -126,8 +126,51 @@ internal static class HtkkDeclarationCasePlans {
  // as yyyy-MM-dd. 78 copies ngayLap (ExportXML_0) and the other cases bind it to a cell.
  internal static string[] ExportDatePaths(HtkkDeclarationCasePlan plan){return plan!=null&&plan.MenuId=="A2"?new string[]{"HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy"}:new string[0];}
  internal static bool ImportAddsAllAnnexes(HtkkDeclarationCasePlan plan){return plan!=null&&"~B8~37~33~B9~N7~W1~".IndexOf("~"+plan.MenuId+"~",StringComparison.Ordinal)>=0;}
+ // Kê khai bổ sung (KHBS) of 01/NTNN I9 and 01/NTNN, NCCNN Y8 (mode declaration-amendment-khbs-inspect, non-gating; htkk_web
+ // docs/KE-KHAI-BO-SUNG-01-NTNN.md, builder KHBS-NATIVE-CASE.md "01/NTNN"). Not lần-đầu declaration cases: CaseIds stays the
+ // declaration-web-import-inspect list. The plans carry the KHBS schema (LoaiToKhai B exports against it; the Y8 one is the
+ // same bytes as its main schema), no cell or XML checks (the whole-tree comparison of the B file decides) and the web leaf count.
+ internal static readonly string[] KhbsCaseIds=new string[]{"01NTNN-khbs-grossup-lan1-M09-2026","01NTNN-khbs-lan2-M09-2026","01NTNN-khbs-decrease-M09-2026","01NTNN-NCCNN-khbs-part1-M10-2026","01NTNN-NCCNN-khbs-part2-M10-2026"};
+ internal static int KhbsSoLan(string caseId){return caseId=="01NTNN-khbs-lan2-M09-2026"?2:Array.IndexOf(KhbsCaseIds,caseId)>=0?1:0;}
+ private static HtkkDeclarationCasePlan KhbsPlan(string caseId){
+  bool i9=caseId.StartsWith("01NTNN-khbs-",StringComparison.Ordinal);
+  int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"?253:178;
+  if(i9)return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","09","01/09/2026","30/09/2026",false,
+   new string[0],new string[]{"01|Tờ khai"},
+   "InterfaceTemplates/excel/01_NTNN_TT80_251.xls","feebf2a918138aad860b52fb409232716027dc7ba59ec8aed861714d7e7de652","InterfaceTemplates/xml/01_NTNN_TT80_251.xml","cb8f1c83df2ebb590e314b2ca71fde4751760906e57df666e92086d6a1f9983c",
+   "Validate/KHBS_01_NTNN_TT80_251.xsd","8d712f0611200c354704bf48dbea54c2d40a96777fe6dae1c4a213a0685938e6",TKhaiThue,TKhaiThueSha256,WorkbookService,leaves,new string[0],new string[0]);
+  return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false,
+   new string[0],new string[]{"01|Tờ khai"},
+   "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",
+   "Validate/KHBS_01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,leaves,new string[0],new string[0]);
+ }
+ // Y8 KHBS rounds are TYPED (the original import resets the Y8 tables, release 238): round 0 the lần đầu rows, round 1 the bổ
+ // sung rows, every planned cell typed again (the B sheet opens on the saved lần đầu, possibly reset). Values = the htkk_web
+ // producer rows (generate-htkk-web-ntnn-khbs-reference.mjs); ngày ký 13/11/2026 as in the files. I9 rounds are imported: null.
+ internal static HtkkDeclarationEntryPlan KhbsEntry(string caseId,int round){
+  bool part1=caseId=="01NTNN-NCCNN-khbs-part1-M10-2026",part2=caseId=="01NTNN-NCCNN-khbs-part2-M10-2026";
+  if(!part1&&!part2||round<0||round>1)return null;
+  string[] entries;
+  if(part1){
+   string amount=round==0?"200000000":"220000000";
+   entries=new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|HD-GL-201","date|W60|01/09/2026","number|Y60|"+amount,
+    "date|AE60|15/10/2026","number|AJ60|"+amount,"number|AN60|5","number|AZ60|"+amount,"number|BD60|5","date-optional|AY98|13/11/2026"};
+   return new HtkkDeclarationEntryPlan("M6","M8","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
+    new string[]{"ThueNTNN|60|1|0","ThueNCCNN|78|1|1","ThueCNKCT|86|1|1"},new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},entries,HtkkOracleBaseline.EntryMethodPins());
+  }
+  string revenue=round==0?"200000000":"240000000";
+  entries=new string[]{
+   "text|C78|NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP","combo|L78|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX78|01","text|S78|HD-GL-003","date|W78|01/09/2026","number|Y78|200000000",
+   "date|AE78|15/10/2026","number|AJ78|"+revenue,"number|AN78|5","number|AZ78|"+revenue,"number|BD78|5",
+   "text|C86|CA NHAN KHONG CU TRU D - GIẢ LẬP","combo|L86|4|H|Hoạt động kinh doanh khác|BX86|05","text|S86|HD-GL-004","date|W86|02/09/2026","number|Y86|100000000",
+   "date|AE86|16/10/2026","number|AJ86|100000000","number|AN86|5","number|AZ86|100000000","number|BD86|2",
+   "date-optional|AY98|13/11/2026"};
+  return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
+   new string[]{"ThueNTNN|60|1|1","ThueNCCNN|78|1|0","ThueCNKCT|86|1|0"},new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},entries,HtkkOracleBaseline.EntryMethodPins());
+ }
  internal static HtkkDeclarationCasePlan Find(string caseId){
   switch(caseId){
+   case "01NTNN-khbs-grossup-lan1-M09-2026":case "01NTNN-khbs-lan2-M09-2026":case "01NTNN-khbs-decrease-M09-2026":case "01NTNN-NCCNN-khbs-part1-M10-2026":case "01NTNN-NCCNN-khbs-part2-M10-2026":return KhbsPlan(caseId);
    // N8 03/TNDN TT80: KieuKy 11 = SetLayoutToKhaiNamTuNgayDenNgay (year + from/to date).
    case "03TNDN-profit20-Y2025":return new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,
     new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},

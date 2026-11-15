@@ -515,7 +515,9 @@ def sync_powershell_and_workflow(registry, check_mode=False):
         # Native-case mode original-entry-export of the same driver: entry failure and entry success.
         'declaration-entry-not-matched', 'declaration-original-entry-exported',
         # Native-case mode web-xml-import-tick-reexport: original edits/ticks after the import fail or export.
-        'declaration-import-tick-not-matched', 'declaration-import-tick-exported'
+        'declaration-import-tick-not-matched', 'declaration-import-tick-exported',
+        # Kê khai bổ sung driver declaration-amendment-khbs-inspect: a refused Ghi/close/Tổng hợp KHBS step, a step timeout.
+        'declaration-khbs-step-rejected', 'declaration-khbs-timeout'
     ]
     terminal_stages = list(base_order)
     for mode_meta in modes.values():

@@ -51,7 +51,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   mode=HtkkNativeAutomationWireMap.ToWireString(modeEnum);string host=Assembly.GetExecutingAssembly().Location;project=Path.GetDirectoryName(host);result=host+".gui-automation.json";
   if(modeEnum!=HtkkAutomationMode.None&&modeEnum!=HtkkAutomationMode.Inspect&&modeEnum!=HtkkAutomationMode.ProfileSave){
    // Adapter by menu family: D1 keeps its reviewed driver; declaration families share one.
-   if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();
+   if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect||modeEnum==HtkkAutomationMode.DeclarationAmendmentKhbsInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();
    adapter.Initialize(this,project,modeEnum);
   }
   try{
@@ -67,7 +67,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   Stopwatch dispatch=null;
   // Annex web cases add the proven 14-input baseline; the nonzero probe exports twice.
   // Both stay below the registry's 180-second mode ceiling.
-  double limit=modeEnum==HtkkAutomationMode.GtgtWebImportInspect||modeEnum==HtkkAutomationMode.GtgtAnnex12ExportNonzero||modeEnum==HtkkAutomationMode.DeclarationWebImportInspect?170:120;
+  double limit=modeEnum==HtkkAutomationMode.GtgtWebImportInspect||modeEnum==HtkkAutomationMode.GtgtAnnex12ExportNonzero||modeEnum==HtkkAutomationMode.DeclarationWebImportInspect?170:modeEnum==HtkkAutomationMode.DeclarationAmendmentKhbsInspect?400:120;
   while(!finished&&clock.Elapsed.TotalSeconds<limit){
    try{
     if(!queued&&Application.OpenForms.Count>0){

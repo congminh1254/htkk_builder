@@ -31,6 +31,8 @@ CASE = '01NTNN-NCCNN-entry-M10-2026'
 OCCURRENCE = '01NTNN-NCCNN-occurrence-D20-10-2026'
 BASE = '01NTNN-NCCNN-two-parts-M10-2026'
 MODE = 'declaration-web-import-inspect'
+# The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
+KHBS_MODE = 'declaration-amendment-khbs-inspect'
 
 
 def plan_block(case_id):
@@ -61,7 +63,7 @@ class Registration(unittest.TestCase):
         self.assertEqual(registry.driver(CASE), MODE)
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'ntnn01-nccnn-entry-m10-2026')
         # The import-based Y8 case was removed after release 242 (HTKK resets the tables on import).
-        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8'], [CASE, OCCURRENCE])
+        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8' and c not in registry.NTNN_KHBS_CASES], [CASE, OCCURRENCE])
         self.assertEqual(registry.input_mode(OCCURRENCE), registry.ENTRY_MODE); self.assertIs(registry.CASES[OCCURRENCE]['releaseGate'], False)
         self.assertNotIn(BASE, registry.CASES); self.assertNotIn(BASE, d.CASES); self.assertNotIn('01-ntnn-nccnn-tt89-3.0.9', registry.TRUSTED_ADAPTERS)
         self.assertNotIn(BASE, automation['resultFields']['webCaseId']['values'])
@@ -226,12 +228,12 @@ class Driver(unittest.TestCase):
         self.assertIn('EditDeclarationEntry(declarationEntryActionCount);if(finished)return;', ENTRY)
 
     def test_import_driver_routes_only_entry_plans_to_the_entry_phases(self):
-        self.assertIn('declarationEntryPlan=HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);', IMPORT)
+        self.assertIn('declarationEntryPlan=DeclarationKhbsMode()?HtkkDeclarationCasePlans.KhbsEntry(declarationPlan.CaseId,declarationKhbsRound):HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);', IMPORT)
         self.assertIn('declarationPhase=declarationEntryPlan!=null?"entry-ready":"import-ready"', IMPORT)
         self.assertIn('if(declarationPhase.StartsWith("entry-",StringComparison.Ordinal)){ContinueDeclarationEntry();return;}', IMPORT)
         self.assertIn('if(exportFilenameEditing||declarationEntryBusy)return;', IMPORT)
         self.assertIn('DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:declarationTickPlan!=null?HtkkAutomationStage.DeclarationImportTickExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched)', IMPORT)
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();', IMPORT)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', IMPORT)
 
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']
@@ -239,7 +241,7 @@ class Driver(unittest.TestCase):
         self.assertEqual(len(names), 25)
         for name in names:
             self.assertIn(name, automation['keys'])
-            self.assertEqual(fields[name]['activeModes'], [MODE])
+            self.assertEqual(fields[name]['activeModes'], [MODE, KHBS_MODE])
             self.assertIn(fields[name]['kind'], ('boolean', 'integer'))
         self.assertIn(CASE, fields['webCaseId']['values'])
         stages = {s['id'] for s in automation['stages']}
@@ -258,9 +260,10 @@ class Driver(unittest.TestCase):
         self.assertIn('-not $lastGui.roundtripImportCommandInvoked -and -not $lastGui.roundtripImportSucceeded', probe)
         self.assertIn('$lastGui.declarationEntryActionCount -eq $lastGui.declarationEntryPlannedCount', probe)
         self.assertIn("@('declaration-web-import-inspected','declaration-original-entry-exported','declaration-import-tick-exported','declaration-export-not-matched')", probe)
-        self.assertIn("inputMode=$(if($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
+        self.assertIn("inputMode=$(if($declarationKhbs){if($declarationEntryCase){'khbs-original-entry-export'}else{'khbs-web-xml-import-reexport'}}elseif($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
         publisher = (ROOT / 'publish-htkk-declaration-native-output.py').read_text(encoding='utf-8')
-        self.assertIn("'inputMode':reader.case_registry.input_mode(case_id)", publisher)
+        self.assertIn("else:mode=reader.case_registry.input_mode(case_id);imported=mode in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE)", publisher)
+        self.assertIn("'inputMode':mode,'originalImportSucceeded':imported,", publisher)
 
 
 if __name__ == '__main__':

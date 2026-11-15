@@ -80,7 +80,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
- private bool DeclarationMode(){return modeEnum==HtkkAutomationMode.DeclarationWebImportInspect;}
+ private bool DeclarationMode(){return modeEnum==HtkkAutomationMode.DeclarationWebImportInspect||DeclarationKhbsMode();}
  private string DeclarationJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"declarationMenuClicked","declarationPeriodObserved","declarationPeriodMatched","declarationAnnexMatched","declarationSheetObserved","declarationIdentityMatched","declarationSourcePinsMatched","declarationImportSheetMatched","declarationSchemaValid","declarationServiceIdentityMatched","declarationCreationDateValid","declarationTreeMatched"};
@@ -89,7 +89,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
   int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
-  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();
+  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();
  }
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
@@ -105,6 +105,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/NNT/tenNNT")!=FakeName||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/nguoiKy")!=FakeSigner)throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinDVu/maDVu")!="CCKK"||FixedWebLeaf(document,"TTinChung/TTinDVu/tenDVu")!=plan.WebServiceName||FixedWebLeaf(document,"TTinChung/TTinDVu/ttinNhaCCapDVu")!="hotrokekhai.net — Công cụ Kê khai, công cụ độc lập"||!Regex.IsMatch(FixedWebLeaf(document,"TTinChung/TTinDVu/pbanDVu"),"^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$"))throw new InvalidOperationException();
   if(FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/maTKhai")!=plan.MaTKhai||FixedWebLeaf(document,"TTinChung/TTinTKhaiThue/TKhaiThue/pbanTKhaiXML")!=plan.VersionXml)throw new InvalidOperationException();
+  // Kê khai bổ sung mode: the KHBS case ids only (HtkkDeclarationKhbs.cs), never a lần-đầu declaration case, and back.
+  if((HtkkDeclarationCasePlans.KhbsSoLan(id)>0)!=DeclarationKhbsMode())throw new InvalidOperationException();
+  if(DeclarationKhbsMode())VerifyDeclarationKhbsInputs(host);
   webInputVerified=true;Record();
  }
 
@@ -271,7 +274,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   else if(plan.PeriodKind=="quarter"){SetCheck(Named(period,"chkTKQuy"),true);}
   // KieuKy 18 Lần phát sinh: CheckedChanged (0x60004b2) unticks Tháng and shows the ngày/tháng/năm boxes.
   else if(plan.PeriodKind=="day"){SetCheck(Named(period,"chkTKLanPS"),true);}
-  if(VisibleNamed(period,"OptChinhthuc")){SetCheck(Named(period,"OptChinhthuc"),true);periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&(!VisibleNamed(period,"OptBosung")||!CheckValue(ReadableNamed(period,"OptBosung")));}else periodFirstMatched=true;
+  if(DeclarationKhbsMode()&&declarationKhbsRound>0)periodFirstMatched=false;
+  else if(VisibleNamed(period,"OptChinhthuc")){SetCheck(Named(period,"OptChinhthuc"),true);periodFirstMatched=CheckValue(Named(period,"OptChinhthuc"))&&(!VisibleNamed(period,"OptBosung")||!CheckValue(ReadableNamed(period,"OptBosung")));}else periodFirstMatched=true;
   if(plan.PeriodKind!="range")SetDeclarationText(period,"mskYear",plan.Year);
   if(plan.PeriodKind=="month")SetDeclarationText(period,"mskMonth",plan.PeriodNumber);
   // The day goes into the VISIBLE original boxes only (mskDay_Leave/mskMonth_Leave pad to two digits).
@@ -279,6 +283,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(plan.PeriodKind=="quarter"){ComboBox quarter=Named(period,"cbbQuy") as ComboBox;if(quarter==null)throw new InvalidOperationException();int index=quarter.FindStringExact(plan.PeriodNumber);if(index<0)throw new InvalidOperationException();if(quarter.SelectedIndex!=index)quarter.SelectedIndex=index;}
   if(plan.KieuKy=="11"||plan.KieuKy=="26"||plan.KieuKy=="22"){SetDeclarationText(period,"mskTuNgay",plan.FromDate);SetDeclarationText(period,"mskDenNgay",plan.ToDate);}
   if(plan.KieuKy=="12"){SetDeclarationText(period,"mskTuThang",plan.FromDate);SetDeclarationText(period,"mskDenThang",plan.ToDate);}
+  // Kê khai bổ sung rounds: Bổ sung, the lần and the fixed ngày lập, after the period boxes (their Leave handlers run first).
+  if(DeclarationKhbsMode()&&declarationKhbsRound>0)periodFirstMatched=ConfigureDeclarationKhbsPeriod(period);
   bool continuous=true;
   if(plan.ContinuousOperation){Control going=ReadableNamed(period,"chkQTTungNam_HoatDongLienTuc");if(going.Enabled&&!CheckValue(going))SetCheck(going,true);continuous=CheckValue(going)&&(!VisibleNamed(period,"chkQTNamDau_KhongHoatDongLienTuc")||!CheckValue(ReadableNamed(period,"chkQTNamDau_KhongHoatDongLienTuc")));}
   // KieuKy 22: the year box is hidden (GetPeriodInfo takes Nam from mskDenNgay), so only the two VISIBLE date boxes count.
@@ -322,7 +328,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(business==null||info==null||period==null)return false;
   bool menu=Convert.ToString(Global("MenuID"),CultureInfo.InvariantCulture)==plan.MenuId&&Convert.ToString(Get(info,"VersionXML"),CultureInfo.InvariantCulture)==plan.VersionXml&&business.GetType().FullName=="TAX.HTKK.Business."+plan.BusinessClass;
   string kind=plan.PeriodKind=="month"?"M":plan.PeriodKind=="quarter"?"Q":plan.PeriodKind=="range"?"D_D":plan.PeriodKind=="day"?"D":"Y";
-  bool periodMatched=Convert.ToString(Get(period,"KieuKy"),CultureInfo.InvariantCulture)==kind&&Convert.ToString(Get(period,"Nam"),CultureInfo.InvariantCulture)==plan.Year&&Convert.ToString(Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)=="C"
+  bool periodMatched=Convert.ToString(Get(period,"KieuKy"),CultureInfo.InvariantCulture)==kind&&Convert.ToString(Get(period,"Nam"),CultureInfo.InvariantCulture)==plan.Year&&Convert.ToString(Get(period,"LoaiToKhai"),CultureInfo.InvariantCulture)==(DeclarationKhbsMode()&&declarationKhbsRound>0?"B":"C")&&(!DeclarationKhbsMode()||declarationKhbsRound==0||Convert.ToString(Get(period,"SoLan"),CultureInfo.InvariantCulture)==declarationKhbsRound.ToString(CultureInfo.InvariantCulture))
    &&(plan.PeriodKind!="month"||Convert.ToString(Get(period,"Thang"),CultureInfo.InvariantCulture)==plan.PeriodNumber)&&(plan.PeriodKind!="quarter"||Convert.ToString(Get(period,"Quy"),CultureInfo.InvariantCulture)==plan.PeriodNumber)
    &&(plan.PeriodKind!="range"||(Convert.ToString(Get(period,"TuNgay"),CultureInfo.InvariantCulture)==plan.FromDate&&Convert.ToString(Get(period,"DenNgay"),CultureInfo.InvariantCulture)==plan.ToDate))
    // KieuKy D (GetPeriodInfo chkTKLanPS branch): the same day in TuNgay, DenNgay and kyKKhai; Ngay/Thang padded.
@@ -350,9 +356,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(!matched){DeclarationTerminal(HtkkAutomationStage.DeclarationSheetContractNotMatched);return;}
   SetStage(HtkkAutomationStage.DeclarationWebInputChecking);Record();VerifyDeclarationWebInput();
   // Native-case mode original-entry-export: no original import, the fixed entry plan is typed instead.
-  declarationEntryPlan=HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);
+  declarationEntryPlan=DeclarationKhbsMode()?HtkkDeclarationCasePlans.KhbsEntry(declarationPlan.CaseId,declarationKhbsRound):HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);
   // Native-case mode web-xml-import-tick-reexport: the original import, then the fixed original edits and ticks.
-  declarationTickPlan=HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();
+  declarationTickPlan=DeclarationKhbsMode()?null:HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();
   declarationFlowStarted=true;exportStarted=true;roundtripOwner=forms[0];declarationPhase=declarationEntryPlan!=null?"entry-ready":"import-ready";SetStage(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationEntryReadyWaiting:HtkkAutomationStage.DeclarationImportReadyWaiting);Record();
   exportWatcher=new System.Windows.Forms.Timer();exportWatcher.Interval=100;exportWatcher.Tick+=delegate(object sender,EventArgs args){try{ContinueDeclarationFlow();}catch(Exception error){exportWatcher.Stop();Failure(error);}};exportWatcher.Start();
  }
@@ -366,7 +372,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string name=null;foreach(string pair in declarationPlan.SheetNames){string[] parts=pair.Split('|');if(parts[0]==key)name=parts[1];}
   object sheets=Get(grid,"Sheets");int count=Convert.ToInt32(Get(sheets,"Count"));PropertyInfo item=sheets.GetType().GetProperty("Item",new Type[]{typeof(int)});if(item==null||count<1||count>64)throw new InvalidOperationException();
   object found=null;
-  for(int index=0;index<count;index++){object sheet=item.GetValue(sheets,new object[]{index});string sheetName=Convert.ToString(Get(sheet,"SheetName"),CultureInfo.InvariantCulture);if(sheetName==key||(name!=null&&sheetName==name)){if(found!=null)throw new InvalidOperationException();found=sheet;}}
+  for(int index=0;index<count;index++){object sheet=item.GetValue(sheets,new object[]{index});string sheetName=Convert.ToString(Get(sheet,"SheetName"),CultureInfo.InvariantCulture);if(sheetName==key||(name!=null&&sheetName==name)||(DeclarationKhbsMode()&&declarationKhbsRound>0&&key=="01"&&sheetName=="Tờ khai điều chỉnh")){if(found!=null)throw new InvalidOperationException();found=sheet;}}
   return found;
  }
  private bool InspectDeclarationGrid(){
@@ -548,6 +554,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(finished){exportWatcher.Stop();return;}if(exportFilenameEditing||declarationEntryBusy)return;
   if(!DeclarationMode()||declarationPlan==null||!webInputVerified||Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
   Form message;string text;
+  if(declarationPhase.StartsWith("khbs-",StringComparison.Ordinal)){ContinueDeclarationKhbs();return;}
   if(declarationPhase.StartsWith("entry-",StringComparison.Ordinal)){ContinueDeclarationEntry();return;}
   if(declarationPhase.StartsWith("tick-",StringComparison.Ordinal)){ContinueDeclarationTick();return;}
   if(declarationPhase=="import-ready"){
@@ -561,14 +568,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(text!="Nhập dữ liệu từ XML thành công."){importRejectedMessageId=OriginalMessageCatalogueId(text);DeclarationTerminal(HtkkAutomationStage.DeclarationImportOriginalMessageRejected);return;}
     FieldInfo loading=OriginalAssembly().GetType("HTKK.frmWinToKhai",true).GetField("FileNameLoading",BindingFlags.Static|BindingFlags.Public|BindingFlags.NonPublic);
     if(loading==null||loading.FieldType!=typeof(string))throw new InvalidOperationException();string actual=(string)loading.GetValue(null);
-    roundtripImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(webInputPath),StringComparison.OrdinalIgnoreCase);
+    roundtripImportPathMatched=!String.IsNullOrEmpty(actual)&&String.Equals(Path.GetFullPath(actual),Path.GetFullPath(DeclarationImportPath()),StringComparison.OrdinalIgnoreCase);
     if(!roundtripImportDialogMatched||!roundtripImportKeyboardCommitted||!roundtripImportDialogSubmitted||!roundtripImportPathMatched)throw new InvalidOperationException();
     roundtripImportSucceeded=true;
     if(declarationTickPlan!=null){declarationPhase="tick-pins";SetStage(HtkkAutomationStage.DeclarationImportTickReadyWaiting);}
     else{declarationPhase="import-inspect";declarationClock=Stopwatch.StartNew();SetStage(HtkkAutomationStage.DeclarationImportSheetChecking);}
     Record();DeclarationMessageClose(message).PerformClick();return;
    }
-   if(!roundtripImportDialogSubmitted){SetStage(HtkkAutomationStage.GtgtImportFileDialogWaiting);TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",webInputPath,true);}
+   if(!roundtripImportDialogSubmitted){SetStage(HtkkAutomationStage.GtgtImportFileDialogWaiting);TrySubmitOriginalFileDialog("Chọn tờ khai để tải vào chương trình",DeclarationImportPath(),true);}
    return;
   }
   if(declarationPhase=="import-inspect"){
@@ -577,6 +584,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    // Original recalculation after import may settle on a later UI turn; bounded wait.
    if(!declarationImportSheetMatched&&declarationClock.Elapsed.TotalSeconds<3)return;
    if(!declarationImportSheetMatched){DeclarationTerminal(HtkkAutomationStage.DeclarationImportSheetNotMatched);return;}
+   if(DeclarationKhbsMode()){DeclarationKhbsInputDone();return;}
    declarationPhase="export-start";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);Record();return;
   }
   if(declarationPhase=="export-start"){
@@ -607,6 +615,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if(declarationEntryPlan!=null)matched=matched&&declarationEntryMethodPinsMatched&&declarationEntryCatalogueMatched&&declarationEntryChoiceMatched&&declarationEntryLocksMatched&&declarationEntryRowsMatched&&declarationEntryValuesMatched&&declarationEntrySheetMatched&&declarationEntryActionCount==declarationEntryPlannedCount;
     // An import-tick case additionally needs its pinned methods, every edit and every tick.
     if(declarationTickPlan!=null)matched=matched&&declarationImportSheetMatched&&DeclarationTickSucceeded();
+    if(DeclarationKhbsMode()){DeclarationKhbsExported(matched);close.PerformClick();return;}
     DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:declarationTickPlan!=null?HtkkAutomationStage.DeclarationImportTickExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched);close.PerformClick();return;
    }
    if(declarationPhase=="export-reinvoke"){
@@ -634,7 +643,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
 public sealed class HtkkDeclarationAdapter : IHtkkNativeAutomationAdapter {
  private HtkkGuiReferenceAutomation harness;
  public string AdapterId { get { return "declaration-web"; } }
- public bool CanHandle(HtkkAutomationMode mode) { return mode == HtkkAutomationMode.DeclarationWebImportInspect; }
+ public bool CanHandle(HtkkAutomationMode mode) { return mode == HtkkAutomationMode.DeclarationWebImportInspect || mode == HtkkAutomationMode.DeclarationAmendmentKhbsInspect; }
  public void Initialize(HtkkGuiReferenceAutomation harnessInstance, string projectDir, HtkkAutomationMode mode) {
   if(harnessInstance==null||!CanHandle(mode))throw new ArgumentException();
   harness = harnessInstance;

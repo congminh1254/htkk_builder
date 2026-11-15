@@ -27,6 +27,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -59,6 +60,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -91,6 +93,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -123,6 +126,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -155,6 +159,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -187,6 +192,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -219,6 +225,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -251,6 +258,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -283,6 +291,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -315,6 +324,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -347,6 +357,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -379,6 +390,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -411,6 +423,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -443,6 +456,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -475,6 +489,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -507,6 +522,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -539,6 +555,7 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
@@ -571,10 +588,44 @@
         "HtkkDeclarationCasePlans.cs",
         "HtkkDeclarationTreeComparison.cs",
         "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
         "HtkkDeclarationOriginalEntry.cs",
         "HtkkNativeUiHarness.cs"
       ],
       "successPolicyId": "declaration-web-import-inspected",
+      "privateArtifactPolicy": "raw-declaration-reexport",
+      "contextPolicy": "htkk-native/case"
+    },
+    "declaration-amendment-khbs-inspect": {
+      "adapterId": "declaration-web",
+      "runtime": "clr2-x86-custom-reference",
+      "login": true,
+      "permit": "profile-save",
+      "terminalStage": "declaration-khbs-inspected",
+      "timeoutSeconds": 180,
+      "orderedCompileInputs": [
+        "HtkkNativeAutomationEnums.cs",
+        "HtkkOracleBaseline.cs",
+        "HtkkGuiReferenceAutomation.cs",
+        "HtkkGtgtReferenceNavigation.cs",
+        "HtkkGtgtPeriodAndSheet.cs",
+        "HtkkGtgtExportInspection.cs",
+        "HtkkGtgtRoundtripInspection.cs",
+        "HtkkWebInputReference.cs",
+        "HtkkWebTaxComparison.cs",
+        "HtkkGtgtAmendmentInspection.cs",
+        "HtkkGtgtAmendmentOpenInspection.cs",
+        "HtkkGtgtAmendmentKhbsInspection.cs",
+        "HtkkGtgtAnnex12NumericInspection.cs",
+        "HtkkGtgtAnnex12ExportInspection.cs",
+        "HtkkDeclarationCasePlans.cs",
+        "HtkkDeclarationTreeComparison.cs",
+        "HtkkDeclarationWebImport.cs",
+        "HtkkDeclarationKhbs.cs",
+        "HtkkDeclarationOriginalEntry.cs",
+        "HtkkNativeUiHarness.cs"
+      ],
+      "successPolicyId": "declaration-khbs-inspected",
       "privateArtifactPolicy": "raw-declaration-reexport",
       "contextPolicy": "htkk-native/case"
     }
@@ -1574,6 +1625,41 @@
       "id": "gtgt-amendment-khbs-inspected",
       "enumName": "GtgtAmendmentKhbsInspected",
       "category": "amendment"
+    },
+    {
+      "id": "declaration-khbs-saving",
+      "enumName": "DeclarationKhbsSaving",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-khbs-closing",
+      "enumName": "DeclarationKhbsClosing",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-khbs-reopening",
+      "enumName": "DeclarationKhbsReopening",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-khbs-summary-waiting",
+      "enumName": "DeclarationKhbsSummaryWaiting",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-khbs-step-rejected",
+      "enumName": "DeclarationKhbsStepRejected",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-khbs-timeout",
+      "enumName": "DeclarationKhbsTimeout",
+      "category": "declaration"
+    },
+    {
+      "id": "declaration-khbs-inspected",
+      "enumName": "DeclarationKhbsInspected",
+      "category": "declaration"
     }
   ],
   "dynamicStageMappings": {
@@ -1935,7 +2021,11 @@
     "khbsPostSaveWaitMask",
     "khbsRound",
     "khbsPriorSaveMessageId",
-    "khbsExportSha256"
+    "khbsExportSha256",
+    "declarationKhbsPromptAnswered",
+    "declarationKhbsRound",
+    "declarationKhbsStepMask",
+    "declarationKhbsMessageId"
   ],
   "controlKinds": [
     "form",
@@ -3298,84 +3388,96 @@
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationPeriodObserved": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationPeriodMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationSheetObserved": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationIdentityMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationSourcePinsMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationImportSheetMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationSchemaValid": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationServiceIdentityMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationCreationDateValid": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationPeriodRejectedMessageId": {
@@ -3384,7 +3486,8 @@
       "minimum": 0,
       "maximum": 9999,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexSelectedCount": {
@@ -3393,7 +3496,8 @@
       "minimum": 0,
       "maximum": 16,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationSheetCount": {
@@ -3402,7 +3506,8 @@
       "minimum": 0,
       "maximum": 64,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationCellCheckCount": {
@@ -3411,7 +3516,8 @@
       "minimum": 0,
       "maximum": 24,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationCellMismatchMask": {
@@ -3420,7 +3526,8 @@
       "minimum": 0,
       "maximum": 16777215,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationCellLockedMask": {
@@ -3429,7 +3536,8 @@
       "minimum": 0,
       "maximum": 16777215,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationXmlCheckCount": {
@@ -3438,7 +3546,8 @@
       "minimum": 0,
       "maximum": 24,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationXmlMismatchMask": {
@@ -3447,7 +3556,8 @@
       "minimum": 0,
       "maximum": 16777215,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeMismatchMask": {
@@ -3456,7 +3566,8 @@
       "minimum": 0,
       "maximum": 63,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeLeafCount": {
@@ -3465,7 +3576,8 @@
       "minimum": 0,
       "maximum": 4096,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationInvalidSheetMask": {
@@ -3474,7 +3586,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationInvalidCellCount": {
@@ -3483,7 +3596,8 @@
       "minimum": 0,
       "maximum": 4096,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationInvalidCell1": {
@@ -3492,7 +3606,8 @@
       "minimum": 0,
       "maximum": 16999999,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationInvalidCell2": {
@@ -3501,7 +3616,8 @@
       "minimum": 0,
       "maximum": 16999999,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationInvalidCell3": {
@@ -3510,7 +3626,8 @@
       "minimum": 0,
       "maximum": 16999999,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationInvalidCell4": {
@@ -3519,70 +3636,80 @@
       "minimum": 0,
       "maximum": 16999999,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryMethodPinsMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryCatalogueMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryChoiceMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryLocksMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryRowsMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryValuesMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntrySignerMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntrySigningDateLocked": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntrySheetMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryPlannedCount": {
@@ -3591,7 +3718,8 @@
       "minimum": 0,
       "maximum": 30,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryActionCount": {
@@ -3600,7 +3728,8 @@
       "minimum": 0,
       "maximum": 30,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryFailureCode": {
@@ -3609,7 +3738,8 @@
       "minimum": 0,
       "maximum": 31,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryMethodPinMask": {
@@ -3618,7 +3748,8 @@
       "minimum": 0,
       "maximum": 1073741823,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryLockBeforeMask": {
@@ -3627,7 +3758,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryLockAfterMask": {
@@ -3636,7 +3768,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryLockFinalMask": {
@@ -3645,7 +3778,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryRowsBefore": {
@@ -3654,7 +3788,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryRowsAfter": {
@@ -3663,7 +3798,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryRowInsertCount": {
@@ -3672,7 +3808,8 @@
       "minimum": 0,
       "maximum": 4,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryMismatchMask": {
@@ -3681,7 +3818,8 @@
       "minimum": 0,
       "maximum": 1073741823,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryLockedMask": {
@@ -3690,7 +3828,8 @@
       "minimum": 0,
       "maximum": 1073741823,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryCellTypeMismatchMask": {
@@ -3699,7 +3838,8 @@
       "minimum": 0,
       "maximum": 1073741823,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryCombo1Mask": {
@@ -3708,7 +3848,8 @@
       "minimum": 0,
       "maximum": 2047,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryCombo2Mask": {
@@ -3717,7 +3858,8 @@
       "minimum": 0,
       "maximum": 2047,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationEntryDateTextMask": {
@@ -3726,35 +3868,40 @@
       "minimum": 0,
       "maximum": 1073741823,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickMethodPinsMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickEditsMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickTicksMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickReadbackMatched": {
       "kind": "boolean",
       "default": false,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickPlannedCount": {
@@ -3763,7 +3910,8 @@
       "minimum": 0,
       "maximum": 8,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickActionCount": {
@@ -3772,7 +3920,8 @@
       "minimum": 0,
       "maximum": 8,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickFailureCode": {
@@ -3781,7 +3930,8 @@
       "minimum": 0,
       "maximum": 31,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickMethodPinMask": {
@@ -3790,7 +3940,8 @@
       "minimum": 0,
       "maximum": 1073741823,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickMismatchMask": {
@@ -3799,7 +3950,8 @@
       "minimum": 0,
       "maximum": 255,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickReadbackMask": {
@@ -3808,7 +3960,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickComboMask": {
@@ -3817,7 +3970,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickComboListCount": {
@@ -3826,7 +3980,8 @@
       "minimum": 0,
       "maximum": 4096,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickEntryMask": {
@@ -3835,7 +3990,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickEntryStartOffset": {
@@ -3844,7 +4000,8 @@
       "minimum": 0,
       "maximum": 255,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTickEntryKeyOffset": {
@@ -3853,7 +4010,8 @@
       "minimum": 0,
       "maximum": 255,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeAttributeMask": {
@@ -3862,7 +4020,8 @@
       "minimum": 0,
       "maximum": 7,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeTextMismatchCount": {
@@ -3871,7 +4030,8 @@
       "minimum": 0,
       "maximum": 4096,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeFirstMismatchOrdinal": {
@@ -3880,7 +4040,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeFirstMismatchKind": {
@@ -3889,7 +4050,8 @@
       "minimum": 0,
       "maximum": 7,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeMismatch1": {
@@ -3898,7 +4060,8 @@
       "minimum": 0,
       "maximum": 6553599,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeMismatch2": {
@@ -3907,7 +4070,8 @@
       "minimum": 0,
       "maximum": 6553599,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeMismatch3": {
@@ -3916,7 +4080,8 @@
       "minimum": 0,
       "maximum": 6553599,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationTreeMismatch4": {
@@ -3925,7 +4090,8 @@
       "minimum": 0,
       "maximum": 6553599,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationUiWaitMask": {
@@ -3934,7 +4100,8 @@
       "minimum": 0,
       "maximum": 4095,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationUiWaitSeconds": {
@@ -3943,7 +4110,8 @@
       "minimum": 0,
       "maximum": 255,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationUiForegroundKind": {
@@ -3952,7 +4120,8 @@
       "minimum": 0,
       "maximum": 8,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationUiVisibleForms": {
@@ -3961,7 +4130,8 @@
       "minimum": 0,
       "maximum": 64,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationUiStallSeconds": {
@@ -3970,7 +4140,8 @@
       "minimum": 0,
       "maximum": 255,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexListMask": {
@@ -3979,7 +4150,8 @@
       "minimum": 0,
       "maximum": 4095,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexListRows": {
@@ -3988,7 +4160,8 @@
       "minimum": 0,
       "maximum": 512,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexListTickedBefore": {
@@ -3997,7 +4170,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexListLockedBefore": {
@@ -4006,7 +4180,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexListTickedAfter": {
@@ -4015,7 +4190,8 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "declarationAnnexListActions": {
@@ -4024,7 +4200,8 @@
       "minimum": 0,
       "maximum": 16,
       "activeModes": [
-        "declaration-web-import-inspect"
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
       ]
     },
     "controlKinds": {
@@ -4373,6 +4550,40 @@
       "allowEmpty": true,
       "activeModes": [
         "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "declarationKhbsPromptAnswered": {
+      "kind": "boolean",
+      "default": false,
+      "activeModes": [
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationKhbsRound": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2,
+      "activeModes": [
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationKhbsStepMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 2047,
+      "activeModes": [
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationKhbsMessageId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 9999,
+      "activeModes": [
+        "declaration-amendment-khbs-inspect"
       ]
     }
   }

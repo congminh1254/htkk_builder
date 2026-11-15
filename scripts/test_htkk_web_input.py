@@ -6,6 +6,8 @@ ROOT=pathlib.Path(__file__).parent
 spec=importlib.util.spec_from_file_location('web_input',ROOT/'fetch-htkk-web-input.py');w=importlib.util.module_from_spec(spec);spec.loader.exec_module(w)
 spec=importlib.util.spec_from_file_location('native_parser_fixtures',ROOT/'test_gtgt_export_evidence.py');n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
 spec=importlib.util.spec_from_file_location('declaration_input_fixtures',ROOT/'declaration_test_support.py');dfx=importlib.util.module_from_spec(spec);spec.loader.exec_module(dfx)
+# 01/NTNN KHBS: the reviewed files stay private, so this reader instance is pinned to synthetic in-memory files.
+spec=importlib.util.spec_from_file_location('ntnn_khbs_input_fixtures',ROOT/'ntnn_khbs_test_support.py');ntnn_fx=importlib.util.module_from_spec(spec);spec.loader.exec_module(ntnn_fx);ntnn_fx.pin(w.ntnn)
 TODAY=datetime.date(2026,10,25)
 def web_fixture():
  root=ET.fromstring(n.parser_fixture());ns='{'+w.privacy.NS+'}';service=root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinDVu')
@@ -78,6 +80,9 @@ def case_manifest(body,case,producer_sha='c'*64):
  """Exact manifest shape of the registered producer for one fixed case."""
  if w.declaration.is_case(case):return dfx.declaration_manifest(body,case,producer_sha)
  value=manifest(body);value.update(format=w.CASES[case],caseId=case,producerSha256=producer_sha)
+ if w.ntnn.is_case(case):
+  c=w.ntnn.case(case);value.update(w.ntnn.manifest_fields(case),originalBytes=c['original'][0],originalXmlSha256=c['original'][1])
+  if c['prior']:value.update(priorBytes=c['prior'][0],priorXmlSha256=c['prior'][1])
  if w.khbs.is_case(case):
   value.update(w.khbs.manifest_fields(case))
   if w.khbs.prior_case(case):prior=sale_fixture(w.khbs.prior_case(case));value.update(priorBytes=len(prior),priorXmlSha256=hashlib.sha256(prior).hexdigest())
@@ -89,6 +94,7 @@ def case_manifest(body,case,producer_sha='c'*64):
  return value
 def sale_fixture(case="01GTGT-sale10-M10-2026"):
  if w.declaration.is_case(case):return dfx.declaration_fixture(case)
+ if w.ntnn.is_case(case):return ntnn_fx.synthetic(w.ntnn,case,'web')
  if w.annex12.is_case(case):return annex_fixture(case)
  if w.annex10.is_case(case):return annex10_fixture(case)
  if w.khbs.is_case(case):return khbs_fixture(case)
