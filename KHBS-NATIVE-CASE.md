@@ -583,3 +583,14 @@ stopped in its bổ sung round at the first giảm thuế tick (`declaration-imp
 16 = AJ291) after the four edits matched: `CnkdHkd01TT50Nckt310.lockUnLockA_TK` sets `AJ.Locked = !(CE > 0)` for every row, and runs
 only from `AutoBindData_0` and `ButtonClick_0`. The tick now records `declarationTickLockShape` (1 CE > 0, 2 U > 0, 4 L > 0, 8 ticked,
 16 bổ sung round, 128 recorded) so the next run says whether the lock follows a zero CE or a refresh that did not run after the import.
+
+Cohort c741595 (HTKK 5.8.2): with the main-schema pin, `01CNKD-khbs-increase-Q3-2026` (run 43742193235),
+`01CNKD-khbs-decrease-Q3-2026` (43742195682) and `01CNKD-khbs-lan2-Q3-2026` (43742197893) matched the whole tree (271 leaves); htkk_web
+keeps the raw exports byte-identical (tests/fixtures/htkk-cnkd-khbs-native-reexport) and released U5 KHBS lần 1 and lần 2+. In those
+runs the Bổ sung period dialog showed its phụ lục list (annex list mask 0, the case's annex ticked like round 0), so the static
+reading of `UpdatePeriodByVerSion` (list hidden) did not hold; the 4096 branch never ran.
+`01CNKD-PL01-khbs-Q3-2026` (run 43742200645) stopped again at AJ291 with `declarationTickLockShape` 151 (CE, U, L > 0, unticked,
+bổ sung round): the lock is stale, set by `lockUnLockA_TK` when the sheet was bound before the import, and nothing re-runs it after
+the import. In HTKK it runs only from `AutoBindData_0` (`WinSpreadProcess.ProcessSheet`: sheet load, the "Đồng ý" of
+`frmWinSelectPhuLuc` behind btnThemPhuLuc, `frmWinToKhai.AddFullPLImportXML`) and `ButtonClick_0`. A candidate original route is the
+"Thêm phụ lục" dialog after the import (not tried; the case stays an observation case and the web keeps PL 01 bổ sung hidden).
