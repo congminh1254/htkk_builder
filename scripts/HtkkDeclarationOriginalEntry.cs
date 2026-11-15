@@ -44,7 +44,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
- private bool DeclarationEntryCase(){return declarationPlan!=null&&HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId)!=null;}
+ private bool DeclarationEntryCase(){return declarationPlan!=null&&(HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId)!=null||HtkkDeclarationCasePlans.KhbsEntry(declarationPlan.CaseId,0)!=null);}
  private void DeclarationEntryFail(int code){if(declarationEntryFailureCode==0)declarationEntryFailureCode=code;DeclarationTerminal(HtkkAutomationStage.DeclarationEntryNotMatched);}
 
  // ---- Owner, grid and table observation (read only) ----
@@ -118,6 +118,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Control grid;object sheet=DeclarationEntrySheet(out grid);SetStage(HtkkAutomationStage.DeclarationEntryChoiceInvoking);Record();
   int[] choice=DeclarationEntryCell(declarationEntryPlan.ChoiceCell),exclusive=DeclarationEntryCell(declarationEntryPlan.ExclusiveCell);
   object cell=Cell(sheet,choice[0],choice[1]);
+  // Kê khai bổ sung, B rounds: the B sheet opens on the saved lần đầu, whose part choice may already hold; it is kept, never toggled.
+  if(DeclarationKhbsMode()&&declarationKhbsRound>0&&Selected(Get(cell,"Value"))&&!Selected(Get(Cell(sheet,exclusive[0],exclusive[1]),"Value"))){declarationEntryChoiceMatched=true;declarationEntryLockBeforeMask=DeclarationEntryLockMask(sheet);declarationEntryLockAfterMask=declarationEntryLockBeforeMask;declarationEntryLocksMatched=declarationEntryLockAfterMask==DeclarationEntryExpectedLocks();Record();if(!declarationEntryLocksMatched)DeclarationEntryFail(5);return;}
   if(DeclarationEntryCellKind(cell)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||DeclarationEntryCellKind(Cell(sheet,exclusive[0],exclusive[1]))!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(cell,"Locked"))||Selected(Get(cell,"Value"))||!RowVisible(sheet,choice[0])){DeclarationEntryFail(3);return;}
   if(DeclarationEntryTables()==null){DeclarationEntryFail(6);return;}
   declarationEntryLockBeforeMask=DeclarationEntryLockMask(sheet);
@@ -315,6 +317,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     // Original recalculation may settle on a later UI turn; bounded wait.
     if(!matched&&declarationEntryClock.Elapsed.TotalSeconds<3)return;
     if(!matched){DeclarationEntryFail(20);return;}
+    if(DeclarationKhbsMode()){DeclarationKhbsInputDone();return;}
     declarationPhase="export-start";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);Record();return;
    }
    throw new InvalidOperationException();

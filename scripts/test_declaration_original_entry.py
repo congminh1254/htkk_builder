@@ -31,6 +31,8 @@ CASE = '01NTNN-NCCNN-entry-M10-2026'
 OCCURRENCE = '01NTNN-NCCNN-occurrence-D20-10-2026'
 BASE = '01NTNN-NCCNN-two-parts-M10-2026'
 MODE = 'declaration-web-import-inspect'
+# The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
+KHBS_MODE = 'declaration-amendment-khbs-inspect'
 
 
 def plan_block(case_id):
@@ -226,12 +228,12 @@ class Driver(unittest.TestCase):
         self.assertIn('EditDeclarationEntry(declarationEntryActionCount);if(finished)return;', ENTRY)
 
     def test_import_driver_routes_only_entry_plans_to_the_entry_phases(self):
-        self.assertIn('declarationEntryPlan=HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);', IMPORT)
+        self.assertIn('declarationEntryPlan=DeclarationKhbsMode()?HtkkDeclarationCasePlans.KhbsEntry(declarationPlan.CaseId,declarationKhbsRound):HtkkDeclarationCasePlans.Entry(declarationPlan.CaseId);', IMPORT)
         self.assertIn('declarationPhase=declarationEntryPlan!=null?"entry-ready":"import-ready"', IMPORT)
         self.assertIn('if(declarationPhase.StartsWith("entry-",StringComparison.Ordinal)){ContinueDeclarationEntry();return;}', IMPORT)
         self.assertIn('if(exportFilenameEditing||declarationEntryBusy)return;', IMPORT)
         self.assertIn('DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:declarationTickPlan!=null?HtkkAutomationStage.DeclarationImportTickExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched)', IMPORT)
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();', IMPORT)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', IMPORT)
 
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']
@@ -239,7 +241,7 @@ class Driver(unittest.TestCase):
         self.assertEqual(len(names), 25)
         for name in names:
             self.assertIn(name, automation['keys'])
-            self.assertEqual(fields[name]['activeModes'], [MODE])
+            self.assertEqual(fields[name]['activeModes'], [MODE, KHBS_MODE])
             self.assertIn(fields[name]['kind'], ('boolean', 'integer'))
         self.assertIn(CASE, fields['webCaseId']['values'])
         stages = {s['id'] for s in automation['stages']}

@@ -7,7 +7,7 @@ function New-HtkkX86ReferenceHost {
   param(
     [Parameter(Mandatory=$true)][string]$ProjectDirectory,
     [Parameter(Mandatory=$true)][string]$TemporaryDirectory,
-    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')][string]$GuiAutomation='none',
+    [ValidateSet('none','inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect','declaration-amendment-khbs-inspect')][string]$GuiAutomation='none',
     [ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1'
   )
   $ErrorActionPreference = 'Stop'

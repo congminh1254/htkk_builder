@@ -22,6 +22,8 @@ failure = load('declaration_failure_callback_test', 'report-native-failure.py')
 automation = json.loads((ROOT / 'htkk-native-automation-registry.json').read_text())
 CASES = registry.DECLARATION_CASES
 MODE = 'declaration-web-import-inspect'
+# The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
+KHBS_MODE = 'declaration-amendment-khbs-inspect'
 TODAY = datetime.date(2026, 11, 6)
 SOURCE, ARTIFACT, BUILDER_SHA = 'a' * 40, 'b' * 40, 'c' * 40
 PLANS = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
@@ -171,9 +173,9 @@ class CompiledPlans(unittest.TestCase):
         for original in ('"cmdImportXML"', '"cmdExport"', '"radKetXuatXML"', '"btnDongY"', 'RaiseOriginalMenuClick', 'TrySubmitOriginalFileDialog', 'OriginalMessageCatalogueId', '"Nhập dữ liệu từ XML thành công."', '"Kết xuất tờ khai xml thành công."'):
             self.assertIn(original, DRIVER)
         core = (ROOT / 'HtkkGuiReferenceAutomation.cs').read_text(encoding='utf-8')
-        self.assertIn('if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();', core)
+        self.assertIn('if(modeEnum==HtkkAutomationMode.DeclarationWebImportInspect||modeEnum==HtkkAutomationMode.DeclarationAmendmentKhbsInspect)adapter=new HtkkDeclarationAdapter();else adapter=new HtkkGtgtAdapter();', core)
         self.assertIn('+SheetJson()+ExportJson()+DeclarationJson();', (ROOT / 'HtkkGtgtReferenceNavigation.cs').read_text(encoding='utf-8'))
-        self.assertIn('KhbsMode()?KhbsImportHash():mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webImportInputSha256', (ROOT / 'HtkkWebInputReference.cs').read_text(encoding='utf-8'))
+        self.assertIn('KhbsMode()?KhbsImportHash():DeclarationKhbsMode()?DeclarationImportHash():mode=="gtgt-web-import-inspect"||mode=="declaration-web-import-inspect"?webImportInputSha256', (ROOT / 'HtkkWebInputReference.cs').read_text(encoding='utf-8'))
 
     def test_0016_refusal_names_pink_cells_by_coordinate_only(self):
         # Release 228 run 42310319856 (05QTT): import and all 11 sheet checks matched, the original
@@ -189,7 +191,7 @@ class CompiledPlans(unittest.TestCase):
         self.assertEqual(fields['declarationInvalidSheetMask']['maximum'], 65535)
         self.assertEqual(fields['declarationInvalidCellCount']['maximum'], 4096)
         for k in range(1, 5):
-            self.assertEqual(fields['declarationInvalidCell%d' % k], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': 16999999, 'activeModes': [MODE]})
+            self.assertEqual(fields['declarationInvalidCell%d' % k], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': 16999999, 'activeModes': [MODE, KHBS_MODE]})
 
     @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR comparison smoke test needs mono')
     def test_compiled_tree_comparison_matches_python_oracle(self):
@@ -249,8 +251,8 @@ class CompiledPlans(unittest.TestCase):
         fields = automation['resultFields']
         for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7),
                               ('declarationTreeMismatch1', 6553599), ('declarationTreeMismatch2', 6553599), ('declarationTreeMismatch3', 6553599), ('declarationTreeMismatch4', 6553599)):
-            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();', DRIVER)
+            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE, KHBS_MODE]})
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', DRIVER)
 
 
 class ExportInvocation(unittest.TestCase):
@@ -263,7 +265,7 @@ class ExportInvocation(unittest.TestCase):
         fields = automation['resultFields']
         for name, maximum in (('declarationUiWaitMask', 4095), ('declarationUiWaitSeconds', 255), ('declarationUiForegroundKind', 8),
                               ('declarationUiVisibleForms', 64), ('declarationUiStallSeconds', 255)):
-            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
+            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE, KHBS_MODE]})
             # Never an export/comparison progress field for the pre-tax classifier.
             self.assertNotIn('export', name.lower())
         for name in ('Math.Min(255,(int)declarationExportClock', 'Math.Min(255,(int)seconds)', 'count<64'):
@@ -631,15 +633,17 @@ class WorkflowAndProbe(unittest.TestCase):
             self.assertIn(name, mode['orderedCompileInputs'])
         fields = automation['resultFields']
         for key, field in fields.items():
-            if key.startswith('declaration'):
-                self.assertEqual(field.get('activeModes'), [MODE], key)
+            if key.startswith('declarationKhbs'):
+                self.assertEqual(field.get('activeModes'), [KHBS_MODE], key)
+            elif key.startswith('declaration'):
+                self.assertEqual(field.get('activeModes'), [MODE, KHBS_MODE], key)
         self.assertTrue(set(CASES) <= set(fields['webCaseId']['values']))
         stages = {s['id'] for s in automation['stages'] if s['category'] == 'declaration'}
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         terminal = re.search(r"\$terminal=.*?-in @\(([^)]*)\)", probe).group(1)
         for stage in ('declaration-web-import-inspected', 'declaration-export-not-matched', 'declaration-import-original-message-rejected', 'declaration-export-original-message-rejected', 'declaration-period-inputs-not-matched', 'declaration-period-original-message-rejected'):
             self.assertIn(stage, stages); self.assertIn("'" + stage + "'", terminal)
-        self.assertEqual(fields['declarationPeriodRejectedMessageId'], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': 9999, 'activeModes': [MODE]})
+        self.assertEqual(fields['declarationPeriodRejectedMessageId'], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': 9999, 'activeModes': [MODE, KHBS_MODE]})
 
     def test_hidden_period_annex_list_is_observed_never_clicked(self):
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
@@ -712,13 +716,13 @@ class VisibleAnnexList(unittest.TestCase):
         fields = automation['resultFields']
         for name, maximum in (('declarationAnnexListMask', 4095), ('declarationAnnexListRows', 512), ('declarationAnnexListTickedBefore', 65535),
                               ('declarationAnnexListLockedBefore', 65535), ('declarationAnnexListTickedAfter', 65535), ('declarationAnnexListActions', 16)):
-            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE]})
+            self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE, KHBS_MODE]})
             self.assertIn('"' + name + '"', DRIVER)
         self.assertIn({'id': 'declaration-period-annex-list-not-matched', 'enumName': 'DeclarationPeriodAnnexListNotMatched', 'category': 'declaration'}, automation['stages'])
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         terminal = re.search(r"\$terminal=.*?-in @\(([^)]*)\)", probe).group(1)
         self.assertIn("'declaration-period-annex-list-not-matched'", terminal)
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson();', DRIVER)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', DRIVER)
 
     def test_handling_is_bounded_never_ticks_khbs_never_forces_locked_rows(self):
         body = self.section(' private void SelectReviewedVisibleAnnexList(Control grid){', ' private void SelectDeclarationAnnexes(Control period){')

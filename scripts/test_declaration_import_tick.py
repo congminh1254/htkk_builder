@@ -31,6 +31,8 @@ CASE = '01CNKD-TT50-310-pl01-three-groups-Q3-2026'
 # U5 3.1.0 with PL 03 (Mẫu 03): the same mode with edits only (capNhatToKhai writes the thuế bù CF; nothing is ticked).
 PL03 = '01CNKD-TT50-310-pl03-two-groups-Q3-2026'
 MODE = 'declaration-web-import-inspect'
+# The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
+KHBS_MODE = 'declaration-amendment-khbs-inspect'
 FIRST_ROW = 291  # 01_CNKD_HKD_TT50_310.xml table_1 DataLocationTemplateRowStart
 
 
@@ -230,7 +232,7 @@ class Driver(unittest.TestCase):
         self.assertIn('declarationPhase="import-inspect";declarationClock=Stopwatch.StartNew();SetStage(HtkkAutomationStage.DeclarationImportSheetChecking);', TICK)
 
     def test_import_driver_routes_the_tick_plan_after_the_original_import(self):
-        self.assertIn('declarationTickPlan=HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();', IMPORT)
+        self.assertIn('declarationTickPlan=DeclarationKhbsMode()?null:HtkkDeclarationCasePlans.ImportTick(declarationPlan.CaseId);if(declarationEntryPlan!=null&&declarationTickPlan!=null)throw new InvalidOperationException();', IMPORT)
         self.assertIn('if(declarationPhase.StartsWith("tick-",StringComparison.Ordinal)){ContinueDeclarationTick();return;}', IMPORT)
         self.assertIn('if(declarationTickPlan!=null){declarationPhase="tick-pins";SetStage(HtkkAutomationStage.DeclarationImportTickReadyWaiting);}', IMPORT)
         self.assertIn('if(declarationTickPlan!=null)matched=matched&&declarationImportSheetMatched&&DeclarationTickSucceeded();', IMPORT)
@@ -246,7 +248,7 @@ class Driver(unittest.TestCase):
         self.assertEqual(len(names), 15)
         for name in names:
             self.assertIn(name, automation['keys'])
-            self.assertEqual(fields[name]['activeModes'], [MODE])
+            self.assertEqual(fields[name]['activeModes'], [MODE, KHBS_MODE])
             self.assertIn(fields[name]['kind'], ('boolean', 'integer'))
         self.assertEqual(fields['declarationTickActionCount']['maximum'], 8)
         stages = {s['id'] for s in automation['stages']}

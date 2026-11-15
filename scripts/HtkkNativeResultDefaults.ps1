@@ -1,7 +1,7 @@
 # BEGIN GENERATED RESULT DEFAULTS - fixture initialization only; reader never fills missing keys
 function New-HtkkNativeResultDefaults {
  param([Parameter(Mandatory=$true)][string]$Mode)
- if($Mode -cnotin @('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect')){throw 'Unknown mode'}
+ if($Mode -cnotin @('inspect','profile-save','gtgt-inspect','gtgt-sheet-inspect','gtgt-amendment-inspect','gtgt-amendment-open-inspect','gtgt-amendment-khbs-inspect','gtgt-annex12-inspect','gtgt-annex12-row-inspect','gtgt-annex12-input-inspect','gtgt-annex12-numeric-inspect','gtgt-annex12-export-inspect','gtgt-annex12-export-nonzero','gtgt-export-inspect','gtgt-roundtrip-inspect','gtgt-web-import-inspect','declaration-web-import-inspect','declaration-amendment-khbs-inspect')){throw 'Unknown mode'}
  $result=[ordered]@{
   annex12NumericTextSnapshots=''
   annex12NumericTypeSnapshots=''
@@ -337,6 +337,10 @@ function New-HtkkNativeResultDefaults {
   khbsRound=0
   khbsPriorSaveMessageId=0
   khbsExportSha256=''
+  declarationKhbsPromptAnswered=$false
+  declarationKhbsRound=0
+  declarationKhbsStepMask=0
+  declarationKhbsMessageId=0
  }
  return $result
 }
