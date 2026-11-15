@@ -35,6 +35,25 @@ lại; so cả cây với tệp web: **88 lá thuế** (chỉ ngày lập và 4 
 dòng II.2, bit 1 Value = −400002, bit 2 Value = 0 (bị chặn MinValue), bit 3 Text có dấu trừ). Chưa có bước "Chọn phụ lục"
 (`frmWinSelectPhuLuc`): nếu nhập XML không tự gắn sheet 01_10, lần chạy đầu cho `annex10ImportSheetObserved` false và so cây thất bại.
 
+## Hai ca 01-6/GTGT (CSSX) (oracle HTKK 5.8.2, ca quan sát)
+
+`01GTGT-annex16-cssx-formula-M10-2026` (producer `annex16-cssx-formula`) và `01GTGT-annex16-cssx-ratio-M10-2026`
+(producer `annex16-cssx-ratio`), adapter `01-gtgt-2.8.3-annex16-cssx`, validator `gtgt-annex16-cssx-v1`
+(`htkk_annex16_cssx_web_cases.py`), status `htkk-native/annex16-cssx-<ca>@htkk582`, `releaseGate: false`. Producer htkk_web
+`scripts/generate-htkk-web-annex16-cssx-reference.mjs` (tài liệu htkk_web `docs/PHU-LUC-01-6-GTGT-CSSX.md`).
+
+- Ca formula: [06] = 50.000.000 lớn hơn tổng [17] (8.000.005): [17] theo công thức, [19]/[20]. Ca ratio: [06] = 70.000.001 nhỏ
+  hơn tổng [17] (83.333.333): [21] = ROUND([06]×[16]/[07]) với tích vượt 2^53, [23]/[24]. Ba dòng, hai tỉnh (Hà Nội hai dòng).
+- Driver `gtgt-web-import-inspect`: kỳ D1 10/2026 không tích phụ lục; baseline = tờ khai chính số 0 xuất bằng Kết xuất gốc
+  (01-6 đính kèm mà trống bị Header B29/B31/B38/B89–B92 chặn), không sửa ô; ngày ký 27/10/2026; "Nhập từ XML" gốc tệp web.
+  Sau nhập, tờ khai chính phải mang [30]/[32] và thuế 5%/10% của tệp web (`InspectCaseMoney`).
+- Cột H (Chi cục Thuế khu vực, `pathCucT`) không có lá XML nên trống sau nhập, mà Header B91 bắt buộc H22 (0016, như R44 của
+  01-2). `RestoreImportedAnnex16HeadOffices` chọn lại H của từng dòng qua combo gốc, sang I (chọn lại I chỉ khi handler gốc
+  xoá), sang K, chờ có giới hạn; đọc lại H/I/U/R/X, không ghi ô. Kết quả có giới hạn: `annex16HeadOfficeRepairCount` (0..64),
+  `annex16HeadOfficeFailureMask` (0..4095: bit 0–4 H, I, U, R, X chưa đạt; bit 5 mã T trống sau khi chọn (chỉ quan sát);
+  bit 6–8 thứ tự dòng + 1; bit 9/10 combo H/I lỗi; bit 11 phải chọn lại I). Chưa chạy Windows: hiệu quả chưa được chứng minh.
+- So cả cây với tệp web: **131 lá thuế** (74 lá tờ khai chính + 61 lá phụ lục − 4 lá dịch vụ); re-export được khác baseline.
+
 ## Allowlist privacy/số tiền
 
 `htkk_annex12_web_cases.py` mô tả chính xác từng lá phụ lục: ID nhóm/dòng, STT, loại, mã/tên

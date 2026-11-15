@@ -46,6 +46,8 @@ function New-HtkkNativeResultDefaults {
   annex10ImportPurchaseRows=0
   annex10ImportSaleRows=0
   annex10NegativeDisplayMask=0
+  annex16HeadOfficeRepairCount=0
+  annex16HeadOfficeFailureMask=0
   annex12InputReadOnlyIdentityMatched=$false
   annex12InputIdentityMatched=$false
   annex12InputTypesMatched=$false

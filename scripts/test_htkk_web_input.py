@@ -54,6 +54,25 @@ def annex10_fixture(case):
  ET.SubElement(ET.SubElement(annex,ns+'ChenhLech'),ns+'ct9').text=spec['ct9']
  ET.register_namespace('',w.privacy.NS)
  return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
+def annex16_fixture(case):
+ """Synthetic 01-6/GTGT (CSSX) web input built from the trusted contract (no application fixture is copied)."""
+ root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}';spec=w.annex16.CASES[case]
+ for name in ('ngayLapTKhai','ngayKy'):root.find('./'+ns+'HSoKhaiThue/'+ns+'TTinChung/'+ns+'TTinTKhaiThue/'+ns+'TKhaiThue/'+ns+name).text=w.annex16.FIXED_DATE
+ for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value
+ pluc=root.find('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
+ if pluc is None:pluc=ET.SubElement(root.find('./'+ns+'HSoKhaiThue'),ns+'PLuc')
+ for child in list(pluc):pluc.remove(child)
+ pluc.text=None;annex=ET.SubElement(pluc,ns+'Pluc_01_6_GTGT_CSSX')
+ for name,value in zip(w.annex16.SECTION_HEAD,spec['head']):ET.SubElement(annex,ns+name).text=value
+ for tag,rows,leaves in (('NoiDungBangPhanBo',spec['rows'],w.annex16.ROW_LEAVES),('cong_ct18',spec['provinces'],w.annex16.PROVINCE_LEAVES)):
+  for row_id,values in rows:
+   row=ET.SubElement(annex,ns+tag,{'id':row_id})
+   for name,value in zip(leaves,values):ET.SubElement(row,ns+name).text=value or None
+ ct19,ct23,ct20,ct24=spec['totals']
+ total=ET.SubElement(annex,ns+'CongCacTinh');ET.SubElement(total,ns+'ct19').text=ct19;ET.SubElement(total,ns+'ct23').text=ct23
+ head=ET.SubElement(annex,ns+'SoThuePhaiNop');ET.SubElement(head,ns+'ct20').text=ct20;ET.SubElement(head,ns+'ct24').text=ct24
+ ET.register_namespace('',w.privacy.NS)
+ return (w.PREAMBLE+ET.tostring(root,encoding='unicode')).encode('utf-8')
 def khbs_fixture(case):
  """Synthetic KHBS (bổ sung lần 1) web input built from the trusted contract (no application fixture is copied)."""
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
@@ -88,6 +107,8 @@ def case_manifest(body,case,producer_sha='c'*64):
   if w.khbs.prior_case(case):prior=sale_fixture(w.khbs.prior_case(case));value.update(priorBytes=len(prior),priorXmlSha256=hashlib.sha256(prior).hexdigest())
  if w.annex10.is_case(case):
   value.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=w.ANNEX10_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex10.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
+ if w.annex16.is_case(case):
+  value.update(exporter='lib/htkk-gtgt-annex16-cssx-xml.ts',producer=w.ANNEX16_PRODUCER,htkkVersion='5.8.2',nativeBaseSha256=w.ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=w.annex16.money(case),expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode())))
  if w.annex12.is_case(case):
   compared,nodes=w.ANNEX_NATIVE_NODES[case]
   value.update(exporter='lib/htkk-gtgt-annex12-xml.ts',producer=w.ANNEX_PRODUCER,nativeAnnexReferenceSha256=w.ANNEX_NATIVE_REFERENCE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeLeafComparisonPassed=compared,nativeNodesCompared=nodes,nativeAnnexRoundTripVerified=False,expectedAnnexLeaves=w.annex_manifest_leaves(ET.fromstring(body.decode().replace(w.COMMENT,''))))
@@ -97,6 +118,7 @@ def sale_fixture(case="01GTGT-sale10-M10-2026"):
  if w.ntnn.is_case(case):return ntnn_fx.synthetic(w.ntnn,case,'web')
  if w.annex12.is_case(case):return annex_fixture(case)
  if w.annex10.is_case(case):return annex10_fixture(case)
+ if w.annex16.is_case(case):return annex16_fixture(case)
  if w.khbs.is_case(case):return khbs_fixture(case)
  root=ET.fromstring(web_fixture().decode().replace(w.COMMENT,''));ns='{'+w.privacy.NS+'}'
  for name,value in w.CASE_MONEY[case].items():root.find('.//'+ns+name).text=value

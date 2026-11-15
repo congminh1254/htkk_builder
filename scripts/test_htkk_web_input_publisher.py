@@ -9,14 +9,15 @@ spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk
 f.ntnn_fx.pin(p.reader.ntnn)
 SHA='a'*40
 # One distinct fake orphan commit per registered case (21 = 15 GTGT + 6 declaration).
-COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8')
+COMMIT_LETTERS=('d','e','f','1','2','3','4','5','6','7','8','9','a','b','0','c','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','a')
 PRODUCER=b'// Fixed synthetic test producer, never executed.\n'
 ANNEX_PRODUCER=b'// Fixed synthetic annex test producer, never executed.\n'
 ANNEX10_PRODUCER=b'// Fixed synthetic 01-10 annex test producer, never executed.\n'
+ANNEX16_PRODUCER=b'// Fixed synthetic 01-6 (CSSX) annex test producer, never executed.\n'
 KHBS_PRODUCER=b'// Fixed synthetic KHBS test producer, never executed.\n'
 NTNN_KHBS_PRODUCER=b'// Fixed synthetic 01/NTNN KHBS test producer, never executed.\n'
 DECLARATION_PRODUCER=f.dfx.PRODUCER
-PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-web-annex10-reference.mjs':ANNEX10_PRODUCER,'scripts/generate-htkk-web-khbs-reference.mjs':KHBS_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER,'scripts/generate-htkk-web-ntnn-khbs-reference.mjs':NTNN_KHBS_PRODUCER}
+PRODUCERS={p.PRODUCER:PRODUCER,'scripts/generate-htkk-web-annex12-reference.mjs':ANNEX_PRODUCER,'scripts/generate-htkk-web-annex10-reference.mjs':ANNEX10_PRODUCER,'scripts/generate-htkk-web-annex16-cssx-reference.mjs':ANNEX16_PRODUCER,'scripts/generate-htkk-web-khbs-reference.mjs':KHBS_PRODUCER,'scripts/generate-htkk-declaration-reference.mjs':DECLARATION_PRODUCER,'scripts/generate-htkk-web-ntnn-khbs-reference.mjs':NTNN_KHBS_PRODUCER}
 
 def fixtures():
  result=[]
@@ -46,6 +47,7 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/contents/'+p.PRODUCER+'?ref='+SHA:return contents(PRODUCER,'generate-htkk-web-reference.mjs',p.PRODUCER)
   if path=='/contents/scripts/generate-htkk-web-annex12-reference.mjs?ref='+SHA:return contents(ANNEX_PRODUCER,'generate-htkk-web-annex12-reference.mjs','scripts/generate-htkk-web-annex12-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-annex10-reference.mjs?ref='+SHA:return contents(ANNEX10_PRODUCER,'generate-htkk-web-annex10-reference.mjs','scripts/generate-htkk-web-annex10-reference.mjs')
+  if path=='/contents/scripts/generate-htkk-web-annex16-cssx-reference.mjs?ref='+SHA:return contents(ANNEX16_PRODUCER,'generate-htkk-web-annex16-cssx-reference.mjs','scripts/generate-htkk-web-annex16-cssx-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-khbs-reference.mjs?ref='+SHA:return contents(KHBS_PRODUCER,'generate-htkk-web-khbs-reference.mjs','scripts/generate-htkk-web-khbs-reference.mjs')
   if path=='/contents/scripts/generate-htkk-declaration-reference.mjs?ref='+SHA:return contents(DECLARATION_PRODUCER,'generate-htkk-declaration-reference.mjs','scripts/generate-htkk-declaration-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-ntnn-khbs-reference.mjs?ref='+SHA:return contents(NTNN_KHBS_PRODUCER,'generate-htkk-web-ntnn-khbs-reference.mjs','scripts/generate-htkk-web-ntnn-khbs-reference.mjs')

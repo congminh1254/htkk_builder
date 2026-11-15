@@ -30,6 +30,9 @@ TRUSTED_ADAPTERS={
  # 01-10/GTGT (giảm thuế GTGT NQ 204/2025/QH15, sheet 01_10, PL_NQ142_GTGT). Its only case runs on the HTKK 5.8.2
  # oracle (per-case htkkVersion): 5.8.2 accepts negative goods values there (htkk_web docs/PHU-LUC-01-10-GTGT.md).
  '01-gtgt-2.8.3-annex10':{'producer':'scripts/generate-htkk-web-annex10-reference.mjs','privacyValidator':'gtgt-annex10-v1','annexes':['01-10/GTGT'],**_d1},
+ # 01-6/GTGT (CSSX) (phân bổ thuế GTGT cho cơ sở sản xuất, sheet 01_6, Pluc_01_6_GTGT_CSSX): two observation cases on the
+ # HTKK 5.8.2 oracle, the formula [17] branch and the ratio [21] branch (htkk_web docs/PHU-LUC-01-6-GTGT-CSSX.md).
+ '01-gtgt-2.8.3-annex16-cssx':{'producer':'scripts/generate-htkk-web-annex16-cssx-reference.mjs','privacyValidator':'gtgt-annex16-cssx-v1','annexes':['01-6/GTGT (CSSX)'],**_d1},
  # Kê khai bổ sung lần 1 (KHBS, loaiTKhai B, PL01_KHBS + PL01_1_KHBS) on the HTKK 5.8.2 oracle, own driver
  # (KHBS-NATIVE-CASE.md): C0 zero Ghi, B1 reopen with a fixed ngày lập, original import of the web B1 file,
  # Tổng hợp KHBS, original export, whole tree. The only adapter whose unit has amendmentOrder 1.
@@ -168,6 +171,8 @@ CANDIDATE_CASES=tuple(id for id,c in CASES.items() if not c['releaseGate'])
 check(GATE_CASES and list(CASES)[:len(GATE_CASES)]==list(GATE_CASES))
 ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex12')
 ANNEX10_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex10')
+ANNEX16_CSSX_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex16-cssx')
+check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in ANNEX16_CSSX_CASES))
 KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId'] in ('01-gtgt-2.8.3-khbs','01-gtgt-2.8.3-khbs-lan2','01-gtgt-2.8.3-khbs-annex12','01-gtgt-2.8.3-khbs-annex12-lan2'))
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in KHBS_CASES))
 # Kê khai bổ sung 01/NTNN cases (driver NTNN_KHBS_DRIVER): observation cases, never a release gate, HTKK 5.8.2 only.

@@ -35,6 +35,9 @@ def annex10_baseline(case):
  declaration.remove(declaration.find(ns+'PLuc'))
  for name in n.reader.CASE_MONEY[case]:root.find('.//'+ns+name).text='0'
  return ET.tostring(root,encoding='utf-8',xml_declaration=True)
+def annex16_baseline(case):
+ # The 01-6 (CSSX) UI baseline is the same zero main declaration (an attached empty 01-6 is refused, 0016).
+ return annex10_baseline(case)
 def changed(body,name,value):
  root=ET.fromstring(body);root.find('.//{'+n.privacy.NS+'}'+name).text=value;return ET.tostring(root,encoding='utf-8')
 

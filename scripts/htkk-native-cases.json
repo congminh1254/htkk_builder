@@ -32,6 +32,16 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-gtgt-2.8.3-annex16-cssx",
+      "htkkVersion": "5.8.1",
+      "menuId": "D1",
+      "xmlVersion": "2.8.3",
+      "producer": "scripts/generate-htkk-web-annex16-cssx-reference.mjs",
+      "driver": "gtgt-web-import-inspect",
+      "privacyValidator": "gtgt-annex16-cssx-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "01-gtgt-2.8.3-khbs",
       "htkkVersion": "5.8.1",
       "menuId": "D1",
@@ -1041,6 +1051,48 @@
         "periodValue": "10/2026",
         "activityCode": "00",
         "annexes": ["01-10/GTGT"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-annex16-cssx-formula-M10-2026",
+      "producerCase": "annex16-cssx-formula",
+      "adapterId": "01-gtgt-2.8.3-annex16-cssx",
+      "format": "htkk-web-annex16-cssx-formula-input-v1",
+      "stagingDirectory": "htkk-web-reference-annex16-cssx-formula-input",
+      "inputBranch": "gtgt-web-reference-annex16-cssx-formula-input",
+      "outputBranch": "gtgt-web-native-annex16-cssx-formula-output",
+      "statusContext": "htkk-native/annex16-cssx-formula",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-6/GTGT (CSSX)"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-annex16-cssx-ratio-M10-2026",
+      "producerCase": "annex16-cssx-ratio",
+      "adapterId": "01-gtgt-2.8.3-annex16-cssx",
+      "format": "htkk-web-annex16-cssx-ratio-input-v1",
+      "stagingDirectory": "htkk-web-reference-annex16-cssx-ratio-input",
+      "inputBranch": "gtgt-web-reference-annex16-cssx-ratio-input",
+      "outputBranch": "gtgt-web-native-annex16-cssx-ratio-output",
+      "statusContext": "htkk-native/annex16-cssx-ratio",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-6/GTGT (CSSX)"],
         "amendmentOrder": 0
       }
     },

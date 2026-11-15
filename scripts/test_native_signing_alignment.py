@@ -8,6 +8,7 @@ class AlignedSigningTests(unittest.TestCase):
   # The two-plant case's UI baseline is the proven one-plant zero annex export.
   if case==n.annex12.TWO_PLANTS_CASE:initial=f.two_plant_baseline()
   if n.annex10.is_case(case):initial=f.annex10_baseline(case)
+  if n.annex16.is_case(case):initial=f.annex16_baseline(case)
   m.update(format='htkk-web-native-output-staging-v3',runAttempt=1,initialOutputSha256=hashlib.sha256(initial).hexdigest(),initialOutputBytes=len(initial),initialSigningDateRule='fixed-web-synthetic-date')
   return web,native,im,m,initial
  def test_all_registered_aligned_pairs_publish_without_normalization(self):
@@ -40,7 +41,7 @@ class OriginalSigningControlTests(unittest.TestCase):
   self.assertIn('FarPoint.Win.Spread.CellType.MaskCellType',block);self.assertIn('Get(type,"Mask")',block);self.assertIn('=="00/00/0000"',block);self.assertIn('webSigningDateCellKind!=4',block);self.assertIn('WebFixedSigningDate().ToString("ddMMyyyy",CultureInfo.InvariantCulture)',block)
   # Fixed typed dates: 25/10/2026 for the main cases, 27/10/2026 only for the two annex cases.
   web=(ROOT/'HtkkWebInputReference.cs').read_text(encoding='utf-8')
-  self.assertIn('private DateTime WebFixedSigningDate(){return Annex12WebCaseId()||Annex10WebCaseId()?new DateTime(2026,10,27):new DateTime(2026,10,25);}',web)
+  self.assertIn('private DateTime WebFixedSigningDate(){return Annex12WebCaseId()||Annex10WebCaseId()||Annex16WebCaseId()?new DateTime(2026,10,27):new DateTime(2026,10,25);}',web)
   for forbidden in ('SetValue','set_Value','set_CellType','set_Locked'):
    self.assertNotIn(forbidden,block)
   self.assertIn('BeginCellEdit(grid,sheet,65,10,true)',block)

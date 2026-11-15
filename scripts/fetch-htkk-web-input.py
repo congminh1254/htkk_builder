@@ -45,6 +45,12 @@ if set(annex10.CASES)!=set(case_registry.ANNEX10_CASES):raise ValueError('CASE_P
 ANNEX10_PRODUCER='scripts/generate-htkk-web-annex10-reference.mjs'
 ANNEX10_NATIVE_BASE='6956eea0fa865e98da71ad3ce23ed6a527e7a17761c6fb11032a11fc0a97b8cb'
 CASE_MONEY.update({case:annex10.money(case) for case in annex10.CASES})
+# 01-6/GTGT (CSSX) (Pluc_01_6_GTGT_CSSX, oracle HTKK 5.8.2): own producer, manifest keys and exact allowlist.
+_annex16_spec=importlib.util.spec_from_file_location('htkk_annex16_cssx_web_input_contract',pathlib.Path(__file__).with_name('htkk_annex16_cssx_web_cases.py'))
+annex16=importlib.util.module_from_spec(_annex16_spec);_annex16_spec.loader.exec_module(annex16)
+if set(annex16.CASES)!=set(case_registry.ANNEX16_CSSX_CASES):raise ValueError('CASE_POLICY')
+ANNEX16_PRODUCER='scripts/generate-htkk-web-annex16-cssx-reference.mjs'
+CASE_MONEY.update({case:annex16.money(case) for case in annex16.CASES})
 # Kê khai bổ sung lần 1 (KHBS, oracle HTKK 5.8.2): own producer, manifest keys and exact PLuc allowlist.
 _khbs_spec=importlib.util.spec_from_file_location('htkk_khbs_web_input_contract',pathlib.Path(__file__).with_name('htkk_khbs_web_cases.py'))
 khbs=importlib.util.module_from_spec(_khbs_spec);_khbs_spec.loader.exec_module(khbs)
@@ -161,6 +167,9 @@ def validate_manifest(body):
  if annex10.is_case(case):
   fixed.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=ANNEX10_PRODUCER,htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex10.money(case))
   variable=variable|{'expectedAnnexLeaves'}
+ if annex16.is_case(case):
+  fixed.update(exporter='lib/htkk-gtgt-annex16-cssx-xml.ts',producer=ANNEX16_PRODUCER,htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex16.money(case))
+  variable=variable|{'expectedAnnexLeaves'}
  if khbs.is_case(case):
   fixed.update(khbs.manifest_fields(case));fixed['htkkVersion']=case_registry.htkk_version(case)
   if khbs.prior_case(case):variable=variable|{'priorBytes','priorXmlSha256'}
@@ -172,7 +181,7 @@ def validate_manifest(body):
  if type(manifest['bytes']) is not int or not 0<manifest['bytes']<=MAX_XML:raise InputError('MANIFEST')
  if khbs.is_case(case) and khbs.prior_case(case):
   if type(manifest['priorBytes']) is not int or not 0<manifest['priorBytes']<=MAX_XML or not isinstance(manifest['priorXmlSha256'],str) or not re.fullmatch('[0-9a-f]{64}',manifest['priorXmlSha256']):raise InputError('MANIFEST')
- if annex12.is_case(case) or annex10.is_case(case):
+ if annex12.is_case(case) or annex10.is_case(case) or annex16.is_case(case):
   rows=manifest['expectedAnnexLeaves']
   if type(rows) is not list or not 0<len(rows)<=256 or any(type(row) is not list or len(row)!=3 or any(type(item) is not str or len(item)>160 for item in row) for row in rows):raise InputError('MANIFEST')
  return manifest
@@ -197,7 +206,7 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  if declaration.is_case(case_id):
   try:return declaration.validate_web_input(body,case_id,manifest)
   except declaration.DeclarationWebCaseError as error:raise InputError(DECLARATION_ERRORS.get(error.code,'XML_PRIVACY')) from None
- annex=annex12 if annex12.is_case(case_id) else annex10 if annex10.is_case(case_id) else None;amendment=khbs.is_case(case_id)
+ annex=annex12 if annex12.is_case(case_id) else annex10 if annex10.is_case(case_id) else annex16 if annex16.is_case(case_id) else None;amendment=khbs.is_case(case_id)
  fixed_day=datetime.date.fromisoformat(annex.FIXED_DATE if annex else khbs.FIXED_DATE if amendment else '2026-10-25')
  if not isinstance(body,bytes) or not 0<len(body)<=MAX_XML:raise InputError('XML_SIZE')
  try:text=body.decode('utf-8')
