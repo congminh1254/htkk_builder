@@ -220,6 +220,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid)){DeclarationEntryFail(10);return;}
   if(kind=="combo"){EditDeclarationEntryCombo(grid,sheet,editor,index,parts,row,column);return;}
   editorKind=editor is TextBoxBase?"text-box":"other-control";
+  string khbsBefore=CellText(sheet,row,column),khbsOpened=editor.Text;
   SendKeys.SendWait("^a");
   // A bổ sung round's cell can hold the previous version's value: also select it with the keyboard before typing over it.
   if(DeclarationKhbsMode()&&declarationKhbsRound>0)SendKeys.SendWait("{END}+{HOME}");
@@ -227,7 +228,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="text"){
    if(DeclarationEntryAscii(value))SendKeys.SendWait(EscapeSendKeys(value));else if(!TypeDeclarationEntryUnicode(grid,editor,value)){DeclarationEntryFail(10);return;}
    Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=value&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-   if(editor.Text!=value){declarationEntryMismatchMask|=1<<index;DeclarationEntryFail(12);return;}
+   if(editor.Text!=value){ObserveDeclarationKhbsEntry(khbsBefore,khbsOpened,editor,value);declarationEntryMismatchMask|=1<<index;DeclarationEntryFail(12);return;}
   }else if(kind=="number")SendKeys.SendWait(value);
   else if(dateMask)SendKeys.SendWait(DateTime.ParseExact(value,"dd/MM/yyyy",CultureInfo.InvariantCulture).ToString("ddMMyyyy",CultureInfo.InvariantCulture));
   else SendKeys.SendWait(value);

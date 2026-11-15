@@ -21,6 +21,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 32 Tổng hợp KHBS acknowledged, 64 intermediate bổ sung saved, 128 it was closed, 256 the 0013 prompt answered Không,
  // 512 the last round opened, 1024 the export written.
  private int declarationKhbsRound=0,declarationKhbsTarget=0,declarationKhbsStepMask=0,declarationKhbsMessageId=0;
+ // First text entry of a bổ sung round that did not take (runs 43698793633, 43698796274: Y8 round 1 entry 0, code 12). Value-free:
+ // declarationKhbsEntryShape bits 1 cell empty before, 2 cell = planned before, 4 trimmed cell = planned before, 8 editor text =
+ // cell text when the editor opened, 16 editor = planned after typing, 32 editor ends with planned, 64 editor starts with the
+ // cell's previous text, 128 editor empty after, 256 editor kept focus, 512 the foreground window is this process, 1024 the
+ // editor is a TextBoxBase, 2048 recorded; declarationKhbsEntryLengths = 256 × length before (≤ 255) + length after (≤ 255).
+ private int declarationKhbsEntryShape=0,declarationKhbsEntryLengths=0;
  private bool declarationKhbsPromptAnswered=false;
  private string webOriginalPath="",webOriginalSha256="",webPriorFilePath="",webPriorFileSha256="";
  private Stopwatch declarationKhbsClock=null;
@@ -42,8 +48,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private string DeclarationKhbsJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   json.Append(","+q+"declarationKhbsPromptAnswered"+q+":"+Bool(declarationKhbsPromptAnswered));
-  string[] names=new string[]{"declarationKhbsRound","declarationKhbsStepMask","declarationKhbsMessageId"};
-  int[] counts=new int[]{declarationKhbsRound,declarationKhbsStepMask,declarationKhbsMessageId};
+  string[] names=new string[]{"declarationKhbsRound","declarationKhbsStepMask","declarationKhbsMessageId","declarationKhbsEntryShape","declarationKhbsEntryLengths"};
+  int[] counts=new int[]{declarationKhbsRound,declarationKhbsStepMask,declarationKhbsMessageId,declarationKhbsEntryShape,declarationKhbsEntryLengths};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -132,6 +138,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="date"||kind=="date-optional")return DeclarationEntryDate(cell,parts[2]);
   if(kind=="combo"){int[] code=DeclarationEntryCell(parts[5]);return CellText(sheet,row,column)==parts[4]&&CellText(sheet,code[0],code[1])==parts[6];}
   return false;
+ }
+ private void ObserveDeclarationKhbsEntry(string before,string opened,Control editor,string value){
+  if(!DeclarationKhbsMode()||declarationKhbsRound==0||(declarationKhbsEntryShape&2048)!=0)return;
+  string after=editor.Text??String.Empty;before=before??String.Empty;opened=opened??String.Empty;int shape=2048;
+  if(before.Length==0)shape|=1;if(before==value)shape|=2;if(before.Trim()==value)shape|=4;if(opened==before)shape|=8;
+  if(after==value)shape|=16;if(after.EndsWith(value,StringComparison.Ordinal))shape|=32;if(before.Length>0&&after.StartsWith(before,StringComparison.Ordinal))shape|=64;
+  if(after.Length==0)shape|=128;if(editor.ContainsFocus)shape|=256;int kind=NativeForegroundKind();if(kind!=7&&kind!=8)shape|=512;if(editor is TextBoxBase)shape|=1024;
+  declarationKhbsEntryShape=shape;declarationKhbsEntryLengths=Math.Min(255,before.Length)*256+Math.Min(255,after.Length);
  }
  // The saved round is closed: the original menu, period dialog (Bổ sung) and sheet steps run again for the next round.
  private void BeginDeclarationKhbsRound(){
