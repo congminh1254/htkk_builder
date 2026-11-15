@@ -434,6 +434,17 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort 1019e5f: `01NTNN-khbs-decrease-M09-2026` matched the whole tree (run 43686715380, retained). The other four:
+- Gross-up (run 43686711369): exported and retained; one leaf differed, `PL01_KHBS/.../Muc_3/ct3b` (HTKK 7.778, web 0). HTKK
+  computes AA38 over ct10 with two Muc_I.1 rows too; the web was fixed to HTKK and the pins of the gross-up web file and of the
+  lần-2 prior (the same file) changed with it.
+- Lần 2 (run 43686713666, and the 05/KK lần 2): every result was refused once round 2 clicked the menu a fourth time;
+  `menuClickCount` allowed 3 for this mode. It now allows 9 (three menu traversals), as for `gtgt-amendment-khbs-inspect`.
+- Y8 part1/part2 (runs 43686717364, 43686719047): round 1 failed at entry 0 (code 12): the B sheet opens with the saved C0
+  values and the planned text was typed over a cell that already held it. A bổ sung round now leaves a planned cell that
+  already holds its planned value as HTKK loaded it (read only), selects with {END}+{HOME} before typing over any other, and
+  resets the combo counter per round.
+
 Cohort 1a6f600 (runs 43676048794, 43676050610, 43676052218, 43676054472, 43676056452): permit written, the seven profile
 inputs typed and the original profile Ghi clicked; four cases then never showed a valid result past `original-save-invoking`
 (no success message, no HEADER.xml), part1 stopped after `waiting-profile-close-ready`, and none showed the driver's own 400 s
@@ -488,14 +499,3 @@ What only these runs decide (web predictions in its golden): hạn nộp quý 30
 and Z8 quý 4/2026 30/01/2027 moved to 01/02/2027 (0 days, ct3a_1 still written); the 05-1/PBT hồ sơ group 000101 and its key text;
 Muc_I.2 with ct04 = Thuế tỉnh/CCT of the row (path_24, saved by HTKK in its Sections file) and ct3 = the unit's MST; tongCong_7
 adding the [14] row; ct3b kept with one Muc_I.2 row.
-
-Cohort 1019e5f: `01NTNN-khbs-decrease-M09-2026` matched the whole tree (run 43686715380, retained). The other four:
-- Gross-up (run 43686711369): exported and retained; one leaf differed, `PL01_KHBS/.../Muc_3/ct3b` (HTKK 7.778, web 0). HTKK
-  computes AA38 over ct10 with two Muc_I.1 rows too; the web was fixed to HTKK and the pins of the gross-up web file and of the
-  lần-2 prior (the same file) changed with it.
-- Lần 2 (run 43686713666, and the 05/KK lần 2): every result was refused once round 2 clicked the menu a fourth time;
-  `menuClickCount` allowed 3 for this mode. It now allows 9 (three menu traversals), as for `gtgt-amendment-khbs-inspect`.
-- Y8 part1/part2 (runs 43686717364, 43686719047): round 1 failed at entry 0 (code 12): the B sheet opens with the saved C0
-  values and the planned text was typed over a cell that already held it. A bổ sung round now leaves a planned cell that
-  already holds its planned value as HTKK loaded it (read only), selects with {END}+{HOME} before typing over any other, and
-  resets the combo counter per round.
