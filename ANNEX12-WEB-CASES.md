@@ -65,6 +65,15 @@ dòng II.2, bit 1 Value = −400002, bit 2 Value = 0 (bị chặn MinValue), bit
   trước (bit 18/19: H/I phải quay về; bit 20: đóng editor đang mở mà không đổi giá trị). Giới hạn 0..2097151. Chưa có run mới.
 - So cả cây với tệp web: **131 lá thuế** (74 lá tờ khai chính + 61 lá phụ lục − 4 lá dịch vụ); re-export được khác baseline.
 
+## Ca 01-6/GTGT (ĐTVT) (oracle HTKK 5.8.2, ca quan sát)
+
+`01GTGT-annex16-dvvt-M10-2026` (producer htkk_web `scripts/generate-htkk-web-annex16-dvvt-reference.mjs --case annex16-dvvt`),
+adapter `01-gtgt-2.8.3-annex16-dvvt`, validator `gtgt-annex16-dvvt-v1` (chung allowlist `htkk_annex16_cssx_web_cases.py`, nút gốc
+`Pluc_01_6_GTGT_DVVT`), status `htkk-native/annex16-dvvt@htkk582`, `releaseGate: false`. Cùng driver với hai ca 01-6 (CSSX):
+baseline tờ khai chính số 0, nhập XML gốc, chọn lại H từng dòng, so cả cây 131 lá thuế. Sheet `01_6_2` ("01-6/GTGT (ĐTVT)"),
+mã ẩn: tỉnh Q (16), Chi cục S (18), CQT T (19), xã W (22); ô kế sau I là L (11) vì K ([14]) bị khóa. Tờ khai chính sau nhập:
+[32] 600.000.000, [27]/[34] 600.000.000, [33]/[28]/[35]/[36]/[40a]/[40] 60.000.000. Chưa chạy Windows.
+
 ## Allowlist privacy/số tiền
 
 `htkk_annex12_web_cases.py` mô tả chính xác từng lá phụ lục: ID nhóm/dòng, STT, loại, mã/tên

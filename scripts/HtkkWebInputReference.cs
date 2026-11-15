@@ -29,7 +29,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // B89-B92, 0016). After the original import, the head tax office H (pathCucT, no XML leaf; Header B91 requires it) is
  // picked again through the original combo (RestoreImportedAnnex16HeadOffices). Whole tree compared: 131 tax leaves.
  private const string Annex16CssxFormulaCaseId="01GTGT-annex16-cssx-formula-M10-2026",Annex16CssxRatioCaseId="01GTGT-annex16-cssx-ratio-M10-2026";
- private bool Annex16WebCaseId(){return webCaseId==Annex16CssxFormulaCaseId||webCaseId==Annex16CssxRatioCaseId;}
+ // 01-6/GTGT (ĐTVT) (Pluc_01_6_GTGT_DVVT, sheet 01_6_2): same baseline, import, H restore and 131 tax leaves.
+ private const string Annex16DvvtCaseId="01GTGT-annex16-dvvt-M10-2026";
+ private bool Annex16DvvtWebCaseId(){return webCaseId==Annex16DvvtCaseId;}
+ private bool Annex16WebCaseId(){return webCaseId==Annex16CssxFormulaCaseId||webCaseId==Annex16CssxRatioCaseId||webCaseId==Annex16DvvtCaseId;}
  private bool Annex16WebCase(){return mode=="gtgt-web-import-inspect"&&webInputVerified&&Annex16WebCaseId();}
  // Exact compared tax leaves: 70 main leaves, plus 38 (one plant, two rows) or
  // 89 (two plants, 2+3 rows) annex leaves; service identity leaves excluded.

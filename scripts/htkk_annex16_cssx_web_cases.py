@@ -9,6 +9,8 @@ attribute, amount or string fails closed. Values: htkk_web scripts/generate-htkk
 NS='http://kekhaithue.gdt.gov.vn/TKhaiThue'
 FORMULA_CASE='01GTGT-annex16-cssx-formula-M10-2026'
 RATIO_CASE='01GTGT-annex16-cssx-ratio-M10-2026'
+# 01-6/GTGT (ĐTVT): same nodes under Pluc_01_6_GTGT_DVVT (htkk_web generate-htkk-web-annex16-dvvt-reference.mjs).
+DVVT_CASE='01GTGT-annex16-dvvt-M10-2026'
 # The producer pins both dates to this fixed day (same as the 01-2 and 01-10 cases).
 FIXED_DATE='2026-10-27'
 CODES=frozenset(('NAMESPACE','STRUCTURE','ATTRIBUTES','CONTENT','VALUE','LEAF_COUNT','CASE'))
@@ -36,6 +38,14 @@ CASES={
   'provinces':[('ID_1',('5000003','0','101','Thành phố Hà Nội')),('ID_2',('3000002','0','103','Thành phố Hải Phòng'))],
   'totals':('8000005','0','41999995','0'),
   'money':{'ct27':'1000000000','ct28':'80000000','ct30':'400000000','ct31':'20000000','ct32':'600000000','ct33':'60000000','ct34':'1000000000','ct35':'80000000','ct36':'80000000','ct40a':'80000000','ct40':'80000000'},
+  'totalLeaves':135,'taxLeaves':131,
+ },
+ DVVT_CASE:{
+  'node':'Pluc_01_6_GTGT_DVVT','head':('0','1','30000000','0'),
+  'rows':[_row(1,HN,('0','200000050','200000050','4000001','0')),_row(2,HP,('0','150000075','150000075','3000002','0')),_row(3,HN,('0','50','50','1','0'))],
+  'provinces':[('ID_1',('4000002','0','101','Thành phố Hà Nội')),('ID_2',('3000002','0','103','Thành phố Hải Phòng'))],
+  'totals':('7000004','0','22999996','0'),
+  'money':{'ct27':'600000000','ct28':'60000000','ct30':'0','ct31':'0','ct32':'600000000','ct33':'60000000','ct34':'600000000','ct35':'60000000','ct36':'60000000','ct40a':'60000000','ct40':'60000000'},
   'totalLeaves':135,'taxLeaves':131,
  },
  RATIO_CASE:{
@@ -76,7 +86,7 @@ def validate_annex(root,case_id):
  spec=CASES[case_id];ns='{'+NS+'}'
  plucs=root.findall('./'+ns+'HSoKhaiThue/'+ns+'PLuc')
  if len(plucs)!=1:reject('STRUCTURE','pluc')
- pluc=plucs[0];container(pluc,('Pluc_01_6_GTGT_CSSX',),{},'pluc')
+ pluc=plucs[0];container(pluc,(spec.get('node','Pluc_01_6_GTGT_CSSX'),),{},'pluc')
  annex=pluc[0];rows=spec['rows'];provinces=spec['provinces']
  container(annex,SECTION_HEAD+('NoiDungBangPhanBo',)*len(rows)+('cong_ct18',)*len(provinces)+('CongCacTinh','SoThuePhaiNop'),{},'annex')
  for node,value in zip(annex,spec['head']):leaf(node,value,'header')

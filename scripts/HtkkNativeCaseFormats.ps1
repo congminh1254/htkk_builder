@@ -37,6 +37,7 @@ $HtkkNativeCaseFormats=@{
  '01GTGT-annex10-nq204-M10-2026'='htkk-web-annex10-nq204-input-v1'
  '01GTGT-annex16-cssx-formula-M10-2026'='htkk-web-annex16-cssx-formula-input-v1'
  '01GTGT-annex16-cssx-ratio-M10-2026'='htkk-web-annex16-cssx-ratio-input-v1'
+ '01GTGT-annex16-dvvt-M10-2026'='htkk-web-annex16-dvvt-input-v1'
  '03TNDN-rate15-Y2025'='htkk-web-tndn03-rate15-y2025-input-v1'
  '03TNDN-rate17-Y2025'='htkk-web-tndn03-rate17-y2025-input-v1'
  '01GTGT-khbs-zero-to-sale10-M10-2026'='htkk-web-khbs-zero-to-sale10-input-v1'

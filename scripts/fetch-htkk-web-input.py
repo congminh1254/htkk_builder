@@ -48,8 +48,10 @@ CASE_MONEY.update({case:annex10.money(case) for case in annex10.CASES})
 # 01-6/GTGT (CSSX) (Pluc_01_6_GTGT_CSSX, oracle HTKK 5.8.2): own producer, manifest keys and exact allowlist.
 _annex16_spec=importlib.util.spec_from_file_location('htkk_annex16_cssx_web_input_contract',pathlib.Path(__file__).with_name('htkk_annex16_cssx_web_cases.py'))
 annex16=importlib.util.module_from_spec(_annex16_spec);_annex16_spec.loader.exec_module(annex16)
-if set(annex16.CASES)!=set(case_registry.ANNEX16_CSSX_CASES):raise ValueError('CASE_POLICY')
+if set(annex16.CASES)!=set(case_registry.ANNEX16_CASES):raise ValueError('CASE_POLICY')
 ANNEX16_PRODUCER='scripts/generate-htkk-web-annex16-cssx-reference.mjs'
+ANNEX16_DVVT_PRODUCER='scripts/generate-htkk-web-annex16-dvvt-reference.mjs'
+def annex16_files(case):return ('lib/htkk-gtgt-annex16-dvvt-xml.ts',ANNEX16_DVVT_PRODUCER) if case in case_registry.ANNEX16_DVVT_CASES else ('lib/htkk-gtgt-annex16-cssx-xml.ts',ANNEX16_PRODUCER)
 CASE_MONEY.update({case:annex16.money(case) for case in annex16.CASES})
 # Kê khai bổ sung lần 1 (KHBS, oracle HTKK 5.8.2): own producer, manifest keys and exact PLuc allowlist.
 _khbs_spec=importlib.util.spec_from_file_location('htkk_khbs_web_input_contract',pathlib.Path(__file__).with_name('htkk_khbs_web_cases.py'))
@@ -168,7 +170,7 @@ def validate_manifest(body):
   fixed.update(exporter='lib/htkk-gtgt-annex10-xml.ts',producer=ANNEX10_PRODUCER,htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex10.money(case))
   variable=variable|{'expectedAnnexLeaves'}
  if annex16.is_case(case):
-  fixed.update(exporter='lib/htkk-gtgt-annex16-cssx-xml.ts',producer=ANNEX16_PRODUCER,htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex16.money(case))
+  fixed.update(exporter=annex16_files(case)[0],producer=annex16_files(case)[1],htkkVersion=case_registry.htkk_version(case),nativeBaseSha256=ANNEX10_NATIVE_BASE,fullCompatibilityVerified=False,independentXsdPassed=True,nativeAnnexRoundTripVerified=False,expectedMainMoney=annex16.money(case))
   variable=variable|{'expectedAnnexLeaves'}
  if khbs.is_case(case):
   fixed.update(khbs.manifest_fields(case));fixed['htkkVersion']=case_registry.htkk_version(case)
