@@ -434,6 +434,15 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort c741595 (Y8 runs 43742154547, 43742157400): `declarationKhbsEntryLengths` high byte 0x33: attempt A ({HOME} + first
+character) and C (select all, first character doubled) both left another text, B was skipped. Read: {HOME} does not put the
+caret at the start of this editor, and a second typing keeps every key, so only the very first key typed into the freshly
+opened editor of a bổ sung round is lost. HTKK 5.8.2 itself does not drop it (static read: frmWinToKhai.winFpSpread_EditModeOn
+adds winFpSpread_KeyPress, which only turns Enter into Tab and checks date-type keys; WinDoWorkEvent.KeyPress finds no KeyPress
+on Ntnn01TT89Nckt309). Each bổ sung entry (text, number, date text) now first types one space by the value's own keyboard path
+and erases it with BACKSPACE; the editor must be empty again; the fallback is one select-all retype. High byte bits: 4 space
+lost, 8 space landed and erased, 16 not empty after, 1/2/3 the fallback outcome.
+
 Cohort 9d45beb (Y8 runs 43733503058, 43733506098): shape 23305 again, no 32768: {HOME} and the first character (SendKeys) did
 not take. The repair now makes up to three bounded keyboard attempts and records each outcome in the high byte of
 `declarationKhbsEntryLengths` (2 bits each: 1 took, 2 still without the first character, 3 other): A {HOME} + SendKeys,

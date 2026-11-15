@@ -229,14 +229,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="text"){
    // Bổ sung round: let the just-opened editor settle before the first key (runs 43705699385/43705701482: one character of
    // the planned text was missing, cell empty, editor focused, own foreground).
-   if(khbsRound)DeclarationKhbsSettle();
+   if(khbsRound&&!DeclarationKhbsPrime(grid,editor,!DeclarationEntryAscii(value)))return;
    if(DeclarationEntryAscii(value))SendKeys.SendWait(EscapeSendKeys(value));else if(!TypeDeclarationEntryUnicode(grid,editor,value)){DeclarationEntryFail(10);return;}
    Stopwatch clock=Stopwatch.StartNew();while(editor.Text!=value&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
    if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;
    if(editor.Text!=value){ObserveDeclarationKhbsEntry(khbsBefore,khbsOpened,editor,value);declarationEntryMismatchMask|=1<<index;DeclarationEntryFail(12);return;}
-  }else if(kind=="number"){if(khbsRound)DeclarationKhbsSettle();SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
+  }else if(kind=="number"){if(khbsRound&&!DeclarationKhbsPrime(grid,editor,false))return;SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
   else if(dateMask)SendKeys.SendWait(DateTime.ParseExact(value,"dd/MM/yyyy",CultureInfo.InvariantCulture).ToString("ddMMyyyy",CultureInfo.InvariantCulture));
-  else{if(khbsRound)DeclarationKhbsSettle();SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
+  else{if(khbsRound&&!DeclarationKhbsPrime(grid,editor,false))return;SendKeys.SendWait(value);if(khbsRound&&!DeclarationKhbsFirstKeyRepair(grid,editor,value,khbsBefore,khbsOpened))return;}
   if(!DeclarationEntryGuard(grid)||!editor.ContainsFocus){DeclarationEntryFail(10);return;}
   SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
   if(OriginalMessageVisible()){DeclarationEntryFail(17);return;}
