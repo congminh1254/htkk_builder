@@ -434,6 +434,12 @@ import (I9) flags, export flags, KHBS XSD and whole tree matched. On `declaratio
 HTKK service identity, fresh ngayLapTKhai, maTKhai/version, loaiTKhai B and soLan of the case, the synthetic NNT, and every text a
 leaf text of the case's own reviewed files or the synthetic profile. The comparison is recomputed against the reviewed web file.
 
+Cohort f3b64d4 (Y8 runs 43705699385, 43705701482): round-1 entry 0 still code 12 with `declarationKhbsEntryShape` 2825 (cell
+empty, editor = cell when opened, focus kept, own foreground) and lengths 30 / 34 for 31- / 35-character texts: one character of
+the planned text did not land. A bổ sung round now selects with {END}+{HOME} only over a non-empty cell, lets the editor settle
+(5 UI turns) before the first key and retypes once over a short result (shape bits 4096/8192 first/last character missing,
+16384 retyped, 32768 retype took).
+
 Cohort 1019e5f: `01NTNN-khbs-decrease-M09-2026` matched the whole tree (run 43686715380, retained). The other four:
 - Gross-up (run 43686711369): exported and retained; one leaf differed, `PL01_KHBS/.../Muc_3/ct3b` (HTKK 7.778, web 0). HTKK
   computes AA38 over ct10 with two Muc_I.1 rows too; the web was fixed to HTKK and the pins of the gross-up web file and of the

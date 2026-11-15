@@ -554,7 +554,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('declaration-amendment-khbs-inspect')) -and $value['declarationKhbsStepMask'] -cne 0){throw 'invalid'}
   if(($value['declarationKhbsMessageId'] -isnot [int] -and $value['declarationKhbsMessageId'] -isnot [long]) -or $value['declarationKhbsMessageId'] -lt 0 -or $value['declarationKhbsMessageId'] -gt 9999){throw 'invalid'}
   if(($ExpectedMode -cnotin @('declaration-amendment-khbs-inspect')) -and $value['declarationKhbsMessageId'] -cne 0){throw 'invalid'}
-  if(($value['declarationKhbsEntryShape'] -isnot [int] -and $value['declarationKhbsEntryShape'] -isnot [long]) -or $value['declarationKhbsEntryShape'] -lt 0 -or $value['declarationKhbsEntryShape'] -gt 4095){throw 'invalid'}
+  if(($value['declarationKhbsEntryShape'] -isnot [int] -and $value['declarationKhbsEntryShape'] -isnot [long]) -or $value['declarationKhbsEntryShape'] -lt 0 -or $value['declarationKhbsEntryShape'] -gt 65535){throw 'invalid'}
   if(($ExpectedMode -cnotin @('declaration-amendment-khbs-inspect')) -and $value['declarationKhbsEntryShape'] -cne 0){throw 'invalid'}
   if(($value['declarationKhbsEntryLengths'] -isnot [int] -and $value['declarationKhbsEntryLengths'] -isnot [long]) -or $value['declarationKhbsEntryLengths'] -lt 0 -or $value['declarationKhbsEntryLengths'] -gt 65535){throw 'invalid'}
   if(($ExpectedMode -cnotin @('declaration-amendment-khbs-inspect')) -and $value['declarationKhbsEntryLengths'] -cne 0){throw 'invalid'}
