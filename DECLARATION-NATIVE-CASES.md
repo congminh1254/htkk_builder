@@ -707,3 +707,30 @@ Câu hỏi cho lần chạy: `FinishImportXML` chỉ khóa/xóa (`LockUnLockDong
 web để trống sẵn) và không tính lại; công thức XLS của GTGT/TNCN, [28], [29] được FarPoint tính lại sau khi nhập. Với tổ chức khai
 thay, `LockUnlockTheoLoaiNopThue` để trống các ô NNT của sheet 01 — TTinChung/NNT khi kết xuất lại có còn như hồ sơ không? Ca
 tháng/quý: `AutoBindData_0` bỏ tích và khóa [cá nhân trực tiếp khai].
+
+## 04/GTGT TT80 (D4, 2.7.4) — bốn ca không chặn phát hành, oracle HTKK 5.8.2
+
+Nhà sản xuất `htkk_web` nhánh `work/gtgt04` (`scripts/generate-htkk-declaration-reference.mjs`, thiết kế trong
+`scripts/generate-htkk-descriptor-reference.mjs`; issue htkk-net/htkk_web#43). Menu D4 (`Gtgt04TT80`, maTKhai 847, KieuKy 21);
+mọi tệp `04_*GTGT_TT80_274` giống hệt 5.8.1. HTKK 5.8.2 kết thúc D4 ở 30/09/2026 (`CheckToKhaiHetHieuLuc`; mẫu TT89 Z3 từ
+01/10/2026 chưa làm), nên các ca dừng ở tháng 9 / quý 3/2026. Menu 101 → 101_1 → D4; KieuKy 21 =
+`SetLayoutToKhaiThangQuyLanPhatSinh` (tháng, quý; không dùng lần phát sinh).
+
+| Ca | Adapter | Kỳ | Phụ lục | Kiểm tra chính |
+|---|---|---|---|---|
+| `04GTGT-TT80-one-group-M09-2026` | `04-gtgt-tt80-2.7.4` | tháng 9/2026 | — | [21] 5.000.000, [22] 200.000.000 → [23] 2.000.000, [32] 205.000.000 |
+| `04GTGT-TT80-quarter-Q3-2026` | `04-gtgt-tt80-2.7.4` | quý 3/2026 | — | [24] 150.000.000 → [25] 7.500.000, [28] 30.000.000 → [29] 600.000 |
+| `04GTGT-TT80-four-groups-rounding-M08-2026` | `04-gtgt-tt80-2.7.4` | tháng 8/2026 | — | bốn nhóm lẻ nửa đồng: [23] 1.234.568, [25] 2.500.001, [27] 1.000.001, [29] 1.555.556 |
+| `04GTGT-TT80-reduction-annex-Q2-2026` | `04-gtgt-tt80-2.7.4-pl013` | quý 2/2026 | PL 01-3 (NQ 204/2025), 5 dòng bán ra | [22] = tổng PL 1% 123.458.000, [23] = ROUND(1.234.580 − 246.917) = 987.663, ct9 1.258.028 |
+
+Ca thiết kế `04GTGT-TT80-zero-M09-2026` (tờ khai 0) chỉ nằm trong `htkk-descriptor-native-cases.json`, không đưa vào registry.
+
+Oracle độc lập `GTGT04_ROWS`/`gtgt04_expected` (htkk_declaration_web_cases.py) tính lại bằng Decimal từ dữ liệu giả lập đã
+duyệt (không dùng engine TypeScript): không có PL 01-3 thì [23]/[25]/[27]/[29] = ROUND(doanh thu × 1/5/3/2 %)
+(`TinhLaiChiTieu23_25_27_29Default`); có PL 01-3 thì F = ROUND(thuế suất × 80/100, 1), G = ROUND(D × (thuế suất − F)/100),
+[22]..[28] = tổng D theo thuế suất (`TinhLaiChiTieu22_den_28_TK`), thuế = ROUND(tổng × thuế suất/100 − tổng G cùng thuế suất)
+(`TheoPL01_3`); [30], [31] là tổng, [32] = [21] + [30]; ROUND làm tròn ra xa 0. Mục B (thu hộ) khóa: một dòng, các số 0.
+
+Câu hỏi cho lần chạy: kỳ quý của KieuKy 21 có ghi `kyKKhaiTuThang`/`kyKKhaiDenThang` không (web để trống); `thueSuatSauGiam`
+HTKK ghi `4.0` hay `4`; Menu.xml ghi XMLnode của sheet 01-3 là `PL_NQ101_GTGT` còn tệp điều khiển là `PL_NQ142_GTGT` — HTKK
+nhập và kết xuất lại phụ lục dưới nút nào.

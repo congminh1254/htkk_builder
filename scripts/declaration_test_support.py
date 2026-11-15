@@ -68,6 +68,14 @@ def _tree(case_id, native=False, created=None):
             owned = set(values)
             for path, value in d.ntnn_qt_expected(case_id)[0].items():
                 _path(main, 'CTieuTKhaiChinh/' + path).text = value
+        if case_id in d.GTGT04_ROWS:  # 04/GTGT: the oracle leaves under KhaiThueTPPTTTDT, Mục B locked (one row, zeros)
+            owned = set(values)
+            _add(_path(main, 'CTieuTKhaiChinh/Header'), 'khaiRiengThuHo', '0')
+            for path, value in d.gtgt04_expected(case_id)[0].items():
+                _path(main, 'CTieuTKhaiChinh/KhaiThueTPPTTTDT/' + path).text = value
+            row = _add(_path(main, 'CTieuTKhaiChinh/KhaiRiengDoiVoiKhoanThuHo'), 'KhoanThuHoCTGTGT', attrib={'id': 'ID_1'})
+            for leaf, value in (('khoanThuHoChiuThueGTGT', ''), ('ct33', '0'), ('ct34', '0'), ('ct35', '0')):
+                _add(row, leaf, value)
         for name, value in values.items():
             if name not in owned:
                 if '/' in name:  # 'Group/leaf' (01/TTS CaNhanKeKhai/ctNN)
@@ -99,6 +107,18 @@ def _tree(case_id, native=False, created=None):
                             _add(row, leaf, value)
                     for leaf, value in totals.items():
                         _add(node, leaf, value)
+                continue
+            if case_id in d.GTGT04_ROWS:  # PL 01-3 (PL_NQ142_GTGT): sale rows and totals of the oracle, no purchase rows
+                _, sale_rows, totals = d.gtgt04_expected(case_id)
+                _add(_add(node, 'HH_DV_MuaVaoTrongKy'), 'tongCongThueGTGTHHDV', '0')
+                sale = _add(node, 'HH_DV_BanRaTrongKy')
+                for index, row in enumerate(sale_rows):
+                    row_ = _add(sale, 'BangKeTenHHDV', attrib={'ID': 'ID_%d' % (index + 1)})
+                    for leaf, value in row.items():
+                        _add(row_, leaf, value)
+                for leaf, value in totals.items():
+                    _add(sale, leaf, value)
+                _add(_add(node, 'ChenhLech'), 'ct9', totals['tongCongThueGTGTDuocGiam'])
                 continue
             if case_id in d.TTS_ROWS:  # 01/TTS contract rows of the independent oracle (01-2 numbers the leaves later)
                 names = d.TTS_02_LEAVES if annex == 'PLuc_02_BK_TTS' else {}

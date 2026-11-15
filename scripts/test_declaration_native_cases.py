@@ -54,7 +54,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'D4', 'D4', 'D4', 'D4'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -109,8 +109,8 @@ class CompiledPlans(unittest.TestCase):
 
     def test_menu_chain_kieuky_and_annexes_follow_menu_xml_design_units(self):
         units = load('declaration_workbook_units', 'htkk_workbook_native_cases.py').UNITS
-        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'Z8': ['101', '101_11', 'Z8'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9'], 'C9': ['101', '101_8', 'C9'], 'G7': ['101', '101_15', 'G7']}
-        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'Z8': '14', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22', 'C9': '22', 'G7': '42'}
+        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'Z8': ['101', '101_11', 'Z8'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9'], 'C9': ['101', '101_8', 'C9'], 'G7': ['101', '101_15', 'G7'], 'D4': ['101', '101_1', 'D4']}
+        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'Z8': '14', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22', 'C9': '22', 'G7': '42', 'D4': '21'}
         for case in CASES:
             menu = d.CASES[case]['menuId']; block = plan_block(case)
             self.assertIn('new string[]{' + ','.join('"' + x + '"' for x in chains[menu]) + '}', block)
@@ -137,6 +137,17 @@ class CompiledPlans(unittest.TestCase):
                 self.assertEqual({p[len(annex_prefix):]: v for p, v in checks if p.startswith(annex_prefix)}, {a[0] + '/' + k: v for a in annexes for k, v in a[5].items()})
                 for name, value in d._descriptor_expected[case][0].items():
                     self.assertEqual(oracle[name], value)
+                for path, value in checks:
+                    self.assertEqual(leaves[path], value)
+            elif family == 'descriptor' and case in d.GTGT04_ROWS:
+                # 04/GTGT: the KhaiThueTPPTTTDT checks are the design leaves and the independent oracle agrees; the PL 01-3
+                # checks are the oracle annex totals.
+                main_prefix = 'HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/KhaiThueTPPTTTDT/'
+                oracle, _, totals = d.gtgt04_expected(case)
+                self.assertEqual({p.rsplit('/', 1)[1]: v for p, v in checks if p.startswith(main_prefix)}, d._descriptor_expected[case][0])
+                self.assertEqual({p[len(main_prefix):]: v for p, v in checks if p.startswith(main_prefix)}, {k: v for k, v in oracle.items() if k in {p[len(main_prefix):] for p, _ in checks}})
+                annex = {p.rsplit('/', 1)[1]: v for p, v in checks if not p.startswith(main_prefix)}
+                self.assertEqual(annex, {'tongCongThueGTGTDuocGiam': totals['tongCongThueGTGTDuocGiam'], 'ct9': totals['tongCongThueGTGTDuocGiam']} if totals else {})
                 for path, value in checks:
                     self.assertEqual(leaves[path], value)
             elif family == 'descriptor':
@@ -308,7 +319,7 @@ class InputPrivacy(unittest.TestCase):
         # Z8 05/KK-TNCN TT89: the web manifest carries htkkVersion 5.8.2 (the registry case version); no other
         # declaration manifest may carry the key, and the Z8 manifest must.
         # 03/TNDN C7 rate 15% / 17% (HTKK 5.8.2 oracle): the web writes htkkVersion for these producer cases too.
-        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026'}))
+        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026'}))
         for case in d.MANIFEST_HTKK_VERSION_CASES:
             self.assertEqual(registry.htkk_version(case), '5.8.2')
         case = '05KK-TT89-withheld-Q4-2026'; body = dfx.declaration_fixture(case); manifest = dfx.declaration_manifest(body, case)
