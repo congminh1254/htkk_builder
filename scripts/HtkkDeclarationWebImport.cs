@@ -27,7 +27,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationSheetBusy=false,declarationFlowStarted=false;
  private Stopwatch declarationClock=null;
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
- private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
+ private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationCellZeroMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
  // B8 visible period annex list (HtkkDeclarationCasePlans.VisibleAnnexListReviewed), value-free and text-free.
  // declarationAnnexListMask bits: 1 the list was visible on a plan whose layout hides it; 2 the reviewed handling matched;
  // 4 a row that is not a checkbox or whose label is neither a case annex nor KHBS; 8 a KHBS row ticked; 16 a KHBS row
@@ -110,8 +110,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationMenuClicked","declarationPeriodObserved","declarationPeriodMatched","declarationAnnexMatched","declarationSheetObserved","declarationIdentityMatched","declarationSourcePinsMatched","declarationImportSheetMatched","declarationSchemaValid","declarationServiceIdentityMatched","declarationCreationDateValid","declarationTreeMatched"};
   bool[] values=new bool[]{declarationMenuClicked,declarationPeriodObserved,declarationPeriodMatched,declarationAnnexMatched,declarationSheetObserved,declarationIdentityMatched,declarationSourcePinsMatched,declarationImportSheetMatched,declarationSchemaValid,declarationServiceIdentityMatched,declarationCreationDateValid,declarationTreeMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
-  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
+  names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationCellZeroMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
+  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationCellZeroMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();
  }
@@ -407,7 +407,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool InspectDeclarationGrid(){
   List<Control> grids=new List<Control>();int count=0;GatherSpreads(roundtripOwner,grids,ref count);if(grids.Count!=1)return false;
   if(!DeclarationIdentity())return false;
-  declarationCellCheckCount=0;declarationCellMismatchMask=0;declarationCellLockedMask=0;
+  declarationCellCheckCount=0;declarationCellMismatchMask=0;declarationCellLockedMask=0;declarationCellZeroMask=0;
   string[] checks=declarationPlan.CellChecks;
   for(int index=0;index<checks.Length;index++){
    string[] parts=checks[index].Split('|');int row,column;if(parts.Length!=3||!ParseA1(parts[1],out row,out column))throw new InvalidOperationException();
@@ -415,6 +415,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(sheet==null||row>=Convert.ToInt32(Get(sheet,"RowCount"))||column>=Convert.ToInt32(Get(sheet,"ColumnCount"))){declarationCellMismatchMask|=1<<index;continue;}
    object cell=Cell(sheet,row,column);decimal actual,expected;
    // Original numeric cells hold double/decimal; the invariant round-trip text may use an exponent.
+   // declarationCellZeroMask: the checked cell holds no value or a numeric 0 (tells a cleared cell from a different amount).
+   object observed=Get(cell,"Value");decimal zero;if(observed==null||Convert.ToString(observed,CultureInfo.InvariantCulture).Trim().Length==0||(Decimal.TryParse(Convert.ToString(observed,CultureInfo.InvariantCulture),NumberStyles.Float,CultureInfo.InvariantCulture,out zero)&&zero==0m))declarationCellZeroMask|=1<<index;
    if(!Decimal.TryParse(Convert.ToString(Get(cell,"Value"),CultureInfo.InvariantCulture),NumberStyles.Float,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(parts[2],NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)declarationCellMismatchMask|=1<<index;
    if(Convert.ToBoolean(Get(cell,"Locked")))declarationCellLockedMask|=1<<index;
   }

@@ -225,6 +225,7 @@ function New-HtkkNativeResultDefaults {
   declarationCellCheckCount=0
   declarationCellMismatchMask=0
   declarationCellLockedMask=0
+  declarationCellZeroMask=0
   declarationXmlCheckCount=0
   declarationXmlMismatchMask=0
   declarationTreeMismatchMask=0

@@ -1910,6 +1910,7 @@
     "declarationCellCheckCount",
     "declarationCellMismatchMask",
     "declarationCellLockedMask",
+    "declarationCellZeroMask",
     "declarationXmlCheckCount",
     "declarationXmlMismatchMask",
     "declarationTreeMismatchMask",
@@ -3585,6 +3586,16 @@
       ]
     },
     "declarationCellLockedMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16777215,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationCellZeroMask": {
       "kind": "integer",
       "default": 0,
       "minimum": 0,
