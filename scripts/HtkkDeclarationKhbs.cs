@@ -29,7 +29,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // declarationKhbsEntryShape bits 1 cell empty before, 2 cell = planned before, 4 trimmed cell = planned before, 8 editor text =
  // cell text when the editor opened, 16 editor = planned after typing, 32 editor ends with planned, 64 editor starts with the
  // cell's previous text, 128 editor empty after, 256 editor kept focus, 512 the foreground window is this process, 1024 the
- // editor is a TextBoxBase, 2048 recorded; declarationKhbsEntryLengths = 256 × length before (≤ 255) + length after (≤ 255).
+ // editor is a TextBoxBase, 2048 recorded, 4096 the editor holds the planned text without its first character, 8192 without
+ // its last, 16384 one bounded retype was made, 32768 the retype took; declarationKhbsEntryLengths = 256 × length before
+ // (≤ 255) + length after (≤ 255). Run 43705699385 (part1): 2825, lengths 30 for a 31-character text (part2: 34 of 35).
  private int declarationKhbsEntryShape=0,declarationKhbsEntryLengths=0;
  private bool declarationKhbsPromptAnswered=false;
  private string webOriginalPath="",webOriginalSha256="",webPriorFilePath="",webPriorFileSha256="";
@@ -151,12 +153,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(kind=="combo"){int[] code=DeclarationEntryCell(parts[5]);return CellText(sheet,row,column)==parts[4]&&CellText(sheet,code[0],code[1])==parts[6];}
   return false;
  }
+ private static void DeclarationKhbsSettle(){for(int turn=0;turn<5;turn++){Application.DoEvents();System.Threading.Thread.Sleep(20);}}
  private void ObserveDeclarationKhbsEntry(string before,string opened,Control editor,string value){
   if(!DeclarationKhbsMode()||declarationKhbsRound==0||(declarationKhbsEntryShape&2048)!=0)return;
   string after=editor.Text??String.Empty;before=before??String.Empty;opened=opened??String.Empty;int shape=2048;
   if(before.Length==0)shape|=1;if(before==value)shape|=2;if(before.Trim()==value)shape|=4;if(opened==before)shape|=8;
   if(after==value)shape|=16;if(after.EndsWith(value,StringComparison.Ordinal))shape|=32;if(before.Length>0&&after.StartsWith(before,StringComparison.Ordinal))shape|=64;
   if(after.Length==0)shape|=128;if(editor.ContainsFocus)shape|=256;int kind=NativeForegroundKind();if(kind!=7&&kind!=8)shape|=512;if(editor is TextBoxBase)shape|=1024;
+  if(value.Length>1&&after==value.Substring(1))shape|=4096;if(value.Length>1&&after==value.Substring(0,value.Length-1))shape|=8192;
   declarationKhbsEntryShape=shape;declarationKhbsEntryLengths=Math.Min(255,before.Length)*256+Math.Min(255,after.Length);
  }
  // The saved round is closed: the original menu, period dialog (Bổ sung) and sheet steps run again for the next round.

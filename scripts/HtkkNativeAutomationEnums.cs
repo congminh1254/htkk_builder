@@ -1389,7 +1389,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.DeclarationKhbsMessageId:
     return 9999;
    case HtkkNativeResultCounter.DeclarationKhbsEntryShape:
-    return 4095;
+    return 65535;
    case HtkkNativeResultCounter.DeclarationKhbsEntryLengths:
     return 65535;
    default: throw new ArgumentException("Unknown result counter");

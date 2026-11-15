@@ -289,7 +289,12 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         observe = observe[:observe.index('\n }\n')]
         for forbidden in ('PerformClick', 'SendKeys', 'Record()', '.Text='):
             self.assertNotIn(forbidden, observe)
-        self.assertEqual(registry['resultFields']['declarationKhbsEntryShape']['maximum'], 4095)
+        self.assertEqual(registry['resultFields']['declarationKhbsEntryShape']['maximum'], 65535)
+        # Cohort f3b64d4 (runs 43705699385, 43705701482): shape 2825, one character missing from an empty cell's text; a bổ sung
+        # round now settles before typing and retypes once, recording both (16384, 32768).
+        self.assertIn('if(khbsRound&&khbsBefore.Length>0)SendKeys.SendWait("{END}+{HOME}");', entry)
+        self.assertIn('if(editor.Text!=value&&khbsRound&&(declarationKhbsEntryShape&2048)==0){', entry)
+        self.assertEqual(entry.count('if(khbsRound)DeclarationKhbsSettle();'), 1)
         self.assertEqual(registry['resultFields']['declarationKhbsEntryLengths']['maximum'], 65535)
 
     def test_profile_save_wait_is_observed_and_stale_results_are_counted(self):
