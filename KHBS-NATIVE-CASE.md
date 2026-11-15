@@ -602,3 +602,9 @@ bổ sung round): the lock is stale, set by `lockUnLockA_TK` when the sheet was 
 the import. In HTKK it runs only from `AutoBindData_0` (`WinSpreadProcess.ProcessSheet`: sheet load, the "Đồng ý" of
 `frmWinSelectPhuLuc` behind btnThemPhuLuc, `frmWinToKhai.AddFullPLImportXML`) and `ButtonClick_0`. A candidate original route is the
 "Thêm phụ lục" dialog after the import (not tried; the case stays an observation case and the web keeps PL 01 bổ sung hidden).
+
+Run 43758208221 (PL 01 with the refresh): `declarationTickRefreshMask` 265 = attempted, AJ341 unticked, but AJ341 was neither a
+checkbox nor unlocked: the TMĐT table moves down with the rows of table_1 (three rows here), so a fixed address misses it. The refresh
+cell is now found by scanning column AJ below the target for the first visible, unlocked, unticked CheckBoxCellType whose row has
+CE <= 0 and is not a planned cell (bit 512; `declarationTickRefreshRowOffset` = its row minus the target row). If none is found, or the
+target stays locked (bit 64 clear), PL 01 bổ sung stays with HTKK (web flag false, the app already refuses it).

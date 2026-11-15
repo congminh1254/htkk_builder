@@ -190,9 +190,10 @@ internal static class HtkkDeclarationCasePlans {
  // 01/CNKD with PL 01: the giảm thuế ticks (AJ, no XML leaf) are made again after each import with the reviewed plan of the lần
  // đầu PL 01 case (rows 01 and 04 keep their 300tr / 200tr in every version of the case).
  // A tick cell left locked in a bổ sung round by a stale lockUnLockA_TK (01CNKD-PL01-khbs-Q3-2026, run 43742200645, lock shape
- // 151) gets one refresh through ButtonClick_0: the original SPACE on AJ341, the giảm thuế checkbox of the empty TMĐT row (table_2,
- // CE 0, so HTKK clears it again and daySangPLGiamThue does not run for it). Null: no refresh.
- internal static string KhbsTickRefresh(string caseId){return caseId=="01CNKD-PL01-khbs-Q3-2026"?"AJ341":null;}
+ // 151) gets one refresh through ButtonClick_0: the original SPACE on a giảm thuế checkbox of column AJ below the target found by
+ // RefreshDeclarationTickLocks (unlocked, unticked, CE 0: the empty TMĐT row; HTKK clears it again, no daySangPLGiamThue for it).
+ // Run 43758208221 showed the fixed AJ341 is not that cell once table_1 has three rows. Null: no refresh.
+ internal static string KhbsTickRefresh(string caseId){return caseId=="01CNKD-PL01-khbs-Q3-2026"?"AJ":null;}
  internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):caseId=="01CNKD-PL01-khbs-Q3-2026"?ImportTick("01CNKD-TT50-310-pl01-three-groups-Q3-2026"):null;}
  // Y8 KHBS rounds are TYPED (the original import resets the Y8 tables, release 238): round 0 the lần đầu rows, round 1 the bổ
  // sung rows, every planned cell typed again (the B sheet opens on the saved lần đầu, possibly reset). Values = the htkk_web

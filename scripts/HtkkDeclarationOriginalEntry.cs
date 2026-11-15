@@ -379,7 +379,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0,declarationTickRefreshRowOffset=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -416,7 +416,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // locks the clicked AJ because its CE is 0; that row is not in table_1, so daySangPLGiamThue does not run for it. (The "Thêm phụ
  // lục" route does not reach AutoBindData_0: frmWinSelectPhuLuc.btnDongY_Click only processes newly ticked annex sheets.)
  // Bits: 1 attempted, 2 refresh cell is a CheckBoxCellType, 4 it was unlocked, 8 it was unticked, 16 SPACE sent, 32 refresh cell
- // unticked again afterwards, 64 the target tick cell unlocked afterwards, 128 an original message appeared, 256 recorded.
+ // unticked again afterwards, 64 the target tick cell unlocked afterwards, 128 an original message appeared, 256 recorded, 512 the
+ // refresh cell was found by the scan (declarationTickRefreshRowOffset = its row minus the target row, value-free).
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -424,18 +425,29 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask","declarationTickRefreshRowOffset"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask,declarationTickRefreshRowOffset};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
- private void RefreshDeclarationTickLocks(Control grid,object sheet,string refresh,int[] target){
-  int mask=256|1;int[] at=DeclarationEntryCell(refresh);declarationTickRefreshMask=mask;Record();
-  if(at[0]>=Convert.ToInt32(Get(sheet,"RowCount"))||at[1]>=Convert.ToInt32(Get(sheet,"ColumnCount"))){DeclarationTickFail(6);return;}
-  object cell=Cell(sheet,at[0],at[1]);
-  if(DeclarationEntryCellKind(cell)=="FarPoint.Win.Spread.CellType.CheckBoxCellType")mask|=2;if(!Convert.ToBoolean(Get(cell,"Locked")))mask|=4;if(!Selected(Get(cell,"Value")))mask|=8;
+ private void RefreshDeclarationTickLocks(Control grid,object sheet,string column,int[] target){
+  // Run 43758208221: the fixed cell AJ341 was not a checkbox (mask 265): the TMĐT table moves down with the rows of table_1. The
+  // refresh cell is now found: the first cell of the planned column below the target that is a visible, unlocked, unticked
+  // CheckBoxCellType whose row has CE <= 0 and is not a planned tick or clear cell (ButtonClick_0 then clears and locks it again).
+  int mask=256|1;declarationTickRefreshMask=mask;Record();
+  int rows=Convert.ToInt32(Get(sheet,"RowCount")),col=DeclarationEntryCell(column+"1")[1],found=-1;
+  for(int row=target[0]+1;row<rows&&row<=target[0]+600&&found<0;row++){
+   string a1=column+(row+1).ToString(CultureInfo.InvariantCulture);bool planned=false;
+   foreach(string c in declarationTickPlan.Ticks)if(c==a1)planned=true;foreach(string c in declarationTickPlan.Unticked)if(c==a1)planned=true;
+   if(planned||!RowVisible(sheet,row))continue;
+   object candidate=Cell(sheet,row,col);
+   if(DeclarationEntryCellKind(candidate)!="FarPoint.Win.Spread.CellType.CheckBoxCellType"||Convert.ToBoolean(Get(candidate,"Locked"))||Selected(Get(candidate,"Value")))continue;
+   if(DeclarationTickPositive(sheet,"CE"+(row+1).ToString(CultureInfo.InvariantCulture)))continue;
+   found=row;
+  }
+  if(found<0){declarationTickRefreshMask=mask;Record();return;}
+  mask|=2|4|8|512;declarationTickRefreshRowOffset=Math.Min(1023,found-target[0]);int[] at=new int[]{found,col};
   declarationTickRefreshMask=mask;Record();
-  if((mask&14)!=14||!RowVisible(sheet,at[0]))return;
   DeclarationEntrySelect(grid,sheet,at[0],at[1]);
   if(!DeclarationEntryActive(sheet,at[0],at[1])||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
   SendKeys.SendWait(" ");mask|=16;Stopwatch clock=Stopwatch.StartNew();
