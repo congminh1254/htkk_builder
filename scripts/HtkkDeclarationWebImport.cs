@@ -36,11 +36,34 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 2048 an action could not be made (row hidden, list disabled, focus not on the list or an original message shown).
  // Rows: row count; masks: bit r = row r (before any action: ticked, locked; after: ticked); actions: SPACE presses.
  private int declarationAnnexListMask=0,declarationAnnexListRows=0,declarationAnnexListTickedBefore=0,declarationAnnexListLockedBefore=0,declarationAnnexListTickedAfter=0,declarationAnnexListActions=0;
+ // Period text shapes the opened declaration holds (run 43678756329: 01/TTS G7 quarter, import refused with 0437,
+ // WinDoWorkImportFormXml compares kieuKy, kyKKhaiTuNgay/DenNgay/TuThang/DenThang and loaiTKhai with TTinChung).
+ // Value-free classes of TTinChung, read once when the declaration sheet opens: bits 0-2 kyKKhaiTuNgay, 3-5
+ // kyKKhaiDenNgay, 6-8 kyKKhaiTuThang, 9-11 kyKKhaiDenThang; class 0 not read, 1 empty, 2 the plan's own value
+ // (dates: from/to date; months: MM/yyyy of them), 3 the plan year's bound (01/01/yyyy, 31/12/yyyy, 01/yyyy,
+ // 12/yyyy), 4 only blanks, slashes or underscores, 5 other text. Bits 12/13: mskTuThang/mskDenThang visible
+ // after the period dialog was configured; bit 14: the TTinChung read succeeded.
+ private int declarationPeriodShapeMask=0;
+ private static int PeriodTextShape(string text,string own,string yearBound){
+  if(text==null||text.Length==0)return 1;if(text==own)return 2;if(text==yearBound)return 3;
+  bool blank=true;foreach(char c in text)if(c!=' '&&c!='/'&&c!='_'){blank=false;break;}
+  return blank?4:5;
+ }
+ private void ObserveDeclarationPeriodShape(){
+  if((declarationPeriodShapeMask&16384)!=0)return;HtkkDeclarationCasePlan plan=declarationPlan;object common=Global("TTinChung");
+  if(plan==null||common==null||plan.FromDate.Length!=10||plan.ToDate.Length!=10)return;
+  string year=plan.Year;
+  int mask=PeriodTextShape(Convert.ToString(Get(common,"kyKKhaiTuNgay"),CultureInfo.InvariantCulture),plan.FromDate,"01/01/"+year)
+   |PeriodTextShape(Convert.ToString(Get(common,"kyKKhaiDenNgay"),CultureInfo.InvariantCulture),plan.ToDate,"31/12/"+year)<<3
+   |PeriodTextShape(Convert.ToString(Get(common,"kyKKhaiTuThang"),CultureInfo.InvariantCulture),plan.FromDate.Substring(3),"01/"+year)<<6
+   |PeriodTextShape(Convert.ToString(Get(common,"kyKKhaiDenThang"),CultureInfo.InvariantCulture),plan.ToDate.Substring(3),"12/"+year)<<9;
+  declarationPeriodShapeMask|=mask|16384;
+ }
  private bool declarationAnnexListFailed=false;
  private string DeclarationAnnexListJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
-  string[] names=new string[]{"declarationAnnexListMask","declarationAnnexListRows","declarationAnnexListTickedBefore","declarationAnnexListLockedBefore","declarationAnnexListTickedAfter","declarationAnnexListActions"};
-  int[] counts=new int[]{declarationAnnexListMask,declarationAnnexListRows,declarationAnnexListTickedBefore,declarationAnnexListLockedBefore,declarationAnnexListTickedAfter,declarationAnnexListActions};
+  string[] names=new string[]{"declarationAnnexListMask","declarationAnnexListRows","declarationAnnexListTickedBefore","declarationAnnexListLockedBefore","declarationAnnexListTickedAfter","declarationAnnexListActions","declarationPeriodShapeMask"};
+  int[] counts=new int[]{declarationAnnexListMask,declarationAnnexListRows,declarationAnnexListTickedBefore,declarationAnnexListLockedBefore,declarationAnnexListTickedAfter,declarationAnnexListActions,declarationPeriodShapeMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -285,6 +308,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(plan.KieuKy=="12"){SetDeclarationText(period,"mskTuThang",plan.FromDate);SetDeclarationText(period,"mskDenThang",plan.ToDate);}
   // Kê khai bổ sung rounds: Bổ sung, the lần and the fixed ngày lập, after the period boxes (their Leave handlers run first).
   if(DeclarationKhbsMode()&&declarationKhbsRound>0)periodFirstMatched=ConfigureDeclarationKhbsPeriod(period);
+  if(VisibleNamed(period,"mskTuThang"))declarationPeriodShapeMask|=4096;if(VisibleNamed(period,"mskDenThang"))declarationPeriodShapeMask|=8192;
   bool continuous=true;
   if(plan.ContinuousOperation){Control going=ReadableNamed(period,"chkQTTungNam_HoatDongLienTuc");if(going.Enabled&&!CheckValue(going))SetCheck(going,true);continuous=CheckValue(going)&&(!VisibleNamed(period,"chkQTNamDau_KhongHoatDongLienTuc")||!CheckValue(ReadableNamed(period,"chkQTNamDau_KhongHoatDongLienTuc")));}
   // KieuKy 22: the year box is hidden (GetPeriodInfo takes Nam from mskDenNgay), so only the two VISIBLE date boxes count.
@@ -349,7 +373,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Control grid=grids[0];declarationSheetObserved=true;declarationSheetCount=Convert.ToInt32(Get(Get(grid,"Sheets"),"Count"));
   if(declarationClock==null)declarationClock=Stopwatch.StartNew();
   object sheet=Get(grid,"ActiveSheet");bool ready=Convert.ToBoolean(Get(sheet,"AutoCalculation"))&&forms[0].Enabled&&grid.Enabled&&!OriginalMessageVisible();
-  declarationIdentityMatched=DeclarationIdentity();declarationSourcePinsMatched=DeclarationPinsMatched();
+  declarationIdentityMatched=DeclarationIdentity();declarationSourcePinsMatched=DeclarationPinsMatched();ObserveDeclarationPeriodShape();
   bool matched=ready&&declarationIdentityMatched&&declarationSourcePinsMatched&&declarationSheetCount>=1+(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(declarationPlan)?0:declarationPlan.Annexes.Length)&&declarationSheetCount<=64;
   // Original load may pump a progress form while sheet binding is still in flight.
   if(!matched&&declarationClock.Elapsed.TotalSeconds<3){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}

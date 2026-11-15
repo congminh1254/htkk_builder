@@ -1977,6 +1977,7 @@
     "declarationAnnexListLockedBefore",
     "declarationAnnexListTickedAfter",
     "declarationAnnexListActions",
+    "declarationPeriodShapeMask",
     "controlKinds",
     "realTaxpayerDataUsed",
     "runtimeRoundTrip",
@@ -4199,6 +4200,16 @@
       "default": 0,
       "minimum": 0,
       "maximum": 16,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationPeriodShapeMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 32767,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

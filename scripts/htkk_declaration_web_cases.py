@@ -434,9 +434,9 @@ CASES = {
                                                   ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, 'BEN THUE TAI SAN B - GIẢ LẬP', 'BEN THUE TAI SAN C - GIẢ LẬP', 'HD-TTS-GL-02', 'HD-TTS-GL-03', TTS_CODE + '01012025_01', TTS_CODE + '01072025_02', 'SO 2 DUONG GIA LAP', 'Cửa hàng', 'Trả tiền 1 lần cho cả hợp đồng']),
     # Tổ chức khai thay: [16]–[21] are the profile (LockUnlockTheoLoaiNopThue: name, MST, "địa chỉ - huyện - tỉnh").
     '01TTS-organization-two-individuals-Q3-2026': _case('tts01-organization-two-individuals-q3-2026', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 386, ['PLuc_02_BK_TTS'], WORKBOOK_SERVICE,
-                                                        ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' -  - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'BEN THUE TAI SAN D - GIẢ LẬP', 'BEN THUE TAI SAN E - GIẢ LẬP', 'HD-TTS-GL-04', 'HD-TTS-GL-05', TTS_CODE + '01012026_01', TTS_CODE + '01072026_02', 'SO 4 DUONG GIA LAP', 'Văn phòng']),
+                                                        ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'BEN THUE TAI SAN D - GIẢ LẬP', 'BEN THUE TAI SAN E - GIẢ LẬP', 'HD-TTS-GL-04', 'HD-TTS-GL-05', TTS_CODE + '01012026_01', TTS_CODE + '01072026_02', 'SO 4 DUONG GIA LAP', 'Văn phòng']),
     '01TTS-organization-monthly-M10-2026': _case('tts01-organization-monthly-m10-2026', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 216, ['PLuc_02_BK_TTS'], WORKBOOK_SERVICE,
-                                                 ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' -  - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'BEN THUE TAI SAN F - GIẢ LẬP', 'HD-TTS-GL-06', TTS_CODE + '01102026_01', 'SO 6 DUONG GIA LAP', 'Để ở']),
+                                                 ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'BEN THUE TAI SAN F - GIẢ LẬP', 'HD-TTS-GL-06', TTS_CODE + '01102026_01', 'SO 6 DUONG GIA LAP', 'Để ở']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases'] + workbook_design.PLAN_582['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
@@ -853,7 +853,10 @@ def tts_expected(case_id):
                 ct24 += revenue
         hd_revenue = sum((D(c['ct24']) for c in cells), D(0))
         hd_tax = _round(hd_revenue * D('0.05'))
-        rows.append({'ct20': str(months), 'ct21': str(value), 'ct22': str(average), 'ct22a': '0', 'ct23': '0', 'ct24': str(hd_revenue), 'ct25': str(hd_tax), 'ct26': str(hd_tax)})
+        # The month leaf is the hidden column BA = IF(contract months<>0, ...); the contract months column has a path_
+        # leaf the file never carries, so the original re-export of an imported file writes 0 (runs 43678752516,
+        # 43678754348: 12 and 6 in, 0 out); the web file writes the same.
+        rows.append({'ct20': '0', 'ct21': str(value), 'ct22': str(average), 'ct22a': '0', 'ct23': '0', 'ct24': str(hd_revenue), 'ct25': str(hd_tax), 'ct26': str(hd_tax)})
         rows.extend(cells)
     ct25 = _round(ct24 * D('0.05'))
     ct28 = _round(D(ct27) * D('0.05'))
