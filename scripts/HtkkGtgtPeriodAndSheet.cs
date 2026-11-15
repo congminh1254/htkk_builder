@@ -541,7 +541,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    gtgtCt42Locked=Convert.ToBoolean(Get(Cell(sheet,60,11),"Locked"));
    bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
    // The 01-10 case exports the untouched zero main declaration as its baseline (no editor action).
-   if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!Annex10WebCaseId()&&!webCaseEdited){
+   if(webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!="01GTGT-noactivity-zero-M10-2026"&&!Annex10WebCaseId()&&!Annex16WebCaseId()&&!webCaseEdited){
     if(!gtgtZero||gtgtEmptyMoney!=0||gtgtCt42Locked||Convert.ToBoolean(Get(Cell(sheet,caseRow,9),"Locked")))throw new InvalidOperationException();
     webCaseEdited=true;webCaseEditClock=Stopwatch.StartNew();if(CreditCt21Case()){EditOriginalGtgtCase(grid,sheet,36,11,"7",HtkkAutomationStage.GtgtCaseEditing);return;}EditOriginalGtgtCase(grid,sheet,caseRow,9,webCaseId=="01GTGT-sale5-half-M10-2026"?"10":webCaseId=="01GTGT-sale10-half-M10-2026"?"5":"1000000",HtkkAutomationStage.GtgtCaseEditing);return;
    }
@@ -582,6 +582,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
    // events give ([32] := [07] = 129999950, [33] := ROUND([32]*10/100-[08],0) = 10399996) carried by the web file.
    if(Annex10WebCaseId()){
     if(roundtripPhase!="not-started"){if(column==9&&(row==44||row==47||row==49))expected=129999950;if(column==11&&(row==44||row==47||row==49||row==50||row==56||row==58))expected=10399996;}
+   }else if(Annex16WebCaseId()){
+    // 01-6 (CSSX): the zero baseline before the import; after it, the web file's sales [30]/[32] with the 5%/10% tax.
+    if(roundtripPhase!="not-started"){bool ratio=webCaseId==Annex16CssxRatioCaseId;
+     if(column==9&&(row==44||row==49))expected=ratio?8000000000m:1000000000m;if(column==9&&row==46)expected=ratio?2000000000m:400000000m;if(column==9&&row==47)expected=ratio?6000000000m:600000000m;
+     if(column==11&&row==46)expected=ratio?100000000m:20000000m;if(column==11&&row==47)expected=ratio?600000000m:60000000m;if(column==11&&(row==44||row==49||row==50||row==56||row==58))expected=ratio?700000000m:80000000m;}
    }else if((webCaseId!="01GTGT-zero-M10-2026"&&!QuarterCase()&&webCaseId!=Annex12WebZeroCaseId&&(!NoActivityCase()||CancelCt21Case()))||mode=="gtgt-annex12-export-nonzero"){
     bool fivePercent=webCaseId=="01GTGT-sale5-half-M10-2026"||webCaseId=="01GTGT-sale5-manual-M10-2026";int caseRow=fivePercent?46:47;
     if(column==9&&(row==44||row==caseRow||row==49))expected=webCaseId=="01GTGT-sale5-half-M10-2026"?10:webCaseId=="01GTGT-sale10-half-M10-2026"?5:1000000;

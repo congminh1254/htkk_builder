@@ -260,7 +260,7 @@ class Driver(unittest.TestCase):
         self.assertIn('-not $lastGui.roundtripImportCommandInvoked -and -not $lastGui.roundtripImportSucceeded', probe)
         self.assertIn('$lastGui.declarationEntryActionCount -eq $lastGui.declarationEntryPlannedCount', probe)
         self.assertIn("@('declaration-web-import-inspected','declaration-original-entry-exported','declaration-import-tick-exported','declaration-export-not-matched')", probe)
-        self.assertIn("inputMode=$(if($declarationKhbs){if($declarationEntryCase){'khbs-original-entry-export'}else{'khbs-web-xml-import-reexport'}}elseif($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
+        self.assertIn("inputMode=$(if($declarationKhbs){if($declarationEntryCase){'khbs-original-entry-export'}elseif($declarationTickCase){'khbs-web-xml-import-tick-reexport'}else{'khbs-web-xml-import-reexport'}}elseif($declarationEntryCase){'original-entry-export'}elseif($declarationTickCase){'web-xml-import-tick-reexport'}else{'web-xml-import-reexport'});originalImportSucceeded=(-not $declarationEntryCase)", probe)
         publisher = (ROOT / 'publish-htkk-declaration-native-output.py').read_text(encoding='utf-8')
         self.assertIn("else:mode=reader.case_registry.input_mode(case_id);imported=mode in (reader.case_registry.IMPORT_MODE,reader.case_registry.IMPORT_TICK_MODE)", publisher)
         self.assertIn("'inputMode':mode,'originalImportSucceeded':imported,", publisher)

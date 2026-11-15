@@ -32,6 +32,16 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-gtgt-2.8.3-annex16-cssx",
+      "htkkVersion": "5.8.1",
+      "menuId": "D1",
+      "xmlVersion": "2.8.3",
+      "producer": "scripts/generate-htkk-web-annex16-cssx-reference.mjs",
+      "driver": "gtgt-web-import-inspect",
+      "privacyValidator": "gtgt-annex16-cssx-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "01-gtgt-2.8.3-khbs",
       "htkkVersion": "5.8.1",
       "menuId": "D1",
@@ -297,6 +307,46 @@
       "menuId": "Y8",
       "xmlVersion": "3.0.9",
       "producer": "scripts/generate-htkk-web-ntnn-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "05-kk-tncn-2.9.3-khbs",
+      "htkkVersion": "5.8.2",
+      "menuId": "L7",
+      "xmlVersion": "2.9.3",
+      "producer": "scripts/generate-htkk-web-kk05-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "05-kk-tncn-2.9.3-khbs-lan2",
+      "htkkVersion": "5.8.2",
+      "menuId": "L7",
+      "xmlVersion": "2.9.3",
+      "producer": "scripts/generate-htkk-web-kk05-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "05-kk-tncn-2.9.3-khbs-pbt",
+      "htkkVersion": "5.8.2",
+      "menuId": "L7",
+      "xmlVersion": "2.9.3",
+      "producer": "scripts/generate-htkk-web-kk05-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "05-kk-tncn-tt89-3.0.9-khbs",
+      "htkkVersion": "5.8.2",
+      "menuId": "Z8",
+      "xmlVersion": "3.0.9",
+      "producer": "scripts/generate-htkk-web-kk05-khbs-reference.mjs",
       "driver": "declaration-amendment-khbs-inspect",
       "privacyValidator": "ntnn-khbs-v1",
       "profilePolicy": "synthetic-9999999997-v1"
@@ -1065,6 +1115,48 @@
       }
     },
     {
+      "caseId": "01GTGT-annex16-cssx-formula-M10-2026",
+      "producerCase": "annex16-cssx-formula",
+      "adapterId": "01-gtgt-2.8.3-annex16-cssx",
+      "format": "htkk-web-annex16-cssx-formula-input-v1",
+      "stagingDirectory": "htkk-web-reference-annex16-cssx-formula-input",
+      "inputBranch": "gtgt-web-reference-annex16-cssx-formula-input",
+      "outputBranch": "gtgt-web-native-annex16-cssx-formula-output",
+      "statusContext": "htkk-native/annex16-cssx-formula",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-6/GTGT (CSSX)"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-annex16-cssx-ratio-M10-2026",
+      "producerCase": "annex16-cssx-ratio",
+      "adapterId": "01-gtgt-2.8.3-annex16-cssx",
+      "format": "htkk-web-annex16-cssx-ratio-input-v1",
+      "stagingDirectory": "htkk-web-reference-annex16-cssx-ratio-input",
+      "inputBranch": "gtgt-web-reference-annex16-cssx-ratio-input",
+      "outputBranch": "gtgt-web-native-annex16-cssx-ratio-output",
+      "statusContext": "htkk-native/annex16-cssx-ratio",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-6/GTGT (CSSX)"],
+        "amendmentOrder": 0
+      }
+    },
+    {
       "caseId": "03TNDN-rate15-Y2025",
       "producerCase": "tndn03-rate15-y2025",
       "adapterId": "03-tndn-2.9.4",
@@ -1820,6 +1912,111 @@
         "activityCode": "00",
         "annexes": ["01-2"],
         "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "05KK-khbs-increase-Q3-2026",
+      "producerCase": "kk05-khbs-increase-q3-2026",
+      "adapterId": "05-kk-tncn-2.9.3-khbs",
+      "format": "htkk-web-kk05-khbs-increase-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-kk05-khbs-increase-q3-2026-input",
+      "inputBranch": "declaration-web-reference-kk05-khbs-increase-q3-2026-input",
+      "outputBranch": "declaration-web-native-kk05-khbs-increase-q3-2026-output",
+      "statusContext": "htkk-native/kk05-khbs-increase-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "L7",
+        "adapterVersion": "2.9.3",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "05KK-khbs-lan2-Q3-2026",
+      "producerCase": "kk05-khbs-lan2-q3-2026",
+      "adapterId": "05-kk-tncn-2.9.3-khbs-lan2",
+      "format": "htkk-web-kk05-khbs-lan2-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-kk05-khbs-lan2-q3-2026-input",
+      "inputBranch": "declaration-web-reference-kk05-khbs-lan2-q3-2026-input",
+      "outputBranch": "declaration-web-native-kk05-khbs-lan2-q3-2026-output",
+      "statusContext": "htkk-native/kk05-khbs-lan2-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "L7",
+        "adapterVersion": "2.9.3",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "05KK-khbs-decrease-Q3-2026",
+      "producerCase": "kk05-khbs-decrease-q3-2026",
+      "adapterId": "05-kk-tncn-2.9.3-khbs",
+      "format": "htkk-web-kk05-khbs-decrease-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-kk05-khbs-decrease-q3-2026-input",
+      "inputBranch": "declaration-web-reference-kk05-khbs-decrease-q3-2026-input",
+      "outputBranch": "declaration-web-native-kk05-khbs-decrease-q3-2026-output",
+      "statusContext": "htkk-native/kk05-khbs-decrease-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "L7",
+        "adapterVersion": "2.9.3",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "05KK-TT89-khbs-increase-Q4-2026",
+      "producerCase": "kk05-tt89-khbs-increase-q4-2026",
+      "adapterId": "05-kk-tncn-tt89-3.0.9-khbs",
+      "format": "htkk-web-kk05-tt89-khbs-increase-q4-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-kk05-tt89-khbs-increase-q4-2026-input",
+      "inputBranch": "declaration-web-reference-kk05-tt89-khbs-increase-q4-2026-input",
+      "outputBranch": "declaration-web-native-kk05-tt89-khbs-increase-q4-2026-output",
+      "statusContext": "htkk-native/kk05-tt89-khbs-increase-q4-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "Z8",
+        "adapterVersion": "3.0.9",
+        "periodType": "quarter",
+        "periodValue": "4/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "05KK-PBT-khbs-Q3-2026",
+      "producerCase": "kk05-pbt-khbs-q3-2026",
+      "adapterId": "05-kk-tncn-2.9.3-khbs-pbt",
+      "format": "htkk-web-kk05-pbt-khbs-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-kk05-pbt-khbs-q3-2026-input",
+      "inputBranch": "declaration-web-reference-kk05-pbt-khbs-q3-2026-input",
+      "outputBranch": "declaration-web-native-kk05-pbt-khbs-q3-2026-output",
+      "statusContext": "htkk-native/kk05-pbt-khbs-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "L7",
+        "adapterVersion": "2.9.3",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": ["01-1"],
+        "amendmentOrder": 1
       }
     }
   ]
