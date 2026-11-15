@@ -263,6 +263,12 @@ NUMBER = re.compile(r'-?(0|[1-9][0-9]{0,17})(\.[0-9]{1,6})?\Z')
 DATE = re.compile(r'([0-9]{2}/[0-9]{2}/[0-9]{4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}/[0-9]{4}|[0-9]{2}/[0-9]{2})\Z')
 CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
+TEMPLATE_TT40 = '(Ban hành kèm theo Thông tư số 40/2021/TT-BTC ngày 01/6/2021 của Bộ trưởng Bộ Tài Chính)'
+# 01/TTS mã hợp đồng (TinhMaHopDong): maCQT_MST(000)_ddMMyyyy(từ ngày)_NN of the synthetic profile.
+TTS_CODE = '10129_9999999997000_'
+# 01/TTS row and hidden-header texts that every G7 case carries.
+# The control XML spells three of the hidden header defaults with combining marks (not NFC); kept exactly.
+TTS_TEXTS = ('Hợp đồng', 'Kỳ thanh toán', 'Kỳ thanh toán cuối cùng', 'Hợp đồng khai lần đầu', 'Phường Sơn Tây', 'H\xf4\u0323 chi\xea\u0301u', 'Gi\xe2\u0301y th\xf4ng ha\u0300nh', 'CMT biên giới', 'Gi\xe2\u0301y t\u01a1\u0300 kh\xe1c')
 TEMPLATE_TT89 = '(Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
 WEB_CODE = 'CCKK'
@@ -419,6 +425,18 @@ CASES = {
                                                         'Phường Sơn Tây', 'Thành phố Hà Nội', 'Thuế cơ sở 16 Thành phố Hà Nội',
                                                         '10129 - Thuế cơ sở 16 Thành phố Hà Nội', '1140759 - Phường Sơn Tây - Thuế cơ sở 16 Thành phố Hà Nội',
                                                         'Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)', 'Thuế thu nhập từ hoạt động sản xuất, kinh doanh của cá nhân']),
+    # G7 01/TTS TT40 2.8.3 (non-gating, HTKK 5.8.2 oracle): KieuKy 42; cá nhân trực tiếp khai năm 2025 with 01-1/BK-TTS,
+    # tổ chức khai thay quý 3/2026 and tháng 10/2026 with 01-2/BK-TTS. Catalogue names: Catalogue_HopDongVaKy,
+    # Catalogue_DM_Muc_dich_SD, Catalogue_DM_trang_thai_HD; the hidden header controls export their control Value.
+    '01TTS-individual-one-contract-Y2025': _case('tts01-individual-one-contract-y2025', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-10-27', '2026-10-27', 210, ['PLuc_01_BK_TTS'], WORKBOOK_SERVICE,
+                                                 ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, 'BEN THUE TAI SAN A - GIẢ LẬP', 'HD-TTS-GL-01', TTS_CODE + '01012025_01', 'SO 1 DUONG GIA LAP', 'Văn phòng']),
+    '01TTS-individual-two-contracts-Y2025': _case('tts01-individual-two-contracts-y2025', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-10-27', '2026-10-27', 274, ['PLuc_01_BK_TTS'], WORKBOOK_SERVICE,
+                                                  ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, 'BEN THUE TAI SAN B - GIẢ LẬP', 'BEN THUE TAI SAN C - GIẢ LẬP', 'HD-TTS-GL-02', 'HD-TTS-GL-03', TTS_CODE + '01012025_01', TTS_CODE + '01072025_02', 'SO 2 DUONG GIA LAP', 'Cửa hàng', 'Trả tiền 1 lần cho cả hợp đồng']),
+    # Tổ chức khai thay: [16]–[21] are the profile (LockUnlockTheoLoaiNopThue: name, MST, "địa chỉ - huyện - tỉnh").
+    '01TTS-organization-two-individuals-Q3-2026': _case('tts01-organization-two-individuals-q3-2026', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('Q', '3/2026', '01/07/2026', '30/09/2026'), None, '2026-10-27', '2026-10-27', 386, ['PLuc_02_BK_TTS'], WORKBOOK_SERVICE,
+                                                        ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' -  - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'BEN THUE TAI SAN D - GIẢ LẬP', 'BEN THUE TAI SAN E - GIẢ LẬP', 'HD-TTS-GL-04', 'HD-TTS-GL-05', TTS_CODE + '01012026_01', TTS_CODE + '01072026_02', 'SO 4 DUONG GIA LAP', 'Văn phòng']),
+    '01TTS-organization-monthly-M10-2026': _case('tts01-organization-monthly-m10-2026', 'G7', '470', '2.8.3', 'Validate/01_TTS_TT40_283.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 216, ['PLuc_02_BK_TTS'], WORKBOOK_SERVICE,
+                                                 ['TỜ KHAI THUẾ ĐỐI VỚI HOẠT ĐỘNG CHO THUÊ TÀI SẢN (01/TTS)', TEMPLATE_TT40, ADDRESS, *TTS_TEXTS, ADDRESS + ' -  - Thành phố Hà Nội', 'CA NHAN CHO THUE A - GIẢ LẬP', 'BEN THUE TAI SAN F - GIẢ LẬP', 'HD-TTS-GL-06', TTS_CODE + '01102026_01', 'SO 6 DUONG GIA LAP', 'Để ở']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases'] + workbook_design.PLAN_582['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
@@ -435,7 +453,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026'})
 
 
 def is_case(case_id):
@@ -777,6 +795,91 @@ def _ntnn_qt(case_id, root):
                 reject('VALUE')
 
 
+# Independent 01/TTS oracle (G7): the reviewed synthetic rows of the design cases and a Decimal recomputation of
+# Tts01TT40Nckt283.CellChange_1/2 for whole-month periods inside one year (never the TypeScript engine):
+# period months = (yTo-yFrom)*12 + mTo - mFrom + 1, value = months * giá; contract row = sums; DT bình quân =
+# Math.Round(value / months) half to even, on the contract and its periods; DT trong năm = sum of the period values of
+# the year (01-2: per individual MST); taxable when > 100.000.000; DT tính thuế = value when taxable; GTGT = TNCN =
+# ROUND(DT tính thuế * 5%) half away from zero; [23]/[24] = sums over the periods starting in the declared period
+# (năm, tháng or quý of từ ngày); [25] = [26] = ROUND([24] * 5%); [28] = ROUND([27] * 5%); [29] = [26] + [28].
+# Rows: (code, MST of the individual or '', từ ngày, đến ngày, giá 1 tháng) in table order.
+TTS_ROWS = {
+    '01TTS-individual-one-contract-Y2025': (('Y', 2025, None), '0', (('01', '', '01/01/2025', '31/12/2025', '0'), ('02', '', '01/01/2025', '30/06/2025', '10000000'), ('03', '', '01/07/2025', '31/12/2025', '10000000')), '10000010'),
+    '01TTS-individual-two-contracts-Y2025': (('Y', 2025, None), '0', (('01', '', '01/01/2025', '30/06/2025', '0'), ('04', '', '01/01/2025', '30/06/2025', '8000000'), ('01', '', '01/07/2025', '31/12/2025', '0'), ('02', '', '01/07/2025', '30/09/2025', '5000000'), ('03', '', '01/10/2025', '31/12/2025', '5000000')), '0'),
+    '01TTS-organization-two-individuals-Q3-2026': (('Q', 2026, 3), '0', (('01', '9999999901', '01/01/2026', '31/12/2026', '0'),) + tuple(('02' if i < 3 else '03', '', f, t, '15000010') for i, (f, t) in enumerate((('01/01/2026', '31/03/2026'), ('01/04/2026', '30/06/2026'), ('01/07/2026', '30/09/2026'), ('01/10/2026', '31/12/2026')))) + (('01', '9999999919', '01/07/2026', '31/12/2026', '0'), ('02', '', '01/07/2026', '30/09/2026', '5000000'), ('03', '', '01/10/2026', '31/12/2026', '5000000')), '0'),
+    '01TTS-organization-monthly-M10-2026': (('M', 2026, 10), '0', (('01', '9999999901', '01/10/2026', '30/11/2026', '0'), ('02', '', '01/10/2026', '31/10/2026', '50000001'), ('03', '', '01/11/2026', '30/11/2026', '50000000')), '0'),
+}
+TTS_THRESHOLD = decimal.Decimal(100000000)
+TTS_02_LEAVES = {'ct20': 'ct22', 'ct21': 'ct23', 'ct22': 'ct24', 'ct22a': 'ct24a', 'ct23': 'ct25', 'ct24': 'ct26', 'ct25': 'ct27', 'ct26': 'ct28'}
+
+
+def _half_even(value):
+    return value.quantize(decimal.Decimal(1), rounding=decimal.ROUND_HALF_EVEN)
+
+
+def tts_expected(case_id):
+    """Per-row leaves (ct20, ct21, ct22, ct22a, ct23, ct24, ct25, ct26) and CaNhanKeKhai of a G7 design case."""
+    (kind, year, number), _, table, ct27 = TTS_ROWS[case_id]
+    D = decimal.Decimal
+    groups = []
+    for code, mst, start, end, price in table:
+        d1, m1, y1 = (int(x) for x in start.split('/'))
+        d2, m2, y2 = (int(x) for x in end.split('/'))
+        if code == '01':
+            groups.append({'mst': mst, 'periods': []})
+            continue
+        months = (y2 - y1) * 12 + m2 - m1 + 1
+        groups[-1]['periods'].append({'year': y1, 'month': m1, 'months': D(months), 'value': D(months) * D(price)})
+    totals = {}
+    for g in groups:
+        for p in g['periods']:
+            key = (g['mst'], p['year'])
+            totals[key] = totals.get(key, D(0)) + p['value']
+    rows, ct23, ct24 = [], D(0), D(0)
+    for g in groups:
+        months = sum((p['months'] for p in g['periods']), D(0))
+        value = sum((p['value'] for p in g['periods']), D(0))
+        average = _half_even(value / months) if months else D(0)
+        cells = []
+        for p in g['periods']:
+            year_total = totals[(g['mst'], p['year'])]
+            taxable = year_total > TTS_THRESHOLD
+            revenue = p['value'] if taxable else D(0)
+            tax = _round(revenue * D('0.05'))
+            cells.append({'ct20': '0', 'ct21': str(p['value']), 'ct22': str(average), 'ct22a': str(year_total), 'ct23': '1' if taxable else '0', 'ct24': str(revenue), 'ct25': str(tax), 'ct26': str(tax)})
+            inside = p['year'] == year and (kind == 'Y' or (kind == 'M' and p['month'] == number) or (kind == 'Q' and (p['month'] - 1) // 3 + 1 == number))
+            if inside:
+                ct23 += p['value']
+                ct24 += revenue
+        hd_revenue = sum((D(c['ct24']) for c in cells), D(0))
+        hd_tax = _round(hd_revenue * D('0.05'))
+        rows.append({'ct20': str(months), 'ct21': str(value), 'ct22': str(average), 'ct22a': '0', 'ct23': '0', 'ct24': str(hd_revenue), 'ct25': str(hd_tax), 'ct26': str(hd_tax)})
+        rows.extend(cells)
+    ct25 = _round(ct24 * D('0.05'))
+    ct28 = _round(D(ct27) * D('0.05'))
+    main = {'ct23': str(ct23), 'ct24': str(ct24), 'ct25': str(ct25), 'ct26': str(ct25), 'ct27': ct27, 'ct28': str(ct28), 'ct29': str(ct25 + ct28)}
+    return rows, main
+
+
+def _tts(case_id, root):
+    rows, main = tts_expected(case_id)
+    found = root.findall(_xpath('HSoKhaiThue/PLuc/*/CTietBKeHDongTTS'))
+    if len(found) != len(rows):
+        reject('VALUE')
+    # 01-2/BK-TTS (PLuc_02_BK_TTS) numbers the same columns two places later (ct22 months … ct28 TNCN).
+    names = TTS_02_LEAVES if root.find(_xpath('HSoKhaiThue/PLuc/PLuc_02_BK_TTS')) is not None else {}
+    for node, row in zip(found, rows):
+        for name, value in row.items():
+            if [(n.text or '') for n in node.findall('{%s}%s' % (NS, names.get(name, name)))] != [value]:
+                reject('VALUE')
+    block = root.find(_xpath('HSoKhaiThue/CTieuTKhaiChinh'))
+    if block is None:
+        reject('STRUCTURE')
+    for name, value in main.items():  # ct23..ct29 occur once under CTieuTKhaiChinh (CaNhanKeKhai)
+        if [(n.text or '') for n in block.iter('{%s}%s' % (NS, name))] != [value]:
+            reject('VALUE')
+
+
 def _expected(case_id, spec, root, items, raw):
     family = spec['family']
     if family == 'workbook':
@@ -801,6 +904,8 @@ def _expected(case_id, spec, root, items, raw):
             _ntnn(case_id, root)
         if case_id in NTNN04 or case_id in NTNN02:
             _ntnn_qt(case_id, root)
+        if case_id in TTS_ROWS:
+            _tts(case_id, root)
     else:
         try:
             hkd_design.validate_case_xml(case_id, raw)
