@@ -14,6 +14,8 @@ text+='$HtkkNtnnKhbsCases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_CASES)+'
 text+='$HtkkNtnnKhbsLan2Cases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_CASES if r.CASES[id]['unit']['amendmentOrder']==2)+')\n'
 # Those whose import is completed by fixed original grid edits (05/KK-TNCN 05-1/PBT: Thuế tỉnh/CCT has no XML leaf).
 text+='$HtkkNtnnKhbsTickCases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_TICK_CASES)+')\n'
+# Those whose bổ sung rounds have no "Tổng hợp KHBS" (01/CNKD U5, KieuKHBS empty): step mask without 32.
+text+='$HtkkNtnnKhbsNoSummaryCases=@('+','.join("'"+id+"'" for id in r.NTNN_KHBS_NO_SUMMARY_CASES)+')\n'
 file=ROOT/'HtkkNativeCaseFormats.ps1';workflow=ROOT.parent/'.github/workflows/probe-htkk-windows.yml';body=workflow.read_text();updated=re.sub(r'(      web_case_id:\n.*?        options: )\[[^\n]*\]',lambda m:m[1]+'['+', '.join(r.CASES)+']',body,flags=re.S)
 if '--check'in sys.argv:
  if file.read_text()!=text or body!=updated:raise SystemExit('Native case metadata stale.')

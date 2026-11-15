@@ -514,3 +514,36 @@ missing): the reader caps `menuClickCount` at 3 for this mode while a third roun
 kỳ tháng 3/2026 (HTKK takes monthly 05/KK-TNCN until tháng 3/2026), its own period in the contract (`period_of`), plan month
 03/2026 (`chkTkhaiThang`, KieuKy 19). Web prediction: hạn 20/04/2026, 207 late days, ct3b 62.100; 213 leaves. htkk_web released
 KHBS 05/KK lần 1 without 05-1/PBT for L7 kỳ quý and Z8 only (runs 43686728548, 43686732231, 43686734447); kỳ tháng waits for this case.
+
+## 01/CNKD TT50/2026 (U5 3.1.0): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (docs/KE-KHAI-BO-SUNG-01-CNKD.md, `lib/htkk-cnkd01-khbs.ts`, hidden behind `KHBS_01CNKD_*_RELEASED=false`) read the
+KHBS of U5 statically from HTKK 5.8.2: Menu.xml has `KieuKHBS=""` (VersionKHBS 3.1.0, sheet KHBS `Active="0"`), MapMCT.xml and
+MapMCT_TieuMuc.xml have no U5 map, and `Validate/KHBS_01_CNKD_HKD_TT50_310.xsd` is the same bytes as `01_CNKD_HKD_TT50_310.xsd`
+(no `PL01_KHBS`). `frmWinToKhai.LoadButton` shows `btnTongHopKHBS` only for LoaiToKhai B with a non-empty KieuKHBS, and
+`frmHTKKPeriod.UpdatePeriodByVerSion` hides `pnVT2_PhuLucKeKhai` for a Bổ sung with an empty KieuKHBS. So the web bổ sung is the
+whole declaration with loaiTKhai B and its lần: no 01/KHBS, no 01-1/KHBS, no tiền chậm nộp.
+
+`scripts/htkk_cnkd_khbs_web_cases.py` holds the pins (sizes and SHA-256, never the files) and per-case settings of four cases, with
+`khbsParts` empty (the merged contract `htkk_ntnn_khbs_web_cases.py` refuses a KHBS fragment in their B files and expects one in every
+other KHBS case; `test_cnkd_khbs_web_cases.py`). Registered in `htkk-native-cases.json` (adapters `01-cnkd-hkd-3.1.0-khbs`,
+`-khbs-lan2`, `-khbs-pl01`; HTKK 5.8.2, `summary: false`) with `releaseGate: false`.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `01CNKD-khbs-increase-Q3-2026` (group 01 300tr → 350tr) | original, web | 271 |
+| `01CNKD-khbs-decrease-Q3-2026` (group 04 200tr → 150tr) | original, web | 271 |
+| `01CNKD-khbs-lan2-Q3-2026` (lần 2 on the increase case, 350tr → 380tr) | original, prior (= the increase web file), web | 271 |
+| `01CNKD-PL01-khbs-Q3-2026` (PL 01 NQ 43 on both, unticked group 02 150tr → 160tr) | original, web | 295 |
+
+Driver: the rounds of the other KHBS cases with the plan of `01CNKD-TT50-310-pl01-three-groups-Q3-2026` (menu 101 → 101_37 → U5,
+quý 3/2026; with PL 01 for the PL 01 case, without otherwise), schema `Validate/KHBS_01_CNKD_HKD_TT50_310.xsd`, every round imported.
+`HtkkDeclarationCasePlans.KhbsSummary` is false for these cases: after the bổ sung input the round goes straight to Ghi (intermediate)
+or Kết xuất (last) without clicking anything, and step bit 2048 records that `btnTongHopKHBS` was not shown (the probe expects 2048
+instead of 32, `$HtkkNtnnKhbsNoSummaryCases`). In a Bổ sung period dialog the phụ lục list is hidden for U5: `SelectDeclarationAnnexes`
+clicks nothing there, sets `declarationAnnexListMask` bit 4096 and leaves the annexes to the saved previous version (the imported
+sheets are still checked). The PL 01 case makes the giảm thuế ticks again after EACH import with the reviewed tick plan of the lần
+đầu PL 01 case (`KhbsImportTick`; rows 01 and 04 keep 300tr / 200tr in every version).
+
+What only these runs decide: whether HTKK accepts the import of a loaiTKhai B file into the Bổ sung form; whether it writes anything
+the web file does not (mục D `soTienChenhLech`, `ct46`); whether the PL 01 bổ sung reopens with the saved PL 01 sheet.

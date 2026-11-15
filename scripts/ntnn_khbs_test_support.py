@@ -1,4 +1,4 @@
-"""Synthetic in-memory files for the 01/NTNN and 05/KK-TNCN kê khai bổ sung contract tests (htkk_ntnn_khbs_web_cases.py).
+"""Synthetic in-memory files for the 01/NTNN, 05/KK-TNCN and 01/CNKD kê khai bổ sung contract tests (htkk_ntnn_khbs_web_cases.py).
 
 The reviewed producer files stay private: this public repository keeps only their pins. Tests therefore assemble small
 synthetic files of the same shape here and pin THEIR sizes, SHA-256 and leaf counts into the module instance under test
@@ -21,14 +21,16 @@ def _tk(m, case_id, role):
 
 def synthetic(m, case_id, role):
     """One synthetic staged file: web service identity, synthetic NNT, the case's identity/period/lần and, for a B file, the
-    two KHBS annex parts. The web B file carries the case's expected ct10 so a comparison can change one amount."""
+    case's KHBS parts (none for 01/CNKD). The web B file carries the case's expected ct10 (01/CNKD: tổng [47] after) so a comparison
+    can change one amount."""
     spec = m.CASES[case_id]
     tk, lan = _tk(m, case_id, role)
-    amount = {'original': '0', 'prior': '1000', 'web': spec['expected']['ct10']}[role]
+    expected = spec['expected']
+    amount = {'original': '0', 'prior': '1000', 'web': expected['ct10'] if 'ct10' in expected else expected['total'][1]}[role]
     service = ''.join('<%s>%s</%s>' % (name, value, name) for name, value in zip(('maDVu', 'tenDVu', 'pbanDVu', 'ttinNhaCCapDVu'), m.SERVICE))
     # The case's own annexes (05/KK-TNCN 05-1/PBT) come first in PLuc, then the two KHBS fragments of a B file.
     annexes = ''.join('<%s><ct14>%s</ct14></%s>' % (part, amount, part) for part in spec['annexParts'])
-    khbs = '' if role == 'original' else (
+    khbs = '' if role == 'original' or not spec['khbsParts'] else (
         '<PL01_KHBS><Header><soLan>%s</soLan><mst>%s</mst></Header><ct10>%s</ct10></PL01_KHBS>'
         '<PL01_1_KHBS><Header><soLan>%s</soLan><mst>%s</mst></Header><ct3_2_ten>CHI TIEU GIA LAP</ct3_2_ten></PL01_1_KHBS>') % (lan, m.MST, amount, lan, m.MST)
     pluc = '<PLuc>' + annexes + khbs + '</PLuc>' if annexes or khbs else ''

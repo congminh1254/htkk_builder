@@ -714,7 +714,7 @@ class VisibleAnnexList(unittest.TestCase):
 
     def test_fields_and_terminal_stage_are_registered_and_bounded(self):
         fields = automation['resultFields']
-        for name, maximum in (('declarationAnnexListMask', 4095), ('declarationAnnexListRows', 512), ('declarationAnnexListTickedBefore', 65535),
+        for name, maximum in (('declarationAnnexListMask', 8191), ('declarationAnnexListRows', 512), ('declarationAnnexListTickedBefore', 65535),
                               ('declarationAnnexListLockedBefore', 65535), ('declarationAnnexListTickedAfter', 65535), ('declarationAnnexListActions', 16)):
             self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE, KHBS_MODE]})
             self.assertIn('"' + name + '"', DRIVER)

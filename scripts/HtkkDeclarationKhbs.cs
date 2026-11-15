@@ -1,4 +1,4 @@
-// Kê khai bổ sung (KHBS) of 01/NTNN TT80 (I9), 01/NTNN, NCCNN TT89 (Y8) and 05/KK-TNCN (L7, Z8) on the declaration driver, mode
+// Kê khai bổ sung (KHBS) of 01/NTNN TT80 (I9), 01/NTNN, NCCNN TT89 (Y8), 05/KK-TNCN (L7, Z8) and 01/CNKD (U5) on the declaration driver, mode
 // declaration-amendment-khbs-inspect (HTKK 5.8.2, non-gating; KHBS-NATIVE-CASE.md "01/NTNN"). C# 2.0 / CLR2.
 // Rounds: 0 = the lần đầu C0 (I9: original "Nhập từ XML" of .web-original.xml; Y8: typed, the original import resets the
 // Y8 tables), saved with the original Ghi and closed with the original Đóng; 1..n = the bổ sung, reopened from the original
@@ -7,6 +7,10 @@
 // round is exported with the original "Kết xuất" (shared declaration export path: readiness gate, selector, pinned KHBS
 // schema, whole-tree comparison with the web B file). An intermediate bổ sung is saved and closed like C0. Only original
 // buttons, editors and dialogs act; no business method, Cell.Value assignment or authored XML. Bounded fields only.
+// 01/CNKD (U5, KieuKHBS "" in the 5.8.2 Menu.xml): frmWinToKhai.LoadButton never shows btnTongHopKHBS for it, so its bổ sung
+// rounds skip the summary (HtkkDeclarationCasePlans.KhbsSummary false; step bit 2048 records that the button was not visible),
+// and frmHTKKPeriod.UpdatePeriodByVerSion hides the phụ lục list of its Bổ sung period dialog (SelectDeclarationAnnexes: the
+// annexes then come from the saved previous version; the imported sheets are checked after the import).
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -19,7 +23,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private const string DeclarationKhbsDate="13/11/2026";
  // declarationKhbsStepMask bits: 1 C0 input done, 2 C0 saved, 4 C0 closed, 8 a bổ sung round opened, 16 its input done,
  // 32 Tổng hợp KHBS acknowledged, 64 intermediate bổ sung saved, 128 it was closed, 256 the 0013 prompt answered Không,
- // 512 the last round opened, 1024 the export written.
+ // 512 the last round opened, 1024 the export written, 2048 a round without "Tổng hợp KHBS" (U5) found btnTongHopKHBS not shown.
  private int declarationKhbsRound=0,declarationKhbsTarget=0,declarationKhbsStepMask=0,declarationKhbsMessageId=0;
  // First text entry of a bổ sung round that did not take (runs 43698793633, 43698796274: Y8 round 1 entry 0, code 12). Value-free:
  // declarationKhbsEntryShape bits 1 cell empty before, 2 cell = planned before, 4 trimmed cell = planned before, 8 editor text =
@@ -78,6 +82,14 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // The round's input (import or entry) and the sheet checks passed.
  private void DeclarationKhbsInputDone(){
   declarationKhbsStepMask|=declarationKhbsRound==0?1:16;declarationKhbsClock=null;
+  if(declarationKhbsRound>0&&!HtkkDeclarationCasePlans.KhbsSummary(webCaseId)){
+   // No original summary for this form: observe the button only, then go on as after an acknowledged summary.
+   Control[] summary=roundtripOwner.Controls.Find("btnTongHopKHBS",true);
+   if(summary.Length==0||summary.Length==1&&!summary[0].Visible)declarationKhbsStepMask|=2048;
+   if(declarationKhbsRound<declarationKhbsTarget){declarationPhase="khbs-save-ready";SetStage(HtkkAutomationStage.DeclarationKhbsSaving);}
+   else{declarationPhase="export-start";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);}
+   Record();return;
+  }
   declarationPhase=declarationKhbsRound==0?"khbs-save-ready":"khbs-summary-ready";SetStage(declarationKhbsRound==0?HtkkAutomationStage.DeclarationKhbsSaving:HtkkAutomationStage.DeclarationKhbsSummaryWaiting);Record();
  }
  private void DeclarationKhbsExported(bool matched){

@@ -1339,7 +1339,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.DeclarationUiStallSeconds:
     return 255;
    case HtkkNativeResultCounter.DeclarationAnnexListMask:
-    return 4095;
+    return 8191;
    case HtkkNativeResultCounter.DeclarationAnnexListRows:
     return 512;
    case HtkkNativeResultCounter.DeclarationAnnexListTickedBefore:
@@ -1385,7 +1385,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.DeclarationKhbsRound:
     return 2;
    case HtkkNativeResultCounter.DeclarationKhbsStepMask:
-    return 2047;
+    return 4095;
    case HtkkNativeResultCounter.DeclarationKhbsMessageId:
     return 9999;
    case HtkkNativeResultCounter.DeclarationKhbsEntryShape:

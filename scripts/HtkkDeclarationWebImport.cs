@@ -33,7 +33,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 4 a row that is not a checkbox or whose label is neither a case annex nor KHBS; 8 a KHBS row ticked; 16 a KHBS row
  // listed; 32 a case annex missing or listed twice; 64 a case annex unticked and locked (never forced); 128 more than 16
  // rows; 256 the states after the actions differ from the case; 512 chkChonPhuLucKeKhaiAll checked; 1024 it was enabled;
- // 2048 an action could not be made (row hidden, list disabled, focus not on the list or an original message shown).
+ // 2048 an action could not be made (row hidden, list disabled, focus not on the list or an original message shown); 4096 a
+ // Bổ sung round of a form without "Tổng hợp KHBS" (U5) found the list hidden and kept the annexes of the saved version.
  // Rows: row count; masks: bit r = row r (before any action: ticked, locked; after: ticked); actions: SPACE presses.
  private int declarationAnnexListMask=0,declarationAnnexListRows=0,declarationAnnexListTickedBefore=0,declarationAnnexListLockedBefore=0,declarationAnnexListTickedAfter=0,declarationAnnexListActions=0;
  // Period text shapes the opened declaration holds (run 43678756329: 01/TTS G7 quarter, import refused with 0437,
@@ -260,6 +261,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(plan))all=true;
    declarationAnnexMatched=all;Record();return;
   }
+  // A Bổ sung round of a form without "Tổng hợp KHBS" (U5, KieuKHBS ""): UpdatePeriodByVerSion hides the list, the bổ sung opens
+  // with the annexes of the saved previous version. Observation only (nothing is clicked); the imported sheets decide
+  // (declarationImportSheetMatched).
+  if(!grid.Visible&&DeclarationKhbsMode()&&declarationKhbsRound>0&&!HtkkDeclarationCasePlans.KhbsSummary(webCaseId)){declarationAnnexListMask|=4096;declarationAnnexMatched=true;Record();return;}
   if(!grid.Visible){declarationAnnexMatched=plan.Annexes.Length==0;return;}
   object sheet=Get(grid,"ActiveSheet");int rowCount=Convert.ToInt32(Get(sheet,"RowCount"));if(rowCount<0||rowCount>512)throw new InvalidOperationException();
   SetStage(HtkkAutomationStage.DeclarationPeriodAnnexSelecting);Record();

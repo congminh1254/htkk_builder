@@ -15,7 +15,9 @@ No value, path or text of a file is ever reported; errors are bounded codes.
 
 The same driver mode runs the 05/KK-TNCN KHBS cases (L7, Z8): their pins and per-case settings (producer, exporter, PLuc parts
 before the KHBS fragments, input mode) live in htkk_kk05_khbs_web_cases.py and are merged into CASES, MENUS and PERIODS here,
-so every reader of this contract (fetch, publishers, probe lists) covers them with the same checks."""
+so every reader of this contract (fetch, publishers, probe lists) covers them with the same checks. The 01/CNKD KHBS cases (U5)
+are merged the same way from htkk_cnkd_khbs_web_cases.py; their B files carry no KHBS fragment (per-case khbsParts empty: U5 has
+KieuKHBS "" in HTKK 5.8.2, so its bổ sung is the declaration itself with loaiTKhai B)."""
 import hashlib
 import importlib.util
 import io
@@ -63,6 +65,18 @@ CASES.update(kk05.CASES)
 MENUS.update(kk05.MENUS)
 PERIODS.update(kk05.PERIODS)
 KK05_CASES = tuple(kk05.CASES)
+_cnkd_spec = importlib.util.spec_from_file_location('htkk_cnkd_khbs_web_cases_data', pathlib.Path(__file__).with_name('htkk_cnkd_khbs_web_cases.py'))
+cnkd = importlib.util.module_from_spec(_cnkd_spec)
+_cnkd_spec.loader.exec_module(cnkd)
+if set(cnkd.CASES) & set(CASES) or set(cnkd.MENUS) & set(MENUS):
+    raise ValueError('CASE_POLICY')
+CASES.update(cnkd.CASES)
+MENUS.update(cnkd.MENUS)
+PERIODS.update(cnkd.PERIODS)
+CNKD_CASES = tuple(cnkd.CASES)
+KHBS_FRAGMENTS = ('PL01_KHBS', 'PL01_1_KHBS')
+for _spec in CASES.values():
+    _spec.setdefault('khbsParts', KHBS_FRAGMENTS)
 
 
 class NtnnKhbsWebCaseError(ValueError):
@@ -179,10 +193,11 @@ def validate_xml(body, case_id, role):
         reject('AMENDMENT')
     pluc = [child for child in root.find('{%s}HSoKhaiThue' % NS) if _local(child) == 'PLuc']
     parts = [_local(child) for item in pluc for child in item]
-    # The case's own annexes (05/KK-TNCN: 05-1/PBT-KK-TNCN) precede the two KHBS fragments of a B file.
-    if parts != list(spec['annexParts']) + ([] if role == 'original' else ['PL01_KHBS', 'PL01_1_KHBS']):
+    # The case's own annexes (05/KK-TNCN: 05-1/PBT-KK-TNCN; 01/CNKD: PL 01 NQ 43) precede the KHBS fragments of a B file (none for U5).
+    fragments = [] if role == 'original' else list(spec['khbsParts'])
+    if parts != list(spec['annexParts']) + fragments:
         reject('AMENDMENT')
-    for part in ([] if role == 'original' else ['PL01_KHBS', 'PL01_1_KHBS']):
+    for part in fragments:
         if _leaf(root, 'HSoKhaiThue/PLuc/' + part + '/Header/soLan') != expected[1] or _leaf(root, 'HSoKhaiThue/PLuc/' + part + '/Header/mst') != MST:
             reject('AMENDMENT')
     return {'privacyValuesVerified': True, 'serviceIdentity': 'web-tool', 'nativeProvenance': False}
@@ -231,6 +246,11 @@ def period_of(spec):
 def producer(case_id):
     """The reviewed htkk_web producer of a case."""
     return case(case_id)['producer']
+
+
+def khbs_summary(case_id):
+    """Whether the bổ sung rounds run the original "Tổng hợp KHBS" (not for U5, whose KieuKHBS is empty)."""
+    return bool(case(case_id)['khbsParts'])
 
 
 def input_mode(case_id):

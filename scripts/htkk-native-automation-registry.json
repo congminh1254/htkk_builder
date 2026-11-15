@@ -3395,7 +3395,11 @@
         "05KK-khbs-decrease-Q3-2026",
         "05KK-TT89-khbs-increase-Q4-2026",
         "05KK-PBT-khbs-Q3-2026",
-        "05KK-khbs-increase-M03-2026"
+        "05KK-khbs-increase-M03-2026",
+        "01CNKD-khbs-increase-Q3-2026",
+        "01CNKD-khbs-decrease-Q3-2026",
+        "01CNKD-khbs-lan2-Q3-2026",
+        "01CNKD-PL01-khbs-Q3-2026"
       ]
     },
     "webCaseEditCount": {
@@ -4196,7 +4200,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 4095,
+      "maximum": 8191,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"
@@ -4630,7 +4634,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 2047,
+      "maximum": 4095,
       "activeModes": [
         "declaration-amendment-khbs-inspect"
       ]

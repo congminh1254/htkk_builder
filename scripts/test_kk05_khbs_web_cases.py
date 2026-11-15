@@ -73,7 +73,7 @@ class Kk05KhbsWebCases(unittest.TestCase):
             self.assertEqual((row['unit']['periodType'], row['unit']['periodValue']), ('month', '03/2026') if case_id == MONTH else ('quarter', '4/2026' if row['unit']['menuId'] == 'Z8' else '3/2026'))
             self.assertEqual(row['unit']['annexes'], ['01-1'] if case_id == PBT else [])
         self.assertTrue(set(CASES) <= set(registry.NTNN_KHBS_CASES))
-        self.assertEqual(registry.NTNN_KHBS_TICK_CASES, (PBT,))
+        self.assertEqual([c for c in registry.NTNN_KHBS_TICK_CASES if c in CASES], [PBT])
         self.assertNotIn(PBT, registry.DECLARATION_TICK_CASES)
 
     def test_pinned_synthetic_files_validate_and_the_annex_order_is_enforced(self):
@@ -103,7 +103,7 @@ class Kk05KhbsDriverWiring(unittest.TestCase):
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
         ids = re.search(r'KhbsCaseIds=new string\[\]\{(.*?)\};', plans, re.S).group(1)
         self.assertEqual(set(re.findall('"([^"]+)"', ids)), set(registry.NTNN_KHBS_CASES))
-        self.assertIn('caseId=="05KK-khbs-lan2-Q3-2026"?2', plans)
+        self.assertRegex(plans, r'KhbsSoLan\(string caseId\)\{return [^;]*caseId=="05KK-khbs-lan2-Q3-2026"[^;]*\?2:')
         counts = re.search(r'int leaves=caseId=="05KK-khbs-increase-Q3-2026"\|\|caseId=="05KK-khbs-increase-M03-2026"\?(\d+):caseId=="05KK-TT89-khbs-increase-Q4-2026"\?(\d+):caseId=="05KK-PBT-khbs-Q3-2026"\?(\d+):(\d+);', plans)
         self.assertIsNotNone(counts)
         expected = [m.tax_leaf_count(c) + 4 for c in ('05KK-khbs-increase-Q3-2026', '05KK-TT89-khbs-increase-Q4-2026', PBT)]
@@ -113,7 +113,7 @@ class Kk05KhbsDriverWiring(unittest.TestCase):
         self.assertEqual({m.tax_leaf_count(c) + 4 for c in ('05KK-khbs-lan2-Q3-2026', '05KK-khbs-decrease-Q3-2026')}, {int(counts.group(4))})
         self.assertIn('"Validate/KHBS_05_KK_TNCN_TT80_293.xsd","91a2d625d1ddeaf5fe71fb5ca0413d25d063d3adb99e9b975e322d95a56d8ec4"', plans)
         self.assertIn('"Validate/KHBS_05_KK_TNCN_TT89_309.xsd","619a2ecf3228d80742e9dbea5c3939308f74fea55a94073e33bbc7efb23bdf97"', plans)
-        self.assertIn('internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):null;}', plans)
+        self.assertIn('internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):', plans)
 
     def test_driver_runs_the_tick_plan_in_every_khbs_round_and_resets_it(self):
         web = (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8')
@@ -126,8 +126,8 @@ class Kk05KhbsDriverWiring(unittest.TestCase):
     def test_probe_lists_and_success_predicate(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text(encoding='utf-8')
-        self.assertIn("$HtkkNtnnKhbsLan2Cases=@('01NTNN-khbs-lan2-M09-2026','05KK-khbs-lan2-Q3-2026')", formats)
-        self.assertIn("$HtkkNtnnKhbsTickCases=@('05KK-PBT-khbs-Q3-2026')", formats)
+        self.assertIn("$HtkkNtnnKhbsLan2Cases=@('01NTNN-khbs-lan2-M09-2026','05KK-khbs-lan2-Q3-2026','01CNKD-khbs-lan2-Q3-2026')", formats)
+        self.assertIn("$HtkkNtnnKhbsTickCases=@('05KK-PBT-khbs-Q3-2026','01CNKD-PL01-khbs-Q3-2026')", formats)
         self.assertIn('$khbsLan2=$env:EXPECTED_WEB_CASE_ID -cin $HtkkNtnnKhbsLan2Cases', probe)
         self.assertIn('$khbsTickCase=$env:EXPECTED_WEB_CASE_ID -cin $HtkkNtnnKhbsTickCases', probe)
         self.assertIn('if($khbsTickCase){$matched=$matched -and $lastGui.declarationTickMethodPinsMatched', probe)

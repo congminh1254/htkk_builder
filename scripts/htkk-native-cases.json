@@ -352,6 +352,36 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs",
+      "htkkVersion": "5.8.2",
+      "menuId": "U5",
+      "xmlVersion": "3.1.0",
+      "producer": "scripts/generate-htkk-web-cnkd-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs-lan2",
+      "htkkVersion": "5.8.2",
+      "menuId": "U5",
+      "xmlVersion": "3.1.0",
+      "producer": "scripts/generate-htkk-web-cnkd-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs-pl01",
+      "htkkVersion": "5.8.2",
+      "menuId": "U5",
+      "xmlVersion": "3.1.0",
+      "producer": "scripts/generate-htkk-web-cnkd-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "01-tts-tt40-2.8.3-bk1",
       "htkkVersion": "5.8.2",
       "menuId": "G7",
@@ -2037,6 +2067,92 @@
         "periodValue": "03/2026",
         "activityCode": "00",
         "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01CNKD-khbs-increase-Q3-2026",
+      "producerCase": "cnkd01-khbs-increase-q3-2026",
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs",
+      "format": "htkk-web-cnkd01-khbs-increase-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-cnkd01-khbs-increase-q3-2026-input",
+      "inputBranch": "declaration-web-reference-cnkd01-khbs-increase-q3-2026-input",
+      "outputBranch": "declaration-web-native-cnkd01-khbs-increase-q3-2026-output",
+      "statusContext": "htkk-native/cnkd01-khbs-increase-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "U5",
+        "adapterVersion": "3.1.0",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01CNKD-khbs-decrease-Q3-2026",
+      "producerCase": "cnkd01-khbs-decrease-q3-2026",
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs",
+      "format": "htkk-web-cnkd01-khbs-decrease-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-cnkd01-khbs-decrease-q3-2026-input",
+      "inputBranch": "declaration-web-reference-cnkd01-khbs-decrease-q3-2026-input",
+      "outputBranch": "declaration-web-native-cnkd01-khbs-decrease-q3-2026-output",
+      "statusContext": "htkk-native/cnkd01-khbs-decrease-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "U5",
+        "adapterVersion": "3.1.0",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01CNKD-khbs-lan2-Q3-2026",
+      "producerCase": "cnkd01-khbs-lan2-q3-2026",
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs-lan2",
+      "format": "htkk-web-cnkd01-khbs-lan2-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-cnkd01-khbs-lan2-q3-2026-input",
+      "inputBranch": "declaration-web-reference-cnkd01-khbs-lan2-q3-2026-input",
+      "outputBranch": "declaration-web-native-cnkd01-khbs-lan2-q3-2026-output",
+      "statusContext": "htkk-native/cnkd01-khbs-lan2-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "U5",
+        "adapterVersion": "3.1.0",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01CNKD-PL01-khbs-Q3-2026",
+      "producerCase": "cnkd01-pl01-khbs-q3-2026",
+      "adapterId": "01-cnkd-hkd-3.1.0-khbs-pl01",
+      "format": "htkk-web-cnkd01-pl01-khbs-q3-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-cnkd01-pl01-khbs-q3-2026-input",
+      "inputBranch": "declaration-web-reference-cnkd01-pl01-khbs-q3-2026-input",
+      "outputBranch": "declaration-web-native-cnkd01-pl01-khbs-q3-2026-output",
+      "statusContext": "htkk-native/cnkd01-pl01-khbs-q3-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "U5",
+        "adapterVersion": "3.1.0",
+        "periodType": "quarter",
+        "periodValue": "3/2026",
+        "activityCode": "00",
+        "annexes": [
+          "01-4"
+        ],
         "amendmentOrder": 1
       }
     }

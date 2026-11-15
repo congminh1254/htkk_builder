@@ -17,6 +17,9 @@ NTNN_KHBS_PRODUCER='scripts/generate-htkk-web-ntnn-khbs-reference.mjs'
 # Kê khai bổ sung of 05/KK-TNCN (L7, Z8) on the same driver and contract (htkk_kk05_khbs_web_cases.py, merged into
 # htkk_ntnn_khbs_web_cases.py; KHBS-NATIVE-CASE.md "05/KK-TNCN"): own producer.
 KK05_KHBS_PRODUCER='scripts/generate-htkk-web-kk05-khbs-reference.mjs'
+# Kê khai bổ sung of 01/CNKD TT50/2026 (U5 3.1.0; htkk_cnkd_khbs_web_cases.py, merged the same way; KHBS-NATIVE-CASE.md
+# "01/CNKD"): own producer; KieuKHBS "" so the rounds have no "Tổng hợp KHBS".
+CNKD_KHBS_PRODUCER='scripts/generate-htkk-web-cnkd-khbs-reference.mjs'
 _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('10/2026',),'quarter':('4/2026',)}}
 # Native-case input modes of the declaration driver: the original "Nhập từ XML" of the web XML, or
 # typing a compiled fixed plan into the original grid (HtkkDeclarationCasePlans.Entry) when the
@@ -116,6 +119,11 @@ TRUSTED_ADAPTERS={
  '05-kk-tncn-2.9.3-khbs-lan2':{'producer':KK05_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'L7','xmlVersion':'2.9.3','periods':{'quarter':('3/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
  '05-kk-tncn-2.9.3-khbs-pbt':{'producer':KK05_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['01-1'],'driver':NTNN_KHBS_DRIVER,'menuId':'L7','xmlVersion':'2.9.3','periods':{'quarter':('3/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2','tick':True},
  '05-kk-tncn-tt89-3.0.9-khbs':{'producer':KK05_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z8','xmlVersion':'3.0.9','periods':{'quarter':('4/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
+ # KHBS 01/CNKD: U5 3.1.0 quý 3/2026, imported; lần 2 has its own adapter; the PL 01 case is imported then its giảm thuế ticks
+ # made again in the grid (KhbsImportTick = the reviewed tick plan of the lần đầu PL 01 case).
+ '01-cnkd-hkd-3.1.0-khbs':{'producer':CNKD_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'U5','xmlVersion':'3.1.0','periods':{'quarter':('3/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2','summary':False},
+ '01-cnkd-hkd-3.1.0-khbs-lan2':{'producer':CNKD_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'U5','xmlVersion':'3.1.0','periods':{'quarter':('3/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2','summary':False},
+ '01-cnkd-hkd-3.1.0-khbs-pl01':{'producer':CNKD_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['01-4'],'driver':NTNN_KHBS_DRIVER,'menuId':'U5','xmlVersion':'3.1.0','periods':{'quarter':('3/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2','tick':True,'summary':False},
  # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 like I9; FinishImportXML clears rate [9], so the case uses rate 0.
  '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',),'day':('20/10/2026',)},[]),
  # D6/Y1 04/NTNN quyết toán (non-gating): KieuKy 22 = SetLayoutToKhaiTuNgayDenNgay, period 'range' (from-to
@@ -194,6 +202,8 @@ NTNN_KHBS_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in NTNN_KHBS_CASES))
 # Those of them whose import is completed by fixed original grid edits (05-1/PBT Thuế tỉnh/CCT, HtkkDeclarationCasePlans.KhbsImportTick).
 NTNN_KHBS_TICK_CASES=tuple(id for id in NTNN_KHBS_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']].get('tick') is True)
+# Those whose bổ sung rounds have no original "Tổng hợp KHBS" (U5: KieuKHBS "", frmWinToKhai.LoadButton hides the button).
+NTNN_KHBS_NO_SUMMARY_CASES=tuple(id for id in NTNN_KHBS_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']].get('summary') is False)
 # Declaration-family cases use their own input/output file names, privacy allowlist and driver.
 DECLARATION_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==DECLARATION_DRIVER)
 check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))
