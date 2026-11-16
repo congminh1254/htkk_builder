@@ -4057,7 +4057,7 @@
       "kind": "integer",
       "default": 0,
       "minimum": 0,
-      "maximum": 255,
+      "maximum": 65535,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

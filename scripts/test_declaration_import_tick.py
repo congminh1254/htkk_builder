@@ -458,17 +458,23 @@ class Gtgt04Tt89AnnexPlan(unittest.TestCase):
 
 
 class ComboNothingSelected(unittest.TestCase):
-    def test_a_cleared_catalogue_combo_is_opened_as_a_windows_combobox_before_the_arrow_keys(self):
+    def test_a_cleared_catalogue_combo_is_opened_and_chosen_in_its_open_list(self):
         # Run 43790936993 (code 18, mask 4619): SelectedIndex -1 after FinishImportXML, the first DOWN left the cell.
-        # Run 43818219370 (code 18, mask 53771): ENTER on the closed list ended the edit. F4, then ALT+DOWN, then the typed item.
+        # Run 43818219370 (code 18, mask 53771): ENTER on the closed list ended the edit.
+        # Run 43827106248 (code 18, open mask 3): F4 opened the list, but the grid lost the focus to it; the full editor guard
+        # is not required while the list is open, the item is chosen by DOWN and committed by ENTER.
         body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
         start = body.index('if(current<0&&current!=planned&&(mask&4)==0){')
-        self.assertLess(start, body.index('SendKeys.SendWait(before<planned?"{DOWN}":"{UP}")'))
-        block = body[start:body.index('if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){')]
+        block = body[start:body.index('if(!committed&&Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){')]
         self.assertIn('new string[]{"{F4}","%{DOWN}"}', block)
+        self.assertIn('if(dropped){declarationTickComboOpenMask|=openIndex==0?2:16;Record();break;}', block)
+        self.assertLess(block.index('if(dropped){'), block.index('Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)'))
+        self.assertIn('if((declarationTickComboOpenMask&(512|2048|4096))!=0)', block)
+        self.assertIn('SendKeys.SendWait("{DOWN}")', block); self.assertIn('SendKeys.SendWait("{ENTER}")', block)
         self.assertIn('SendKeys.SendWait(name)', block)
-        self.assertNotIn('{ENTER}', block)
-        self.assertEqual(block.count('DeclarationTickFail(18)'), 2)
+        # An edit ended by the list ENTER counts only when HTKK shows the name and wrote the code.
+        self.assertIn('if(CellText(sheet,row,column)!=name||CellText(sheet,code[0],code[1])!=parts[5])', block)
+        self.assertIn('if(!committed){', body)
         self.assertIn('"declarationTickComboOpenMask"', ENTRY)
-        self.assertEqual(automation['resultFields']['declarationTickComboOpenMask']['maximum'], 255)
+        self.assertEqual(automation['resultFields']['declarationTickComboOpenMask']['maximum'], 65535)
         self.assertGreaterEqual(automation['resultFields']['declarationTickComboMask']['maximum'], 32768 | 16384 | 8191)

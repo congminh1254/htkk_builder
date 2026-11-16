@@ -1312,7 +1312,7 @@ public static class HtkkNativeResultContract {
    case HtkkNativeResultCounter.DeclarationTickComboListCount:
     return 4096;
    case HtkkNativeResultCounter.DeclarationTickComboOpenMask:
-    return 255;
+    return 65535;
    case HtkkNativeResultCounter.DeclarationTickEntryMask:
     return 65535;
    case HtkkNativeResultCounter.DeclarationTickEntryStartOffset:

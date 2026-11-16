@@ -411,7 +411,7 @@ function Get-HtkkSafeGuiReferenceResult {
   if(($ExpectedMode -cnotin @('declaration-web-import-inspect','declaration-amendment-khbs-inspect')) -and $value['declarationTickComboMask'] -cne 0){throw 'invalid'}
   if(($value['declarationTickComboListCount'] -isnot [int] -and $value['declarationTickComboListCount'] -isnot [long]) -or $value['declarationTickComboListCount'] -lt 0 -or $value['declarationTickComboListCount'] -gt 4096){throw 'invalid'}
   if(($ExpectedMode -cnotin @('declaration-web-import-inspect','declaration-amendment-khbs-inspect')) -and $value['declarationTickComboListCount'] -cne 0){throw 'invalid'}
-  if(($value['declarationTickComboOpenMask'] -isnot [int] -and $value['declarationTickComboOpenMask'] -isnot [long]) -or $value['declarationTickComboOpenMask'] -lt 0 -or $value['declarationTickComboOpenMask'] -gt 255){throw 'invalid'}
+  if(($value['declarationTickComboOpenMask'] -isnot [int] -and $value['declarationTickComboOpenMask'] -isnot [long]) -or $value['declarationTickComboOpenMask'] -lt 0 -or $value['declarationTickComboOpenMask'] -gt 65535){throw 'invalid'}
   if(($ExpectedMode -cnotin @('declaration-web-import-inspect','declaration-amendment-khbs-inspect')) -and $value['declarationTickComboOpenMask'] -cne 0){throw 'invalid'}
   if(($value['declarationTickEntryMask'] -isnot [int] -and $value['declarationTickEntryMask'] -isnot [long]) -or $value['declarationTickEntryMask'] -lt 0 -or $value['declarationTickEntryMask'] -gt 65535){throw 'invalid'}
   if(($ExpectedMode -cnotin @('declaration-web-import-inspect','declaration-amendment-khbs-inspect')) -and $value['declarationTickEntryMask'] -cne 0){throw 'invalid'}

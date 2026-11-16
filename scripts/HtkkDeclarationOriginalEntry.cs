@@ -580,6 +580,16 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // must leave the editor open on the cell (code 18 otherwise). declarationTickComboOpenMask: 1 F4 sent, 2 list open after
   // F4, 4 editor kept after F4, 8 ALT+DOWN sent, 16 list open after it, 32 editor kept after it, 64 item typed, 128 typed
   // item selected.
+  // Run 43827106248 (E30, code 18, open mask 3): F4 opened the list (bit 2) but the full editor guard failed while it was open
+  // (bit 4 clear): the dropped list has the focus, not the grid. While the list is open only a narrower guard holds (cell
+  // still active, HTKK window foreground in this process, no original message); the item is chosen in the open list by
+  // DOWN (one press per step from the current index) and committed by ENTER, which closes the list. If that ENTER also ends
+  // the cell edit (FpSpread handles it), the edit is complete when the cell shows the name and HTKK wrote the code.
+  // declarationTickComboOpenMask (0..65535): 1 F4 sent, 2 open after F4, 4 editor kept after F4, 8 ALT+DOWN sent, 16 open
+  // after it, 32 editor kept after it, 64 item typed, 128 typed item selected, 256 no editor after an open key, 512 active
+  // cell moved, 1024 grid without focus, 2048 foreground not HTKK's window, 4096 original message, 8192 list-commit ENTER
+  // sent, 16384 planned item selected after it, 32768 list closed after it.
+  bool committed=false;
   if(current<0&&current!=planned&&(mask&4)==0){
    mask|=32768|16384;listShown=true;declarationTickComboOpenMask=0;
    string[] openKeys=new string[]{"{F4}","%{DOWN}"};
@@ -587,20 +597,41 @@ public sealed partial class HtkkGuiReferenceAutomation {
     declarationTickComboOpenMask|=openIndex==0?1:8;Record();
     SendKeys.SendWait(openKeys[openIndex]);Stopwatch opening=Stopwatch.StartNew();
     while(!Convert.ToBoolean(Get(vendor,"DroppedDown"))&&opening.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-    if(Convert.ToBoolean(Get(vendor,"DroppedDown")))declarationTickComboOpenMask|=openIndex==0?2:16;
+    bool dropped=Convert.ToBoolean(Get(vendor,"DroppedDown"));
+    declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);
+    if(dropped){declarationTickComboOpenMask|=openIndex==0?2:16;Record();break;}
     if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
     declarationTickComboOpenMask|=openIndex==0?4:32;Record();
    }
-   if(Convert.ToBoolean(Get(vendor,"DroppedDown")))mask|=64;
-   else{
+   if(Convert.ToBoolean(Get(vendor,"DroppedDown"))){
+    mask|=64;
+    if((declarationTickComboOpenMask&(512|2048|4096))!=0){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    int presses=planned-Convert.ToInt32(Get(vendor,"SelectedIndex"));
+    for(int press=0;press<presses&&press<=list.Length;press++){SendKeys.SendWait("{DOWN}");Application.DoEvents();System.Threading.Thread.Sleep(30);}
+    declarationTickComboOpenMask|=8192;Record();SendKeys.SendWait("{ENTER}");Stopwatch closing=Stopwatch.StartNew();
+    while(Convert.ToBoolean(Get(vendor,"DroppedDown"))&&closing.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+    Application.DoEvents();
+    if(!Convert.ToBoolean(Get(vendor,"DroppedDown")))declarationTickComboOpenMask|=32768;
+    if(OriginalMessageVisible()){declarationTickComboOpenMask|=4096;DeclarationTickCombo(mask,list.Length);DeclarationTickFail(17);return;}
+    if(Get(grid,"EditingControl")!=null&&DeclarationEntryActive(sheet,row,column)&&DeclarationEntryGuard(grid)){
+     if(Convert.ToInt32(Get(vendor,"SelectedIndex"))==planned)declarationTickComboOpenMask|=16384;
+    }else{
+     // The ENTER also ended the edit: accepted when HTKK shows the name and wrote the code (read back below).
+     Stopwatch written=Stopwatch.StartNew();
+     while(CellText(sheet,code[0],code[1])!=parts[5]&&written.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+     if(CellText(sheet,row,column)!=name||CellText(sheet,code[0],code[1])!=parts[5]){declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+     declarationTickComboOpenMask|=16384;committed=true;
+    }
+    Record();
+   }else{
     declarationTickComboOpenMask|=64;Record();SendKeys.SendWait(name);Stopwatch typing=Stopwatch.StartNew();
     while(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned&&typing.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-    if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
     if(Convert.ToInt32(Get(vendor,"SelectedIndex"))==planned)declarationTickComboOpenMask|=128;
     Record();
    }
   }
-  if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){
+  if(!committed&&Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){
    // DOWN/UP first (FpCombo selects when AcceptsArrowKeys or its list is shown); if a key does not move the selection, ENTER
    // shows the list once and the key is repeated. Every step must move the selection by itself.
    for(int step=0;step<=list.Length+1&&Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned;step++){
@@ -620,8 +651,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(15);return;}
   }
   mask|=32;if(String.Equals(editor.Text,name)||String.Equals(vendor.Text,name))mask|=2048;
-  if(!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(10);return;}
-  SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+  if(!committed){
+   if(!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(10);return;}
+   SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+  }
   if(OriginalMessageVisible()){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(17);return;}
   Stopwatch clock=Stopwatch.StartNew();
   while(CellText(sheet,code[0],code[1])!=parts[5]&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
@@ -668,6 +701,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // editor as it does for a user; an open editor on the target cell is accepted.
   if(!DeclarationEntryActive(sheet,row,column)||CellText(sheet,row,column)!=before)return 21;
   return 0;
+ }
+ // Value-free state of the combo edit after an open key (declarationTickComboOpenMask bits 256..4096).
+ private int DeclarationComboOpenState(Control grid,object sheet,int row,int column){
+  int state=0;uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
+  if(Get(grid,"EditingControl")==null)state|=256;if(!DeclarationEntryActive(sheet,row,column))state|=512;if(!grid.ContainsFocus)state|=1024;
+  if(pid!=(uint)Process.GetCurrentProcess().Id)state|=2048;if(OriginalMessageVisible())state|=4096;
+  return state;
  }
  private void DeclarationTickCombo(int mask,int count){declarationTickComboMask=mask;declarationTickComboListCount=Math.Min(count,4096);Record();}
  // SPACE on an open, unticked original checkbox: FpSpread.ButtonClicked -> frmWinToKhai.winFpSpread_ButtonClicked
