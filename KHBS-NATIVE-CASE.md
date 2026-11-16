@@ -657,3 +657,9 @@ count differs, i.e. HTKK writes another hồ sơ group (presumably 02-1/BK-QTT-T
 leaf 206 = the first `ten_HSo`, a text outside the inputs), so no raw export exists yet. These cases now also accept the public B8
 catalogue texts (`CATALOGUE_TEXTS`: sheet names, the 02-1 captions with and without "[nn] - ") and, on the 01-1/KHBS row key
 leaf only, ' - '-joined keys of input pieces (`catalogue_texts`), so the next run retains the export and the web port follows HTKK.
+
+Cohort fc800a2 (web b13c8cd9; runs 43790973810, 43790976608, 43790979591, 43790982675): the four fragment Header dates now match
+(no text difference left); the only difference is the child count of `PL01_1_KHBS/Muc_A/DSachHSo` (web element 249, kind 3, 202
+leaves). Retention stopped again (`XML_PRIVACY`), now at native leaf 209: the catalogue `ten_HSo` of leaf 206 passed, and leaf 209
+is `ct3_ma` of the first row of the FIRST hồ sơ group. A main-sheet row would carry an input text ("[20]"…), so the first group is
+the 02-1/BK-QTT-TNCN one and its rows name the 02-1 items. `CATALOGUE_TEXTS` now also holds the MapMCT codes [14]…[17].

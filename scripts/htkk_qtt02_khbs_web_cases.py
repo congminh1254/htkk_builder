@@ -41,7 +41,11 @@ CASES = {
 # these texts and ' - '-joined row keys of input pieces (CATALOGUE_KEY_PATH) the next export can be retained and the web ported.
 _CAPTIONS = ('[14] - Ngày sinh', '[15] - Quan hệ với NNT', '[16] - Thời gian được tính giảm trừ trong năm\\ Từ tháng',
              '[17] - Thời gian được tính giảm trừ trong năm\\ Đến tháng')
-CATALOGUE_TEXTS = frozenset(('Tờ khai', '02/QTT-TNCN', '02-1/BK-QTT-TNCN') + _CAPTIONS + tuple(c.split(' - ', 1)[1] for c in _CAPTIONS))
+# Cohort fc800a2 (runs 43790973810, 43790976608, 43790979591, 43790982675): the Header dates matched; DSachHSo still differs in child
+# count and retention stopped at native leaf 209 = ct3_ma of the FIRST row of the first hồ sơ group, whose ten_HSo passed: the 02-1
+# group comes first and its rows carry the MapMCT codes of the 02-1 items ([14]…[17]), outside the inputs.
+_CODES = ('[14]', '[15]', '[16]', '[17]')
+CATALOGUE_TEXTS = frozenset(('Tờ khai', '02/QTT-TNCN', '02-1/BK-QTT-TNCN') + _CODES + _CAPTIONS + tuple(c.split(' - ', 1)[1] for c in _CAPTIONS))
 CATALOGUE_KEY_PATH = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
 for _spec in CASES.values():
     _spec['catalogueTexts'] = CATALOGUE_TEXTS
