@@ -462,5 +462,5 @@ class ComboNothingSelected(unittest.TestCase):
         body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
         enter = body.index('if(current<0&&current!=planned&&(mask&4)==0){')
         self.assertLess(enter, body.index('SendKeys.SendWait(before<planned?"{DOWN}":"{UP}")'))
-        self.assertIn('mask|=32768;shown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();mask|=16384;', body)
+        self.assertIn('mask|=32768;listShown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();mask|=16384;', body)
         self.assertGreaterEqual(automation['resultFields']['declarationTickComboMask']['maximum'], 32768 | 16384 | 8191)
