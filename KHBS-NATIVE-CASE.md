@@ -732,3 +732,11 @@ Driver: the rounds of the other KHBS cases with the plan of `03TNDN-profit20-Y20
 chosen in the period dialog), KHBS schema above, every round imported, "Tổng hợp KHBS" in each bổ sung round (no driver change). What only
 these runs decide (web predictions in its golden): the row set of 01-1/KHBS (computed items B1, B13, C4, C6, H1, I included), ct3_ma
 "E1_PN" with the "1052 - " caption, ct7 0 for items without LoaiThue, no 03-1A hồ sơ group in `DSachHSo`, hạn 31/03/2026.
+
+Cohort for web 6c7096f01 / builder c8f0bfe: `03TNDN-khbs-increase-Y2025`, `-decrease-` and `-lan2-` matched the whole tree.
+`03TNDN-khbs-rate15-Y2025` (run 43871378439) stopped at `declaration-export-not-matched`, tree mask 16 (PLuc text only), one text
+mismatch at element ordinal 374 = `ct3_ten` of the C9 row (text shape 360: native 90 characters, neither a prefix of the other);
+retention was refused (`XML_PRIVACY`, first ct3_ten path, text-other). MapMCT has "(C9 =(C7 x 20%) + (C8 x C8a))" while the tờ khai
+cell C70 is ="…(C9 =(C7 x "&R66&"%) + (C8 x C8a))": htkk_web now writes the C9 caption with the case's rate (15%), the rate15 web pin
+changed (11201 bytes, 918e23b7…1036), and `CATALOGUE_TEXTS` takes the C9 caption for 15/17/20% (space or line break) so the next
+export is retained even if that reading is wrong.

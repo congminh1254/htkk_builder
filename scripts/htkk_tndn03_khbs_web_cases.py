@@ -32,8 +32,8 @@ CASES = {
         'expected': {'rows': _ROWS, 'subitems': [['1052', '1000000']], 'ct10': '1000000', **_LATE, 'ct3b': '68100'}},
     '03TNDN-khbs-decrease-Y2025': {'producerCase': 'tndn03-khbs-decrease-y2025', 'menuId': 'N8', 'soLan': 1, 'web': (11311, 'fca6218ed1046d6f7f581310d3b9bf0998467de77c844edb4712afd1531b1d88'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 421,
         'expected': {'rows': _ROWS, 'subitems': [['1052', '-2000000']], 'ct10': '-2000000', **_LATE, 'ct3b': '-136200'}},
-    # Thuế suất 15% (C66 / ctC7_thueSuat 15) on both versions: [C9] 39tr → 40,5tr.
-    '03TNDN-khbs-rate15-Y2025': {'producerCase': 'tndn03-khbs-rate15-y2025', 'menuId': 'N8', 'soLan': 1, 'web': (11201, '4af8793b9ed59ac0a7d9b83b16e14acb335cf2c7af9a1d3872daedbd6186d577'), 'original': (4067, '5cd78b7576a7a1e48eeeb03b162dc7d98369f0b5c0e296dfcc489efd2e4a84e9'), 'prior': None, 'leafTarget': 421,
+    # Thuế suất 15% (C66 / ctC7_thueSuat 15) on both versions: [C9] 39tr → 40,5tr; the C9 caption names 15% (run 43871378439).
+    '03TNDN-khbs-rate15-Y2025': {'producerCase': 'tndn03-khbs-rate15-y2025', 'menuId': 'N8', 'soLan': 1, 'web': (11201, '918e23b7fab67d28156b773a190a0c8d06f9d8330f6e80d322e7398b93e21036'), 'original': (4067, '5cd78b7576a7a1e48eeeb03b162dc7d98369f0b5c0e296dfcc489efd2e4a84e9'), 'prior': None, 'leafTarget': 421,
         'expected': {'rows': _ROWS, 'subitems': [['1052', '1500000']], 'ct10': '1500000', **_LATE, 'ct3b': '102150'}},
 }
 # Public HTKK 5.8.2 catalogue texts of N8 that the native 01/KHBS / 01-1/KHBS may carry beyond the reviewed files (the B8 cases
@@ -293,7 +293,12 @@ _SUBITEMS = (
     'Thuế thu nhập doanh nghiệp khác',
 )
 
-CATALOGUE_TEXTS = frozenset(_SHEETS + _CODES + _CAPTIONS + _SUBITEMS)
+# Run 43871378439 (03TNDN-khbs-rate15-Y2025): the only differing leaf was ct3_ten of the C9 row, a 90-character text outside the
+# inputs, so the export was not retained. The tờ khai cell C70 is ="…(C9 =(C7 x "&R66&"%) + (C8 x C8a))": the C9 caption with each
+# DC_184 rate (15/17/20) is public catalogue text, with a space (MapMCT) or the line break of the sheet cell.
+_C9 = ('Thuế TNDN từ hoạt động SXKD tính theo thuế suất không ưu đãi', '(C9 =(C7 x %s%%) + (C8 x C8a))')
+_C9_RATES = tuple(_C9[0] + sep + _C9[1] % rate for rate in ('15', '17', '20') for sep in (' ', '\n'))
+CATALOGUE_TEXTS = frozenset(_SHEETS + _CODES + _CAPTIONS + _SUBITEMS + _C9_RATES)
 for _spec in CASES.values():
     _spec['catalogueTexts'] = CATALOGUE_TEXTS
     _spec['annexParts'] = (ANNEX,)

@@ -107,6 +107,8 @@ class Tndn03KhbsNativeRetention(unittest.TestCase):
                      '[12] - Số thuế TNDN phải nộp cho từng tỉnh', 'Số thuế TNDN phải nộp cho từng tỉnh'):
             self.assertIn(text, extra)
         self.assertNotIn('Tờ khai', m.catalogue_texts('05KK-khbs-increase-Q3-2026', [], frozenset()))
+        for rate in ('15', '17', '20'):
+            self.assertIn('Thuế TNDN từ hoạt động SXKD tính theo thuế suất không ưu đãi (C9 =(C7 x %s%%) + (C8 x C8a))' % rate, extra)
 
 
 class Tndn03KhbsDriverWiring(unittest.TestCase):
