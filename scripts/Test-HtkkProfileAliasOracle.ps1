@@ -1,7 +1,7 @@
 # Read-only oracle for the original property loader. This is not a GUI save/export round trip.
 function Invoke-HtkkProfileAliasOracle {
   [CmdletBinding()]
-  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
+  param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2','5.8.3')][string]$OracleVersion='5.8.1')
   $ErrorActionPreference = 'Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')

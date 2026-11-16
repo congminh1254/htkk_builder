@@ -1,7 +1,7 @@
 # Original metadata binding + common-header serializer only. Never a GUI export/import oracle.
 function Invoke-HtkkCommonHeaderOracle {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2')][string]$OracleVersion='5.8.1')
+ param([Parameter(Mandatory=$true)][string]$ProjectDirectory,[Parameter(Mandatory=$true)][string]$TemporaryDirectory,[ValidateSet('5.8.1','5.8.2','5.8.3')][string]$OracleVersion='5.8.1')
  $ErrorActionPreference='Stop'
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedJobProcess.ps1')
   . (Join-Path $PSScriptRoot 'Invoke-HtkkBoundedCompiler.ps1')

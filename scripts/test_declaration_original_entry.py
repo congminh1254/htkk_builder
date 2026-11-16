@@ -156,7 +156,7 @@ class EntryPlan(unittest.TestCase):
         self.assertIn('HtkkOracleBaseline.EntryMethodPins());', entry_block())
         self.assertNotRegex(entry_block(), r'"[BH]\|')  # no inline, version-blind method pin
         pins_by_version = self.entry_pins()
-        self.assertEqual(list(pins_by_version), ['5.8.1', '5.8.2'])
+        self.assertEqual(list(pins_by_version), ['5.8.1', '5.8.2', '5.8.3'])
         reviewed = pins_by_version['5.8.1']
         # The reviewed 5.8.1 list, unchanged (token, IL size, IL-code SHA-256).
         self.assertEqual(reviewed[0], 'B|Ntnn01TT89Nckt309|AutoBindData_0|0x060018f9|352|86baaca777e636dd3d76918c3b779dbcdd557467f8704bba44d89838d52068c9')
@@ -180,6 +180,11 @@ class EntryPlan(unittest.TestCase):
             else:
                 self.assertEqual(o[4], n[4])
         self.assertEqual(methods['y8-entry-f5-row']['ilBytes'], 9939); self.assertEqual(methods['y8-entry-grid-cellchange']['ilBytes'], 25029)
+        # HTKK 5.8.3: getCols and CellChange_0 also changed (BX); reviewed against this plan, pinned as themselves for 5.8.3.
+        entry3 = [m for m in BASELINES['versions']['5.8.3']['methods'] if m['id'].startswith('y8-entry-')]
+        self.assertEqual([i for i, m in enumerate(entry3) if m['status'] == 'changed-reviewed'], [1, 4, 8, 12])
+        for new, method in zip(pins_by_version['5.8.3'], entry3):
+            self.assertEqual(new.split('|')[3:], [method['token'], str(method['ilBytes']), method['ilSha256']])
         for pins in pins_by_version.values():
          self.assertEqual(len(pins), 14)
          names = set()

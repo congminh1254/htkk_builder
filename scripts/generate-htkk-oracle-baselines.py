@@ -14,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 SOURCE = ROOT / 'htkk-oracle-baselines.json'
 PS_OUT = ROOT / 'HtkkOracleBaseline.ps1'
 CS_OUT = ROOT / 'HtkkOracleBaseline.cs'
-VERSIONS = ('5.8.1', '5.8.2')
+VERSIONS = ('5.8.1', '5.8.2', '5.8.3')
 DEFAULT = '5.8.1'
 SHA = re.compile(r'[0-9a-f]{64}')
 TOKEN = re.compile(r'0x06[0-9a-f]{6}')
@@ -245,12 +245,12 @@ def render(data):
           ' private static readonly string[][] Pbt=new string[][]{']
     c.append(',\n'.join(('  new string[]{' + ','.join(cs(p) for p in pbt_pins(v)) + '}') if pbt_pins(v) else '  new string[0]' for v in data['versions'].values()))
     c += [' };',
-          ' // 05-1/PBT-KK-TNCN import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.',
+          ' // 05-1/PBT-KK-TNCN import-plan method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.',
           ' internal static string[] PbtMethodPins(){if(Pbt[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_PBT_UNPINNED");return (string[])Pbt[Current].Clone();}',
           ' private static readonly string[][] Gtgt04=new string[][]{']
     c.append(',\n'.join(('  new string[]{' + ','.join(cs(p) for p in gtgt04_pins(v)) + '}') if gtgt04_pins(v) else '  new string[0]' for v in data['versions'].values()))
     c += [' };',
-          ' // 04/GTGT TT89 PL 01-1 import-plan method pins (added-reviewed, 5.8.2 only); none for 5.8.1, which refuses the plan.',
+          ' // 04/GTGT TT89 PL 01-1 import-plan method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.',
           ' internal static string[] Gtgt04Tt89AnnexMethodPins(){if(Gtgt04[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_GTGT04_UNPINNED");return (string[])Gtgt04[Current].Clone();}',
           '}']
     return ps_text, '\n'.join(c) + '\n'
