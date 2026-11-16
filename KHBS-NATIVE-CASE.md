@@ -671,6 +671,33 @@ is unchanged (key "họ tên -  - số giấy tờ", ct04 = ct05 = the month, ct
 reproduces every leaf of the four exports (kept byte-identical there); every other prediction (hạn 31/03/2026, 227 days, NopThua
 signs, Muc_III, negative ct3b) held. New pins; leaf targets 326 / 300 (plans 330 / 304).
 
+## 05/QTT-TNCN TT80 (B9 2.9.3): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (docs/KE-KHAI-BO-SUNG-05-QTT-TNCN.md, `lib/htkk-qtt05-khbs.ts`, hidden behind `KHBS_05QTT_RELEASED=false`) read the KHBS of
+B9 statically from HTKK 5.8.2: Menu.xml `KieuKHBS="3"` (VersionKHBS 2.9.3; sheets 05 0004, 05-1 000401, 05-2 000402, 05-3 000403), B9
+in neither KHBS menu list, so `KHBS_TT80_293.xls` (D1 formulas) and the generic TT80 templates; schema
+`Validate/KHBS_05_QTT_TNCN_TT80_293.xsd` (8f885a0f…931d, on TKhaiThue_DBHC.xsd). Every MapMCT B9 item is static: 26 of the tờ khai, the
+totals of 05-1 (SheetIndex 1) and of 05-2 (SheetIndex 2), each sheet one hồ sơ group when it has rows; only [40] (LoaiThue 0) and [41]
+(LoaiThue 0, NopThua 1) carry ct7; tiểu mục 1001; hạn 31/03/2026, 227 days to 13/11/2026.
+
+`scripts/htkk_qtt05_khbs_web_cases.py` holds the pins and per-case settings of three cases (annexParts 05-1, 05-3 before the fragments),
+merged into `htkk_ntnn_khbs_web_cases.py` (`test_qtt05_khbs_web_cases.py`). Learning from B8, the public B9 catalogue texts (sheet names
+and captions of Menu.xml, MapMCT SheetNames, the codes of the annex totals, every MapMCT B9 caption) are in `CATALOGUE_TEXTS` from the
+first run, so a differing export is retained. Registered in `htkk-native-cases.json` (adapters `05-qtt-tncn-2.9.3-khbs`, `-khbs-lan2`;
+HTKK 5.8.2) with `releaseGate: false`.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `05QTT-khbs-increase-Y2025` (05-1 row A income 300tr → 330tr; [41] −3tr, ct7 +3tr) | original, web | 371 |
+| `05QTT-khbs-lan2-Y2025` (lần 2 on the increase case, 350tr) | original, prior (= the increase web file), web | 371 |
+| `05QTT-khbs-decrease-Y2025` (05-1 row A tax withheld 12tr → 13tr; ct7 −1tr) | original, web | 319 |
+
+Driver: the rounds of the other KHBS cases with the plan of `05QTT-two-employees-Y2025` (menu 101 → 101_11 → B9, năm 2025, KieuKy 12,
+annexes 05-1, 05-3; `cmdImportXML_Click` adds every B9 annex), KHBS schema above, every round imported, "Tổng hợp KHBS" in each bổ sung
+round; no driver change. What only these runs decide: whether HTKK writes only the changed rows of the 05-1 totals (B8 wrote unchanged
+dynamic rows of its annex), the ten_HSo of the 05-1 group ("05-1/BK-TNCN"), the 0016 checks of a B9 bổ sung after the import, and the
+annex list of the Bổ sung period dialog.
+
 ## 03/TNDN TT80 (N8 2.9.4): mode `declaration-amendment-khbs-inspect` (observation cases)
 
 htkk_web (docs/KE-KHAI-BO-SUNG-03-TNDN.md, `lib/htkk-tndn03-khbs.ts`, hidden behind `KHBS_03TNDN_RELEASED` / `_LATER_RELEASED` = false)
