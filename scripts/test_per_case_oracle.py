@@ -58,7 +58,9 @@ class Registry(unittest.TestCase):
                  '05KK-khbs-increase-Q3-2026', '05KK-khbs-lan2-Q3-2026', '05KK-khbs-decrease-Q3-2026', '05KK-TT89-khbs-increase-Q4-2026', '05KK-PBT-khbs-Q3-2026', '01GTGT-annex16-cssx-formula-M10-2026', '01GTGT-annex16-cssx-ratio-M10-2026', '01GTGT-annex16-dvvt-M10-2026', '05KK-khbs-increase-M03-2026',
                  '01CNKD-khbs-increase-Q3-2026', '01CNKD-khbs-decrease-Q3-2026', '01CNKD-khbs-lan2-Q3-2026', '01CNKD-PL01-khbs-Q3-2026',
                  '02QTT-khbs-increase-Y2025', '02QTT-khbs-lan2-Y2025', '02QTT-khbs-decrease-Y2025', '02QTT-khbs-refund-Y2025',
-                 '05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025'}
+                 '05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025',
+                 '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025'}
+
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
         self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER)
         self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER)
