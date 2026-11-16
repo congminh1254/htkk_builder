@@ -20,18 +20,21 @@ PERIODS = {'B8': ('Y', '2025', '', '')}
 ANNEX = 'PLuc_02_1_BK_QTT_TNCN'
 IMPORT = 'khbs-web-xml-import-reexport'
 _ORIGINAL = (3599, '1b0bfba345e5ab2122bad362fd06d6cb73237674cb98f2d56dc4fea7d5f04843')
-_INCREASE = (7635, '536c0615160e91ea9eed59a37ea4fc0d4d65387098a6d95d8fc27fa2296880c2')
+_INCREASE = (8997, '9f7ca9337239835a3adb8a4f3bde7c5887451104b32c1533d4f1104f2f959425')
+# Web files of htkk_web 94d441ce: the 02-1 hồ sơ group 001201 ([16] then [17] of every unchanged row) that HTKK 5.8.2 wrote in
+# cohort aaf853d (runs 43818257270, 43818260608, 43818263782, 43818267354; raw exports kept in htkk_web
+# tests/fixtures/htkk-qtt02-khbs-native-reexport, reproduced leaf for leaf); 52 more leaves per case.
 # Năm 2025 is due 31/03/2026 as GetHanNopToKhai reads it (KieuKy Y), ngày lập 13/11/2026: 227 late days in every case.
 CASES = {
-    '02QTT-khbs-increase-Y2025': {'producerCase': 'qtt02-khbs-increase-y2025', 'menuId': 'B8', 'soLan': 1, 'web': _INCREASE, 'original': _ORIGINAL, 'prior': None, 'leafTarget': 272,
+    '02QTT-khbs-increase-Y2025': {'producerCase': 'qtt02-khbs-increase-y2025', 'menuId': 'B8', 'soLan': 1, 'web': _INCREASE, 'original': _ORIGINAL, 'prior': None, 'leafTarget': 326,
         'expected': {'rows': ['[20]', '[21]', '[31]', '[32]', '[42]'], 'subitems': [['1001', '3000000']], 'refund': [], 'ct10': '3000000', 'ct13': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '204300'}},
-    '02QTT-khbs-lan2-Y2025': {'producerCase': 'qtt02-khbs-lan2-y2025', 'menuId': 'B8', 'soLan': 2, 'web': (7637, 'd21ed222b7c25f52637092a65f36426e03d588553a6ee609e610e262e2b082b3'), 'original': _ORIGINAL, 'prior': _INCREASE, 'leafTarget': 272,
+    '02QTT-khbs-lan2-Y2025': {'producerCase': 'qtt02-khbs-lan2-y2025', 'menuId': 'B8', 'soLan': 2, 'web': (8999, '0a868182600654f64b50863c0e4d5e6ac7d3ccc7d475c1fca3806794217bc02d'), 'original': _ORIGINAL, 'prior': _INCREASE, 'leafTarget': 326,
         'expected': {'rows': ['[20]', '[21]', '[31]', '[32]', '[42]'], 'subitems': [['1001', '1440000']], 'refund': [], 'ct10': '1440000', 'ct13': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '98064'}},
-    '02QTT-khbs-decrease-Y2025': {'producerCase': 'qtt02-khbs-decrease-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (7104, '5df997694c4aea2a0994105ef77301401fab73d026ce8b72ed022517d91ad667'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 246,
+    '02QTT-khbs-decrease-Y2025': {'producerCase': 'qtt02-khbs-decrease-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (8466, 'c0310ba422f5835ef4fbd1d6b3f2fcc7a575df2d6b419eb54d29614c822f2632'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 300,
         'expected': {'rows': ['[33]', '[34]', '[42]'], 'subitems': [['1001', '-1000000']], 'refund': [], 'ct10': '-1000000', 'ct13': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '-68100'}},
     # Hoàn qua chuyển khoản on both versions (the reviewed transfer of 02QTT-refund-transfer-Y2025): [34] 20tr → 22tr, [46] 14,12tr
     # → 16,12tr; [45] (LoaiThue 2) goes to Muc_III.
-    '02QTT-khbs-refund-Y2025': {'producerCase': 'qtt02-khbs-refund-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (7945, 'f9c305efa68e4d8259f44e3e2842d33d88f9d89a5f31af3fe438120105f2eb9a'), 'original': (3819, '12924fb7cfcec03807839fe4f9cea3e3254b9c467ed59a8007fc63b045d18b06'), 'prior': None, 'leafTarget': 272,
+    '02QTT-khbs-refund-Y2025': {'producerCase': 'qtt02-khbs-refund-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (9307, '136bcd8175dfab48cdaa9673e0e7b4f009753c547d15f4a13d9f44da4f8db5f7'), 'original': (3819, '12924fb7cfcec03807839fe4f9cea3e3254b9c467ed59a8007fc63b045d18b06'), 'prior': None, 'leafTarget': 326,
         'expected': {'rows': ['[33]', '[34]', '[44]', '[45]', '[46]'], 'subitems': [['1001', '-2000000']], 'refund': [['1001', '2000000']], 'ct10': '-2000000', 'ct13': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '-136200'}},
 }
 # Public HTKK 5.8.2 catalogue texts of B8 (Project/Menu.xml sheet names and caption, Project/MapMCT.xml Map B8 SheetName and the

@@ -195,7 +195,7 @@ internal static class HtkkDeclarationCasePlans {
   return new HtkkDeclarationCasePlan(caseId,"B8","2.7.3","952","TncnQtt02TT80Nckt273",new string[]{"101","101_11","B8"},"year","12","2025","","01/2025","12/2025",false,
    new string[]{"02-1/BK-QTT-TNCN"},new string[]{"02|Tờ khai","02-1|02-1/BK-QTT-TNCN"},
    "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
-   "Validate/KHBS_02_QTT_TNCN_TT80_273.xsd","b534fbed4424b694cb45dc9a37a65b8cfd9084daadeb810e7946c184303e7529",TKhaiThue,TKhaiThueSha256,WorkbookService,caseId=="02QTT-khbs-decrease-Y2025"?250:276,new string[0],new string[0]);
+   "Validate/KHBS_02_QTT_TNCN_TT80_273.xsd","b534fbed4424b694cb45dc9a37a65b8cfd9084daadeb810e7946c184303e7529",TKhaiThue,TKhaiThueSha256,WorkbookService,caseId=="02QTT-khbs-decrease-Y2025"?304:330,new string[0],new string[0]);
  }
  // 05/KK-TNCN with 05-1/PBT: every imported round leaves Thuế tỉnh/CCT empty (no XML leaf), so the import is completed with the
  // reviewed combo edits of 05KK-PBT-two-provinces-Q3-2026 (the same two rows, offices unchanged between the versions).

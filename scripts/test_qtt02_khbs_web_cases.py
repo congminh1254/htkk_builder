@@ -63,8 +63,8 @@ class Qtt02KhbsWebCases(unittest.TestCase):
         self.assertEqual(len({m.CASES[c]['original'] for c in CASES if c != REFUND}), 1)
         self.assertNotEqual(m.CASES[REFUND]['original'], m.CASES[DECREASE]['original'])
         self.assertEqual(m.CASES[REFUND]['expected']['refund'], [['1001', '2000000']])
-        self.assertEqual(m.tax_leaf_count(DECREASE), 246)
-        self.assertEqual({m.tax_leaf_count(c) for c in CASES if c != DECREASE}, {272})
+        self.assertEqual(m.tax_leaf_count(DECREASE), 300)
+        self.assertEqual({m.tax_leaf_count(c) for c in CASES if c != DECREASE}, {326})
 
     def test_registered_as_observation_cases_with_summary(self):
         for case_id in CASES:

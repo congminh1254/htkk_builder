@@ -634,10 +634,10 @@ Registered in `htkk-native-cases.json` (adapters `02-qtt-tncn-2.7.3-khbs`, `-khb
 
 | Case | Files | Web leaf target (no TTinDVu) |
 | --- | --- | --- |
-| `02QTT-khbs-increase-Y2025` ([21] 300tr → 330tr; [32] +3tr) | original, web | 272 |
-| `02QTT-khbs-lan2-Y2025` (lần 2 on the increase case, [21] 340tr) | original, prior (= the increase web file), web | 272 |
-| `02QTT-khbs-decrease-Y2025` ([34] 4tr → 5tr; ct7 −1tr) | original, web | 246 |
-| `02QTT-khbs-refund-Y2025` (hoàn qua chuyển khoản on both: [34] 20tr → 22tr, [46] 16,12tr; Muc_III +2tr) | original, web | 272 |
+| `02QTT-khbs-increase-Y2025` ([21] 300tr → 330tr; [32] +3tr) | original, web | 326 |
+| `02QTT-khbs-lan2-Y2025` (lần 2 on the increase case, [21] 340tr) | original, prior (= the increase web file), web | 326 |
+| `02QTT-khbs-decrease-Y2025` ([34] 4tr → 5tr; ct7 −1tr) | original, web | 300 |
+| `02QTT-khbs-refund-Y2025` (hoàn qua chuyển khoản on both: [34] 20tr → 22tr, [46] 16,12tr; Muc_III +2tr) | original, web | 326 |
 
 Driver: the rounds of the other KHBS cases with the plan of `02QTT-dependants-Y2025` (menu 101 → 101_11 → B8, năm 2025, KieuKy 12,
 annex 02-1; `cmdImportXML_Click` adds every B8 annex), KHBS schema above, every round imported, "Tổng hợp KHBS" in each bổ sung
@@ -663,3 +663,10 @@ Cohort fc800a2 (web b13c8cd9; runs 43790973810, 43790976608, 43790979591, 437909
 leaves). Retention stopped again (`XML_PRIVACY`), now at native leaf 209: the catalogue `ten_HSo` of leaf 206 passed, and leaf 209
 is `ct3_ma` of the first row of the FIRST hồ sơ group. A main-sheet row would carry an input text ("[20]"…), so the first group is
 the 02-1/BK-QTT-TNCN one and its rows name the 02-1 items. `CATALOGUE_TEXTS` now also holds the MapMCT codes [14]…[17].
+
+Cohort aaf853d (web b0371ca1; runs 43818257270, 43818260608, 43818263782, 43818267354): retention passed for all four (output branches
+`declaration-web-native-qtt02-khbs-*-y2025-output-htkk582`, `allTaxValuesMatched` false, mask 48, 202 leaves as before). The raw
+exports show the second `DSachHSo` group: `001201` "02-1/BK-QTT-TNCN", one row per 02-1 row for [16] then for [17] although the table
+is unchanged (key "họ tên -  - số giấy tờ", ct04 = ct05 = the month, ct06/ct7 0), none for [14]/[15]. htkk_web 94d441ce writes it and
+reproduces every leaf of the four exports (kept byte-identical there); every other prediction (hạn 31/03/2026, 227 days, NopThua
+signs, Muc_III, negative ct3b) held. New pins; leaf targets 326 / 300 (plans 330 / 304).
