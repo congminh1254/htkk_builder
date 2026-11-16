@@ -18,7 +18,8 @@ before the KHBS fragments, input mode) live in htkk_kk05_khbs_web_cases.py and a
 so every reader of this contract (fetch, publishers, probe lists) covers them with the same checks. The 01/CNKD KHBS cases (U5)
 are merged the same way from htkk_cnkd_khbs_web_cases.py; their B files carry no KHBS fragment (per-case khbsParts empty: U5 has
 KieuKHBS "" in HTKK 5.8.2, so its bổ sung is the declaration itself with loaiTKhai B). The 02/QTT-TNCN KHBS cases (B8, KieuKHBS
-3, 02-1/BK-QTT-TNCN before the two fragments) are merged the same way from htkk_qtt02_khbs_web_cases.py."""
+3, 02-1/BK-QTT-TNCN before the two fragments) are merged the same way from htkk_qtt02_khbs_web_cases.py, and the 03/TNDN KHBS
+cases (N8, KieuKHBS 3, 03-1A/TNDN before the two fragments) from htkk_tndn03_khbs_web_cases.py."""
 import hashlib
 import importlib.util
 import io
@@ -84,6 +85,15 @@ CASES.update(qtt02.CASES)
 MENUS.update(qtt02.MENUS)
 PERIODS.update(qtt02.PERIODS)
 QTT02_CASES = tuple(qtt02.CASES)
+_tndn03_spec = importlib.util.spec_from_file_location('htkk_tndn03_khbs_web_cases_data', pathlib.Path(__file__).with_name('htkk_tndn03_khbs_web_cases.py'))
+tndn03 = importlib.util.module_from_spec(_tndn03_spec)
+_tndn03_spec.loader.exec_module(tndn03)
+if set(tndn03.CASES) & set(CASES) or set(tndn03.MENUS) & set(MENUS):
+    raise ValueError('CASE_POLICY')
+CASES.update(tndn03.CASES)
+MENUS.update(tndn03.MENUS)
+PERIODS.update(tndn03.PERIODS)
+TNDN03_CASES = tuple(tndn03.CASES)
 KHBS_FRAGMENTS = ('PL01_KHBS', 'PL01_1_KHBS')
 for _spec in CASES.values():
     _spec.setdefault('khbsParts', KHBS_FRAGMENTS)
@@ -323,7 +333,7 @@ KEY_PATH_SUFFIX = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
 
 
 def catalogue_texts(case_id, items, allowed):
-    """Extra texts a case's native export may carry (02/QTT-TNCN only, ``catalogueTexts``): the public HTKK catalogue texts of the
+    """Extra texts a case's native export may carry (02/QTT-TNCN and 03/TNDN only, ``catalogueTexts``): the public HTKK catalogue texts of the
     menu, and on the 01-1/KHBS row key leaf a ' - '-joined key whose every piece is empty, a text of the case's files or a bounded
     number/code/date shape. Every other case gets none."""
     spec = case(case_id)

@@ -670,3 +670,30 @@ exports show the second `DSachHSo` group: `001201` "02-1/BK-QTT-TNCN", one row p
 is unchanged (key "họ tên -  - số giấy tờ", ct04 = ct05 = the month, ct06/ct7 0), none for [14]/[15]. htkk_web 94d441ce writes it and
 reproduces every leaf of the four exports (kept byte-identical there); every other prediction (hạn 31/03/2026, 227 days, NopThua
 signs, Muc_III, negative ct3b) held. New pins; leaf targets 326 / 300 (plans 330 / 304).
+
+## 03/TNDN TT80 (N8 2.9.4): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (docs/KE-KHAI-BO-SUNG-03-TNDN.md, `lib/htkk-tndn03-khbs.ts`, hidden behind `KHBS_03TNDN_RELEASED` / `_LATER_RELEASED` = false)
+read the KHBS of N8 statically from HTKK 5.8.2: Menu.xml `KieuKHBS="3"`, VersionKHBS 2.9.4, tờ khai MaHoSo 0066; N8 is in the DIA_BAN
+menu list of `WinFnProcess.WinLoadFromFile` / `WinDoWorkEvent.WinDoWorkGetExportSheetXML` (as D1, L7), so the workbook is
+`KHBS_DIA_BAN_294.xls` (D1 formulas) and 01/KHBS uses `KHBS_01_DIA_BAN_xml.xml`; schema `Validate/KHBS_03_TNDN_TT80_294.xsd` (42f72f6a…8ba2).
+MapMCT: 71 static tờ khai items, only the nine `E1_PN`/`E2_PN`/`E5_PN` items (NghiaVuThue/CtE*/tieuMuc*) have LoaiThue 0 (tiểu mục
+1052/1056/1057/1099/1053), no NopThua, no item on 03-1A/1B/1C/03-2/03-5. `GetHanNopToKhai` has an N8 branch (T5,Y4,C6,C7,N8,H4; MaQuyetToan
+01/04): the quarter after the one holding DenNgay, its last day: năm 2025 → 31/03/2026, 227 late days to 13/11/2026.
+
+`scripts/htkk_tndn03_khbs_web_cases.py` holds the pins (sizes and SHA-256, never the files), per-case settings (annexParts
+`PLuc_03_1A_TNDN`, import) and, from the start, the public N8 catalogue texts (`CATALOGUE_TEXTS`: Menu sheet names, every MapMCT N8 code
+and caption with and without its "[nn] - " prefix, DM_MaTM names of the tờ khai tiểu mục), merged into `htkk_ntnn_khbs_web_cases.py`
+(`test_tndn03_khbs_web_cases.py`). Registered with adapters `03-tndn-2.9.4-khbs`, `-khbs-lan2` (HTKK 5.8.2), `releaseGate: false`.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `03TNDN-khbs-increase-Y2025` ([B2] 25tr → 35tr, [B14] = [C7] 1,2 tỷ → 1,21 tỷ; 1052 +2tr) | original, web | 421 |
+| `03TNDN-khbs-lan2-Y2025` (lần 2 on the increase case, 1052 +1tr) | original, prior (= the increase web file), web | 421 |
+| `03TNDN-khbs-decrease-Y2025` (1052 −2tr, ct3b −136.200) | original, web | 421 |
+| `03TNDN-khbs-rate15-Y2025` (C7 15% on both, 1052 +1,5tr) | original, web | 421 |
+
+Driver: the rounds of the other KHBS cases with the plan of `03TNDN-profit20-Y2025` (menu 101 → 101_2 → N8, năm 2025, KieuKy 11, 03-1A
+chosen in the period dialog), KHBS schema above, every round imported, "Tổng hợp KHBS" in each bổ sung round (no driver change). What only
+these runs decide (web predictions in its golden): the row set of 01-1/KHBS (computed items B1, B13, C4, C6, H1, I included), ct3_ma
+"E1_PN" with the "1052 - " caption, ct7 0 for items without LoaiThue, no 03-1A hồ sơ group in `DSachHSo`, hạn 31/03/2026.
