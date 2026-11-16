@@ -29,6 +29,8 @@ CODE = re.sub(r'//[^\n]*', '', ENTRY)  # entry driver without comments
 CASE = '01NTNN-NCCNN-entry-M10-2026'
 # Lần phát sinh (KieuKy 18, kieuKy D) of the same rows: the second entry case, with (6) AE typed as the period day.
 OCCURRENCE = '01NTNN-NCCNN-occurrence-D20-10-2026'
+# HTKK 5.8.3 cases typing one part II table only (II-I row 78 or II-II row 86).
+PART_II1, PART_II2 = '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026'
 BASE = '01NTNN-NCCNN-two-parts-M10-2026'
 MODE = 'declaration-web-import-inspect'
 # The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
@@ -55,7 +57,7 @@ def entries():
 
 class Registration(unittest.TestCase):
     def test_entry_case_is_the_only_y8_case_non_gating_and_of_its_own_mode(self):
-        self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE, OCCURRENCE))
+        self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE, OCCURRENCE, PART_II1, PART_II2))
         self.assertIn(CASE, registry.DECLARATION_CASES)
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.GATE_CASES)
@@ -63,14 +65,16 @@ class Registration(unittest.TestCase):
         self.assertEqual(registry.driver(CASE), MODE)
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'ntnn01-nccnn-entry-m10-2026')
         # The import-based Y8 case was removed after release 242 (HTKK resets the tables on import).
-        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8' and c not in registry.NTNN_KHBS_CASES], [CASE, OCCURRENCE])
+        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8' and c not in registry.NTNN_KHBS_CASES], [CASE, OCCURRENCE, PART_II1, PART_II2])
+        for case in (PART_II1, PART_II2):
+            self.assertEqual((registry.input_mode(case), registry.CASES[case]['releaseGate'], registry.htkk_version(case)), (registry.ENTRY_MODE, False, '5.8.3'))
         self.assertEqual(registry.input_mode(OCCURRENCE), registry.ENTRY_MODE); self.assertIs(registry.CASES[OCCURRENCE]['releaseGate'], False)
         self.assertNotIn(BASE, registry.CASES); self.assertNotIn(BASE, d.CASES); self.assertNotIn('01-ntnn-nccnn-tt89-3.0.9', registry.TRUSTED_ADAPTERS)
         self.assertNotIn(BASE, automation['resultFields']['webCaseId']['values'])
         adapters = {a['adapterId']: a['mode'] for a in design.DESIGN['adapters']}
         self.assertEqual(adapters['01-ntnn-nccnn-tt89-3.0.9-entry'], 'original-entry-export')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationEntryCases=@('" + CASE + "','" + OCCURRENCE + "')", formats); self.assertNotIn(BASE, formats)
+        self.assertIn("$HtkkDeclarationEntryCases=@('" + "','".join((CASE, OCCURRENCE, PART_II1, PART_II2)) + "')", formats); self.assertNotIn(BASE, formats)
 
     def test_entry_input_is_the_reviewed_design_case(self):
         designs = {c['caseId']: c['expectedLeaves'] for c in design.DESIGN['cases']}
@@ -213,7 +217,7 @@ class EntryPlan(unittest.TestCase):
         self.assertEqual(list(rows), list(registry.DECLARATION_CASES))
         for case, (found, count, pins) in rows.items():
             self.assertEqual(found, 'True')
-            self.assertEqual((count, pins), ('21', '14') if case in (CASE, OCCURRENCE) else ('0', '0'))
+            self.assertEqual((count, pins), ('21', '14') if case in (CASE, OCCURRENCE) else ('11', '14') if case in (PART_II1, PART_II2) else ('0', '0'))
 
 
 class Driver(unittest.TestCase):

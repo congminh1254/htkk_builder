@@ -61,14 +61,18 @@ class Registry(unittest.TestCase):
                  '05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025',
                  '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025'}
 
+        # HTKK 5.8.3 observation cases: X9/Y1 with đến ngày 07/10/2026 and Y8 with one part II table (HTKK-5.8.3-IMPACT.md).
+        NEWER_583 = {'02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026'}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
-        self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER)
-        self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER)
+        self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583)
+        self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583)
         self.assertTrue(all(registry.htkk_version(c) == '5.8.2' and not registry.CASES[c]['releaseGate'] for c in NEWER))
+        self.assertTrue(all(registry.htkk_version(c) == '5.8.3' and not registry.CASES[c]['releaseGate'] for c in NEWER_583))
+        self.assertEqual(registry.status_context('02NTNN-TT89-two-annexes-to-07-10-2026'), 'htkk-native/ntnn02-tt89-two-annexes-to-07-10-2026@htkk583')
         self.assertEqual(registry.status_context(U5_310), 'htkk-native/cnkd01-310-pl01-three-groups-q3-2026@htkk582')
         self.assertEqual(registry.status_context(ANNEX10), 'htkk-native/annex10-nq204@htkk582')
         self.assertEqual(registry.status_context(Z8_TT89), 'htkk-native/tncn05kk-tt89-withheld-q4-2026@htkk582')
-        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c not in NEWER}, {c: v['statusContext'] for c, v in registry.CASES.items() if c not in NEWER})
+        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c not in NEWER | NEWER_583}, {c: v['statusContext'] for c, v in registry.CASES.items() if c not in NEWER | NEWER_583})
 
     def test_an_adapter_of_a_later_release_runs_only_on_that_oracle(self):
         index = {c['caseId']: i for i, c in enumerate(RAW['cases'])}

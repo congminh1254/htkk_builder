@@ -156,6 +156,8 @@ CHECK_KEYS = {
                                                      ('AG', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm'), ('AM', ''), ('AR', 'HD-GL-041')),
                                            'date': '15/03/2026', 'code': '01', 'dateColumn': 'AW'},
 }
+# The 5.8.3 Y1 case (đến ngày 07/10/2026) has the same annex row.
+CHECK_KEYS['04NTNN-TT89-one-subcontractor-to-07-10-2026'] = CHECK_KEYS['04NTNN-TT89-one-subcontractor-2026']
 
 
 def farpoint_trim(text):
@@ -387,6 +389,23 @@ CASES = {
                                           ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI (Mẫu số 02/NTNN)', TEMPLATE_TT89, ADDRESS, 'HD-GL-020', 'HD-GL-021', 'HD-GL-022', 'Kết thúc hợp đồng nhà thầu',
                                            'NHA THAU NUOC NGOAI E - GIẢ LẬP', 'NHA THAU PHU VIET NAM F - GIẢ LẬP', 'JP', 'Nhật',
                                            'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    # HTKK 5.8.3 observation cases (registry htkkVersion 5.8.3, non-gating): X9/Y1 with đến ngày 07/10/2026, the first day 5.8.3
+    # accepts for a TT89 quyết toán (frmHTKKPeriod.CheckHLToKhaiTT80 0718); same contracts and texts as the 30/09/2026 cases.
+    '04NTNN-TT89-one-subcontractor-to-07-10-2026': _case('ntnn04-tt89-one-subcontractor-to-07-10-2026', 'Y1', '2015', '3.0.9', 'Validate/04_NTNN_TT89_309.xsd', ('Y', '2026', '01/07/2026', '07/10/2026'), None, '2026-10-27', '2026-10-27', 79, ['PL02_2_NTNN'], WORKBOOK_SERVICE,
+                                                ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI - MẪU SỐ 04/NTNN', TEMPLATE_TT89, ADDRESS, 'HD-GL-040', 'HD-GL-041', 'Kết thúc hợp đồng nhà thầu',
+                                                 'NHA THAU PHU VIET NAM A - GIẢ LẬP', 'NHA THAU NUOC NGOAI B - GIẢ LẬP', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm']),
+    '02NTNN-TT89-two-annexes-to-07-10-2026': _case('ntnn02-tt89-two-annexes-to-07-10-2026', 'X9', '2013', '3.0.9', 'Validate/02_NTNN_TT89_309.xsd', ('Y', '2026', '01/07/2026', '07/10/2026'), None, '2026-10-27', '2026-10-27', 112, ['PL02_1_NTNN', 'PL02_2_NTNN'], WORKBOOK_SERVICE,
+                                          ['TỜ KHAI QUYẾT TOÁN THUẾ NHÀ THẦU NƯỚC NGOÀI (Mẫu số 02/NTNN)', TEMPLATE_TT89, ADDRESS, 'HD-GL-020', 'HD-GL-021', 'HD-GL-022', 'Kết thúc hợp đồng nhà thầu',
+                                           'NHA THAU NUOC NGOAI E - GIẢ LẬP', 'NHA THAU PHU VIET NAM F - GIẢ LẬP', 'JP', 'Nhật',
+                                           'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Xây dựng, lắp đặt không bao thầu nguyên vật liệu, máy móc, thiết bị']),
+    # HTKK 5.8.3 Y8 (original entry, htkkVersion 5.8.3): part II chosen with only II-I (ThueNCCNN) or only II-II (ThueCNKCT);
+    # Ntnn01TT89Nckt309.checkTKChinh skips the empty table when the other has data (5.8.2 required both). Texts of that part only.
+    '01NTNN-NCCNN-entry-part-II1-M10-2026': _case('ntnn01-nccnn-entry-part-ii1-m10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
+                                         ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
+                                          TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'HD-GL-003', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm']),
+    '01NTNN-NCCNN-entry-part-II2-M10-2026': _case('ntnn01-nccnn-entry-part-ii2-m10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
+                                         ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
+                                          TEMPLATE_TT89, ADDRESS, 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-004', 'Hoạt động kinh doanh khác']),
     # C9 02/NTNN quyết toán TT80 (non-gating): KieuKy 22 like D6 (Menu.xml EndDate 01/10/2026); annexes 02-1 (one foreign
     # contractor: nước cư trú Nhật / JP, control 56; địa điểm Thành phố Hà Nội / 101, control 100) and 02-2 (one Vietnamese
     # subcontractor, địa điểm Thành phố Hải Phòng / 103). 02-1 ct10 is the labour count (5), not an amount.
@@ -480,7 +499,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026'})
 
 
 def is_case(case_id):
@@ -651,6 +670,10 @@ NTNN_ROWS['01NTNN-occurrence-D20-09-2026'] = tuple((path, parent, prefix, tuple(
                                                 for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-two-contractors-M09-2026'])
 NTNN_ROWS['01NTNN-NCCNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(row if row is _EMPTY_ROW else dict(row, ct6=_OCCURRENCE_DAY) for row in rows), *rest)
                                                       for path, parent, prefix, rows, *rest in NTNN_ROWS['01NTNN-NCCNN-entry-M10-2026'])
+# HTKK 5.8.3 Y8 one-part cases: the other part II table keeps its default template row (as part I), so HTKK exports it empty.
+_Y8_ENTRY = NTNN_ROWS['01NTNN-NCCNN-entry-M10-2026']
+NTNN_ROWS['01NTNN-NCCNN-entry-part-II1-M10-2026'] = (_Y8_ENTRY[0], _Y8_ENTRY[1], _Y8_ENTRY[2][:3] + ((_EMPTY_ROW,),))
+NTNN_ROWS['01NTNN-NCCNN-entry-part-II2-M10-2026'] = (_Y8_ENTRY[0], _Y8_ENTRY[1][:3] + ((_EMPTY_ROW,),), _Y8_ENTRY[2])
 NTNN_ROWS['03NTNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct7=_OCCURRENCE_DAY) for row in rows), *rest)
                                                 for path, parent, prefix, rows, *rest in NTNN_ROWS['03NTNN-no-rate-M10-2026'])
 
@@ -724,6 +747,7 @@ NTNN04 = {
     '04NTNN-TT80-one-subcontractor-2026': ('D6', ('2500000000', '2400000000', '0', '96000000'), ('400000000', '100000000', '96000000'), (('2500000000', '2400000000'),)),
     '04NTNN-TT89-one-subcontractor-2026': ('Y1', ('2000000000', '1800000000', '0', '72000000'), ('300000000', '75000000', '72000000'), (('2000000000', '1800000000'),)),
 }
+NTNN04['04NTNN-TT89-one-subcontractor-to-07-10-2026'] = NTNN04['04NTNN-TT89-one-subcontractor-2026']
 
 
 def ntnn04_expected(case_id):
@@ -759,6 +783,7 @@ NTNN02 = {
     '02NTNN-TT80-two-annexes-2026': (('3000000000', '2800000000', '1000000000', '90000000', '36000000'), ('1000000000', '90000000', '40000000', '90000000', '36000000'),
                                      (('2000000000', '1800000000', '5'),), (('1000000000', '1000000000'),)),
 }
+NTNN02['02NTNN-TT89-two-annexes-to-07-10-2026'] = NTNN02['02NTNN-TT89-two-annexes-2026']
 # The TT80 form (C9) names row 2 DThuChuaGomGTGT (TT89: DThuTinhThue) and its 02-1 rows carry ct10 (số lượng lao động).
 _NTNN02_TT80 = frozenset({'02NTNN-TT80-two-annexes-2026'})
 

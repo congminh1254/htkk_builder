@@ -237,6 +237,16 @@ must be 5.8.2. The probe accepts 5.8.2 only for `gtgt-web-import-inspect` and
 modes, the separate oracle workflows and the private source extract stay 5.8.1-only and fail
 closed on a 5.8.2 install.
 
+### HTKK 5.8.3 (selectable per case, non-gating)
+
+`htkk_version` also takes `5.8.3` (GDT row 12/11/2026, Fshare `59JNEQ8M6QW4`, pins in `scripts/htkk-oracle-baselines.json`,
+review in `HTKK-5.8.3-IMPACT.md`). Same separation as 5.8.2: run title ` [HTKK 5.8.3]`, concurrency/output suffix `-htkk583`,
+status context `@htkk583`; the default oracle stays 5.8.1. Method pins: everything is token-renumbered except the Y8 entry
+pins `getCols` (BX added to LockUnlock's columns) and `CellChange_0` (BX cleared when L is emptied), whose 5.8.3 bodies were
+reviewed against the entry plan (`changed-reviewed`, accepted for 5.8.3 only), and the two bodies already changed in 5.8.2.
+A case runs on 5.8.3 only when its registry entry says `"htkkVersion": "5.8.3"` (four observation cases so far,
+`DECLARATION-NATIVE-CASES.md`, "HTKK 5.8.3"); the cohort command below takes `-f htkk_version=5.8.3` the same way.
+
 ### Running the 5.8.2 cohort
 
 Run right after a release of the current `htkk_web` main (the inputs and callbacks must belong

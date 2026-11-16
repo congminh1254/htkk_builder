@@ -758,3 +758,24 @@ Ca thiết kế `04GTGT-TT89-zero-M10-2026` chỉ nằm trong `htkk-descriptor-n
 Câu hỏi cho lần chạy: hộp kỳ Z3 ghi `nganhNgheKD` gì khi để trống "Tên hoạt động kê khai riêng"; bảng địa chỉ bất động sản
 (`DiaChiBds`, khóa khi không chọn bất động sản) kết xuất một dòng `stt` 1 như web không; không kèm PL thì `FinishImportXML` không
 tính lại [23]..[29] (giữ số trong tệp); `ct10` rỗng web ghi `xsi:nil`.
+
+## HTKK 5.8.3 — bốn ca quan sát, không chặn phát hành (`htkkVersion` 5.8.3)
+
+Theo `HTKK-5.8.3-IMPACT.md` §3. Nhà sản xuất `htkk_web` nhánh `work/htkk-583-phase2` (thiết kế trong
+`scripts/generate-htkk-descriptor-reference.mjs`, ca sản xuất có `htkkVersion: '5.8.3'`).
+
+| Ca | Adapter | Kỳ | Kiểm tra chính |
+|---|---|---|---|
+| `02NTNN-TT89-two-annexes-to-07-10-2026` | `02-ntnn-tt89-3.0.9` | 01/07/2026–07/10/2026 | cùng hợp đồng với ca 30/09/2026; đến ngày 07/10/2026 là ngày đầu tiên `CheckHLToKhaiTT80` (5.8.3) nhận cho mẫu TT89 (0718 trước đó) |
+| `04NTNN-TT89-one-subcontractor-to-07-10-2026` | `04-ntnn-tt89-3.0.9` | 01/07/2026–07/10/2026 | như trên, ct6_ma = khóa CR49 của dòng 02-2 |
+| `01NTNN-NCCNN-entry-part-II1-M10-2026` | `01-ntnn-nccnn-tt89-3.0.9-entry` | tháng 10/2026 | tích M8, chỉ gõ II-I (dòng 78); bảng II-II giữ dòng mẫu, sheet 86/88 = 0, `mucII_tong_*` = 0 |
+| `01NTNN-NCCNN-entry-part-II2-M10-2026` | `01-ntnn-nccnn-tt89-3.0.9-entry` | tháng 10/2026 | tích M8, chỉ gõ II-II (dòng 86); bảng II-I giữ dòng mẫu, sheet 78/80 = 0 |
+
+Hai ca Y8 dùng `HtkkDeclarationCasePlans.Entry` với các dòng của bảng còn lại bị bỏ. Trên 5.8.2 hai ca này sẽ dừng ở
+`checkTKChinh` (E_13 dòng mẫu của bảng trống); trên 5.8.3 bảng trống được bỏ qua khi bảng kia có dữ liệu. Web chỉ kiểm theo
+5.8.3 khi nhà sản xuất truyền `htkkRules: '5.8.3'`; ứng dụng vẫn giữ quy tắc 5.8.2.
+
+Chưa có ca từ chối: khuôn khổ native chỉ có ca chạy tới kết xuất, chưa có ca khẳng định một thông báo của hộp kỳ (0718/0719).
+Ca nhận ở mốc 06/10/2026 của C9/D6 chưa thêm được: engine web (Menu.xml 5.8.1/5.8.2) vẫn chặn đến ngày sau 01/10/2026 nên
+nhà sản xuất không tạo được tệp; cần đổi quy tắc web, việc này để sau khi các ca trên khớp.
+

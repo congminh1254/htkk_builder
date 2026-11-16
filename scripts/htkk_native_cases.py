@@ -151,9 +151,11 @@ TRUSTED_ADAPTERS={
  # dates, GetPeriodInfo KieuKy D_D); Menu.xml sheet 01-1 (SheetName 02-2/NTNN) ticked in the period dialog.
  # D6 validity ends 01/10/2026 (CheckToKhaiHetHieuLuc), Y1 starts 01/07/2026 (CheckHieuLuc 0441).
  '04-ntnn-tt80-3.0.8':_declaration('D6','3.0.8',{'range':('01/01/2026-30/09/2026',)},['01-1']),
- '04-ntnn-tt89-3.0.9':_declaration('Y1','3.0.9',{'range':('01/07/2026-30/09/2026',)},['01-1']),
+ # HTKK 5.8.3 (CheckHLToKhaiTT80 0718): X9/Y1 refuse đến ngày before 07/10/2026; 01/07/2026-07/10/2026 is the first
+ # range accepted by both TT89 limits (5.8.2 từ ngày from 01/07/2026, 5.8.3 đến ngày from 07/10/2026), cases on 5.8.3 only.
+ '04-ntnn-tt89-3.0.9':_declaration('Y1','3.0.9',{'range':('01/07/2026-30/09/2026','01/07/2026-07/10/2026')},['01-1']),
  # X9 02/NTNN quyết toán TT89 (non-gating): KieuKy 22 like Y1; annexes 01-1 (02-1/NTNN) and 01-2 (02-2/NTNN).
- '02-ntnn-tt89-3.0.9':_declaration('X9','3.0.9',{'range':('01/07/2026-30/09/2026',)},['01-1','01-2']),
+ '02-ntnn-tt89-3.0.9':_declaration('X9','3.0.9',{'range':('01/07/2026-30/09/2026','01/07/2026-07/10/2026')},['01-1','01-2']),
  # C9 02/NTNN quyết toán TT80 (non-gating): KieuKy 22 like D6 (Menu.xml EndDate 01/10/2026); annexes as X9.
  '02-ntnn-tt80-2.5.1':_declaration('C9','2.5.1',{'range':('01/01/2026-30/09/2026',)},['01-1','01-2']),
  # G7 01/TTS TT40 2.8.3 (non-gating, cases on the HTKK 5.8.2 oracle; the menu and every 01_TTS_TT40_283 resource are
