@@ -273,6 +273,7 @@ function New-HtkkNativeResultDefaults {
   declarationTickReadbackMask=0
   declarationTickComboMask=0
   declarationTickComboListCount=0
+  declarationTickComboOpenMask=0
   declarationTickEntryMask=0
   declarationTickEntryStartOffset=0
   declarationTickEntryKeyOffset=0

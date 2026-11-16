@@ -379,7 +379,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0,declarationTickRefreshRowOffset=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickComboOpenMask=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0,declarationTickRefreshRowOffset=0;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -425,8 +425,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask","declarationTickRefreshRowOffset"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask,declarationTickRefreshRowOffset};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickComboOpenMask","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask","declarationTickRefreshRowOffset"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickComboOpenMask,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask,declarationTickRefreshRowOffset};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -574,12 +574,33 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // non-editable list (DC_ catalogue; combo mask bit 4 clear): the editable 05-1/PBT lists keep the path their runs passed with.
   // declarationTickComboMask 32768: nothing selected on entry; 16384: ENTER sent first. (Run 43804931601: the flag was first named
   // shown, the name of the editor-list local above; Windows csc refused it with CS0136, mcs did not.)
+  // Run 43818219370 (E30 again, code 18, combo mask 53771): ENTER on the closed list ended the edit (no list shown, bit 64
+  // clear). The list is now opened as a Windows combobox is: F4, then ALT+DOWN if F4 did not open it; if neither opens it
+  // while the editor stays open, the item is typed (a non-editable list selects the item starting with the key). Each key
+  // must leave the editor open on the cell (code 18 otherwise). declarationTickComboOpenMask: 1 F4 sent, 2 list open after
+  // F4, 4 editor kept after F4, 8 ALT+DOWN sent, 16 list open after it, 32 editor kept after it, 64 item typed, 128 typed
+  // item selected.
   if(current<0&&current!=planned&&(mask&4)==0){
-   mask|=32768;listShown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();mask|=16384;
-   if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+   mask|=32768|16384;listShown=true;declarationTickComboOpenMask=0;
+   string[] openKeys=new string[]{"{F4}","%{DOWN}"};
+   for(int openIndex=0;openIndex<openKeys.Length&&!Convert.ToBoolean(Get(vendor,"DroppedDown"));openIndex++){
+    declarationTickComboOpenMask|=openIndex==0?1:8;Record();
+    SendKeys.SendWait(openKeys[openIndex]);Stopwatch opening=Stopwatch.StartNew();
+    while(!Convert.ToBoolean(Get(vendor,"DroppedDown"))&&opening.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+    if(Convert.ToBoolean(Get(vendor,"DroppedDown")))declarationTickComboOpenMask|=openIndex==0?2:16;
+    if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    declarationTickComboOpenMask|=openIndex==0?4:32;Record();
+   }
    if(Convert.ToBoolean(Get(vendor,"DroppedDown")))mask|=64;
+   else{
+    declarationTickComboOpenMask|=64;Record();SendKeys.SendWait(name);Stopwatch typing=Stopwatch.StartNew();
+    while(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned&&typing.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+    if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    if(Convert.ToInt32(Get(vendor,"SelectedIndex"))==planned)declarationTickComboOpenMask|=128;
+    Record();
+   }
   }
-  if(current!=planned){
+  if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){
    // DOWN/UP first (FpCombo selects when AcceptsArrowKeys or its list is shown); if a key does not move the selection, ENTER
    // shows the list once and the key is repeated. Every step must move the selection by itself.
    for(int step=0;step<=list.Length+1&&Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned;step++){

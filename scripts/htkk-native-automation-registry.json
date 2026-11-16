@@ -1958,6 +1958,7 @@
     "declarationTickReadbackMask",
     "declarationTickComboMask",
     "declarationTickComboListCount",
+    "declarationTickComboOpenMask",
     "declarationTickEntryMask",
     "declarationTickEntryStartOffset",
     "declarationTickEntryKeyOffset",
@@ -4048,6 +4049,15 @@
       "default": 0,
       "minimum": 0,
       "maximum": 4096,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },    "declarationTickComboOpenMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

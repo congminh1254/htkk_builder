@@ -248,8 +248,9 @@ class Driver(unittest.TestCase):
         names = re.findall(r'"(declarationTick[A-Za-z0-9]+)"', TICK[TICK.index('private string DeclarationTickJson(){'):TICK.index('private void DeclarationTickFail(')])
         # 10 tick fields plus the five 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount,
         # declarationTickEntryMask, declarationTickEntryStartOffset, declarationTickEntryKeyOffset), plus declarationTickLockShape
-        # (the value-free shape of a locked tick cell, 01/CNKD PL 01 bổ sung) and declarationTickRefreshMask, declarationTickRefreshRowOffset (its one refresh).
-        self.assertEqual(len(names), 18)
+        # (the value-free shape of a locked tick cell, 01/CNKD PL 01 bổ sung) and declarationTickRefreshMask, declarationTickRefreshRowOffset (its one refresh),
+        # and declarationTickComboOpenMask (how a cleared catalogue list was opened, Z3 PL 01-1).
+        self.assertEqual(len(names), 19)
         for name in names:
             self.assertIn(name, automation['keys'])
             self.assertEqual(fields[name]['activeModes'], [MODE, KHBS_MODE])
@@ -457,10 +458,17 @@ class Gtgt04Tt89AnnexPlan(unittest.TestCase):
 
 
 class ComboNothingSelected(unittest.TestCase):
-    def test_a_cleared_catalogue_combo_is_opened_by_enter_before_the_arrow_keys(self):
-        # Run 43790936993 (Z3 E30, code 18, combo mask 4619): SelectedIndex -1 after FinishImportXML; the first DOWN left the cell.
+    def test_a_cleared_catalogue_combo_is_opened_as_a_windows_combobox_before_the_arrow_keys(self):
+        # Run 43790936993 (code 18, mask 4619): SelectedIndex -1 after FinishImportXML, the first DOWN left the cell.
+        # Run 43818219370 (code 18, mask 53771): ENTER on the closed list ended the edit. F4, then ALT+DOWN, then the typed item.
         body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
-        enter = body.index('if(current<0&&current!=planned&&(mask&4)==0){')
-        self.assertLess(enter, body.index('SendKeys.SendWait(before<planned?"{DOWN}":"{UP}")'))
-        self.assertIn('mask|=32768;listShown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();mask|=16384;', body)
+        start = body.index('if(current<0&&current!=planned&&(mask&4)==0){')
+        self.assertLess(start, body.index('SendKeys.SendWait(before<planned?"{DOWN}":"{UP}")'))
+        block = body[start:body.index('if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){')]
+        self.assertIn('new string[]{"{F4}","%{DOWN}"}', block)
+        self.assertIn('SendKeys.SendWait(name)', block)
+        self.assertNotIn('{ENTER}', block)
+        self.assertEqual(block.count('DeclarationTickFail(18)'), 2)
+        self.assertIn('"declarationTickComboOpenMask"', ENTRY)
+        self.assertEqual(automation['resultFields']['declarationTickComboOpenMask']['maximum'], 255)
         self.assertGreaterEqual(automation['resultFields']['declarationTickComboMask']['maximum'], 32768 | 16384 | 8191)
