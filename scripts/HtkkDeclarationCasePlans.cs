@@ -136,8 +136,9 @@ internal static class HtkkDeclarationCasePlans {
  internal static readonly string[] KhbsCaseIds=new string[]{"01NTNN-khbs-grossup-lan1-M09-2026","01NTNN-khbs-lan2-M09-2026","01NTNN-khbs-decrease-M09-2026","01NTNN-NCCNN-khbs-part1-M10-2026","01NTNN-NCCNN-khbs-part2-M10-2026",
   "05KK-khbs-increase-Q3-2026","05KK-khbs-lan2-Q3-2026","05KK-khbs-decrease-Q3-2026","05KK-TT89-khbs-increase-Q4-2026","05KK-PBT-khbs-Q3-2026","05KK-khbs-increase-M03-2026",
   "01CNKD-khbs-increase-Q3-2026","01CNKD-khbs-decrease-Q3-2026","01CNKD-khbs-lan2-Q3-2026","01CNKD-PL01-khbs-Q3-2026",
-  "02QTT-khbs-increase-Y2025","02QTT-khbs-lan2-Y2025","02QTT-khbs-decrease-Y2025","02QTT-khbs-refund-Y2025"};
- internal static int KhbsSoLan(string caseId){return caseId=="01NTNN-khbs-lan2-M09-2026"||caseId=="05KK-khbs-lan2-Q3-2026"||caseId=="02QTT-khbs-lan2-Y2025"||caseId=="01CNKD-khbs-lan2-Q3-2026"?2:Array.IndexOf(KhbsCaseIds,caseId)>=0?1:0;}
+  "02QTT-khbs-increase-Y2025","02QTT-khbs-lan2-Y2025","02QTT-khbs-decrease-Y2025","02QTT-khbs-refund-Y2025",
+  "05QTT-khbs-increase-Y2025","05QTT-khbs-lan2-Y2025","05QTT-khbs-decrease-Y2025"};
+ internal static int KhbsSoLan(string caseId){return caseId=="01NTNN-khbs-lan2-M09-2026"||caseId=="05KK-khbs-lan2-Q3-2026"||caseId=="02QTT-khbs-lan2-Y2025"||caseId=="05QTT-khbs-lan2-Y2025"||caseId=="01CNKD-khbs-lan2-Q3-2026"?2:Array.IndexOf(KhbsCaseIds,caseId)>=0?1:0;}
  // Whether a bổ sung round runs the original "Tổng hợp KHBS": not for 01/CNKD (U5 KieuKHBS "" in the 5.8.2 Menu.xml;
  // frmWinToKhai.LoadButton shows btnTongHopKHBS only for LoaiToKhai B with a non-empty KieuKHBS).
  internal static bool KhbsSummary(string caseId){return Array.IndexOf(KhbsCaseIds,caseId)>=0&&!caseId.StartsWith("01CNKD-",StringComparison.Ordinal);}
@@ -145,6 +146,7 @@ internal static class HtkkDeclarationCasePlans {
   if(caseId.StartsWith("05KK-",StringComparison.Ordinal))return Kk05KhbsPlan(caseId);
   if(caseId.StartsWith("01CNKD-",StringComparison.Ordinal))return CnkdKhbsPlan(caseId);
   if(caseId.StartsWith("02QTT-",StringComparison.Ordinal))return Qtt02KhbsPlan(caseId);
+  if(caseId.StartsWith("05QTT-",StringComparison.Ordinal))return Qtt05KhbsPlan(caseId);
   bool i9=caseId.StartsWith("01NTNN-khbs-",StringComparison.Ordinal);
   int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"?253:178;
   if(i9)return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","09","01/09/2026","30/09/2026",false,
@@ -197,6 +199,15 @@ internal static class HtkkDeclarationCasePlans {
    "InterfaceTemplates/excel/02_QTT_TNCN_TT80_273.xls","e1eb77e740803215372e64e58d6c57bd71fc71ba64916ba1a8b4fddabbc95a26","InterfaceTemplates/xml/02_QTT_TNCN_TT80_273.xml","6b2a2c1d27c9298e1fe73b12138ab98e4f722f785e9c253ed91bde3570611f12",
    "Validate/KHBS_02_QTT_TNCN_TT80_273.xsd","b534fbed4424b694cb45dc9a37a65b8cfd9084daadeb810e7946c184303e7529",TKhaiThue,TKhaiThueSha256,WorkbookService,caseId=="02QTT-khbs-decrease-Y2025"?304:330,new string[0],new string[0]);
  }
+ // 05/QTT-TNCN KHBS (B9 2.9.3 năm 2025; htkk_web docs/KE-KHAI-BO-SUNG-05-QTT-TNCN.md, KHBS-NATIVE-CASE.md "05/QTT-TNCN"): the
+ // plan of the lần đầu case 05QTT-two-employees-Y2025 (KieuKy 12, annexes 05-1 and 05-3, every annex added by the import), the
+ // KHBS schema KHBS_05_QTT_TNCN_TT80_293.xsd (KieuKHBS 3), no cell or XML checks, and the web B file leaf count (leafTarget + 4).
+ private static HtkkDeclarationCasePlan Qtt05KhbsPlan(string caseId){
+  return new HtkkDeclarationCasePlan(caseId,"B9","2.9.3","953","TncnQtt05TT80Nckt293",new string[]{"101","101_11","B9"},"year","12","2025","","01/2025","12/2025",false,
+   new string[]{"05-1/BK-TNCN|05-1/BK-QTT-TNCN","05-3/BK-TNCN|05-3/BK-QTT-TNCN"},new string[]{"05|Tờ khai","05-1|05-1/BK-TNCN"},
+   "InterfaceTemplates/excel/05_QTT_TNCN_TT80_293.xls","eb948994ab364965b6545cda88294e011605a643a88bb9c5cf5412bdd6008e11","InterfaceTemplates/xml/05_QTT_TNCN_TT80_293.xml","3f8791819f9fe088b939fec20c7d4deeb46931f3e20534dc434a86abd63bd250",
+   "Validate/KHBS_05_QTT_TNCN_TT80_293.xsd","8f885a0f5c6abc500b1c6268891fdfcc78ffb7b96146ec088908c4c4f579931d",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,caseId=="05QTT-khbs-decrease-Y2025"?323:375,new string[0],new string[0]);
+ }
  // 05/KK-TNCN with 05-1/PBT: every imported round leaves Thuế tỉnh/CCT empty (no XML leaf), so the import is completed with the
  // reviewed combo edits of 05KK-PBT-two-provinces-Q3-2026 (the same two rows, offices unchanged between the versions).
  // 01/CNKD with PL 01: the giảm thuế ticks (AJ, no XML leaf) are made again after each import with the reviewed plan of the lần
@@ -236,7 +247,8 @@ internal static class HtkkDeclarationCasePlans {
    case "01NTNN-khbs-grossup-lan1-M09-2026":case "01NTNN-khbs-lan2-M09-2026":case "01NTNN-khbs-decrease-M09-2026":case "01NTNN-NCCNN-khbs-part1-M10-2026":case "01NTNN-NCCNN-khbs-part2-M10-2026":
    case "05KK-khbs-increase-Q3-2026":case "05KK-khbs-lan2-Q3-2026":case "05KK-khbs-decrease-Q3-2026":case "05KK-TT89-khbs-increase-Q4-2026":case "05KK-PBT-khbs-Q3-2026":case "05KK-khbs-increase-M03-2026":
    case "01CNKD-khbs-increase-Q3-2026":case "01CNKD-khbs-decrease-Q3-2026":case "01CNKD-khbs-lan2-Q3-2026":case "01CNKD-PL01-khbs-Q3-2026":
-   case "02QTT-khbs-increase-Y2025":case "02QTT-khbs-lan2-Y2025":case "02QTT-khbs-decrease-Y2025":case "02QTT-khbs-refund-Y2025":return KhbsPlan(caseId);
+   case "02QTT-khbs-increase-Y2025":case "02QTT-khbs-lan2-Y2025":case "02QTT-khbs-decrease-Y2025":case "02QTT-khbs-refund-Y2025":
+   case "05QTT-khbs-increase-Y2025":case "05QTT-khbs-lan2-Y2025":case "05QTT-khbs-decrease-Y2025":return KhbsPlan(caseId);
    // N8 03/TNDN TT80: KieuKy 11 = SetLayoutToKhaiNamTuNgayDenNgay (year + from/to date).
    case "03TNDN-profit20-Y2025":return new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,
     new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},
