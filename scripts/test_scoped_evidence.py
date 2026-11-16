@@ -42,6 +42,17 @@ class CollectorTests(unittest.TestCase):
   for run in ({'conclusion':'failure'},{'repository':{'full_name':'fork/repo'}}):
    def get(repo,path):return {'object':{'sha':SOURCE}} if path=='git/ref/heads/main' else run
    with self.assertRaises(ValueError):prepare.prepare({'workflow_run':{'id':12}}, {},get)
+ def test_combined_statuses_reads_every_page(self):
+  # The cohort has more than 100 contexts: page 1 alone would miss gating statuses.
+  contexts=[{'context':'htkk-native/case-'+str(i),'state':'success'}for i in range(107)];calls=[]
+  def get(repo,path):
+   calls.append(path);page=int(path.rsplit('page=',1)[1]);return {'statuses':contexts[(page-1)*100:page*100]}
+  self.assertEqual(c.combined_statuses(get,SOURCE),contexts)
+  self.assertEqual(calls,['commits/'+SOURCE+'/status?per_page=100&page=1','commits/'+SOURCE+'/status?per_page=100&page=2'])
+  full=[{'context':str(i)}for i in range(100)]
+  self.assertEqual(len(c.combined_statuses(lambda repo,path:{'statuses':full if path.endswith('page=1')else[]},SOURCE)),100)
+  with self.assertRaises(ValueError):c.combined_statuses(lambda repo,path:{'statuses':full},SOURCE)
+  with self.assertRaises(ValueError):c.combined_statuses(lambda repo,path:{'statuses':None},SOURCE)
 class PublicationTests(unittest.TestCase):
  def test_private_repo_required_before_any_blob_write(self):
   calls=[]

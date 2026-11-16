@@ -48,12 +48,21 @@ def validate_report(report,source,case):
  gui=report.get('guiReferenceAutomation',{});check(gui.get('webSourceSha')==source and gui.get('webCaseId')==case and gui.get('webTaxLeafCount')==70)
  check(all(gui.get(k) is True for k in ('gtgtCaseMoneyMatched','webTaxValuesMatched','roundtripReexportSucceeded','exportSchemaPinnedVerified')))
  return gui
+def combined_statuses(get,source):
+ """Latest status of every context on a source commit. The combined-status endpoint returns at
+ most 100 contexts per page; the native cohort has more, so every page is read."""
+ statuses=[]
+ for page in range(1,11):
+  body=get(SOURCE,'commits/'+source+'/status?per_page=100&page='+str(page));check(isinstance(body.get('statuses'),list))
+  statuses+=body['statuses']
+  if len(body['statuses'])<100:return statuses
+ raise ValueError('STATUS_PAGES')
+
 def collect(source,builder,directory,get=api,progress=lambda done,total:None):
  sha(source);sha(builder);directory=pathlib.Path(directory);directory.mkdir(mode=0o700)
  complete=False
  try:
-  statuses=get(SOURCE,'commits/'+source+'/status?per_page=100');check(isinstance(statuses.get('statuses'),list))
-  latest={s['context']:s for s in reversed(statuses['statuses'])}
+  latest={s['context']:s for s in reversed(combined_statuses(get,source))}
   producer=raw(get,'scripts/generate-htkk-web-reference.mjs',source);producer_sha=hashlib.sha256(producer).hexdigest()
   index={'format':'htkk-native-evidence-bundle-v1','sourceCommit':source,'builderCommit':builder,'cases':[],'nativeQualified':False,'filingEnabled':False}
   for case in cases.GATE_CASES:
