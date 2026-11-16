@@ -567,11 +567,20 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(hits>1)mask|=8192;
   if(hits!=1){DeclarationTickCombo(mask,list.Length);declarationTickMismatchMask|=1<<index;DeclarationTickFail(14);return;}
   mask|=2;if(data!=null&&items!=null&&planned<items.Length&&items[planned]==name&&planned<data.Length&&data[planned]==parts[5])mask|=512;
-  int current=Convert.ToInt32(Get(vendor,"SelectedIndex"));
+  int current=Convert.ToInt32(Get(vendor,"SelectedIndex"));bool shown=false;
+  // Run 43790936993 (Z3 PL 01-1 E30, code 18, combo mask 4619, list 4): FinishImportXML had cleared the cell, so nothing was
+  // selected (SelectedIndex -1) and the first DOWN left the cell instead of selecting an item. With nothing selected the
+  // list is shown first by ENTER (FpCombo.OnKeyDown ShowList), as a user opens it, and only then moved by DOWN/UP. Only for a
+  // non-editable list (DC_ catalogue; combo mask bit 4 clear): the editable 05-1/PBT lists keep the path their runs passed with.
+  // declarationTickComboMask 32768: nothing selected on entry; 16384: ENTER sent first.
+  if(current<0&&current!=planned&&(mask&4)==0){
+   mask|=32768;shown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();mask|=16384;
+   if(!DeclarationEntryActive(sheet,row,column)||Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+   if(Convert.ToBoolean(Get(vendor,"DroppedDown")))mask|=64;
+  }
   if(current!=planned){
    // DOWN/UP first (FpCombo selects when AcceptsArrowKeys or its list is shown); if a key does not move the selection, ENTER
    // shows the list once and the key is repeated. Every step must move the selection by itself.
-   bool shown=false;
    for(int step=0;step<=list.Length+1&&Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned;step++){
     int before=Convert.ToInt32(Get(vendor,"SelectedIndex"));
     SendKeys.SendWait(before<planned?"{DOWN}":"{UP}");Stopwatch wait=Stopwatch.StartNew();

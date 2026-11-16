@@ -454,3 +454,13 @@ class Gtgt04Tt89AnnexPlan(unittest.TestCase):
             old = subprocess.run(['mono', str(folder / 'p.exe'), '5.8.1'], capture_output=True, text=True).stdout.split('\n')
         self.assertEqual(new[0], '5 0 10 True')
         self.assertEqual(old[0], 'HTKK_ORACLE_GTGT04_UNPINNED')
+
+
+class ComboNothingSelected(unittest.TestCase):
+    def test_a_cleared_catalogue_combo_is_opened_by_enter_before_the_arrow_keys(self):
+        # Run 43790936993 (Z3 E30, code 18, combo mask 4619): SelectedIndex -1 after FinishImportXML; the first DOWN left the cell.
+        body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
+        enter = body.index('if(current<0&&current!=planned&&(mask&4)==0){')
+        self.assertLess(enter, body.index('SendKeys.SendWait(before<planned?"{DOWN}":"{UP}")'))
+        self.assertIn('mask|=32768;shown=true;SendKeys.SendWait("{ENTER}");Application.DoEvents();mask|=16384;', body)
+        self.assertGreaterEqual(automation['resultFields']['declarationTickComboMask']['maximum'], 32768 | 16384 | 8191)
