@@ -645,3 +645,15 @@ round (no driver change). Năm 2025 only: the period dialog opens on Now.Year �
 01/12/2026. What only these runs decide (web predictions in its golden): hạn nộp 31/03/2026 and 227 days; the sign of ct7 for the
 NopThua items; [45] in Muc_III with tongCong_9; negative ct3b; the [33] caption with its double space; whether the Bổ sung period
 dialog shows the B8 annex list (handled by `SelectReviewedVisibleAnnexList` as in the năm 2026 cases).
+
+Cohort e0ad917 (web 54ebb413; runs 43776168729 increase, 43776171044 lần 2, 43776173361 decrease, 43776176073 refund): every
+round ran (step masks 1591 / 1791, round 1 / 2, import and summary acknowledged, export written and the KHBS schema pin held),
+then `declaration-export-not-matched` with the same shape in all four: tree mask 48 (PLuc + structure), 202 compared leaves, four
+text differences at web element ordinals 159, 160, 235, 236 = `kyKKhaiTuNgay` / `kyKKhaiDenNgay` of the two fragment Headers
+(native text 10 characters, web empty). `WinDoWorkEvent.xmlExportTTinChungKHBS` writes `GetNgayDauKyKeKhai` /
+`GetNgayCuoiKyKeKhai` as dd/MM/yyyy when TTinChung leaves them empty (KieuKy Y: 01/01/2025, 31/12/2025); htkk_web now writes them
+(pins re-made, leaf targets unchanged). 202 leaves = the web count minus `DSachHSo` (BKeHSo + TongCong, 70 / 44 leaves): its child
+count differs, i.e. HTKK writes another hồ sơ group (presumably 02-1/BK-QTT-TNCN). Retention was refused (`XML_PRIVACY`, native
+leaf 206 = the first `ten_HSo`, a text outside the inputs), so no raw export exists yet. These cases now also accept the public B8
+catalogue texts (`CATALOGUE_TEXTS`: sheet names, the 02-1 captions with and without "[nn] - ") and, on the 01-1/KHBS row key
+leaf only, ' - '-joined keys of input pieces (`catalogue_texts`), so the next run retains the export and the web port follows HTKK.

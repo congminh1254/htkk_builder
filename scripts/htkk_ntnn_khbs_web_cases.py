@@ -314,8 +314,26 @@ def validate_native_output(body, case_id, today=None, service_version=None, file
         d.reject('DATE')
     if files is None:
         return {'privacyValuesVerified': False, 'leafCount': len(items), 'nativeServiceIdentityVerified': True, 'creationDateRule': 'native-export-current-date'}
-    d._texts(items, input_texts(files) | d.PROFILE_TEXTS | set(service))
+    allowed = input_texts(files) | d.PROFILE_TEXTS | set(service)
+    d._texts(items, allowed | catalogue_texts(case_id, items, allowed))
     return {'privacyValuesVerified': True, 'leafCount': len(items), 'nativeServiceIdentityVerified': True, 'creationDateRule': 'native-export-current-date'}
+
+
+KEY_PATH_SUFFIX = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
+
+
+def catalogue_texts(case_id, items, allowed):
+    """Extra texts a case's native export may carry (02/QTT-TNCN only, ``catalogueTexts``): the public HTKK catalogue texts of the
+    menu, and on the 01-1/KHBS row key leaf a ' - '-joined key whose every piece is empty, a text of the case's files or a bounded
+    number/code/date shape. Every other case gets none."""
+    spec = case(case_id)
+    texts = spec.get('catalogueTexts')
+    if not texts:
+        return frozenset()
+    d = declaration()
+    shaped = lambda piece: piece == '' or piece in allowed or bool(d.NUMBER.match(piece) or d.CODE.match(piece) or d.DATE.match(piece))
+    keys = {value for path, value in items if path.endswith(KEY_PATH_SUFFIX) and ' - ' in value and len(value) <= 512 and all(shaped(piece) for piece in value.split(' - '))}
+    return frozenset(texts) | frozenset(keys)
 
 
 def compare_tree(web_body, native_body, case_id):

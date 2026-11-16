@@ -20,21 +20,31 @@ PERIODS = {'B8': ('Y', '2025', '', '')}
 ANNEX = 'PLuc_02_1_BK_QTT_TNCN'
 IMPORT = 'khbs-web-xml-import-reexport'
 _ORIGINAL = (3599, '1b0bfba345e5ab2122bad362fd06d6cb73237674cb98f2d56dc4fea7d5f04843')
-_INCREASE = (7533, '2838c556d0744c35c04f95fe6fe6689dc14ed579f0613be659374c9fde54bb27')
+_INCREASE = (7635, '536c0615160e91ea9eed59a37ea4fc0d4d65387098a6d95d8fc27fa2296880c2')
 # Năm 2025 is due 31/03/2026 as GetHanNopToKhai reads it (KieuKy Y), ngày lập 13/11/2026: 227 late days in every case.
 CASES = {
     '02QTT-khbs-increase-Y2025': {'producerCase': 'qtt02-khbs-increase-y2025', 'menuId': 'B8', 'soLan': 1, 'web': _INCREASE, 'original': _ORIGINAL, 'prior': None, 'leafTarget': 272,
         'expected': {'rows': ['[20]', '[21]', '[31]', '[32]', '[42]'], 'subitems': [['1001', '3000000']], 'refund': [], 'ct10': '3000000', 'ct13': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '204300'}},
-    '02QTT-khbs-lan2-Y2025': {'producerCase': 'qtt02-khbs-lan2-y2025', 'menuId': 'B8', 'soLan': 2, 'web': (7535, '0cb27777150ae8ac67850397cdc2cc73565dcf87e6a30859384a6d8c76728642'), 'original': _ORIGINAL, 'prior': _INCREASE, 'leafTarget': 272,
+    '02QTT-khbs-lan2-Y2025': {'producerCase': 'qtt02-khbs-lan2-y2025', 'menuId': 'B8', 'soLan': 2, 'web': (7637, 'd21ed222b7c25f52637092a65f36426e03d588553a6ee609e610e262e2b082b3'), 'original': _ORIGINAL, 'prior': _INCREASE, 'leafTarget': 272,
         'expected': {'rows': ['[20]', '[21]', '[31]', '[32]', '[42]'], 'subitems': [['1001', '1440000']], 'refund': [], 'ct10': '1440000', 'ct13': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '98064'}},
-    '02QTT-khbs-decrease-Y2025': {'producerCase': 'qtt02-khbs-decrease-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (7002, 'ba77ad7590f97b7f8b9c9ed2e6e3741631d7c40011d8b7521568d69a539e5f88'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 246,
+    '02QTT-khbs-decrease-Y2025': {'producerCase': 'qtt02-khbs-decrease-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (7104, '5df997694c4aea2a0994105ef77301401fab73d026ce8b72ed022517d91ad667'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 246,
         'expected': {'rows': ['[33]', '[34]', '[42]'], 'subitems': [['1001', '-1000000']], 'refund': [], 'ct10': '-1000000', 'ct13': '0', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '-68100'}},
     # Hoàn qua chuyển khoản on both versions (the reviewed transfer of 02QTT-refund-transfer-Y2025): [34] 20tr → 22tr, [46] 14,12tr
     # → 16,12tr; [45] (LoaiThue 2) goes to Muc_III.
-    '02QTT-khbs-refund-Y2025': {'producerCase': 'qtt02-khbs-refund-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (7843, 'b87263b9c99eaea3c4ce772ac4d498ec037fd2a12c1523b062fee0f793f3e306'), 'original': (3819, '12924fb7cfcec03807839fe4f9cea3e3254b9c467ed59a8007fc63b045d18b06'), 'prior': None, 'leafTarget': 272,
+    '02QTT-khbs-refund-Y2025': {'producerCase': 'qtt02-khbs-refund-y2025', 'menuId': 'B8', 'soLan': 1, 'web': (7945, 'f9c305efa68e4d8259f44e3e2842d33d88f9d89a5f31af3fe438120105f2eb9a'), 'original': (3819, '12924fb7cfcec03807839fe4f9cea3e3254b9c467ed59a8007fc63b045d18b06'), 'prior': None, 'leafTarget': 272,
         'expected': {'rows': ['[33]', '[34]', '[44]', '[45]', '[46]'], 'subitems': [['1001', '-2000000']], 'refund': [['1001', '2000000']], 'ct10': '-2000000', 'ct13': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '-136200'}},
 }
+# Public HTKK 5.8.2 catalogue texts of B8 (Project/Menu.xml sheet names and caption, Project/MapMCT.xml Map B8 SheetName and the
+# captions of the 02-1/BK-QTT-TNCN items with and without their "[nn] - " prefix) that the native 01-1/KHBS may carry beyond the
+# reviewed files. Cohort e0ad917 (runs 43776168729, 43776171044, 43776173361, 43776176073): every export differed in
+# PL01_1_KHBS/Muc_A/DSachHSo (child count) and its retention was refused at a text outside the inputs (leaf 206, ten_HSo). With
+# these texts and ' - '-joined row keys of input pieces (CATALOGUE_KEY_PATH) the next export can be retained and the web ported.
+_CAPTIONS = ('[14] - Ngày sinh', '[15] - Quan hệ với NNT', '[16] - Thời gian được tính giảm trừ trong năm\\ Từ tháng',
+             '[17] - Thời gian được tính giảm trừ trong năm\\ Đến tháng')
+CATALOGUE_TEXTS = frozenset(('Tờ khai', '02/QTT-TNCN', '02-1/BK-QTT-TNCN') + _CAPTIONS + tuple(c.split(' - ', 1)[1] for c in _CAPTIONS))
+CATALOGUE_KEY_PATH = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
 for _spec in CASES.values():
+    _spec['catalogueTexts'] = CATALOGUE_TEXTS
     _spec['annexParts'] = (ANNEX,)
     _spec['inputMode'] = IMPORT
     _spec['producer'], _spec['exporter'] = PRODUCER, EXPORTER

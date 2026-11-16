@@ -104,6 +104,23 @@ class Qtt02KhbsWebCases(unittest.TestCase):
             m.validate_xml(support.files(sm, REFUND)[m.WEB_NAME], REFUND, 'web')
 
 
+class Qtt02KhbsNativeRetention(unittest.TestCase):
+    def test_catalogue_texts_and_row_keys_only_for_the_b8_cases(self):
+        key = 'HSoThueDTu/HSoKhaiThue/PLuc/' + m.KEY_PATH_SUFFIX
+        allowed = frozenset(('NGUOI PHU THUOC A', '001215000001'))
+        items = [(key, 'NGUOI PHU THUOC A -  - 001215000001'), (key, 'NGUOI PHU THUOC A - 2015-02-01'), (key, 'NGUOI KHAC - 001215000001'),
+                 ('HSoThueDTu/HSoKhaiThue/PLuc/PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/ten_HSo', 'NGUOI PHU THUOC A - 001215000001')]
+        extra = m.catalogue_texts(REFUND, items, allowed)
+        self.assertEqual(extra - qtt02.CATALOGUE_TEXTS, {'NGUOI PHU THUOC A -  - 001215000001', 'NGUOI PHU THUOC A - 2015-02-01'})
+        for text in ('02-1/BK-QTT-TNCN', 'Tờ khai', 'Ngày sinh', '[15] - Quan hệ với NNT', 'Thời gian được tính giảm trừ trong năm\\ Đến tháng'):
+            self.assertIn(text, extra)
+        # Every other KHBS case keeps the exact input-text rule.
+        for case_id in m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES:
+            self.assertEqual(m.catalogue_texts(case_id, items, allowed), frozenset())
+        source = (ROOT / 'htkk_ntnn_khbs_web_cases.py').read_text(encoding='utf-8')
+        self.assertIn('d._texts(items, allowed | catalogue_texts(case_id, items, allowed))', source)
+
+
 class Qtt02KhbsDriverWiring(unittest.TestCase):
     def test_case_plans_use_the_b8_plan_with_the_khbs_schema_and_web_leaf_counts(self):
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
