@@ -688,12 +688,20 @@ HTKK 5.8.2) with `releaseGate: false`.
 
 | Case | Files | Web leaf target (no TTinDVu) |
 | --- | --- | --- |
-| `05QTT-khbs-increase-Y2025` (05-1 row A income 300tr → 330tr; [41] −3tr, ct7 +3tr) | original, web | 371 |
-| `05QTT-khbs-lan2-Y2025` (lần 2 on the increase case, 350tr) | original, prior (= the increase web file), web | 371 |
-| `05QTT-khbs-decrease-Y2025` (05-1 row A tax withheld 12tr → 13tr; ct7 −1tr) | original, web | 319 |
+| `05QTT-khbs-increase-Y2025` (05-1 row A income 300tr → 330tr; [41] −3tr, ct7 +3tr) | original, web | 393 |
+| `05QTT-khbs-lan2-Y2025` (lần 2 on the increase case, 350tr) | original, prior (= the increase web file), web | 393 |
+| `05QTT-khbs-decrease-Y2025` (05-1 row A tax withheld 12tr → 13tr; ct7 −1tr) | original, web | 341 |
 
 Driver: the rounds of the other KHBS cases with the plan of `05QTT-two-employees-Y2025` (menu 101 → 101_11 → B9, năm 2025, KieuKy 12,
 annexes 05-1, 05-3; `cmdImportXML_Click` adds every B9 annex), KHBS schema above, every round imported, "Tổng hợp KHBS" in each bổ sung
 round; no driver change. What only these runs decide: whether HTKK writes only the changed rows of the 05-1 totals (B8 wrote unchanged
 dynamic rows of its annex), the ten_HSo of the 05-1 group ("05-1/BK-TNCN"), the 0016 checks of a B9 bổ sung after the import, and the
 annex list of the Bổ sung period dialog.
+
+Cohort 5cf04ba (web cccb59f8; runs 43845164240, 43845168874, 43845173606): every round ran (step masks 1591 / 1791, the Bổ sung period
+dialog showed no annex list: `declarationAnnexListMask` 0), and the three exports were retained (`allTaxValuesMatched` false, mask 48,
+63 leaves: the walk stopped at the child count of `HSoKhaiThue/PLuc`). The only difference: HTKK wrote `PLuc_05_2_BK_QTT` as its default
+sheet (one empty row, totals 0) into every bổ sung although neither version had 05-2 (the lần đầu export of the same C0 had none).
+htkk_web 2d7ead18 writes every bảng kê into a B9 bổ sung and reproduces every leaf of the three exports. The contract now separates the
+lần đầu annexes (`originalAnnexParts`: 05-1, 05-3) from those of a B file (05-1, 05-2, 05-3); new pins, leaf targets 393 / 341
+(plans 397 / 345). The KHBS groups (0004, 000401 "05-1/BK-TNCN", changed totals only), ct7 of [41], 227 days and ct3b held.

@@ -214,8 +214,11 @@ def validate_xml(body, case_id, role):
     pluc = [child for child in root.find('{%s}HSoKhaiThue' % NS) if _local(child) == 'PLuc']
     parts = [_local(child) for item in pluc for child in item]
     # The case's own annexes (05/KK-TNCN: 05-1/PBT-KK-TNCN; 01/CNKD: PL 01 NQ 43) precede the KHBS fragments of a B file (none for U5).
+    # 05/QTT-TNCN: a B file carries every bảng kê of B9 (HTKK writes the missing ones as default sheets), the lần đầu only its own
+    # (originalAnnexParts); every other case has the same annexes in all files.
     fragments = [] if role == 'original' else list(spec['khbsParts'])
-    if parts != list(spec['annexParts']) + fragments:
+    annexes = spec.get('originalAnnexParts', spec['annexParts']) if role == 'original' else spec['annexParts']
+    if parts != list(annexes) + fragments:
         reject('AMENDMENT')
     for part in fragments:
         if _leaf(root, 'HSoKhaiThue/PLuc/' + part + '/Header/soLan') != expected[1] or _leaf(root, 'HSoKhaiThue/PLuc/' + part + '/Header/mst') != MST:

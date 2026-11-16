@@ -19,18 +19,22 @@ EXPORTER = 'lib/htkk-qtt05-khbs.ts'
 MENUS = {'B9': ('953', '2.9.3')}
 # kieuKy, kyKKhai, kyKKhaiTuNgay, kyKKhaiDenNgay of every file of the cases.
 PERIODS = {'B9': ('Y', '2025', '', '')}
-ANNEXES = ('PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT')
+# The lần đầu file carries 05-1 and 05-3; every B file carries all three bảng kê, 05-2 as HTKK's default sheet (cohort 5cf04ba: runs
+# 43845164240, 43845168874, 43845173606 exported PLuc_05_2_BK_QTT with one empty row; htkk_web 2d7ead18 writes it, raw exports kept
+# there and reproduced leaf for leaf).
+ORIGINAL_ANNEXES = ('PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT')
+ANNEXES = ('PLuc_05_1_BK_QTT', 'PLuc_05_2_BK_QTT', 'PLuc_05_3_BK_QTT')
 IMPORT = 'khbs-web-xml-import-reexport'
 _ORIGINAL = (4593, '3ee7bfff733a6954ca6bf8697ed9d38cc3b060482ab5160620d6b3722eb9a47a')
-_INCREASE = (10042, '4c5715e17ae7ceab722c72a15c0d7ac6e2bcbc474eafaf5cd5d84f712f403bc0')
+_INCREASE = (10485, '2ad42d11318db75cc9ac14f5d1e4734094cc26ef0df3410973f424c93646a0e1')
 _ROWS = ['0[23]', '0[24]', '0[28]', '0[29]', '0[38]', '0[41]', '1[28]', '1[37]', '1[40]', '1[41]']
 # Năm 2025 is due 31/03/2026 (GetHanNopToKhai KieuKy Y), ngày lập 13/11/2026: 227 late days. Rows: sheet index + MapMCT code.
 CASES = {
-    '05QTT-khbs-increase-Y2025': {'producerCase': 'qtt05-khbs-increase-y2025', 'menuId': 'B9', 'soLan': 1, 'web': _INCREASE, 'original': _ORIGINAL, 'prior': None, 'leafTarget': 371,
+    '05QTT-khbs-increase-Y2025': {'producerCase': 'qtt05-khbs-increase-y2025', 'menuId': 'B9', 'soLan': 1, 'web': _INCREASE, 'original': _ORIGINAL, 'prior': None, 'leafTarget': 393,
         'expected': {'rows': _ROWS, 'subitems': [['1001', '3000000']], 'ct10': '3000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '204300'}},
-    '05QTT-khbs-lan2-Y2025': {'producerCase': 'qtt05-khbs-lan2-y2025', 'menuId': 'B9', 'soLan': 2, 'web': (10043, 'f87b6f42236cee6b9e6444e81b54879e36172ce8505339ea622eaae4010109e9'), 'original': _ORIGINAL, 'prior': _INCREASE, 'leafTarget': 371,
+    '05QTT-khbs-lan2-Y2025': {'producerCase': 'qtt05-khbs-lan2-y2025', 'menuId': 'B9', 'soLan': 2, 'web': (10486, '567c1cf8bddfcbae666a99e62ea9bebb9aac918ff5f01075f1882c107633a648'), 'original': _ORIGINAL, 'prior': _INCREASE, 'leafTarget': 393,
         'expected': {'rows': _ROWS, 'subitems': [['1001', '2000000']], 'ct10': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '136200'}},
-    '05QTT-khbs-decrease-Y2025': {'producerCase': 'qtt05-khbs-decrease-y2025', 'menuId': 'B9', 'soLan': 1, 'web': (8943, '7327b067db338837714bce19cc355cd0b41974e7ded371033cebf686f3a6d7f4'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 319,
+    '05QTT-khbs-decrease-Y2025': {'producerCase': 'qtt05-khbs-decrease-y2025', 'menuId': 'B9', 'soLan': 1, 'web': (9386, '70ed280f721ea010d22d4acd013cf0ac0f68ef6dd66a0f28674b50bc641994a3'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 341,
         'expected': {'rows': ['0[31]', '0[32]', '0[36]', '0[41]', '1[38]', '1[41]'], 'subitems': [['1001', '-1000000']], 'ct10': '-1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '227', 'ct3b': '-68100'}},
 }
 # Public HTKK 5.8.2 catalogue texts of B9: Menu.xml sheet names and captions, the MapMCT B9 MauToKhai / SheetNames, the codes of
@@ -113,5 +117,6 @@ CATALOGUE_TEXTS = frozenset((
 for _spec in CASES.values():
     _spec['catalogueTexts'] = CATALOGUE_TEXTS
     _spec['annexParts'] = ANNEXES
+    _spec['originalAnnexParts'] = ORIGINAL_ANNEXES
     _spec['inputMode'] = IMPORT
     _spec['producer'], _spec['exporter'] = PRODUCER, EXPORTER

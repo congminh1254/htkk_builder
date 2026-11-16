@@ -206,7 +206,7 @@ internal static class HtkkDeclarationCasePlans {
   return new HtkkDeclarationCasePlan(caseId,"B9","2.9.3","953","TncnQtt05TT80Nckt293",new string[]{"101","101_11","B9"},"year","12","2025","","01/2025","12/2025",false,
    new string[]{"05-1/BK-TNCN|05-1/BK-QTT-TNCN","05-3/BK-TNCN|05-3/BK-QTT-TNCN"},new string[]{"05|Tờ khai","05-1|05-1/BK-TNCN"},
    "InterfaceTemplates/excel/05_QTT_TNCN_TT80_293.xls","eb948994ab364965b6545cda88294e011605a643a88bb9c5cf5412bdd6008e11","InterfaceTemplates/xml/05_QTT_TNCN_TT80_293.xml","3f8791819f9fe088b939fec20c7d4deeb46931f3e20534dc434a86abd63bd250",
-   "Validate/KHBS_05_QTT_TNCN_TT80_293.xsd","8f885a0f5c6abc500b1c6268891fdfcc78ffb7b96146ec088908c4c4f579931d",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,caseId=="05QTT-khbs-decrease-Y2025"?323:375,new string[0],new string[0]);
+   "Validate/KHBS_05_QTT_TNCN_TT80_293.xsd","8f885a0f5c6abc500b1c6268891fdfcc78ffb7b96146ec088908c4c4f579931d",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,caseId=="05QTT-khbs-decrease-Y2025"?345:397,new string[0],new string[0]);
  }
  // 05/KK-TNCN with 05-1/PBT: every imported round leaves Thuế tỉnh/CCT empty (no XML leaf), so the import is completed with the
  // reviewed combo edits of 05KK-PBT-two-provinces-Q3-2026 (the same two rows, offices unchanged between the versions).

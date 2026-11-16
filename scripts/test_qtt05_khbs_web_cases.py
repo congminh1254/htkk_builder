@@ -25,7 +25,7 @@ sm = support.pin(load('htkk_ntnn_khbs_web_cases_qtt05_pinned', 'htkk_ntnn_khbs_w
 registry = load('htkk_native_cases_qtt05', 'htkk_native_cases.py')
 CASES = ('05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025')
 LAN2, DECREASE = '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025'
-ANNEXES = ('PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT')
+ANNEXES = ('PLuc_05_1_BK_QTT', 'PLuc_05_2_BK_QTT', 'PLuc_05_3_BK_QTT')
 
 
 def manifest(case_id, module):
@@ -51,6 +51,7 @@ class Qtt05KhbsWebCases(unittest.TestCase):
             self.assertEqual(m.names(case_id), (m.ORIGINAL_NAME,) + ((m.PRIOR_NAME,) if case_id == LAN2 else ()) + (m.WEB_NAME, m.MANIFEST_NAME))
             self.assertEqual(m.input_mode(case_id), 'khbs-web-xml-import-reexport')
             self.assertEqual(c['annexParts'], ANNEXES)
+            self.assertEqual(c['originalAnnexParts'], ('PLuc_05_1_BK_QTT', 'PLuc_05_3_BK_QTT'))
             self.assertEqual(c['khbsParts'], ('PL01_KHBS', 'PL01_1_KHBS'))
             self.assertTrue(m.khbs_summary(case_id))
             self.assertEqual(m.validate_manifest(manifest(case_id, m))['caseId'], case_id)
@@ -58,8 +59,8 @@ class Qtt05KhbsWebCases(unittest.TestCase):
             self.assertEqual((c['expected']['ct3a_1'], c['expected']['ct3a_2']), ('2026-11-13', '227'))
         self.assertEqual(m.CASES[LAN2]['prior'], m.CASES['05QTT-khbs-increase-Y2025']['web'])
         self.assertEqual(len({m.CASES[c]['original'] for c in CASES}), 1)
-        self.assertEqual(m.tax_leaf_count(DECREASE), 319)
-        self.assertEqual({m.tax_leaf_count(c) for c in CASES if c != DECREASE}, {371})
+        self.assertEqual(m.tax_leaf_count(DECREASE), 341)
+        self.assertEqual({m.tax_leaf_count(c) for c in CASES if c != DECREASE}, {393})
 
     def test_registered_as_observation_cases_with_summary(self):
         for case_id in CASES:
@@ -92,6 +93,18 @@ class Qtt05KhbsWebCases(unittest.TestCase):
                 sm.CASES[DECREASE]['web'] = saved
         with self.assertRaises(m.NtnnKhbsWebCaseError):
             m.validate_xml(support.files(sm, DECREASE)[m.WEB_NAME], DECREASE, 'web')
+        # The lần đầu keeps only its own bảng kê; a lần đầu with the default 05-2 sheet is refused.
+        original = support.files(sm, DECREASE)[sm.ORIGINAL_NAME].decode('utf-8')
+        self.assertNotIn('PLuc_05_2_BK_QTT', original)
+        raw = original.replace('<PLuc_05_3_BK_QTT>', '<PLuc_05_2_BK_QTT><ct14>0</ct14></PLuc_05_2_BK_QTT><PLuc_05_3_BK_QTT>').encode('utf-8')
+        saved = sm.CASES[DECREASE]['original']
+        try:
+            sm.CASES[DECREASE]['original'] = (len(raw), hashlib.sha256(raw).hexdigest())
+            with self.assertRaises(sm.NtnnKhbsWebCaseError) as error:
+                sm.validate_xml(raw, DECREASE, 'original')
+            self.assertEqual(error.exception.code, 'AMENDMENT')
+        finally:
+            sm.CASES[DECREASE]['original'] = saved
 
 
 class Qtt05KhbsNativeRetention(unittest.TestCase):

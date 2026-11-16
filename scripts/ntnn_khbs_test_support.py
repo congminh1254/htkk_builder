@@ -29,7 +29,7 @@ def synthetic(m, case_id, role):
     amount = {'original': '0', 'prior': '1000', 'web': expected['ct10'] if 'ct10' in expected else expected['total'][1]}[role]
     service = ''.join('<%s>%s</%s>' % (name, value, name) for name, value in zip(('maDVu', 'tenDVu', 'pbanDVu', 'ttinNhaCCapDVu'), m.SERVICE))
     # The case's own annexes (05/KK-TNCN 05-1/PBT) come first in PLuc, then the two KHBS fragments of a B file.
-    annexes = ''.join('<%s><ct14>%s</ct14></%s>' % (part, amount, part) for part in spec['annexParts'])
+    annexes = ''.join('<%s><ct14>%s</ct14></%s>' % (part, amount, part) for part in (spec.get('originalAnnexParts', spec['annexParts']) if role == 'original' else spec['annexParts']))
     khbs = '' if role == 'original' or not spec['khbsParts'] else (
         '<PL01_KHBS><Header><soLan>%s</soLan><mst>%s</mst></Header><ct10>%s</ct10></PL01_KHBS>'
         '<PL01_1_KHBS><Header><soLan>%s</soLan><mst>%s</mst></Header><ct3_2_ten>CHI TIEU GIA LAP</ct3_2_ten></PL01_1_KHBS>') % (lan, m.MST, amount, lan, m.MST)
