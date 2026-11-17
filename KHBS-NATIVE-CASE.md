@@ -395,10 +395,10 @@ KHBS of both menus statically from HTKK 5.8.2: KieuKHBS 3 like D1, but every Map
 `KHBS_TT80_309.xls` (same formulas as D1, AA38 included), output `KHBS_01_TT80_xml.xml` / `KHBS_01_1_TT80_xml.xml`, schemas
 `KHBS_01_NTNN_TT80_251.xsd` / `KHBS_01_NTNN_NCCNN_TT89_309.xsd`.
 
-`scripts/htkk_ntnn_khbs_web_cases.py` is the reviewed INPUT half of five cases (sizes and SHA-256 of every staged file pinned,
+`scripts/htkk_ntnn_khbs_web_cases.py` is the reviewed INPUT half of six cases (sizes and SHA-256 of every staged file pinned,
 bounded structural checks; the reviewed bytes themselves in `htkk_ntnn_khbs_web_inputs.json`; `test_ntnn_khbs_web_cases.py`).
-The five cases are registered in `htkk-native-cases.json` (adapters `01-ntnn-tt80-2.5.1-khbs`, `01-ntnn-tt80-2.5.1-khbs-lan2`,
-`01-ntnn-nccnn-tt89-3.0.9-khbs`; driver `declaration-amendment-khbs-inspect`, HTKK 5.8.2) with `releaseGate: false`: they are
+The six cases are registered in `htkk-native-cases.json` (adapters `01-ntnn-tt80-2.5.1-khbs`, `01-ntnn-tt80-2.5.1-khbs-lan2`,
+`01-ntnn-nccnn-tt89-3.0.9-khbs`, `01-ntnn-nccnn-tt89-3.0.9-khbs-lan2`; driver `declaration-amendment-khbs-inspect`, HTKK 5.8.2) with `releaseGate: false`: they are
 observation cases, dispatched by the cohort but never in `GATE_CASES`, so a mismatch neither blocks a release nor turns Assess red.
 
 | Case | Menu | Files | Web leaf target (no TTinDVu) |
@@ -408,6 +408,7 @@ observation cases, dispatched by the cohort but never in `GATE_CASES`, so a mism
 | `01NTNN-khbs-decrease-M09-2026` | I9 | original, web | 174 |
 | `01NTNN-NCCNN-khbs-part1-M10-2026` | Y8 | original, web | 265 |
 | `01NTNN-NCCNN-khbs-part2-M10-2026` | Y8 | original, web | 249 |
+| `01NTNN-NCCNN-khbs-lan2-M10-2026` | Y8 | original, prior (= `01NTNN-NCCNN-khbs-part1-M10-2026`'s web file), web | 223 |
 
 Driver (`scripts/HtkkDeclarationKhbs.cs` on the declaration driver; step mask bits listed there):
 
@@ -420,7 +421,9 @@ Driver (`scripts/HtkkDeclarationKhbs.cs` on the declaration driver; step mask bi
 3. Menu again; period dialog: OptBosung, txtLan (2 in round 2 of lần 2), `mskNgayLapKHBS` 13/11/2026, Đồng ý; TTPeriodInfo
    LoaiToKhai B, SoLan, NgayLapKHBS; sheets 01-KHBS and 01-1/KHBS present.
 4. I9: original import of the bổ sung file (lần 2 round 1: `.web-prior.xml`, then Tổng hợp KHBS, Ghi `bs1_…`, Đóng, round 2).
-   Y8: the changed cells typed (the B sheet may open reset; type every planned cell).
+   Y8: the changed cells typed (the B sheet may open reset; type every planned cell). Y8 lần 2 (phần I): round 1 types the
+   lần 1 rows of `01NTNN-NCCNN-khbs-part1-M10-2026` (Tổng hợp KHBS, Ghi, Đóng), round 2 the lần 2 rows (AZ 240.000.000); the
+   staged `.web-prior.xml` is verified against its pin but never imported.
 5. Original "Tổng hợp KHBS" (0222), original export (schema pinned: the two KHBS XSDs above), whole-tree comparison
    with the web B file (C# leaf counts = targets above + 4 service leaves); the shared export readiness gate applies.
 

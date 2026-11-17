@@ -4,6 +4,9 @@ second module instance pinned to synthetic in-memory files (ntnn_khbs_test_suppo
 import importlib.util
 import json
 import pathlib
+import shutil
+import subprocess
+import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).parent
@@ -33,7 +36,7 @@ class NtnnKhbsWebCases(unittest.TestCase):
         # The 05/KK-TNCN cases are merged from htkk_kk05_khbs_web_cases.py (test_kk05_khbs_web_cases.py).
         self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES))
         self.assertEqual(sorted(m.NTNN_CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
-                                                  '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026']))
+                                                  '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026']))
         for case_id, c in m.CASES.items():
             self.assertEqual(m.names(case_id)[-2:], (m.WEB_NAME, m.MANIFEST_NAME))
             self.assertEqual(m.names(case_id)[0], m.ORIGINAL_NAME)
@@ -50,6 +53,9 @@ class NtnnKhbsWebCases(unittest.TestCase):
         lan1, lan2 = m.CASES['01NTNN-khbs-grossup-lan1-M09-2026'], m.CASES['01NTNN-khbs-lan2-M09-2026']
         self.assertEqual(lan2['prior'], lan1['web'])
         self.assertEqual(len({c['original'] for c in m.CASES.values() if c['menuId'] == 'I9'}), 1)
+        # Y8 lần 2: the previous version is the phần I lần-1 case's own file, on the same lần đầu.
+        y8_lan1, y8_lan2 = m.CASES['01NTNN-NCCNN-khbs-part1-M10-2026'], m.CASES['01NTNN-NCCNN-khbs-lan2-M10-2026']
+        self.assertEqual((y8_lan2['soLan'], y8_lan2['prior'], y8_lan2['original']), (2, y8_lan1['web'], y8_lan1['original']))
 
     def test_registered_as_non_gating_582_cases_of_the_khbs_declaration_mode(self):
         registry = json.loads((ROOT / 'htkk-native-cases.json').read_text(encoding='utf-8'))
@@ -325,6 +331,42 @@ class NtnnKhbsProbeWiring(unittest.TestCase):
         self.assertIn('if(!DeclarationKhbsMode())return;', body)
         self.assertNotIn('PerformClick', body)
         self.assertIn('$report.guiReferenceResultReads=[ordered]@{invalidAfterValid=[int]$guiInvalidAfterValid;missingAfterValid=[int]$guiMissingAfterValid;lastWriteAgeSeconds=$guiResultAge}', probe)
+
+
+class NtnnKhbsY8Lan2Plan(unittest.TestCase):
+    """The Y8 lần-2 case types three rounds: the lần đầu and lần 1 of the phần I lần-1 case, then its own lần 2 (AZ only)."""
+    LAN1, LAN2 = '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026'
+
+    def test_plan_lists_and_leaf_count(self):
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        self.assertRegex(plans, r'KhbsSoLan\(string caseId\)\{return [^;]*caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"[^;]*\?2:')
+        self.assertIn('caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?%d:' % (m.tax_leaf_count(self.LAN2) + 4), plans)
+        self.assertIn('caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"?%d:' % (m.tax_leaf_count(self.LAN1) + 4), plans)
+        self.assertEqual(m.input_mode(self.LAN2), 'khbs-original-entry-export')
+        probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
+        self.assertEqual(probe.count("@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026')"), 2)
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_entry_rounds(self):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory)
+            (folder / 'P.cs').write_text('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.2");foreach(string id in new string[]{"%s","%s"})for(int r=-1;r<4;r++){HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.KhbsEntry(id,r);Console.WriteLine(id+"\\t"+r+"\\t"+(e==null?"-":String.Join("\\t",e.Entries)));}}}' % (self.LAN1, self.LAN2), encoding='utf-8')
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs'), str(ROOT / 'HtkkOracleBaseline.cs')], check=True, capture_output=True)
+            run = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True)
+        rounds = {}
+        for line in run.stdout.decode('utf-8', 'replace').splitlines():
+            case_id, number, *entries = line.split('\t')
+            rounds[(case_id, int(number))] = None if entries == ['-'] else entries
+        for number in (-1, 2, 3):
+            self.assertIsNone(rounds[(self.LAN1, number)])
+        for number in (-1, 3):
+            self.assertIsNone(rounds[(self.LAN2, number)])
+        # Rounds 0 and 1 are exactly the lần đầu and lần 1 of the phần I lần-1 case (its web file is the staged previous version).
+        for number in (0, 1):
+            self.assertEqual(rounds[(self.LAN2, number)], rounds[(self.LAN1, number)])
+        lan1, lan2 = rounds[(self.LAN1, 1)], rounds[(self.LAN2, 2)]
+        self.assertEqual([(a, b) for a, b in zip(lan1, lan2) if a != b], [('number|AZ60|220000000', 'number|AZ60|240000000')])
+        self.assertEqual(len(lan1), len(lan2))
 
 
 if __name__ == '__main__':

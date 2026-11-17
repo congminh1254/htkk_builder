@@ -53,6 +53,8 @@ CASES = {
         'leafTarget': 265, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '1000000'], ['1052', '1000000']], 'ct10': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
     '01NTNN-NCCNN-khbs-part2-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part2-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (8748, 'b289ac26290d25dd376ee1951d0ae4cc8496bef481d12f66b681cf50f304f5e6'), 'original': (3940, 'c12296c09bd11817f5dfa2e07ba76d1c530034a4d909ae3bccbaea0d0ec97ff0'), 'prior': None,
         'leafTarget': 249, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1052', '4000000']], 'ct10': '4000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
+    '01NTNN-NCCNN-khbs-lan2-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-lan2-m10-2026', 'menuId': 'Y8', 'soLan': 2, 'web': (7918, '0b55fe92318e50f6918a404436e903382847d871c1ba09147ae795b152e4e130'), 'original': (3742, '84942b95573d8c64dc60c9c765674765ec253b340716320a3fb0908ff688dd03'), 'prior': (9307, '349aec81f924153b9c0a4d57bca8f026d57e5698504083e0a22f9c1a5a9e412d'),
+        'leafTarget': 223, 'expected': {'rows': ['(10)', '(13)', '(14)'], 'subitems': [['1052', '1000000']], 'ct10': '1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
 }
 for _spec in CASES.values():
     _spec.setdefault('annexParts', ())

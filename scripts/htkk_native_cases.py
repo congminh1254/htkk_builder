@@ -124,6 +124,7 @@ TRUSTED_ADAPTERS={
  '01-ntnn-tt80-2.5.1-khbs':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'I9','xmlVersion':'2.5.1','periods':{'month':('09/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
  '01-ntnn-tt80-2.5.1-khbs-lan2':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'I9','xmlVersion':'2.5.1','periods':{'month':('09/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
  '01-ntnn-nccnn-tt89-3.0.9-khbs':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Y8','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
+ '01-ntnn-nccnn-tt89-3.0.9-khbs-lan2':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Y8','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
  # KHBS 05/KK-TNCN: L7 quý 3/2026 (monthly first declarations are refused from 4/2026, HTKK 0682) and Z8 quý 4/2026, both
  # imported; lần 2 has its own adapter; the 05-1/PBT case is imported then its Thuế tỉnh/CCT chosen in the grid (ImportTick).
  '05-kk-tncn-2.9.3-khbs':{'producer':KK05_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'L7','xmlVersion':'2.9.3','periods':{'quarter':('3/2026',),'month':('03/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},

@@ -322,6 +322,16 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-ntnn-nccnn-tt89-3.0.9-khbs-lan2",
+      "htkkVersion": "5.8.2",
+      "menuId": "Y8",
+      "xmlVersion": "3.0.9",
+      "producer": "scripts/generate-htkk-web-ntnn-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "05-kk-tncn-2.9.3-khbs",
       "htkkVersion": "5.8.2",
       "menuId": "L7",
@@ -1989,6 +1999,27 @@
         "activityCode": "00",
         "annexes": [],
         "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01NTNN-NCCNN-khbs-lan2-M10-2026",
+      "producerCase": "ntnn01-nccnn-khbs-lan2-m10-2026",
+      "adapterId": "01-ntnn-nccnn-tt89-3.0.9-khbs-lan2",
+      "format": "htkk-web-ntnn01-nccnn-khbs-lan2-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn01-nccnn-khbs-lan2-m10-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn01-nccnn-khbs-lan2-m10-2026-input",
+      "outputBranch": "declaration-web-native-ntnn01-nccnn-khbs-lan2-m10-2026-output",
+      "statusContext": "htkk-native/ntnn01-nccnn-khbs-lan2-m10-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "Y8",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 2
       }
     },
     {
