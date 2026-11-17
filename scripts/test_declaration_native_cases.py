@@ -54,7 +54,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'Y7', 'Y7', 'Y7', 'D4', 'D4', 'D4', 'D4', 'Z3', 'Z3', 'Z3', 'Z3', 'X9', 'Y1', 'Y8', 'Y8', 'C9', 'D6', 'X9', 'Y1'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'D4', 'D4', 'D4', 'D4', 'Z3', 'Z3', 'Z3', 'Z3', 'X9', 'Y1', 'Y8', 'Y8', 'C9', 'D6', 'X9', 'Y1'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -320,7 +320,7 @@ class InputPrivacy(unittest.TestCase):
         # Z8 05/KK-TNCN TT89: the web manifest carries htkkVersion 5.8.2 (the registry case version); no other
         # declaration manifest may carry the key, and the Z8 manifest must.
         # 03/TNDN C7 rate 15% / 17% (HTKK 5.8.2 oracle): the web writes htkkVersion for these producer cases too.
-        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026'}))
+        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'}))
         # HTKK 5.8.3 observation cases (X9/Y1 to 07/10/2026, Y8 one part II table) name 5.8.3; every other one 5.8.2.
         for case in d.MANIFEST_HTKK_VERSION_CASES:
             self.assertEqual(registry.htkk_version(case), '5.8.3' if case in {'02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026'} else '5.8.2')
@@ -674,8 +674,33 @@ class WorkflowAndProbe(unittest.TestCase):
         self.assertIn('1+(HtkkDeclarationCasePlans.ImportAddsAllAnnexes(declarationPlan)?0:declarationPlan.Annexes.Length)', driver)
         # A modal original refusal of the period confirmation is reported by catalogue ID only.
         block = driver[driver.index('Form periodMessage;'):driver.index('if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting)')]
-        self.assertIn('declarationPeriodRejectedMessageId=OriginalMessageCatalogueId(periodText)', block)
-        self.assertNotIn('PerformClick', block)
+        self.assertIn('int periodMessageId=OriginalMessageCatalogueId(periodText);', block)
+        self.assertIn('declarationPeriodRejectedMessageId=periodMessageId;DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodOriginalMessageRejected);return;', block)
+        # Only the reviewed information message 0699 of Y7 (btnDongY_Click: frmMessage style 3, no icon, result discarded, then
+        # OpenToKhai) is closed with its one button, once; nothing else is ever clicked here.
+        self.assertEqual(block.count('PerformClick'), 1)
+        self.assertIn('if(declarationPeriodInfoMessageId==0&&HtkkDeclarationCasePlans.PeriodInfoMessageAccepted(declarationPlan,periodMessageId)){declarationPeriodInfoMessageId=periodMessageId;Record();DeclarationMessageClose(periodMessage).PerformClick();return;}', block)
+        plans_text = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        self.assertIn('internal static bool PeriodInfoMessageAccepted(HtkkDeclarationCasePlan plan,int messageId){return plan!=null&&plan.MenuId=="Y7"&&messageId==699;}', plans_text)
+        self.assertEqual(plans_text.count('PeriodInfoMessageAccepted('), 1)
+        fields = json.loads((ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8'))
+        self.assertIn('declarationPeriodInfoMessageId', json.dumps(fields))
+        safe = (ROOT / 'Get-HtkkSafeGuiReferenceResult.ps1').read_text(encoding='utf-8')
+        self.assertIn("$value['declarationPeriodInfoMessageId'] -lt 0 -or $value['declarationPeriodInfoMessageId'] -gt 699){throw 'invalid'}", safe)
+
+    def test_period_info_message_is_tolerated_only_for_y7_0699(self):
+        # Behaviour of the closed predicate, read from the C# source: menu Y7 and catalogue message 699, nothing else.
+        plans_text = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        body = plans_text[plans_text.index('internal static bool PeriodInfoMessageAccepted('):]
+        body = body[:body.index('}') + 1]
+        self.assertEqual(re.findall(r'plan\.MenuId=="([A-Z0-9]+)"', body), ['Y7'])
+        self.assertEqual(re.findall(r'messageId==(\d+)', body), ['699'])
+        self.assertNotIn('||', body)
+        # Every Y7 case (3.0.9 and 3.1.0) has a plan of menu Y7, the one the predicate reads.
+        y7 = [case for case in CASES if registry.CASES[case]['unit']['menuId'] == 'Y7']
+        self.assertEqual(len(y7), 7)
+        for case in y7:
+            self.assertTrue(plan_block(case).startswith('caseId,"Y7",'))
 
     def test_root_exit_diagnostic_is_bounded_exit_code_and_category(self):
         # Run 42218283778: the root exited during the original import with no message.

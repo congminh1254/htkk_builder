@@ -121,8 +121,8 @@ def _tree(case_id, native=False, created=None):
                     _add(sale, leaf, value)
                 _add(_add(node, 'ChenhLech'), 'ct9', totals['tongCongThueGTGTDuocGiam'])
                 continue
-            if case_id in d.TCKT_ROWS:  # 01/TCKT bảng kê rows and totals of the independent oracle
-                element, table_name, rows_, totals = d.tckt_expected(case_id)
+            if case_id in d.TCKT_ROWS:  # 01/TCKT bảng kê rows and totals (3.1.0: and PL 01-3) of the independent oracle
+                element, table_name, rows_, totals = d.tckt_reduction_expected(case_id) if annex == 'PLuc_giamthue_NQ43' else d.tckt_expected(case_id)
                 for index, row in enumerate(rows_):
                     row_ = _add(node, table_name, attrib={'id': 'ID_%d' % (index + 1)})
                     for leaf, value in row.items():

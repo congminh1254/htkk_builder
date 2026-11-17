@@ -44,6 +44,11 @@ TRUSTED={
  # with name, MST and amounts, and the period dialog refuses a tờ khai without bảng kê (0670).
  '01-tckt-tt89-3.0.9-bk1':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_TCKT_TT89_309.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'}},
  '01-tckt-tt89-3.0.9-bk2':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_TCKT_TT89_309.xsd','annexes':['01-2'],'mode':'web-xml-import-reexport','periodTypes':{'month','day'}},
+ # 01/TCKT TT89 3.1.0 (Y7 of HTKK 5.8.2/5.8.3, Tckt01TT89Nckt310, HTKK 5.8.2 oracle): the same bảng kê adapters, and 01/BK-KTHTKD
+ # with PL 01-3 "PL NQ 43/2026/QH16" (rows of the ticked bảng kê rows; it needs a ticked row with TNCN > 0, so no zero case).
+ '01-tckt-tt89-3.1.0-bk1':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.1.0','schemaId':'Validate/01_TCKT_TT89_310.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.2'},
+ '01-tckt-tt89-3.1.0-bk2':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.1.0','schemaId':'Validate/01_TCKT_TT89_310.xsd','annexes':['01-2'],'mode':'web-xml-import-reexport','periodTypes':{'month','day'},'htkkVersion':'5.8.2'},
+ '01-tckt-tt89-3.1.0-bk1-pl013':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.1.0','schemaId':'Validate/01_TCKT_TT89_310.xsd','annexes':['01-1','01-3'],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.2'},
  # 04/GTGT TT80 (D4 2.7.4, HTKK 5.8.2 oracle): KieuKy 21, tháng/quý đến 09/2026; the annex adapter ticks PL 01-3 (giảm thuế
  # NQ 142/174/204), which needs at least one sale row with a rate, so it has no zero case.
  '04-gtgt-tt80-2.7.4':{'menuId':'D4','businessClass':'Gtgt04TT80','xmlVersion':'2.7.4','schemaId':'Validate/04_GTGT_TT80_274.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.2'},
@@ -57,7 +62,7 @@ TRUSTED={
 # 05-1/PBT adapters: the annex needs at least one row with loại, tỉnh, xã, Thuế tỉnh/CCT and CQT quản lý (Header B35-B39),
 # so there is no zero declaration with the annex.
 # The 02/QTT refund adapter: a refund needs số thuế nộp thừa [44] > 0 and [46] > 0, so no zero declaration either.
-NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2'})
+NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2','01-tckt-tt89-3.1.0-bk1','01-tckt-tt89-3.1.0-bk2','01-tckt-tt89-3.1.0-bk1-pl013'})
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})
  check(value['format']=='htkk-descriptor-native-case-design-v1' and value['htkkVersion']=='5.8.1')

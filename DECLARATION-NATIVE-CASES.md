@@ -728,6 +728,30 @@ công thức XLS (K theo nhóm ngành DC_185, I = H × K không làm tròn; O = 
 Câu hỏi cho lần chạy: sau "Nhập từ XML", `AutoBindData_0` có tích lại hopTacKD/batDongSan theo bảng kê, `AutoBindData_2` có giữ
 DiaChi_BDS của tệp, ct06_tyLe có xuất "0.02"/"0.01" như web, và ct6/ct10 (dòng tiêu đề, ô trống) có xuất 0 không.
 
+Thông báo 0699 (sửa sau các lần chạy 44023258598, 44023261804: dừng ở `declaration-period-original-message-rejected`, mã 699):
+`frmHTKKPeriod.btnDongY_Click` (5.8.1 0x60004dc, 5.8.2 0x60004de, 5.8.3 0x60004e0) với menu Y7, sau khi mọi kiểm tra kỳ đã qua,
+gọi `new frmMessage("0699","3","","Thông báo").ShowDialog()` — kiểu 3 là một nút "Đóng", biểu tượng rỗng là information.ico —
+bỏ kết quả rồi `OpenToKhai`. Đây là lời nhắc ("Tờ khai này được tổng hợp từ phụ lục…"), không phải từ chối. Driver
+(`HtkkDeclarationWebImport.cs`) đóng đúng thông báo này một lần bằng nút duy nhất của nó và ghi `declarationPeriodInfoMessageId`
+= 699 (`HtkkDeclarationCasePlans.PeriodInfoMessageAccepted`: chỉ Y7 và 699); mọi thông báo khác sau nút "Đồng ý" vẫn là từ chối.
+
+## 01/TCKT TT89 (Y7, 3.1.0) — bốn ca không chặn phát hành, oracle HTKK 5.8.2
+
+Nhà sản xuất `htkk_web` nhánh `work/tckt-y7-310` (khóa hợp đồng `Y7@3.1.0`). HTKK 5.8.2/5.8.3 đổi Y7 sang 3.1.0
+(`Tckt01TT89Nckt310`, `01_TCKT_TT89_310.xls`, XSD `01_TCKT_TT89_310.xsd`; mọi tệp Y7 của 5.8.2 và 5.8.3 trùng byte, IL lớp trùng)
+và thêm phụ lục 01-3 "PL NQ 43/2026/QH16" (sheet `giam_thue`). Cột tích NQ 43 (01-1 X `ct09a`, 01-2 S `ct12a`) giảm 30% I / P của
+dòng; PL 01-3 chép các dòng đã tích (`daySangPLGiamThue_PL01_1/2` → `CopyTableToTable5`). Hộp chọn kỳ giữ nhánh Y7 của 5.8.1:
+dòng 3 (PL 01-3) bỏ tích dòng 2 (02/BK-KTBĐS), nên với 01/BK-KTHTKD thứ tự tích nào cũng được.
+
+| Ca | Adapter | Kỳ | Bảng kê | Kiểm tra chính |
+|---|---|---|---|---|
+| `01TCKT-310-hop-tac-kd-two-individuals-Q4-2026` | `01-tckt-tt89-3.1.0-bk1` | quý 4/2026 | 01/BK-KTHTKD | như 3.0.9, `ct09a` = 0 |
+| `01TCKT-310-bds-three-lessors-M10-2026` | `01-tckt-tt89-3.1.0-bk2` | tháng 10/2026 | 02/BK-KTBĐS | như 3.0.9, `ct12a` = 0 |
+| `01TCKT-310-bds-occurrence-D15-10-2026` | `01-tckt-tt89-3.1.0-bk2` | lần phát sinh 15/10/2026 | 02/BK-KTBĐS | như 3.0.9 |
+| `01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026` | `01-tckt-tt89-3.1.0-bk1-pl013` | quý 4/2026 | 01/BK-KTHTKD + PL 01-3 | I 3.500.000 / 7.000.000 / 4.000.000; PL hai dòng ct10 5.000.000 / 10.000.000, ct11 1.500.000 / 3.000.000; [09] 14.500.000 |
+
+Oracle độc lập: `TCKT_ROWS` (phần tử thứ năm = ô tích) và `tckt_reduction_expected`.
+
 ## 04/GTGT TT80 (D4, 2.7.4) — bốn ca không chặn phát hành, oracle HTKK 5.8.2
 
 Nhà sản xuất `htkk_web` nhánh `work/gtgt04` (`scripts/generate-htkk-declaration-reference.mjs`, thiết kế trong

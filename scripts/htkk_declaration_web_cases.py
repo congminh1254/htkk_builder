@@ -280,6 +280,7 @@ TTS_CODE = '10129_9999999997000_'
 TTS_ORGANIZATION_ADDRESS = (ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội')[:50]
 TTS_TEXTS = ('Hợp đồng', 'Kỳ thanh toán', 'Kỳ thanh toán cuối cùng', 'Hợp đồng khai lần đầu', 'Phường Sơn Tây', 'H\xf4\u0323 chi\xea\u0301u', 'Gi\xe2\u0301y th\xf4ng ha\u0300nh', 'CMT biên giới', 'Gi\xe2\u0301y t\u01a1\u0300 kh\xe1c')
 TCKT_NAME = 'TỜ KHAI THUẾ CỦA TỔ CHỨC KHAI THAY'
+TCKT_310_SCHEMA = 'Validate/01_TCKT_TT89_310.xsd'
 TEMPLATE_TT89 = '(Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
 WEB_CODE = 'CCKK'
@@ -510,6 +511,17 @@ CASES = {
                                                [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'CA NHAN CHO THUE C - GIẢ LẬP', 'SO 1 DUONG GIA LAP', 'SO 2 DUONG GIA LAP', 'SO 3 DUONG GIA LAP']),
     '01TCKT-bds-occurrence-D15-10-2026': _case('tckt01-bds-occurrence-d15-10-2026', 'Y7', '2007', '3.0.9', 'Validate/01_TCKT_TT89_309.xsd', ('D', '15/10/2026', '15/10/2026', '15/10/2026'), None, '2026-10-27', '2026-10-27', 63, ['PLuc_CANHAN_TTS'], WORKBOOK_SERVICE,
                                                [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN CHO THUE D - GIẢ LẬP', 'SO 4 DUONG GIA LAP']),
+    # Y7 01/TCKT TT89 3.1.0 (non-gating, HTKK 5.8.2 oracle; Tckt01TT89Nckt310, schema 01_TCKT_TT89_310, sources byte-identical in
+    # 5.8.3): the three 3.0.9 designs (rows carry ct09a / ct12a = 0) and 01/BK-KTHTKD with PL 01-3 "PL NQ 43/2026/QH16"
+    # (PLuc_giamthue_NQ43: one row per ticked bảng kê row, ct09_ten = the DC_185 name of the row).
+    '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026': _case('tckt01-310-hop-tac-kd-two-individuals-q4-2026', 'Y7', '2007', '3.1.0', TCKT_310_SCHEMA, ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 67, ['PLuc_HKD_CNKD'], WORKBOOK_SERVICE,
+                                                           [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN HOP TAC A - GIẢ LẬP', 'CA NHAN HOP TAC B - GIẢ LẬP', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Hoạt động kinh doanh khác']),
+    '01TCKT-310-bds-three-lessors-M10-2026': _case('tckt01-310-bds-three-lessors-m10-2026', 'Y7', '2007', '3.1.0', TCKT_310_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 82, ['PLuc_CANHAN_TTS'], WORKBOOK_SERVICE,
+                                                   [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'CA NHAN CHO THUE C - GIẢ LẬP', 'SO 1 DUONG GIA LAP', 'SO 2 DUONG GIA LAP', 'SO 3 DUONG GIA LAP']),
+    '01TCKT-310-bds-occurrence-D15-10-2026': _case('tckt01-310-bds-occurrence-d15-10-2026', 'Y7', '2007', '3.1.0', TCKT_310_SCHEMA, ('D', '15/10/2026', '15/10/2026', '15/10/2026'), None, '2026-10-27', '2026-10-27', 64, ['PLuc_CANHAN_TTS'], WORKBOOK_SERVICE,
+                                                   [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN CHO THUE D - GIẢ LẬP', 'SO 4 DUONG GIA LAP']),
+    '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026': _case('tckt01-310-pl-nq43-hop-tac-kd-q4-2026', 'Y7', '2007', '3.1.0', TCKT_310_SCHEMA, ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 90, ['PLuc_HKD_CNKD', 'PLuc_giamthue_NQ43'], WORKBOOK_SERVICE,
+                                                   [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN HOP TAC A - GIẢ LẬP', 'CA NHAN HOP TAC B - GIẢ LẬP', 'CA NHAN HOP TAC C - GIẢ LẬP', 'Hoạt động kinh doanh khác', 'Hoạt động cho thuê tài sản trừ bất động sản', 'Hoạt động cung cấp sản phẩm nội dung thông tin số về giải trí, trò chơi điện tử, phim số, ảnh số, nhạc số, quảng cáo số']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases'] + workbook_design.PLAN_582['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
@@ -526,7 +538,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
 
 
 def is_case(case_id):
@@ -1076,46 +1088,87 @@ TCKT_ROWS = {
     '01TCKT-hop-tac-kd-two-individuals-Q4-2026': ('01-1', (('9999999901', '02', '300000000', '300000000'), ('9999999919', '06', '120000000', '110000000'))),
     '01TCKT-bds-three-lessors-M10-2026': ('01-2', (('9999999901', '60000010', '10', False), ('9999999919', '1200000001', '200000000', False), ('9999999926', '300000000', '0', True))),
     '01TCKT-bds-occurrence-D15-10-2026': ('01-2', (('9999999933', '80000000', '20000000', False),)),
+    # 3.1.0 (Tckt01TT89Nckt310, 01_TCKT_TT89_310): a fifth element is the NQ 43/2026/QH16 tick (ct09a / ct12a).
+    '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026': ('01-1', (('9999999901', '02', '300000000', '300000000', False), ('9999999919', '06', '120000000', '110000000', False))),
+    '01TCKT-310-bds-three-lessors-M10-2026': ('01-2', (('9999999901', '60000010', '10', False, False), ('9999999919', '1200000001', '200000000', False, False), ('9999999926', '300000000', '0', True, False))),
+    '01TCKT-310-bds-occurrence-D15-10-2026': ('01-2', (('9999999933', '80000000', '20000000', False, False),)),
+    '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026': ('01-1', (('9999999901', '06', '500000000', '500000000', True), ('9999999919', '03', '200000000', '200000000', True), ('9999999926', '05', '100000000', '80000000', False))),
 }
 
 
 def tckt_expected(case_id):
-    """Per-row leaves and totals of a Y7 design case."""
+    """Per-row leaves and totals of a Y7 design case. 3.1.0 rows (a fifth element, the NQ 43 tick) follow the 310 workbook:
+    01-1 I = ROUND(H x K - H x K x 0,3) when ticked, else ROUND(H x K); 01-2 P = ROUND(AB - AB x 0,3) when ticked, else AB (the
+    3.0.9 P); ct09a / ct12a = the tick."""
     sheet, table = TCKT_ROWS[case_id]
     D = decimal.Decimal
     rows = []
     if sheet == '01-1':
         sums = [D(0), D(0), D(0)]
-        for mst, code, revenue, taxable in table:
+        for row in table:
+            mst, code, revenue, taxable = row[:4]
             rate = D(TCKT_RATES[code])
             tax = D(taxable) * rate
+            if len(row) == 5:
+                tax = _round(tax - tax * D('0.3')) if row[4] else _round(tax)
             if tax != tax.to_integral_value() or rate != rate.quantize(D('0.01')):
                 reject('VALUE')
-            rows.append({'ct05': mst, 'ct06_ma': code, 'ct06_tyLe': str(rate.quantize(D('0.01'))), 'ct07': revenue, 'ct08': taxable, 'ct09': str(int(tax))})
+            rows.append({'ct05': mst, 'ct06_ma': code, 'ct06_tyLe': str(rate.quantize(D('0.01'))), 'ct07': revenue, 'ct08': taxable, 'ct09': str(int(tax)), **({'ct09a': '1' if row[4] else '0'} if len(row) == 5 else {})})
             sums = [sums[0] + D(revenue), sums[1] + D(taxable), sums[2] + tax]
         return 'PLuc_HKD_CNKD', 'CTietBKeHKD_CNKD', rows, {'ct11': str(int(sums[0])), 'ct12': str(int(sums[1])), 'ct13': str(int(sums[2]))}
     sums = [D(0), D(0), D(0), D(0)]
-    for mst, revenue, deducted, exempt in table:
+    for row in table:
+        mst, revenue, deducted, exempt = row[:4]
         vat = D(0) if exempt else _round(D(revenue) * 5 / 100)
         pit = D(0) if exempt else _round((D(revenue) - D(deducted)) * 5 / 100)
-        rows.append({'ct06': mst, 'ct08': revenue, 'ct09': deducted, 'ct10': '1' if exempt else '0', 'ct11': str(vat), 'ct12': str(pit)})
+        if len(row) == 5 and row[4]:
+            pit = _round(pit - pit * D('0.3'))
+        rows.append({'ct06': mst, 'ct08': revenue, 'ct09': deducted, 'ct10': '1' if exempt else '0', 'ct11': str(vat), 'ct12': str(pit), **({'ct12a': '1' if row[4] else '0'} if len(row) == 5 else {})})
         sums = [sums[0] + D(revenue), sums[1] + D(deducted), sums[2] + vat, sums[3] + pit]
     return 'PLuc_CANHAN_TTS', 'CTietBKeCNTTS', rows, {'tong_doanhThu': str(sums[0]), 'tong_duocTru': str(sums[1]), 'tong_thueGTGT': str(sums[2]), 'tong_thueTNCN': str(sums[3])}
 
 
-def _tckt(case_id, root):
-    element, table, rows, totals = tckt_expected(case_id)
-    annex = root.find(_xpath('HSoKhaiThue/PLuc/' + element))
-    found = root.findall(_xpath('HSoKhaiThue/PLuc/%s/%s' % (element, table)))
-    if annex is None or len(found) != len(rows):
-        reject('VALUE')
-    for node, row in zip(found, rows):
-        for name, value in row.items():
-            if [(n.text or '') for n in node.findall('{%s}%s' % (NS, name))] != [value]:
-                reject('VALUE')
-    for name, value in totals.items():
-        if [(n.text or '') for n in annex.findall('{%s}%s' % (NS, name))] != [value]:
+def tckt_reduction_expected(case_id):
+    """PL 01-3 "PL NQ 43/2026/QH16" (PLuc_giamthue_NQ43) of a 3.1.0 case: one row per ticked bảng kê row, in order
+    (daySangPLGiamThue_PL01_1/2 -> CopyTableToTable5): ct08 MST, ct09_ma the nhóm (01-2: 07), ct10 the unreduced TNCN (01-1
+    AD = H x K, 01-2 AB), ct11 = ct10 x 0,3 (giam_thue J45 = I45*0.3); totals ct12 / ct13. None without ticked rows."""
+    sheet, table = TCKT_ROWS[case_id]
+    D = decimal.Decimal
+    rows = []
+    for row in table:
+        if len(row) != 5 or not row[4]:
+            continue
+        if sheet == '01-1':
+            mst, code, _, taxable = row[:4]
+            base = D(taxable) * D(TCKT_RATES[code])
+        else:
+            mst, revenue, deducted, exempt = row[:4]
+            code, base = '07', D(0) if exempt else _round((D(revenue) - D(deducted)) * 5 / 100)
+        cut = base * D('0.3')
+        if base != base.to_integral_value() or cut != cut.to_integral_value():
             reject('VALUE')
+        rows.append({'ct08': mst, 'ct09_ma': code, 'ct10': str(int(base)), 'ct11': str(int(cut))})
+    if not rows:
+        return None
+    return 'PLuc_giamthue_NQ43', 'CTietGiamThue', rows, {'ct12': str(sum(int(r['ct10']) for r in rows)), 'ct13': str(sum(int(r['ct11']) for r in rows))}
+
+
+def _tckt(case_id, root):
+    reduction = tckt_reduction_expected(case_id)
+    if (reduction is None) != (root.find(_xpath('HSoKhaiThue/PLuc/PLuc_giamthue_NQ43')) is None):
+        reject('VALUE')
+    for element, table, rows, totals in [tckt_expected(case_id)] + ([reduction] if reduction else []):
+        annex = root.find(_xpath('HSoKhaiThue/PLuc/' + element))
+        found = root.findall(_xpath('HSoKhaiThue/PLuc/%s/%s' % (element, table)))
+        if annex is None or len(found) != len(rows):
+            reject('VALUE')
+        for node, row in zip(found, rows):
+            for name, value in row.items():
+                if [(n.text or '') for n in node.findall('{%s}%s' % (NS, name))] != [value]:
+                    reject('VALUE')
+        for name, value in totals.items():
+            if [(n.text or '') for n in annex.findall('{%s}%s' % (NS, name))] != [value]:
+                reject('VALUE')
 
 
 def _expected(case_id, spec, root, items, raw):

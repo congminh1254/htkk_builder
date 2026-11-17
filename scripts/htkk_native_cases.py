@@ -170,6 +170,11 @@ TRUSTED_ADAPTERS={
  # 02/BK-KTBĐS (Quý disabled, Lần phát sinh allowed; the tỉnh/xã/CQT panel of the period dialog opens).
  '01-tckt-tt89-3.0.9-bk1':_declaration('Y7','3.0.9',{'quarter':('4/2026',)},['01-1']),
  '01-tckt-tt89-3.0.9-bk2':_declaration('Y7','3.0.9',{'month':('10/2026',),'day':('15/10/2026',)},['01-2']),
+ # Y7 01/TCKT TT89 3.1.0 (non-gating, HTKK 5.8.2 oracle; the Y7 sources of 5.8.3 are byte-identical). The same period dialog
+ # (its Y7 branches are those of 5.8.1); the third annex row PL 01-3 "PL NQ 43/2026/QH16" goes with either bảng kê.
+ '01-tckt-tt89-3.1.0-bk1':{**_declaration('Y7','3.1.0',{'quarter':('4/2026',)},['01-1']),'htkkVersion':'5.8.2'},
+ '01-tckt-tt89-3.1.0-bk2':{**_declaration('Y7','3.1.0',{'month':('10/2026',),'day':('15/10/2026',)},['01-2']),'htkkVersion':'5.8.2'},
+ '01-tckt-tt89-3.1.0-bk1-pl013':{**_declaration('Y7','3.1.0',{'quarter':('4/2026',)},['01-1','01-3']),'htkkVersion':'5.8.2'},
  # D4 04/GTGT TT80 2.7.4 (non-gating, cases on the HTKK 5.8.2 oracle; the menu node and every 04_*GTGT_TT80_274 resource are
  # byte-identical in 5.8.1). KieuKy 21 = SetLayoutToKhaiThangQuyLanPhatSinh (month, quarter). HTKK 5.8.2 ends D4 at
  # 30/09/2026 (CheckToKhaiHetHieuLuc; Z3 TT89 from 01/10/2026), so the periods end at tháng 9 / quý 3/2026. The annex

@@ -27,7 +27,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationSheetBusy=false,declarationFlowStarted=false;
  private Stopwatch declarationClock=null;
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
- private int declarationPeriodRejectedMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationCellZeroMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
+ private int declarationPeriodRejectedMessageId=0,declarationPeriodInfoMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationCellZeroMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
  // B8 visible period annex list (HtkkDeclarationCasePlans.VisibleAnnexListReviewed), value-free and text-free.
  // declarationAnnexListMask bits: 1 the list was visible on a plan whose layout hides it; 2 the reviewed handling matched;
  // 4 a row that is not a checkbox or whose label is neither a case annex nor KHBS; 8 a KHBS row ticked; 16 a KHBS row
@@ -110,8 +110,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationMenuClicked","declarationPeriodObserved","declarationPeriodMatched","declarationAnnexMatched","declarationSheetObserved","declarationIdentityMatched","declarationSourcePinsMatched","declarationImportSheetMatched","declarationSchemaValid","declarationServiceIdentityMatched","declarationCreationDateValid","declarationTreeMatched"};
   bool[] values=new bool[]{declarationMenuClicked,declarationPeriodObserved,declarationPeriodMatched,declarationAnnexMatched,declarationSheetObserved,declarationIdentityMatched,declarationSourcePinsMatched,declarationImportSheetMatched,declarationSchemaValid,declarationServiceIdentityMatched,declarationCreationDateValid,declarationTreeMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationPeriodRejectedMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationCellZeroMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
-  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationCellZeroMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
+  names=new string[]{"declarationPeriodRejectedMessageId","declarationPeriodInfoMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationCellZeroMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
+  int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationPeriodInfoMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationCellZeroMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();
  }
@@ -372,7 +372,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // the reviewed period/annex set with a modal catalogue message (e.g. 0485, 0682) before
   // any sheet opens. Report its catalogue ID only (never text) and stop; nothing is clicked.
   Form periodMessage;string periodText;
-  if(forms.Count==0&&!declarationSheetObserved&&DeclarationMessage(out periodMessage,out periodText)){declarationPeriodRejectedMessageId=OriginalMessageCatalogueId(periodText);DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodOriginalMessageRejected);return;}
+  // Y7 (01/TCKT TT89) only: btnDongY_Click shows the information message 0699 after every period check passed and then
+  // opens the tờ khai (HtkkDeclarationCasePlans.PeriodInfoMessageAccepted). It is recorded and closed once with its only
+  // button ("Đóng"); any other message, or a second one, is still a refusal.
+  if(forms.Count==0&&!declarationSheetObserved&&DeclarationMessage(out periodMessage,out periodText)){
+   int periodMessageId=OriginalMessageCatalogueId(periodText);
+   if(declarationPeriodInfoMessageId==0&&HtkkDeclarationCasePlans.PeriodInfoMessageAccepted(declarationPlan,periodMessageId)){declarationPeriodInfoMessageId=periodMessageId;Record();DeclarationMessageClose(periodMessage).PerformClick();return;}
+   declarationPeriodRejectedMessageId=periodMessageId;DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodOriginalMessageRejected);return;}
   if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   Control grid=grids[0];declarationSheetObserved=true;declarationSheetCount=Convert.ToInt32(Get(Get(grid,"Sheets"),"Count"));

@@ -1905,6 +1905,7 @@
     "declarationCreationDateValid",
     "declarationTreeMatched",
     "declarationPeriodRejectedMessageId",
+    "declarationPeriodInfoMessageId",
     "declarationAnnexSelectedCount",
     "declarationSheetCount",
     "declarationCellCheckCount",
@@ -3394,6 +3395,10 @@
         "01TCKT-hop-tac-kd-two-individuals-Q4-2026",
         "01TCKT-bds-three-lessors-M10-2026",
         "01TCKT-bds-occurrence-D15-10-2026",
+        "01TCKT-310-hop-tac-kd-two-individuals-Q4-2026",
+        "01TCKT-310-bds-three-lessors-M10-2026",
+        "01TCKT-310-bds-occurrence-D15-10-2026",
+        "01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026",
         "04GTGT-TT80-one-group-M09-2026",
         "04GTGT-TT80-quarter-Q3-2026",
         "04GTGT-TT80-four-groups-rounding-M08-2026",
@@ -3564,6 +3569,16 @@
       "default": 0,
       "minimum": 0,
       "maximum": 9999,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationPeriodInfoMessageId": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 699,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"
