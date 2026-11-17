@@ -370,23 +370,14 @@ KEY_PATH_SUFFIX = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
 def catalogue_texts(case_id, items, allowed):
     """Extra texts a case's native export may carry (02/QTT-TNCN, 05/QTT-TNCN, 03/TNDN, 03/NTNN and 01/TCKT only, ``catalogueTexts``): the public HTKK catalogue texts of the
     menu, and on the 01-1/KHBS row key leaf a ' - '-joined key whose every piece is empty, a text of the case's files or a bounded
-    number/code/date shape (for 03/NTNN also a key text of the files ending in an empty piece, with its trailing space trimmed as
-    HTKK writes it).
-    Every other case gets none."""
+    number/code/date shape. Every other case gets none."""
     spec = case(case_id)
     texts = spec.get('catalogueTexts')
     if not texts:
         return frozenset()
     d = declaration()
     shaped = lambda piece: piece == '' or piece in allowed or bool(d.NUMBER.match(piece) or d.CODE.match(piece) or d.DATE.match(piece))
-    key = lambda value: ' - ' in value and len(value) <= 512 and all(shaped(piece) for piece in value.split(' - '))
-    keys = {value for path, value in items if path.endswith(KEY_PATH_SUFFIX) and key(value)}
-    # ``keyTrailingTrim`` (03/NTNN J1): a key whose LAST piece is empty is written by HTKK with its trailing space removed
-    # ("… - 15/08/2026 -" for the ' - '-joined "… - 15/08/2026 - "; runs 44101960535 and siblings, tree shape 525: the native
-    # text is the web text without its last character). Accepted only on the key leaf, and only when the text plus that one
-    # space is itself a text of the case's files (the web key leaf).
-    if spec.get('keyTrailingTrim') is True:
-        keys |= {value for path, value in items if path.endswith(KEY_PATH_SUFFIX) and value.endswith(' -') and value + ' ' in allowed}
+    keys = {value for path, value in items if path.endswith(KEY_PATH_SUFFIX) and ' - ' in value and len(value) <= 512 and all(shaped(piece) for piece in value.split(' - '))}
     return frozenset(texts) | frozenset(keys)
 
 

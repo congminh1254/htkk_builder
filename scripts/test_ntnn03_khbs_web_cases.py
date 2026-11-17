@@ -67,6 +67,9 @@ class Ntnn03KhbsWebCases(unittest.TestCase):
             self.assertEqual(m.catalogue_texts(case_id, [], frozenset()), ntnn03.CATALOGUE_TEXTS)
         for text in ('03/NTNN', '(11)', 'Thuế TNDN phải nộp', '(11) - Thuế TNDN phải nộp', '(9) - Tỷ lệ % thuế TNDN'):
             self.assertIn(text, ntnn03.CATALOGUE_TEXTS)
+        # No retention exception for the key: the web files carry the key trimmed as HTKK exports it (run 44101960535).
+        self.assertFalse(any('keyTrailingTrim' in c for c in m.CASES.values()))
+        self.assertEqual([m.CASES[c]['web'][0] for c in CASES], [5933, 5936, 5968])
         self.assertEqual(m.CASES[LAN2]['prior'], m.CASES[INCREASE]['web'])
         self.assertEqual(len({m.CASES[c]['original'] for c in CASES}), 1)
 
@@ -91,39 +94,6 @@ class Ntnn03KhbsWebCases(unittest.TestCase):
             self.assertNotIn(b'<PLuc>', files[sm.ORIGINAL_NAME])
         with self.assertRaises(m.NtnnKhbsWebCaseError):
             m.validate_xml(support.files(sm, INCREASE)[m.WEB_NAME], INCREASE, 'web')
-
-
-class Ntnn03KhbsNativeRetention(unittest.TestCase):
-    KEY = 'HSoThueDTu/HSoKhaiThue/PLuc/' + m.KEY_PATH_SUFFIX
-    # The web key of row A: every piece a text of the files or a date, ct3 and ct7 empty (the last piece).
-    WEB = 'TU VAN KY THUAT A - GIẢ LẬP - Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm - NHA THAU PHU A - GIẢ LẬP -  - HD-GL-031 - 15/08/2026 - '
-    # input_texts of the case files: the web key leaf itself among them.
-    ALLOWED = frozenset((WEB, 'TU VAN KY THUAT A - GIẢ LẬP', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'NHA THAU PHU A - GIẢ LẬP', 'HD-GL-031'))
-
-    def test_key_with_its_trailing_space_trimmed_as_htkk_writes_it(self):
-        # Runs 44101960535 and siblings: the native ct3_2_ten is the web key without its last character (tree shape 525).
-        native = self.WEB.rstrip(' ')
-        self.assertEqual(len(native), len(self.WEB) - 1)
-        for case_id in CASES:
-            self.assertIs(m.CASES[case_id]['keyTrailingTrim'], True)
-            self.assertIn(native, m.catalogue_texts(case_id, [(self.KEY, native)], self.ALLOWED))
-
-    def test_only_that_one_space_on_the_key_leaf_of_the_j1_cases(self):
-        native = self.WEB.rstrip(' ')
-        other = 'HSoThueDTu/HSoKhaiThue/PLuc/PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/ten_HSo'
-        for value in (native.rstrip('-').rstrip(' '), native + '  ', native.replace(' - HD-GL-031', ' - HD-GL-999'), ' ' + native, native[:-2] + '  -'):
-            self.assertNotIn(value, m.catalogue_texts(INCREASE, [(self.KEY, value)], self.ALLOWED))
-        self.assertNotIn(native, m.catalogue_texts(INCREASE, [(other, native)], self.ALLOWED))
-        # Not a key of the files plus one space: refused.
-        self.assertNotIn(native, m.catalogue_texts(INCREASE, [(self.KEY, native)], self.ALLOWED - {self.WEB}))
-        # Every other KHBS case keeps its rule: no trimmed key.
-        for case_id in m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES:
-            self.assertNotIn(native, m.catalogue_texts(case_id, [(self.KEY, native)], self.ALLOWED))
-        # The privacy walk itself refuses the trimmed key without this rule and takes it with it.
-        d = m.declaration()
-        with self.assertRaises(Exception):
-            d._texts([(self.KEY, native)], self.ALLOWED)
-        d._texts([(self.KEY, native)], self.ALLOWED | m.catalogue_texts(INCREASE, [(self.KEY, native)], self.ALLOWED))
 
 
 class Ntnn03KhbsDriverWiring(unittest.TestCase):

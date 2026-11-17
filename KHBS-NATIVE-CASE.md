@@ -854,6 +854,9 @@ passed (rates typed, Tổng hợp KHBS, export, KHBS schema), but `declaration-e
 mismatches, codes 19354 / 20754 = ordinals 193 and 207 of the web file, kind 5 (leaf text), native class 4 = the two `ct3_2_ten` keys of
 01-1/KHBS; first text shape 525 = native length 131 and a proper prefix of the 132-character web key. The J1 key ends with ct7 (ngày
 thanh toán, empty here), so the ' - '-joined key ends in " - "; HTKK writes it with that trailing space removed ("… - 15/08/2026 -").
-The web file must write the key the same way (htkk_web change; the pins then change). Retention was refused (`XML_PRIVACY`, leaf 149,
-section 16, `whitespace-variant`): `keyTrailingTrim` now accepts, on the key leaf of the J1 cases only, a text that plus one space is
-a text of the case's files. The "mismatches": 0 lines of the run log are the profile-alias and tax-ID oracles, not this comparison.
+Retention was refused (`XML_PRIVACY`, leaf 149, section 16, `whitespace-variant`): the trimmed key is no text of the staged files.
+The "mismatches": 0 lines of the run log are the profile-alias and tax-ID oracles, not this comparison. Cause in HTKK.exe (CLR 2.0):
+`CollectionDynamic01_1_KHBS` puts `ListToString(pieces, " - ")` into the cell as it is, and `WinDoWorkEvent.ExportDataTableToTableNode`
+writes every cell as `GetValueExportXML(...).ToString().Trim()` (.NET 2.0 String.Trim, both ends only). htkk_web now trims every KHBS
+cell value the same way (`lib/htkk-khbs-fragments.ts` `dotNetTrim`), so the web file carries the HTKK text and no privacy exception is
+needed; the J1 web pins changed (5933 / 5936 / 5968 bytes), the lần đầu file is unchanged.
