@@ -31,8 +31,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // summarises and exports; the whole tree is compared with the B2 file (270 leaves). HTKK's lần trước of round 2 is the saved
  // B1 main sheet (ReadSheet_LanTruoc), so the B2 sheet opens with the B1 vector ([32] 1.000.000) or zero (khbsOpenMainState 3/1).
  private const string KhbsLan2WebCaseId="01GTGT-khbs-lan2-sale10-M10-2026";
- private const string KhbsPriorB1MonthFileName="bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml",KhbsPriorB1Q3FileName="bs1_01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml";
- private string KhbsPriorB1FileName(){return KhbsQuarterCase()?KhbsPriorB1Q3FileName:KhbsPriorB1MonthFileName;}
+ private const string KhbsPriorB1MonthFileName="bs1_01_GTGT_TT80_CQTQL10129_00_102026_283.xml",KhbsPriorB1Q3FileName="bs1_01_GTGT_TT80_CQTQL10129_00_Q032026_283.xml",KhbsPriorB1M09FileName="bs1_01_GTGT_TT80_CQTQL10129_00_092026_283.xml";
+ private string KhbsPriorB1FileName(){return KhbsQuarterCase()?KhbsPriorB1Q3FileName:KhbsAnnexM09Case()?KhbsPriorB1M09FileName:KhbsPriorB1MonthFileName;}
  private static readonly decimal[] KhbsSale10B1=new decimal[]{0,0,0,0,0,0,0,1000000,100000,0,0,0,1000000,100000,0,1000000,100000,100000,0,0,0,100000,0,100000,0,0,0};
  private int khbsRound=0,khbsPriorSaveMessageId=0;private string webPriorPath="",webPriorSha256="",khbsPriorFileSha256="";
  private bool khbsPriorImportSucceeded=false,khbsPriorSummaryAcknowledged=false,khbsPriorSaveAcknowledged=false,khbsPriorFileSaved=false,khbsRound2Opened=false;private Stopwatch khbsPriorCloseClock=null;
@@ -103,15 +103,28 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // 2 and 3 (−4,5, −3,5): the negative ct06/ct7 display.
  private const string KhbsAnnex12Q3CaptureCaseId="01GTGT-khbs-annex12-capture-Q3-2026",KhbsAnnex12Round3CaseId="01GTGT-khbs-annex12-round3-M10-2026",KhbsAnnex12Lan2NegRoundCaseId="01GTGT-khbs-annex12-lan2-neg-round-M10-2026";
  private const int KhbsAnnex12Q3CaptureLeafTarget=504,KhbsAnnex12Round3LeafTarget=564,KhbsAnnex12Lan2NegRoundLeafTarget=427;
- private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}
- private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:id==KhbsAnnex12EqualRowsCaseId?KhbsAnnex12EqualRowsLeafTarget:id==KhbsAnnex12DisplaySameCaseId?KhbsAnnex12DisplaySameLeafTarget:-1;}
+ // Cases 21-23 (htkk_web issue 422; producers khbs-annex12-capture-m09 / -lan2-ct10-m09 / -lan2-zero-ct10, non-gating): case 4 on
+ // M09/2026 (due 20/10/2026, so the fixed ngày lập gives 24 late days: a late MONTH with 01-2, two Muc_I.2 rows), case 8 on M09/2026
+ // with case 21's exact file as round 1 (one Muc_I.2 row, ct3b 360), and case 8 on M10/2026 whose B2 main sheet keeps [40]
+ // (sale 2.000.000, purchase 1.000.000 with [25] 100.000): Muc_I.1 [10] 0 with a Muc_I.2 total, so HTKK's
+ // AnHienSoNgayVaSoTienNopCham_01_KHBS still writes the date. Same flows, annexes and checks as cases 4 and 8; only the period
+ // month (and the saved file names) of cases 21-22 and the web files differ.
+ private const string KhbsAnnex12CaptureM09CaseId="01GTGT-khbs-annex12-capture-M09-2026",KhbsAnnex12Lan2Ct10M09CaseId="01GTGT-khbs-annex12-lan2-ct10-M09-2026",KhbsAnnex12Lan2ZeroCt10CaseId="01GTGT-khbs-annex12-lan2-zero-ct10-M10-2026";
+ private const int KhbsAnnex12CaptureM09LeafTarget=504,KhbsAnnex12Lan2Ct10M09LeafTarget=452,KhbsAnnex12Lan2ZeroCt10LeafTarget=452;
+ // The lần-2 cases whose B2 annex is case 8's (plant 2 [10] 4).
+ private static bool KhbsCt10AnnexCaseId(string id){return id==KhbsAnnex12Ct10CaseId||id==KhbsAnnex12Lan2Ct10M09CaseId||id==KhbsAnnex12Lan2ZeroCt10CaseId;}
+ // The 01-2 cases on M09/2026 (case 2's month, with C0 zero).
+ private static bool KhbsAnnexM09CaseId(string id){return id==KhbsAnnex12CaptureM09CaseId||id==KhbsAnnex12Lan2Ct10M09CaseId;}
+ private bool KhbsAnnexM09Case(){return KhbsMode()&&webInputVerified&&KhbsAnnexM09CaseId(webCaseId);}
+ private static bool KhbsAnnexWideCaseId(string id){return id==KhbsAnnex12AddPlantCaseId||id==KhbsAnnex12RemovePlantCaseId||id==KhbsAnnex12TwoPlacesCaseId||KhbsCt10AnnexCaseId(id)||id==KhbsAnnex12EqualRowsCaseId||id==KhbsAnnex12DisplaySameCaseId;}
+ private static int KhbsAnnexWideLeafTarget(string id){return id==KhbsAnnex12AddPlantCaseId?KhbsAnnex12AddPlantLeafTarget:id==KhbsAnnex12RemovePlantCaseId?KhbsAnnex12RemovePlantLeafTarget:id==KhbsAnnex12TwoPlacesCaseId?KhbsAnnex12TwoPlacesLeafTarget:id==KhbsAnnex12Ct10CaseId?KhbsAnnex12Ct10LeafTarget:id==KhbsAnnex12Lan2Ct10M09CaseId?KhbsAnnex12Lan2Ct10M09LeafTarget:id==KhbsAnnex12Lan2ZeroCt10CaseId?KhbsAnnex12Lan2ZeroCt10LeafTarget:id==KhbsAnnex12EqualRowsCaseId?KhbsAnnex12EqualRowsLeafTarget:id==KhbsAnnex12DisplaySameCaseId?KhbsAnnex12DisplaySameLeafTarget:-1;}
  // Case 5 and cases 6-9 share the annex lần 2 flow.
  private bool KhbsAnnexLan2Case(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan2RoundCaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}
- private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(webCaseId)||webCaseId==KhbsAnnex12Q3CaptureCaseId||webCaseId==KhbsAnnex12Round3CaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId);}
- private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3WebCaseId||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12RoundCaseId||id==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(id)||id==KhbsAnnex12Q3CaptureCaseId||id==KhbsAnnex12Round3CaseId||id==KhbsAnnex12Lan2NegRoundCaseId;}
+ private bool KhbsAnnexCase(){return KhbsMode()&&webInputVerified&&(webCaseId==KhbsAnnex12CaptureCaseId||webCaseId==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12RoundCaseId||webCaseId==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(webCaseId)||webCaseId==KhbsAnnex12Q3CaptureCaseId||webCaseId==KhbsAnnex12Round3CaseId||webCaseId==KhbsAnnex12Lan2NegRoundCaseId||webCaseId==KhbsAnnex12CaptureM09CaseId);}
+ private static bool KhbsCaseId(string id){return id==KhbsWebCaseId||id==KhbsSale5WebCaseId||id==KhbsLan2WebCaseId||id==KhbsAnnex12CaptureCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3WebCaseId||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12RoundCaseId||id==KhbsAnnex12Lan2RoundCaseId||KhbsLan1ExistingCaseId(id)||id==KhbsAnnex12Q3CaptureCaseId||id==KhbsAnnex12Round3CaseId||id==KhbsAnnex12Lan2NegRoundCaseId||id==KhbsAnnex12CaptureM09CaseId;}
  // The bổ sung lần 2 case ids (web file soLan 2, a staged previous-version file): cases 3, 5-11, 13, 15 and 20.
  private static bool KhbsLan2CaseId(string id){return id==KhbsLan2WebCaseId||id==KhbsAnnex12Lan2CaseId||KhbsAnnexWideCaseId(id)||id==KhbsQ3Lan2WebCaseId||id==KhbsAnnex12Lan2RoundCaseId||id==KhbsAnnex12Lan2NegRoundCaseId;}
- private static int KhbsCaseLeafTarget(string id){return id==KhbsSale5WebCaseId?KhbsSale5LeafTarget:id==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:id==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(id)?KhbsAnnexWideLeafTarget(id):id==KhbsQ3WebCaseId?KhbsQ3LeafTarget:id==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:id==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:id==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:id==KhbsAnnex12Lan1Ct11CaseId?KhbsAnnex12Lan1Ct11LeafTarget:id==KhbsAnnex12Lan1AddPlantCaseId?KhbsAnnex12Lan1AddPlantLeafTarget:id==KhbsAnnex12Q3CaptureCaseId?KhbsAnnex12Q3CaptureLeafTarget:id==KhbsAnnex12Round3CaseId?KhbsAnnex12Round3LeafTarget:id==KhbsAnnex12Lan2NegRoundCaseId?KhbsAnnex12Lan2NegRoundLeafTarget:KhbsLeafTarget;}
+ private static int KhbsCaseLeafTarget(string id){return id==KhbsSale5WebCaseId?KhbsSale5LeafTarget:id==KhbsAnnex12CaptureCaseId?KhbsAnnex12CaptureLeafTarget:id==KhbsAnnex12Lan2CaseId?KhbsAnnex12Lan2LeafTarget:KhbsAnnexWideCaseId(id)?KhbsAnnexWideLeafTarget(id):id==KhbsQ3WebCaseId?KhbsQ3LeafTarget:id==KhbsQ3Lan2WebCaseId?KhbsQ3Lan2LeafTarget:id==KhbsAnnex12RoundCaseId?KhbsAnnex12RoundLeafTarget:id==KhbsAnnex12Lan2RoundCaseId?KhbsAnnex12Lan2RoundLeafTarget:id==KhbsAnnex12Lan1Ct11CaseId?KhbsAnnex12Lan1Ct11LeafTarget:id==KhbsAnnex12Lan1AddPlantCaseId?KhbsAnnex12Lan1AddPlantLeafTarget:id==KhbsAnnex12Q3CaptureCaseId?KhbsAnnex12Q3CaptureLeafTarget:id==KhbsAnnex12Round3CaseId?KhbsAnnex12Round3LeafTarget:id==KhbsAnnex12Lan2NegRoundCaseId?KhbsAnnex12Lan2NegRoundLeafTarget:id==KhbsAnnex12CaptureM09CaseId?KhbsAnnex12CaptureM09LeafTarget:KhbsLeafTarget;}
  // The lần 2 flow (round 1 imports, summarises and saves the previous-version B1, round 2 opens B2): cases 3, 5 and 6-9.
  private bool KhbsLan2Case(){return KhbsMode()&&webInputVerified&&KhbsLan2CaseId(webCaseId);}
  // The 01-2 percentages the imported annex must show: the proven two-plant annex, or in case 5's round 2 plant 1 at 40/60.
@@ -149,8 +162,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   khbsRound2Opened=true;navigationPhase="waiting-main-menu";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsRound2Opening);Record();
  }
  private bool KhbsNonzeroOriginal(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsSale5WebCaseId;}
- // The only period month of the D1 drivers: 10, or 09 for KHBS case 2 (GetPeriodInfo pads Thang to two digits, 0x0efc).
- private string PeriodMonth(){return KhbsNonzeroOriginal()?"09":"10";}
+ // The only period month of the D1 drivers: 10, or 09 for KHBS cases 2, 21 and 22 (GetPeriodInfo pads Thang to two digits, 0x0efc).
+ private string PeriodMonth(){return KhbsNonzeroOriginal()||KhbsAnnexM09Case()?"09":"10";}
  // The quarterly D1 drivers: the zero quý 4/2026 web case, and the KHBS quarterly cases 12-13 on quý 3/2026.
  private bool QuarterPeriod(){return QuarterCase()||KhbsQuarterCase();}
  private string PeriodQuarter(){return KhbsQuarterCase()?"3":"4";}

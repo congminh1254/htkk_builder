@@ -82,7 +82,7 @@ class AmendmentPrerequisiteContract(unittest.TestCase):
   self.assertEqual(re.search(r'OriginalPriorM09FileName="([^"]+)"',source).group(1),expected.replace('_102026_','_092026_'))
   # KHBS cases 12-13 (quý 3/2026): the quarterly rule of the same method, "_Q" + (Quy+Nam) left-padded to six digits.
   self.assertEqual(re.search(r'OriginalPriorQ3FileName="([^"]+)"',source).group(1),expected.replace('_102026_','_Q032026_'))
-  self.assertIn('private string PriorFileName(){return KhbsNonzeroOriginal()?OriginalPriorM09FileName:KhbsQuarterCase()?OriginalPriorQ3FileName:OriginalPriorFileName;}',source)
+  self.assertIn('private string PriorFileName(){return KhbsNonzeroOriginal()||KhbsAnnexM09Case()?OriginalPriorM09FileName:KhbsQuarterCase()?OriginalPriorQ3FileName:OriginalPriorFileName;}',source)
   self.assertIn('String.Equals(file.Name,PriorFileName(),StringComparison.Ordinal)',source)
   self.assertNotIn('Regex.IsMatch(file.Name',source)
   for wrong in ('01_GTGT_TT80_1701_102026_283.xml',expected.replace('10129','10100'),expected.replace('_102026_','_092026_'),expected.replace('_00_','_1701_'),'bs1_'+expected,expected+'.bak'):

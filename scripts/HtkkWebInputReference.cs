@@ -70,7 +70,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    webPriorPath=host+".web-prior.xml";webPriorSha256=ReadOwnHexSidecar(host+".web-prior.sha256",64);
    XmlDocument prior=ReadBoundedOriginalXml(webPriorPath);if(Hash(webPriorPath)!=webPriorSha256||webPriorSha256==webImportInputSha256)throw new InvalidOperationException();
    bool first=KhbsLan1ExistingCaseId(webCaseId);
-   if(FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!=(first?"C":"B")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!=(first?"0":"1")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhai")!=(webCaseId==KhbsQ3Lan2WebCaseId?"3/2026":"10/2026"))throw new InvalidOperationException();
+   if(FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/NNT/mst")!=Mst||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/loaiTKhai")!=(first?"C":"B")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/soLan")!=(first?"0":"1")||FixedWebLeaf(prior,"TTinChung/TTinTKhaiThue/TKhaiThue/KyKKhaiThue/kyKKhai")!=(webCaseId==KhbsQ3Lan2WebCaseId?"3/2026":KhbsAnnexM09CaseId(webCaseId)?"09/2026":"10/2026"))throw new InvalidOperationException();
   }else if(File.Exists(host+".web-prior.xml")||File.Exists(host+".web-prior.sha256"))throw new InvalidOperationException();
   webInputVerified=true;Record();
  }

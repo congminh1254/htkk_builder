@@ -206,7 +206,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(webCaseId==KhbsAnnex12TwoPlacesCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,v,v}};return;}
   if(webCaseId==KhbsAnnex12EqualRowsCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{new decimal[]{40m,60m},new decimal[]{50m,50m}};types=new string[][]{t1,t1};wards=new string[][]{new string[]{w,w},new string[]{w,w}};return;}
   if(webCaseId==KhbsAnnex12DisplaySameCaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,3m};percentages=new decimal[][]{new decimal[]{35m,65m},p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,w,w}};return;}
-  if(webCaseId==KhbsAnnex12Ct10CaseId){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,4m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,w,w}};return;}
+  // Cases 22-23 carry case 8's B2 annex.
+  if(KhbsCt10AnnexCaseId(webCaseId)){names=new string[]{n1,n2};codes=new string[]{"9999999997-001","99997"};parents=new decimal[]{7m,4m};percentages=new decimal[][]{p1,p2};types=new string[][]{t1,t2};wards=new string[][]{new string[]{w,w},new string[]{w,w,w}};return;}
   throw new InvalidOperationException();
  }
  // Cases 14-15 (display-rounding captures): the B1 annex (case 14, and case 15's round 1) has plant 1 at [10] 3 and plant 2 at

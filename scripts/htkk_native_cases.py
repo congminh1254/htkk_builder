@@ -67,10 +67,12 @@ TRUSTED_ADAPTERS={
  # imported, summarised and saved in HTKK first (htkk_khbs_web_cases.prior_case), then B2 is opened, imported and summarised.
  # KHBS ORACLE CAPTURE with phụ lục 01-2/GTGT (C0 without annex, B1 adds the proven two-plant annex): non-gating.
  '01-gtgt-2.8.3-khbs-annex12':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':['01-2/GTGT'],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':1,
-  # Case 18 (kỳ quý with 01-2, non-gating capture) is quý 3/2026, as cases 12-13.
-  'periods':{'month':('10/2026',),'quarter':('3/2026',)}},
+  # Case 18 (kỳ quý with 01-2, non-gating capture) is quý 3/2026, as cases 12-13; case 21 (a late month with 01-2) is 09/2026, as case 2.
+  'periods':{'month':('10/2026','09/2026'),'quarter':('3/2026',)}},
  # KHBS ORACLE CAPTURE of a CHANGED allocation, bổ sung lần 2: round 1 is the annex capture B1 (saved), round 2 B2 moves [11].
- '01-gtgt-2.8.3-khbs-annex12-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':['01-2/GTGT'],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,'periods':{'month':('10/2026',)}},
+ '01-gtgt-2.8.3-khbs-annex12-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':['01-2/GTGT'],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,
+  # Case 22 (case 8 late, on 09/2026) is 09/2026.
+  'periods':{'month':('10/2026','09/2026')}},
  '01-gtgt-2.8.3-khbs-lan2':{'producer':'scripts/generate-htkk-web-khbs-reference.mjs','privacyValidator':'gtgt-khbs-v1','annexes':[],**_d1,'driver':KHBS_DRIVER,'amendmentOrder':2,'periods':{'month':('10/2026',),'quarter':('3/2026',)}},
  # Declaration families behind htkk_web DeclarationEngine (03/TNDN, BCTC, TNCN, 01/CNKD).
  # One reviewed menu, XML version, period and annex set per adapter; Menu.xml 5.8.1 pins.

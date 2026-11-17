@@ -370,6 +370,29 @@ cell, O49 Σ Muc_I.1 of `KHBS_01_TT80_DIA_BAN_283.xls`); the second Muc_I.2 row 
 template cell. htkk_web ports it (`khbsAnnex12LateInterest`: 2-11 Muc_I.2 rows give 0) and `ROWS_ANNEX12_CAPTURE_Q3` now carries
 ct3b 0; the raw exports are pinned in htkk_web byte-identical and the producer reproduces every leaf of all four.
 
+## Cases 21-23: a late month with 01-2, and [10] = 0 with a Muc_I.2 total (non-gating; htkk_web issue 422)
+
+**Static reading (HTKK.exe 5.8.2 `331ed84a…f98a`; the lambda paths re-read on the 5.8.1 binary, dnfile only, nothing executed).**
+`TinhSoNgayNopCham`, `TinhSoTienPhatNopCham` and `AnHienSoNgayVaSoTienNopCham_01_KHBS` do not read `KieuKy`; only `GetHanNopToKhai`
+does (the due date). So a month with 01-2 and late days takes the quarter's rules (case 18): ct3b is AA38 = `0.03/100*P71*O49`, the
+computed interest with at most one Muc_I.2 row, 0 with two to eleven. `AnHienSoNgayVaSoTienNopCham_01_KHBS` reads the cells of
+`PL01_KHBS/Muc_A/Muc_I/Muc_1/tongCong_ct10` and `Muc_2/DSachPLuc/tongCong_ct11` (`Convert.ToDouble` of `Cell.Value`) and clears the
+date, days and interest only when BOTH are 0 (IL: `(ct10 != 0) || (ct11 != 0)`). With 01-2, [10] can be 0 while the Muc_I.2 total is
+not; htkk_web wrote ct3a_1 empty there before, and now refuses that shape until case 23 matches
+(`KHBS_01GTGT_ANNEX_ZERO_CT10_RELEASED=false`). The late month stays behind `KHBS_01GTGT_ANNEX_MONTH_LATE_RELEASED=false`.
+
+| Case | Flow | Annex (B1 / B2) | Web writes | Leaves |
+| --- | --- | --- | --- | --- |
+| `01GTGT-khbs-annex12-capture-M09-2026` (`khbs-annex12-capture-m09`) | case 4 on M09/2026 (zero C0, `…_092026_283.xml`) | the proven two-plant annex | 24 late days, two Muc_I.2 rows, ct3b 0 | 504 |
+| `01GTGT-khbs-annex12-lan2-ct10-M09-2026` (`khbs-annex12-lan2-ct10-m09`) | case 8 on M09/2026, round 1 imports case 21's exact file (saved `bs1_…_092026_283.xml`) | `CT10_VARIANT` (plant 2 [10] 4) | 24 days, ONE Muc_I.2 row, ct3b 0,03% × 24 × 50.000 = 360 | 452 |
+| `01GTGT-khbs-annex12-lan2-zero-ct10-M10-2026` (`khbs-annex12-lan2-zero-ct10`) | case 8 on M10/2026 (round 1 case 4's file) | `CT10_VARIANT` | B2 main `SALE_PURCHASE`: [32] 2.000.000, [23] 1.000.000, [24]/[25] 100.000, [40] stays 100.000; Muc_I.1 empty ([10] 0), Muc_I.2 +1, ct3a_1 13/11/2026, 0 days, ct3b 0 | 452 |
+
+Driver: cases 4 and 8 unchanged (`KhbsAnnexM09Case` gives `PeriodMonth` 09 and the M09 C0/B1 file names; `KhbsCt10AnnexCaseId`
+gives cases 22-23 case 8's B2 annex). Rows generated from htkk_web's goldens. What each run decides: cases 21-22 match -> htkk_web may
+open `KHBS_01GTGT_ANNEX_MONTH_LATE_RELEASED` (case 22 is the first native ct3b with an annex and one Muc_I.2 row); case 23 matches ->
+`KHBS_01GTGT_ANNEX_ZERO_CT10_RELEASED`. Not covered: more than eleven Muc_I.2 rows (P71 would then be the tỉnh text of an inserted
+Muc_I.2 row, so AA38 is not determined statically).
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe
