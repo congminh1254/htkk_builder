@@ -54,7 +54,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'D4', 'D4', 'D4', 'D4', 'Z3', 'Z3', 'Z3', 'Z3', 'X9', 'Y1', 'Y8', 'Y8', 'C9', 'D6', 'X9', 'Y1'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'Y7', 'Y7', 'Y7', 'D4', 'D4', 'D4', 'D4', 'Z3', 'Z3', 'Z3', 'Z3', 'X9', 'Y1', 'Y8', 'Y8', 'C9', 'D6', 'X9', 'Y1'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -110,8 +110,8 @@ class CompiledPlans(unittest.TestCase):
 
     def test_menu_chain_kieuky_and_annexes_follow_menu_xml_design_units(self):
         units = load('declaration_workbook_units', 'htkk_workbook_native_cases.py').UNITS
-        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'Z8': ['101', '101_11', 'Z8'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9'], 'C9': ['101', '101_8', 'C9'], 'G7': ['101', '101_15', 'G7'], 'D4': ['101', '101_1', 'D4'], 'Z3': ['101', '101_1', 'Z3']}
-        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'Z8': '14', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22', 'C9': '22', 'G7': '42', 'D4': '21', 'Z3': '21'}
+        chains = {'N8': units['N8']['menuChain'], 'A2': units['A2']['menuChain'], '78': units['78']['menuChain'], 'L7': ['101', '101_11', 'L7'], 'Z8': ['101', '101_11', 'Z8'], 'B9': ['101', '101_11', 'B9'], 'U5': ['101', '101_37', 'U5'], 'B8': ['101', '101_11', 'B8'], 'I9': ['101', '101_8', 'I9'], 'Y8': ['101', '101_8', 'Y8'], 'J1': ['101', '101_8', 'J1'], 'D6': ['101', '101_8', 'D6'], 'Y1': ['101', '101_8', 'Y1'], 'X9': ['101', '101_8', 'X9'], 'C9': ['101', '101_8', 'C9'], 'G7': ['101', '101_15', 'G7'], 'D4': ['101', '101_1', 'D4'], 'Z3': ['101', '101_1', 'Z3'], 'Y7': ['101', '101_37', 'Y7']}
+        kieu = {'N8': '11', 'A2': '26', '78': '26', 'L7': '19', 'Z8': '14', 'B9': '12', 'U5': '21', 'B8': '12', 'I9': '18', 'Y8': '18', 'J1': '18', 'D6': '22', 'Y1': '22', 'X9': '22', 'C9': '22', 'G7': '42', 'D4': '21', 'Z3': '21', 'Y7': '21'}
         for case in CASES:
             menu = d.CASES[case]['menuId']; block = plan_block(case)
             self.assertIn('new string[]{' + ','.join('"' + x + '"' for x in chains[menu]) + '}', block)
@@ -821,9 +821,14 @@ class OccurrencePeriod(unittest.TestCase):
             self.assertIn('"day","18","2026","","%s","%s",false' % (day, day), plan_block(case))
             spec = d.case(case)
             self.assertEqual((spec['kieuKy'], spec['kyKKhai'], spec['tuNgay'], spec['denNgay']), ('D', day, day, day))
-        # The plan refuses a day period that is not KieuKy 18 or whose from/to differ.
+        # 01/TCKT (Y7): KieuKy 21 builds the same D period (GetPeriodInfo index 17), only with 02/BK-KTBĐS.
+        case = '01TCKT-bds-occurrence-D15-10-2026'
+        self.assertEqual((registry.CASES[case]['unit']['periodType'], registry.CASES[case]['unit']['periodValue'], registry.CASES[case]['unit']['annexes']), ('day', '15/10/2026', ['01-2']))
+        self.assertIn('"day","21","2026","","15/10/2026","15/10/2026",false', plan_block(case))
+        self.assertEqual((d.case(case)['kieuKy'], d.case(case)['kyKKhai'], d.case(case)['tuNgay'], d.case(case)['denNgay']), ('D', '15/10/2026', '15/10/2026', '15/10/2026'))
+        # The plan refuses a day period that is not KieuKy 18 or 21 or whose from/to differ.
         constructor = PLANS[PLANS.index('internal HtkkDeclarationCasePlan('):PLANS.index('internal sealed class HtkkDeclarationEntryPlan')]
-        self.assertIn('periodKind=="day"&&(kieuKy!="18"||fromDate.Length!=10||fromDate!=toDate', constructor)
+        self.assertIn('periodKind=="day"&&((kieuKy!="18"&&kieuKy!="21")||fromDate.Length!=10||fromDate!=toDate', constructor)
 
     def test_driver_types_only_the_visible_day_month_year_boxes_and_checks_kieuky_d(self):
         configure = DRIVER[DRIVER.index('private void ConfigureDeclarationPeriod('):DRIVER.index('// ---- Original declaration sheet')]

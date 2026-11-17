@@ -279,6 +279,7 @@ TTS_CODE = '10129_9999999997000_'
 # characters (runs 43678758282, 43686726527: the full 74-character text differed from the original re-export).
 TTS_ORGANIZATION_ADDRESS = (ADDRESS + ' - Phường Sơn Tây - Thành phố Hà Nội')[:50]
 TTS_TEXTS = ('Hợp đồng', 'Kỳ thanh toán', 'Kỳ thanh toán cuối cùng', 'Hợp đồng khai lần đầu', 'Phường Sơn Tây', 'H\xf4\u0323 chi\xea\u0301u', 'Gi\xe2\u0301y th\xf4ng ha\u0300nh', 'CMT biên giới', 'Gi\xe2\u0301y t\u01a1\u0300 kh\xe1c')
+TCKT_NAME = 'TỜ KHAI THUẾ CỦA TỔ CHỨC KHAI THAY'
 TEMPLATE_TT89 = '(Kèm theo Thông tư số 89/2026/TT-BTC ngày 30 tháng 6 năm 2026 của Bộ trưởng Bộ Tài chính)'
 WEB_TOOL = 'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'
 WEB_CODE = 'CCKK'
@@ -500,6 +501,15 @@ CASES = {
                                                        [GTGT04_NAME, TEMPLATE_TT89, ADDRESS]),
     '04GTGT-TT89-reduction-annex-M10-2026': _case('gtgt04-tt89-reduction-annex-m10-2026', 'Z3', '2035', '3.0.9', GTGT04_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, ['PL_NQ204_GTGT'], WORKBOOK_SERVICE,
                                                   [GTGT04_NAME, TEMPLATE_TT89, ADDRESS, 'HANG HOA A - GIẢ LẬP', 'DICH VU B - GIẢ LẬP', 'SAN XUAT C - GIẢ LẬP', 'HOAT DONG D - GIẢ LẬP', 'HANG HOA E - GIẢ LẬP']),
+    # Y7 01/TCKT TT89 3.0.9 (non-gating, HTKK 5.8.1 oracle): KieuKy 21, one bảng kê per tờ khai: 01/BK-KTHTKD (PLuc_HKD_CNKD,
+    # quý 4/2026; nhóm ngành names of DM_DUNG_CHUNG DC_185) or 02/BK-KTBĐS (PLuc_CANHAN_TTS, tháng 10/2026 and lần phát sinh
+    # 15/10/2026; DiaChi_BDS xã/tỉnh = the synthetic profile ward).
+    '01TCKT-hop-tac-kd-two-individuals-Q4-2026': _case('tckt01-hop-tac-kd-two-individuals-q4-2026', 'Y7', '2007', '3.0.9', 'Validate/01_TCKT_TT89_309.xsd', ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 65, ['PLuc_HKD_CNKD'], WORKBOOK_SERVICE,
+                                                       [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN HOP TAC A - GIẢ LẬP', 'CA NHAN HOP TAC B - GIẢ LẬP', 'Dịch vụ, xây dựng không bao thầu  nguyên vật liệu', 'Hoạt động kinh doanh khác']),
+    '01TCKT-bds-three-lessors-M10-2026': _case('tckt01-bds-three-lessors-m10-2026', 'Y7', '2007', '3.0.9', 'Validate/01_TCKT_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 79, ['PLuc_CANHAN_TTS'], WORKBOOK_SERVICE,
+                                               [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN CHO THUE A - GIẢ LẬP', 'CA NHAN CHO THUE B - GIẢ LẬP', 'CA NHAN CHO THUE C - GIẢ LẬP', 'SO 1 DUONG GIA LAP', 'SO 2 DUONG GIA LAP', 'SO 3 DUONG GIA LAP']),
+    '01TCKT-bds-occurrence-D15-10-2026': _case('tckt01-bds-occurrence-d15-10-2026', 'Y7', '2007', '3.0.9', 'Validate/01_TCKT_TT89_309.xsd', ('D', '15/10/2026', '15/10/2026', '15/10/2026'), None, '2026-10-27', '2026-10-27', 63, ['PLuc_CANHAN_TTS'], WORKBOOK_SERVICE,
+                                               [TCKT_NAME, TEMPLATE_TT89, ADDRESS, 'CA NHAN CHO THUE D - GIẢ LẬP', 'SO 4 DUONG GIA LAP']),
 }
 _workbook_expected = {c['caseId']: c['expected'] for c in workbook_design.PLAN['cases'] + workbook_design.PLAN_582['cases']}
 _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows', {})) for c in descriptor_design.DESIGN['cases']}
@@ -1056,6 +1066,58 @@ def _gtgt04(case_id, root):
             reject('VALUE')
 
 
+# Independent 01/TCKT oracle (Y7, Tckt01TT89Nckt309 and the XLS formulas of 01_TCKT_TT89_309; never the TypeScript engine).
+# 01/BK-KTHTKD rows (MST, nhóm ngành, [07] G, [08] H): K = rate of the nhóm (IF(J="01",0.5%,"02",2%,"03",5%,"04",1.5%,"05",5%,
+# "06",1%)), I = H x K (no ROUND), ct06_tyLe = K with the 2 places of the control DefaultValue "0,00"; totals ct11..ct13.
+# 02/BK-KTBĐS rows ([08] L, [09] M, [10] N): O = 0 if N else ROUND(L x 5 / 100), P = 0 if N else ROUND((L - M) x 5 / 100),
+# half away from zero; totals. CTieuTKhaiChinh ct7..ct9 / ct11..ct13 come from the expected leaves of the design case.
+TCKT_RATES = {'01': '0.005', '02': '0.02', '03': '0.05', '04': '0.015', '05': '0.05', '06': '0.01'}
+TCKT_ROWS = {
+    '01TCKT-hop-tac-kd-two-individuals-Q4-2026': ('01-1', (('9999999901', '02', '300000000', '300000000'), ('9999999919', '06', '120000000', '110000000'))),
+    '01TCKT-bds-three-lessors-M10-2026': ('01-2', (('9999999901', '60000010', '10', False), ('9999999919', '1200000001', '200000000', False), ('9999999926', '300000000', '0', True))),
+    '01TCKT-bds-occurrence-D15-10-2026': ('01-2', (('9999999933', '80000000', '20000000', False),)),
+}
+
+
+def tckt_expected(case_id):
+    """Per-row leaves and totals of a Y7 design case."""
+    sheet, table = TCKT_ROWS[case_id]
+    D = decimal.Decimal
+    rows = []
+    if sheet == '01-1':
+        sums = [D(0), D(0), D(0)]
+        for mst, code, revenue, taxable in table:
+            rate = D(TCKT_RATES[code])
+            tax = D(taxable) * rate
+            if tax != tax.to_integral_value() or rate != rate.quantize(D('0.01')):
+                reject('VALUE')
+            rows.append({'ct05': mst, 'ct06_ma': code, 'ct06_tyLe': str(rate.quantize(D('0.01'))), 'ct07': revenue, 'ct08': taxable, 'ct09': str(int(tax))})
+            sums = [sums[0] + D(revenue), sums[1] + D(taxable), sums[2] + tax]
+        return 'PLuc_HKD_CNKD', 'CTietBKeHKD_CNKD', rows, {'ct11': str(int(sums[0])), 'ct12': str(int(sums[1])), 'ct13': str(int(sums[2]))}
+    sums = [D(0), D(0), D(0), D(0)]
+    for mst, revenue, deducted, exempt in table:
+        vat = D(0) if exempt else _round(D(revenue) * 5 / 100)
+        pit = D(0) if exempt else _round((D(revenue) - D(deducted)) * 5 / 100)
+        rows.append({'ct06': mst, 'ct08': revenue, 'ct09': deducted, 'ct10': '1' if exempt else '0', 'ct11': str(vat), 'ct12': str(pit)})
+        sums = [sums[0] + D(revenue), sums[1] + D(deducted), sums[2] + vat, sums[3] + pit]
+    return 'PLuc_CANHAN_TTS', 'CTietBKeCNTTS', rows, {'tong_doanhThu': str(sums[0]), 'tong_duocTru': str(sums[1]), 'tong_thueGTGT': str(sums[2]), 'tong_thueTNCN': str(sums[3])}
+
+
+def _tckt(case_id, root):
+    element, table, rows, totals = tckt_expected(case_id)
+    annex = root.find(_xpath('HSoKhaiThue/PLuc/' + element))
+    found = root.findall(_xpath('HSoKhaiThue/PLuc/%s/%s' % (element, table)))
+    if annex is None or len(found) != len(rows):
+        reject('VALUE')
+    for node, row in zip(found, rows):
+        for name, value in row.items():
+            if [(n.text or '') for n in node.findall('{%s}%s' % (NS, name))] != [value]:
+                reject('VALUE')
+    for name, value in totals.items():
+        if [(n.text or '') for n in annex.findall('{%s}%s' % (NS, name))] != [value]:
+            reject('VALUE')
+
+
 def _expected(case_id, spec, root, items, raw):
     family = spec['family']
     if family == 'workbook':
@@ -1084,6 +1146,8 @@ def _expected(case_id, spec, root, items, raw):
             _tts(case_id, root)
         if case_id in GTGT04_ROWS:
             _gtgt04(case_id, root)
+        if case_id in TCKT_ROWS:
+            _tckt(case_id, root)
     else:
         try:
             hkd_design.validate_case_xml(case_id, raw)

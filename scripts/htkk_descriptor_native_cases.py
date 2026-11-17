@@ -39,6 +39,11 @@ TRUSTED={
  # tháng/quý with 01-2/BK-TTS (CheckChonLoaiNopThue). No zero case: a table needs a contract row and a payment period.
  '01-tts-tt40-2.8.3-bk1':{'menuId':'G7','businessClass':'Tts01TT40','xmlVersion':'2.8.3','schemaId':'Validate/01_TTS_TT40_283.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'year'},'htkkVersion':'5.8.2'},
  '01-tts-tt40-2.8.3-bk2':{'menuId':'G7','businessClass':'Tts01TT40','xmlVersion':'2.8.3','schemaId':'Validate/01_TTS_TT40_283.xsd','annexes':['01-2'],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.2'},
+ # 01/TCKT TT89 (Y7 3.0.9, HTKK 5.8.1 oracle): KieuKy 21; one bảng kê per tờ khai (frmHTKKPeriod axfpsPhuLuc_ButtonClicked):
+ # 01/BK-KTHTKD (01-1, tháng/quý) or 02/BK-KTBĐS (01-2, tháng/lần phát sinh). No zero case: Header B18-B26/B30 require a row
+ # with name, MST and amounts, and the period dialog refuses a tờ khai without bảng kê (0670).
+ '01-tckt-tt89-3.0.9-bk1':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_TCKT_TT89_309.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'}},
+ '01-tckt-tt89-3.0.9-bk2':{'menuId':'Y7','businessClass':'Tckt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_TCKT_TT89_309.xsd','annexes':['01-2'],'mode':'web-xml-import-reexport','periodTypes':{'month','day'}},
  # 04/GTGT TT80 (D4 2.7.4, HTKK 5.8.2 oracle): KieuKy 21, tháng/quý đến 09/2026; the annex adapter ticks PL 01-3 (giảm thuế
  # NQ 142/174/204), which needs at least one sale row with a rate, so it has no zero case.
  '04-gtgt-tt80-2.7.4':{'menuId':'D4','businessClass':'Gtgt04TT80','xmlVersion':'2.7.4','schemaId':'Validate/04_GTGT_TT80_274.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.2'},
@@ -52,7 +57,7 @@ TRUSTED={
 # 05-1/PBT adapters: the annex needs at least one row with loại, tỉnh, xã, Thuế tỉnh/CCT and CQT quản lý (Header B35-B39),
 # so there is no zero declaration with the annex.
 # The 02/QTT refund adapter: a refund needs số thuế nộp thừa [44] > 0 and [46] > 0, so no zero declaration either.
-NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011'})
+NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2'})
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})
  check(value['format']=='htkk-descriptor-native-case-design-v1' and value['htkkVersion']=='5.8.1')
@@ -89,7 +94,7 @@ def validate(value):
    check(re.fullmatch(r'[A-Za-z][A-Za-z0-9_.]{0,40}(/[A-Za-z][A-Za-z0-9_]{0,40})?',name) and isinstance(text,str))
    # Only the synthetic profile MST or plain non-negative integers: no names or free text.
    check(text=='9999999997' and name=='mst_cu' or re.fullmatch(r'0|[1-9][0-9]{0,15}',text))
-  rows=c.get('expectedRows',{});check(type(rows) is dict and all(re.fullmatch(r'(PLuc_[A-Za-z0-9_]+/[A-Za-z]+(/[A-Za-z]+)?|PL[0-9]{2}_[0-9]_NTNN/[A-Za-z]+/[A-Za-z]+|PL_NQ[0-9]{2,3}_GTGT/[A-Za-z_]+/[A-Za-z]+)',k) and type(v) is int and 1<=v<=50 for k,v in rows.items()))
+  rows=c.get('expectedRows',{});check(type(rows) is dict and all(re.fullmatch(r'(PLuc_[A-Za-z0-9_]+/[A-Za-z]+(_[A-Za-z]+)?(/[A-Za-z]+)?|PL[0-9]{2}_[0-9]_NTNN/[A-Za-z]+/[A-Za-z]+|PL_NQ[0-9]{2,3}_GTGT/[A-Za-z_]+/[A-Za-z]+)',k) and type(v) is int and 1<=v<=50 for k,v in rows.items()))
   check(bool(rows)==bool(u['annexes']))
   per.setdefault(c['adapterId'],[]).append(c)
  # Each adapter needs a zero case and at least one case with amounts. The TT89 settlements have no zero

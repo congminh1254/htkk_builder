@@ -482,6 +482,26 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-tckt-tt89-3.0.9-bk1",
+      "htkkVersion": "5.8.1",
+      "menuId": "Y7",
+      "xmlVersion": "3.0.9",
+      "producer": "scripts/generate-htkk-declaration-reference.mjs",
+      "driver": "declaration-web-import-inspect",
+      "privacyValidator": "declaration-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
+      "adapterId": "01-tckt-tt89-3.0.9-bk2",
+      "htkkVersion": "5.8.1",
+      "menuId": "Y7",
+      "xmlVersion": "3.0.9",
+      "producer": "scripts/generate-htkk-declaration-reference.mjs",
+      "driver": "declaration-web-import-inspect",
+      "privacyValidator": "declaration-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "04-gtgt-tt80-2.7.4",
       "htkkVersion": "5.8.2",
       "menuId": "D4",
@@ -2101,6 +2121,66 @@
         "adapterVersion": "2.8.3",
         "periodType": "month",
         "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01TCKT-hop-tac-kd-two-individuals-Q4-2026",
+      "producerCase": "tckt01-hop-tac-kd-two-individuals-q4-2026",
+      "adapterId": "01-tckt-tt89-3.0.9-bk1",
+      "format": "htkk-web-tckt01-hop-tac-kd-two-individuals-q4-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-tckt01-hop-tac-kd-two-individuals-q4-2026-input",
+      "inputBranch": "declaration-web-reference-tckt01-hop-tac-kd-two-individuals-q4-2026-input",
+      "outputBranch": "declaration-web-native-tckt01-hop-tac-kd-two-individuals-q4-2026-output",
+      "statusContext": "htkk-native/tckt01-hop-tac-kd-two-individuals-q4-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Y7",
+        "adapterVersion": "3.0.9",
+        "periodType": "quarter",
+        "periodValue": "4/2026",
+        "activityCode": "00",
+        "annexes": ["01-1"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01TCKT-bds-three-lessors-M10-2026",
+      "producerCase": "tckt01-bds-three-lessors-m10-2026",
+      "adapterId": "01-tckt-tt89-3.0.9-bk2",
+      "format": "htkk-web-tckt01-bds-three-lessors-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-tckt01-bds-three-lessors-m10-2026-input",
+      "inputBranch": "declaration-web-reference-tckt01-bds-three-lessors-m10-2026-input",
+      "outputBranch": "declaration-web-native-tckt01-bds-three-lessors-m10-2026-output",
+      "statusContext": "htkk-native/tckt01-bds-three-lessors-m10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Y7",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": ["01-2"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01TCKT-bds-occurrence-D15-10-2026",
+      "producerCase": "tckt01-bds-occurrence-d15-10-2026",
+      "adapterId": "01-tckt-tt89-3.0.9-bk2",
+      "format": "htkk-web-tckt01-bds-occurrence-d15-10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-tckt01-bds-occurrence-d15-10-2026-input",
+      "inputBranch": "declaration-web-reference-tckt01-bds-occurrence-d15-10-2026-input",
+      "outputBranch": "declaration-web-native-tckt01-bds-occurrence-d15-10-2026-output",
+      "statusContext": "htkk-native/tckt01-bds-occurrence-d15-10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Y7",
+        "adapterVersion": "3.0.9",
+        "periodType": "day",
+        "periodValue": "15/10/2026",
         "activityCode": "00",
         "annexes": ["01-2"],
         "amendmentOrder": 0

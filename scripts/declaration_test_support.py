@@ -121,6 +121,15 @@ def _tree(case_id, native=False, created=None):
                     _add(sale, leaf, value)
                 _add(_add(node, 'ChenhLech'), 'ct9', totals['tongCongThueGTGTDuocGiam'])
                 continue
+            if case_id in d.TCKT_ROWS:  # 01/TCKT bảng kê rows and totals of the independent oracle
+                element, table_name, rows_, totals = d.tckt_expected(case_id)
+                for index, row in enumerate(rows_):
+                    row_ = _add(node, table_name, attrib={'id': 'ID_%d' % (index + 1)})
+                    for leaf, value in row.items():
+                        _add(row_, leaf, value)
+                for leaf, value in totals.items():
+                    _add(node, leaf, value)
+                continue
             if case_id in d.TTS_ROWS:  # 01/TTS contract rows of the independent oracle (01-2 numbers the leaves later)
                 names = d.TTS_02_LEAVES if annex == 'PLuc_02_BK_TTS' else {}
                 for index, row in enumerate(d.tts_expected(case_id)[0]):

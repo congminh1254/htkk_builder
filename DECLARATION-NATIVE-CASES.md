@@ -708,6 +708,26 @@ web để trống sẵn) và không tính lại; công thức XLS của GTGT/TNC
 thay, `LockUnlockTheoLoaiNopThue` để trống các ô NNT của sheet 01 — TTinChung/NNT khi kết xuất lại có còn như hồ sơ không? Ca
 tháng/quý: `AutoBindData_0` bỏ tích và khóa [cá nhân trực tiếp khai].
 
+## 01/TCKT TT89 (Y7, 3.0.9) — ba ca không chặn phát hành, oracle HTKK 5.8.1
+
+Nhà sản xuất `htkk_web` nhánh `work/tckt-y7` (`scripts/generate-htkk-declaration-reference.mjs`, thiết kế trong
+`scripts/generate-htkk-descriptor-reference.mjs`). Y7 có từ HTKK 5.8.1 (`Tckt01TT89`, maTKhai 2007, KieuKy 21, Validity từ
+01/10/2026); HTKK 5.8.2/5.8.3 đổi Y7 sang 3.1.0 (thêm phụ lục NQ 43/2026) và tệp `01_TCKT_TT89_309.xls` khác bản 5.8.1, nên các
+ca chạy trên 5.8.1 (mặc định). Menu 101 → 101_37 → Y7; KieuKy 21 = `SetLayoutToKhaiThangQuyLanPhatSinh`. Mỗi tờ khai đúng một bảng
+kê (`axfpsPhuLuc_ButtonClicked` bỏ tích bảng kê kia): 01/BK-KTHTKD cho Quý, khóa Lần phát sinh; 02/BK-KTBĐS khóa Quý, mở Lần phát
+sinh và bảng tỉnh/xã/CQT của hộp chọn kỳ (driver chọn tỉnh, xã, CQT của hồ sơ giả lập).
+
+| Ca | Adapter | Kỳ | Bảng kê | Kiểm tra chính |
+|---|---|---|---|---|
+| `01TCKT-hop-tac-kd-two-individuals-Q4-2026` | `01-tckt-tt89-3.0.9-bk1` | quý 4/2026 | 01/BK-KTHTKD, 2 cá nhân | I = H × K: 300.000.000 × 2% = 6.000.000, 110.000.000 × 1% = 1.100.000; ct9 7.100.000 |
+| `01TCKT-bds-three-lessors-M10-2026` | `01-tckt-tt89-3.0.9-bk2` | tháng 10/2026 | 02/BK-KTBĐS, 3 cá nhân | ROUND(3.000.000,5) = 3.000.001; [08] > 1 tỷ, [10] bỏ tích; [10] tích → O = P = 0 |
+| `01TCKT-bds-occurrence-D15-10-2026` | `01-tckt-tt89-3.0.9-bk2` | lần phát sinh 15/10/2026 | 02/BK-KTBĐS, 1 cá nhân | O 4.000.000, P 3.000.000 |
+
+Oracle độc lập `TCKT_ROWS`/`tckt_expected` (htkk_declaration_web_cases.py) tính lại các dòng và tổng của bảng kê bằng Decimal từ
+công thức XLS (K theo nhóm ngành DC_185, I = H × K không làm tròn; O = ROUND(L × 5%), P = ROUND((L − M) × 5%), 0 khi [10] tích).
+Câu hỏi cho lần chạy: sau "Nhập từ XML", `AutoBindData_0` có tích lại hopTacKD/batDongSan theo bảng kê, `AutoBindData_2` có giữ
+DiaChi_BDS của tệp, ct06_tyLe có xuất "0.02"/"0.01" như web, và ct6/ct10 (dòng tiêu đề, ô trống) có xuất 0 không.
+
 ## 04/GTGT TT80 (D4, 2.7.4) — bốn ca không chặn phát hành, oracle HTKK 5.8.2
 
 Nhà sản xuất `htkk_web` nhánh `work/gtgt04` (`scripts/generate-htkk-declaration-reference.mjs`, thiết kế trong
