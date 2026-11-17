@@ -528,6 +528,9 @@ _descriptor_expected = {c['caseId']: (c['expectedLeaves'], c.get('expectedRows',
 # Leaves the ORIGINAL export fills with the export day (HtkkDeclarationCasePlans.ExportDatePaths):
 # A2 has no control bound to TKhaiThue/ngayKy, so TTinChung.ngayKy keeps DateTime.Now.
 EXPORT_DATES = {'BCTC133-B01a-basic-Y2025': (TK + 'ngayKy',)}
+# Y7 (01/TCKT TT89, 3.0.9 and 3.1.0) likewise: HTKK 5.8.1 and 5.8.2 wrote the export day into TKhaiThue/ngayKy in all seven
+# cases (runs of release web d2acec02c, builder c0ab30e: the only differing leaf, tree mask 2, every tax leaf equal).
+EXPORT_DATES.update({_id: (TK + 'ngayKy',) for _id in ('01TCKT-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-bds-three-lessors-M10-2026', '01TCKT-bds-occurrence-D15-10-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026')})
 for _id, _c in CASES.items():
     _c['caseId'] = _id
     _c['exportDates'] = EXPORT_DATES.get(_id, ())

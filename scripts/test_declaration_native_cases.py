@@ -568,7 +568,11 @@ class NativeOutput(unittest.TestCase):
         opened (BindToKhaiInfoToTTinChung: DateTime.Now). Release 216 r1373: tree mask 2."""
         case = 'BCTC133-B01a-basic-Y2025'; dates = d.case(case)['exportDates']
         self.assertEqual(dates, ('HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy',))
-        self.assertEqual([c for c in CASES if d.case(c)['exportDates']], [case])
+        # Y7 (01/TCKT TT89, 3.0.9 and 3.1.0) is the only other form whose original export writes the export day (release c0ab30e).
+        y7 = [c for c in CASES if c.startswith('01TCKT-')]
+        self.assertEqual(len(y7), 7)
+        self.assertEqual([c for c in CASES if d.case(c)['exportDates']], [case] + y7)
+        for c in y7: self.assertEqual(d.case(c)['exportDates'], dates)
         web = dfx.declaration_fixture(case); native = native_of(web, case); exported = export_day_of(native, case)
         self.assertEqual(d.compare_tree(web, exported)['mismatchSectionMask'], 2)  # exact comparison: the r1373 mask
         self.assertTrue(d.compare_tree(web, exported, dates)['allTaxValuesMatched'])
@@ -579,7 +583,7 @@ class NativeOutput(unittest.TestCase):
         # The web draft side must carry its own creation date too.
         self.assertEqual(d.compare_tree(web.replace(b'<ngayKy>2026-03-20<', b'<ngayKy>2026-03-21<', 1), exported, dates)['mismatchSectionMask'], 2)
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
-        self.assertIn('plan.MenuId=="A2"?new string[]{"HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy"}:new string[0]', plans)
+        self.assertIn('(plan.MenuId=="A2"||plan.MenuId=="Y7")?new string[]{"HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy"}:new string[0]', plans)
         self.assertIn('HtkkDeclarationCasePlans.ExportDatePaths(declarationPlan),out leaves,out mask', (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8'))
         self.assertIn("declaration.case(metadata['caseId'])['exportDates']", (ROOT / 'publish-htkk-declaration-native-output.py').read_text(encoding='utf-8'))
 

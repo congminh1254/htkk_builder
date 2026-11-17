@@ -131,7 +131,7 @@ internal static class HtkkDeclarationCasePlans {
  // is bound to TKhaiThue/ngayKy, so WinDoWorkEvent.UpdateObjectValue never sets TTinChung.ngayKy and
  // WinFnProcess.BindToKhaiInfoToTTinChung leaves it at DateTime.Now; xmlExportTTinChung writes it
  // as yyyy-MM-dd. 78 copies ngayLap (ExportXML_0) and the other cases bind it to a cell.
- internal static string[] ExportDatePaths(HtkkDeclarationCasePlan plan){return plan!=null&&plan.MenuId=="A2"?new string[]{"HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy"}:new string[0];}
+ internal static string[] ExportDatePaths(HtkkDeclarationCasePlan plan){return plan!=null&&(plan.MenuId=="A2"||plan.MenuId=="Y7")?new string[]{"HSoThueDTu/HSoKhaiThue/TTinChung/TTinTKhaiThue/TKhaiThue/ngayKy"}:new string[0];}
  internal static bool ImportAddsAllAnnexes(HtkkDeclarationCasePlan plan){return plan!=null&&"~B8~37~33~B9~N7~W1~".IndexOf("~"+plan.MenuId+"~",StringComparison.Ordinal)>=0;}
  // Kê khai bổ sung (KHBS) of 01/NTNN I9 and 01/NTNN, NCCNN Y8 (mode declaration-amendment-khbs-inspect, non-gating; htkk_web
  // docs/KE-KHAI-BO-SUNG-01-NTNN.md, builder KHBS-NATIVE-CASE.md "01/NTNN"). Not lần-đầu declaration cases: CaseIds stays the
