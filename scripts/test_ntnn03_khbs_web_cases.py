@@ -93,6 +93,39 @@ class Ntnn03KhbsWebCases(unittest.TestCase):
             m.validate_xml(support.files(sm, INCREASE)[m.WEB_NAME], INCREASE, 'web')
 
 
+class Ntnn03KhbsNativeRetention(unittest.TestCase):
+    KEY = 'HSoThueDTu/HSoKhaiThue/PLuc/' + m.KEY_PATH_SUFFIX
+    # The web key of row A: every piece a text of the files or a date, ct3 and ct7 empty (the last piece).
+    WEB = 'TU VAN KY THUAT A - GIẢ LẬP - Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm - NHA THAU PHU A - GIẢ LẬP -  - HD-GL-031 - 15/08/2026 - '
+    # input_texts of the case files: the web key leaf itself among them.
+    ALLOWED = frozenset((WEB, 'TU VAN KY THUAT A - GIẢ LẬP', 'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'NHA THAU PHU A - GIẢ LẬP', 'HD-GL-031'))
+
+    def test_key_with_its_trailing_space_trimmed_as_htkk_writes_it(self):
+        # Runs 44101960535 and siblings: the native ct3_2_ten is the web key without its last character (tree shape 525).
+        native = self.WEB.rstrip(' ')
+        self.assertEqual(len(native), len(self.WEB) - 1)
+        for case_id in CASES:
+            self.assertIs(m.CASES[case_id]['keyTrailingTrim'], True)
+            self.assertIn(native, m.catalogue_texts(case_id, [(self.KEY, native)], self.ALLOWED))
+
+    def test_only_that_one_space_on_the_key_leaf_of_the_j1_cases(self):
+        native = self.WEB.rstrip(' ')
+        other = 'HSoThueDTu/HSoKhaiThue/PLuc/PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/ten_HSo'
+        for value in (native.rstrip('-').rstrip(' '), native + '  ', native.replace(' - HD-GL-031', ' - HD-GL-999'), ' ' + native, native[:-2] + '  -'):
+            self.assertNotIn(value, m.catalogue_texts(INCREASE, [(self.KEY, value)], self.ALLOWED))
+        self.assertNotIn(native, m.catalogue_texts(INCREASE, [(other, native)], self.ALLOWED))
+        # Not a key of the files plus one space: refused.
+        self.assertNotIn(native, m.catalogue_texts(INCREASE, [(self.KEY, native)], self.ALLOWED - {self.WEB}))
+        # Every other KHBS case keeps its rule: no trimmed key.
+        for case_id in m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES:
+            self.assertNotIn(native, m.catalogue_texts(case_id, [(self.KEY, native)], self.ALLOWED))
+        # The privacy walk itself refuses the trimmed key without this rule and takes it with it.
+        d = m.declaration()
+        with self.assertRaises(Exception):
+            d._texts([(self.KEY, native)], self.ALLOWED)
+        d._texts([(self.KEY, native)], self.ALLOWED | m.catalogue_texts(INCREASE, [(self.KEY, native)], self.ALLOWED))
+
+
 class Ntnn03KhbsDriverWiring(unittest.TestCase):
     def test_case_plans_use_the_j1_plan_with_the_khbs_schema_web_leaf_counts_and_rate_edits(self):
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')

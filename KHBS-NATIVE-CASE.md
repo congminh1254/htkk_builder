@@ -848,3 +848,12 @@ cases, "Tổng hợp KHBS" in each bổ sung round (no driver change; `Tckt01Khb
 the 5.8.2 MapMCT adds Y7 3.1.0 items (ct09a / ct12a, PL 01-3) to 01-1/KHBS; the static ct3_ten with its "[07] - " prefix (CollectionStatic
 adds " - Tiểu mục" only with a TCTPath); the row key texts (the nhóm ngành name with its double space); the hồ sơ groups 0252 "01/TCKT",
 025201 "01/BK-KTHTKD", 025202 "02/BK-KTBĐS"; tiểu mục 1003 / 1701 / 1014 and their names.
+
+Cohort for web 97b0d3326 / builder 8234ee8 (run 44101960535 for `03NTNN-khbs-increase-M09-2026`; the other two the same): every round
+passed (rates typed, Tổng hợp KHBS, export, KHBS schema), but `declaration-export-not-matched`: tree mask 16 (PLuc text only), two text
+mismatches, codes 19354 / 20754 = ordinals 193 and 207 of the web file, kind 5 (leaf text), native class 4 = the two `ct3_2_ten` keys of
+01-1/KHBS; first text shape 525 = native length 131 and a proper prefix of the 132-character web key. The J1 key ends with ct7 (ngày
+thanh toán, empty here), so the ' - '-joined key ends in " - "; HTKK writes it with that trailing space removed ("… - 15/08/2026 -").
+The web file must write the key the same way (htkk_web change; the pins then change). Retention was refused (`XML_PRIVACY`, leaf 149,
+section 16, `whitespace-variant`): `keyTrailingTrim` now accepts, on the key leaf of the J1 cases only, a text that plus one space is
+a text of the case's files. The "mismatches": 0 lines of the run log are the profile-alias and tax-ID oracles, not this comparison.

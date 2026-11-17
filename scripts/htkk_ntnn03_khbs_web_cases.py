@@ -45,6 +45,8 @@ _SUBITEMS = ('Thuế thu nhập doanh nghiệp từ hoạt động sản xuất 
 CATALOGUE_TEXTS = frozenset(_SHEETS + _CODES + _CAPTIONS + tuple(code + ' - ' + text for code, text in zip(_CODES, _CAPTIONS)) + _SUBITEMS)
 for _spec in CASES.values():
     _spec['catalogueTexts'] = CATALOGUE_TEXTS
+    # HTKK writes the 01-1/KHBS key (ct3_2_ten) trimmed: J1's key ends with ct7 (ngày thanh toán), empty in these cases.
+    _spec['keyTrailingTrim'] = True
     _spec['annexParts'] = ()
     _spec['inputMode'] = IMPORT_TICK
     _spec['producer'], _spec['exporter'] = PRODUCER, EXPORTER
