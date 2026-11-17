@@ -61,8 +61,9 @@ class Registry(unittest.TestCase):
                  '05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025',
                  '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025'}
 
-        # HTKK 5.8.3 observation cases: X9/Y1 with đến ngày 07/10/2026 and Y8 with one part II table (HTKK-5.8.3-IMPACT.md).
-        NEWER_583 = {'02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026'}
+        # HTKK 5.8.3 observation cases: X9/Y1 with đến ngày 07/10/2026 and Y8 with one part II table (HTKK-5.8.3-IMPACT.md);
+        # C9/D6 to 06/10/2026 (0719) and X9/Y1 with từ ngày before 01/07/2026 (no 0441 in 5.8.3).
+        NEWER_583 = {'02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026'}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
         self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583)
         self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583)

@@ -2794,6 +2794,90 @@
         "annexes": [],
         "amendmentOrder": 0
       }
+    },
+    {
+      "caseId": "02NTNN-TT80-two-annexes-to-06-10-2026",
+      "producerCase": "ntnn02-tt80-two-annexes-to-06-10-2026",
+      "adapterId": "02-ntnn-tt80-2.5.1",
+      "htkkVersion": "5.8.3",
+      "format": "htkk-web-ntnn02-tt80-two-annexes-to-06-10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn02-tt80-two-annexes-to-06-10-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn02-tt80-two-annexes-to-06-10-2026-input",
+      "outputBranch": "declaration-web-native-ntnn02-tt80-two-annexes-to-06-10-2026-output",
+      "statusContext": "htkk-native/ntnn02-tt80-two-annexes-to-06-10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "C9",
+        "adapterVersion": "2.5.1",
+        "periodType": "range",
+        "periodValue": "01/01/2026-06/10/2026",
+        "activityCode": "00",
+        "annexes": ["01-1", "01-2"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "04NTNN-TT80-one-subcontractor-to-06-10-2026",
+      "producerCase": "ntnn04-tt80-one-subcontractor-to-06-10-2026",
+      "adapterId": "04-ntnn-tt80-3.0.8",
+      "htkkVersion": "5.8.3",
+      "format": "htkk-web-ntnn04-tt80-one-subcontractor-to-06-10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn04-tt80-one-subcontractor-to-06-10-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn04-tt80-one-subcontractor-to-06-10-2026-input",
+      "outputBranch": "declaration-web-native-ntnn04-tt80-one-subcontractor-to-06-10-2026-output",
+      "statusContext": "htkk-native/ntnn04-tt80-one-subcontractor-to-06-10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "D6",
+        "adapterVersion": "3.0.8",
+        "periodType": "range",
+        "periodValue": "01/01/2026-06/10/2026",
+        "activityCode": "00",
+        "annexes": ["01-1"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "02NTNN-TT89-two-annexes-from-01-06-2026",
+      "producerCase": "ntnn02-tt89-two-annexes-from-01-06-2026",
+      "adapterId": "02-ntnn-tt89-3.0.9",
+      "htkkVersion": "5.8.3",
+      "format": "htkk-web-ntnn02-tt89-two-annexes-from-01-06-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn02-tt89-two-annexes-from-01-06-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn02-tt89-two-annexes-from-01-06-2026-input",
+      "outputBranch": "declaration-web-native-ntnn02-tt89-two-annexes-from-01-06-2026-output",
+      "statusContext": "htkk-native/ntnn02-tt89-two-annexes-from-01-06-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "X9",
+        "adapterVersion": "3.0.9",
+        "periodType": "range",
+        "periodValue": "01/06/2026-07/10/2026",
+        "activityCode": "00",
+        "annexes": ["01-1", "01-2"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "04NTNN-TT89-one-subcontractor-from-01-06-2026",
+      "producerCase": "ntnn04-tt89-one-subcontractor-from-01-06-2026",
+      "adapterId": "04-ntnn-tt89-3.0.9",
+      "htkkVersion": "5.8.3",
+      "format": "htkk-web-ntnn04-tt89-one-subcontractor-from-01-06-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-ntnn04-tt89-one-subcontractor-from-01-06-2026-input",
+      "inputBranch": "declaration-web-reference-ntnn04-tt89-one-subcontractor-from-01-06-2026-input",
+      "outputBranch": "declaration-web-native-ntnn04-tt89-one-subcontractor-from-01-06-2026-output",
+      "statusContext": "htkk-native/ntnn04-tt89-one-subcontractor-from-01-06-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Y1",
+        "adapterVersion": "3.0.9",
+        "periodType": "range",
+        "periodValue": "01/06/2026-07/10/2026",
+        "activityCode": "00",
+        "annexes": ["01-1"],
+        "amendmentOrder": 0
+      }
     }
   ]
 }
