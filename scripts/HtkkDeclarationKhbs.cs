@@ -209,6 +209,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(declarationKhbsRound==declarationKhbsTarget)declarationKhbsStepMask|=512;else declarationKhbsStepMask|=8;
   roundtripImportCommandInvoked=false;roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
   declarationImportClickReturned=false;declarationImportSheetMatched=false;declarationSheetObserved=false;declarationPeriodObserved=false;declarationPeriodMatched=false;declarationAnnexMatched=false;declarationClock=null;
+  // Each round's period dialog shows the Y7 notice 0699 again (HtkkDeclarationCasePlans.PeriodInfoMessageAccepted).
+  declarationPeriodInfoClosed=false;
   declarationEntryActionCount=0;declarationEntryComboCount=0;declarationEntryMismatchMask=0;declarationEntryLockedMask=0;declarationEntryCellTypeMismatchMask=0;declarationEntryRowInsertCount=0;
   // A 05-1/PBT round (KhbsImportTick) chooses its Thuế tỉnh/CCT again after each import: the tick state starts afresh.
   declarationTickClock=null;declarationTickMethodPinsMatched=false;declarationTickEditsMatched=false;declarationTickTicksMatched=false;declarationTickReadbackMatched=false;

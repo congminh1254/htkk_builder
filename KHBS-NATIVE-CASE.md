@@ -860,3 +860,11 @@ The "mismatches": 0 lines of the run log are the profile-alias and tax-ID oracle
 writes every cell as `GetValueExportXML(...).ToString().Trim()` (.NET 2.0 String.Trim, both ends only). htkk_web now trims every KHBS
 cell value the same way (`lib/htkk-khbs-fragments.ts` `dotNetTrim`), so the web file carries the HTKK text and no privacy exception is
 needed; the J1 web pins changed (5933 / 5936 / 5968 bytes), the lần đầu file is unchanged.
+
+Runs 44102029926 (`01TCKT-310-khbs-hop-tac-kd-Q4-2026`) and 44102047602 (`01TCKT-310-khbs-bds-M10-2026`), builder 8234ee8: round 0 (lần đầu)
+was imported, saved and closed (step mask 519, round 1, sheet count 7), then the bổ sung period dialog of round 1 stopped at
+`declaration-period-original-message-rejected` with both `declarationPeriodRejectedMessageId` and `declarationPeriodInfoMessageId` 699:
+`btnDongY_Click` shows the Y7 notice 0699 on every period confirmation, the Bổ sung one included, and the driver closed it only once per
+case. The driver now closes it once per period dialog (`declarationPeriodInfoClosed`, cleared by `BeginDeclarationKhbsRound`); the
+predicate is unchanged (Y7 and 699 only), `declarationPeriodInfoMessageId` keeps the recorded id, and any other message, or a second 0699
+in the same confirmation, is still a refusal.
