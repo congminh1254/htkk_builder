@@ -683,7 +683,7 @@ class WorkflowAndProbe(unittest.TestCase):
         # Only the reviewed information message 0699 of Y7 (btnDongY_Click: frmMessage style 3, no icon, result discarded, then
         # OpenToKhai) is closed with its one button, once; nothing else is ever clicked here.
         self.assertEqual(block.count('PerformClick'), 1)
-        self.assertIn('if(declarationPeriodInfoMessageId==0&&HtkkDeclarationCasePlans.PeriodInfoMessageAccepted(declarationPlan,periodMessageId)){declarationPeriodInfoMessageId=periodMessageId;Record();DeclarationMessageClose(periodMessage).PerformClick();return;}', block)
+        self.assertIn('if(!declarationPeriodInfoClosed&&HtkkDeclarationCasePlans.PeriodInfoMessageAccepted(declarationPlan,periodMessageId)){declarationPeriodInfoClosed=true;declarationPeriodInfoMessageId=periodMessageId;Record();DeclarationMessageClose(periodMessage).PerformClick();return;}', block)
         plans_text = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
         self.assertIn('internal static bool PeriodInfoMessageAccepted(HtkkDeclarationCasePlan plan,int messageId){return plan!=null&&plan.MenuId=="Y7"&&messageId==699;}', plans_text)
         self.assertEqual(plans_text.count('PeriodInfoMessageAccepted('), 1)
@@ -691,6 +691,26 @@ class WorkflowAndProbe(unittest.TestCase):
         self.assertIn('declarationPeriodInfoMessageId', json.dumps(fields))
         safe = (ROOT / 'Get-HtkkSafeGuiReferenceResult.ps1').read_text(encoding='utf-8')
         self.assertIn("$value['declarationPeriodInfoMessageId'] -lt 0 -or $value['declarationPeriodInfoMessageId'] -gt 699){throw 'invalid'}", safe)
+
+    def test_period_info_message_is_closed_once_per_khbs_round(self):
+        # A KHBS case opens the period dialog once per round and Y7 shows 0699 each time (runs 44102029926, 44102047602: round 1
+        # refused the second 0699). The once-only flag is set only where 0699 is closed and cleared only when a new round begins;
+        # the predicate stays Y7 + 699, and a second 0699 within one period confirmation is still a refusal.
+        driver = (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8')
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        sources = driver + khbs + ''.join(p.read_text(encoding='utf-8') for p in ROOT.glob('*.cs') if p.name not in ('HtkkDeclarationWebImport.cs', 'HtkkDeclarationKhbs.cs'))
+        self.assertEqual(sources.count('declarationPeriodInfoClosed=true;'), 1)
+        self.assertEqual(len(re.findall(r'(?<!bool )declarationPeriodInfoClosed=false;', sources)), 1)
+        self.assertIn('private bool declarationPeriodInfoClosed=false;', driver)
+        begin = khbs[khbs.index('private void BeginDeclarationKhbsRound(){'):]
+        begin = begin[:begin.index('\n }\n')]
+        self.assertIn('declarationPeriodInfoClosed=false;', begin)
+        # The recorded id is never cleared between rounds (only its field initializer sets 0).
+        self.assertEqual(len(re.findall(r'declarationPeriodInfoMessageId=0\b', sources)), 1)
+        self.assertIn('private int declarationPeriodRejectedMessageId=0,declarationPeriodInfoMessageId=0,', driver)
+        block = driver[driver.index('Form periodMessage;'):driver.index('if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting)')]
+        accept = block.index('if(!declarationPeriodInfoClosed&&')
+        self.assertLess(accept, block.index('declarationPeriodRejectedMessageId=periodMessageId;'))
 
     def test_period_info_message_is_tolerated_only_for_y7_0699(self):
         # Behaviour of the closed predicate, read from the C# source: menu Y7 and catalogue message 699, nothing else.

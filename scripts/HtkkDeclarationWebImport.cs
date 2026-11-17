@@ -27,6 +27,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private bool declarationSheetBusy=false,declarationFlowStarted=false;
  private Stopwatch declarationClock=null;
  private bool declarationMenuClicked=false,declarationPeriodObserved=false,declarationPeriodMatched=false,declarationAnnexMatched=false,declarationSheetObserved=false,declarationIdentityMatched=false,declarationSourcePinsMatched=false,declarationImportSheetMatched=false,declarationSchemaValid=false,declarationServiceIdentityMatched=false,declarationCreationDateValid=false,declarationTreeMatched=false;
+ // The Y7 0699 notice of the current period confirmation was closed (once per period dialog; see InspectDeclarationSheetCore).
+ private bool declarationPeriodInfoClosed=false;
  private int declarationPeriodRejectedMessageId=0,declarationPeriodInfoMessageId=0,declarationAnnexSelectedCount=0,declarationSheetCount=0,declarationCellCheckCount=0,declarationCellMismatchMask=0,declarationCellLockedMask=0,declarationCellZeroMask=0,declarationXmlCheckCount=0,declarationXmlMismatchMask=0,declarationTreeMismatchMask=0,declarationTreeLeafCount=0;
  // B8 visible period annex list (HtkkDeclarationCasePlans.VisibleAnnexListReviewed), value-free and text-free.
  // declarationAnnexListMask bits: 1 the list was visible on a plan whose layout hides it; 2 the reviewed handling matched;
@@ -374,10 +376,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Form periodMessage;string periodText;
   // Y7 (01/TCKT TT89) only: btnDongY_Click shows the information message 0699 after every period check passed and then
   // opens the tờ khai (HtkkDeclarationCasePlans.PeriodInfoMessageAccepted). It is recorded and closed once with its only
-  // button ("Đóng"); any other message, or a second one, is still a refusal.
+  // button ("Đóng"); any other message, or a second one in the same period confirmation, is still a refusal. A kê khai bổ
+  // sung case opens the period dialog once per round (lần đầu C0, then each bổ sung) and btnDongY_Click shows 0699 each time
+  // (runs 44102029926 / 44102047602: round 1 refused the second 0699), so the once-only flag is per round
+  // (declarationPeriodInfoClosed, reset by BeginDeclarationKhbsRound); declarationPeriodInfoMessageId keeps the recorded id.
   if(forms.Count==0&&!declarationSheetObserved&&DeclarationMessage(out periodMessage,out periodText)){
    int periodMessageId=OriginalMessageCatalogueId(periodText);
-   if(declarationPeriodInfoMessageId==0&&HtkkDeclarationCasePlans.PeriodInfoMessageAccepted(declarationPlan,periodMessageId)){declarationPeriodInfoMessageId=periodMessageId;Record();DeclarationMessageClose(periodMessage).PerformClick();return;}
+   if(!declarationPeriodInfoClosed&&HtkkDeclarationCasePlans.PeriodInfoMessageAccepted(declarationPlan,periodMessageId)){declarationPeriodInfoClosed=true;declarationPeriodInfoMessageId=periodMessageId;Record();DeclarationMessageClose(periodMessage).PerformClick();return;}
    declarationPeriodRejectedMessageId=periodMessageId;DeclarationTerminal(HtkkAutomationStage.DeclarationPeriodOriginalMessageRejected);return;}
   if(forms.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}
   List<Control> grids=new List<Control>();visited=0;GatherSpreads(forms[0],grids,ref visited);if(grids.Count!=1){SetStage(HtkkAutomationStage.DeclarationSheetWaiting);Record();return;}

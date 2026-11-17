@@ -848,3 +848,11 @@ cases, "Tổng hợp KHBS" in each bổ sung round (no driver change; `Tckt01Khb
 the 5.8.2 MapMCT adds Y7 3.1.0 items (ct09a / ct12a, PL 01-3) to 01-1/KHBS; the static ct3_ten with its "[07] - " prefix (CollectionStatic
 adds " - Tiểu mục" only with a TCTPath); the row key texts (the nhóm ngành name with its double space); the hồ sơ groups 0252 "01/TCKT",
 025201 "01/BK-KTHTKD", 025202 "02/BK-KTBĐS"; tiểu mục 1003 / 1701 / 1014 and their names.
+
+Runs 44102029926 (`01TCKT-310-khbs-hop-tac-kd-Q4-2026`) and 44102047602 (`01TCKT-310-khbs-bds-M10-2026`), builder 8234ee8: round 0 (lần đầu)
+was imported, saved and closed (step mask 519, round 1, sheet count 7), then the bổ sung period dialog of round 1 stopped at
+`declaration-period-original-message-rejected` with both `declarationPeriodRejectedMessageId` and `declarationPeriodInfoMessageId` 699:
+`btnDongY_Click` shows the Y7 notice 0699 on every period confirmation, the Bổ sung one included, and the driver closed it only once per
+case. The driver now closes it once per period dialog (`declarationPeriodInfoClosed`, cleared by `BeginDeclarationKhbsRound`); the
+predicate is unchanged (Y7 and 699 only), `declarationPeriodInfoMessageId` keeps the recorded id, and any other message, or a second 0699
+in the same confirmation, is still a refusal.
