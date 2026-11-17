@@ -163,7 +163,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
   amendmentOpenConfirmInvoked=false;amendmentOpenPeriodMatched=false;amendmentOpenKhbsSheetsObserved=false;amendmentOpenPriorUnchanged=false;
   // Case 5: round 2 selects (or finds selected) phụ lục 01-2 again and imports, checks and restores the changed B2 annex.
-  if(KhbsAnnexLan2Case()){annex12SelectionActionCount=0;annexSelected=0;periodAnnex12Matched=false;annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;annex12WebHeadAuthorityRepairCount=0;annex12WebHeadAuthorityFailureMask=0;annex12WebHeadAuthorityComboMask=0;annex12WebImportDisplayEmptyMask=0;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;}
+  if(KhbsAnnexLan2Case()){annex12SelectionActionCount=0;annexSelected=0;periodAnnex12Matched=false;annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;annex12WebHeadAuthorityRepairCount=0;annex12WebHeadAuthorityFailureMask=0;annex12WebHeadAuthorityComboMask=0;annex12WebHeadAuthorityListMask=0;annex12WebImportDisplayEmptyMask=0;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;}
   khbsRound2Opened=true;navigationPhase="waiting-main-menu";menuStep=0;SetStage(HtkkAutomationStage.GtgtAmendmentKhbsRound2Opening);Record();
  }
  private bool KhbsNonzeroOriginal(){return KhbsMode()&&webInputVerified&&webCaseId==KhbsSale5WebCaseId;}
@@ -289,7 +289,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!khbsOriginalMoneyMatched){if(khbsPriorCloseClock==null)khbsPriorCloseClock=Stopwatch.StartNew();if(khbsPriorCloseClock.Elapsed.TotalSeconds>=10)throw new InvalidOperationException();return;}
    khbsPriorCloseClock=null;exportWatcher.Stop();khbsC0Import=false;khbsPhase="not-started";
    roundtripImportCommandInvoked=false;roundtripImportDialogMatched=false;roundtripImportKeyboardCommitted=false;roundtripImportDialogSubmitted=false;roundtripImportPathMatched=false;roundtripImportSucceeded=false;
-   annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;annex12WebHeadAuthorityRepairCount=0;annex12WebHeadAuthorityFailureMask=0;annex12WebHeadAuthorityComboMask=0;annex12WebImportDisplayEmptyMask=0;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;
+   annex12WebImportSheetMatched=false;annex12WebHeadAuthorityRestored=false;annex12WebHeadAuthorityRepairCount=0;annex12WebHeadAuthorityFailureMask=0;annex12WebHeadAuthorityComboMask=0;annex12WebHeadAuthorityListMask=0;annex12WebImportDisplayEmptyMask=0;annex12WebImportGroupCount=0;annex12WebImportRowCount=0;
    Record();StartOriginalAmendmentPriorSave(khbsOwner,grid,main);return;
   }
   throw new InvalidOperationException();

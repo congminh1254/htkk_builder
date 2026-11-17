@@ -25,14 +25,21 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // failed, bit 10 S combo failed, bit 11 the percentage editor was opened to leave the row.
  private int annex12WebHeadAuthorityFailureMask=0;
  private int annex12WebHeadAuthorityComboMask=0;
+ // Bounded diagnostic of the R list at the FIRST head-CQT pick of the latest row (run 44122393792, case 24: failure mask 2752 =
+ // 2048|512|ordinal 3, the first Bắc Ninh row's first R pick threw; the public catalogue names 22100 AND 22300 "Thuế thành phố
+ // Bắc Ninh", as every merged tỉnh's head CQT, while "Thuế Thành phố Hà Nội" is unique). Bits 0/1/2: the head text is 0, 1, 2+
+ // times in R's Items; bit 3 R entered by a real key first (EnterCell installs the ward's list); after it bit 4 ItemData aligned,
+ // bit 5/6 the text 1 / 2+ times, bit 7 exactly one entry has the text AND the head code; bit 8 the pick by that code was made.
+ // Counts and flags only; no item text leaves the process.
+ private int annex12WebHeadAuthorityListMask=0;
  private bool annex12NonzeroBusy=false;private Control annex12ExportGrid=null;private object annex12ExportSheet=null;
  private string Annex12ExportJson(){
   string q=((char)34).ToString();StringBuilder json=new StringBuilder();
   string[] names=new string[]{"annex12ExportMainZeroMatched","annex12ExportShapeMatched","annex12ExportSchemaVerified","annex12NonzeroEditsMatched","annex12NonzeroSecondShapeMatched","annex12NonzeroSecondSchemaVerified","annex12WebImportSheetMatched","annex12WebBaselineSchemaVerified","annex12WebReexportSchemaVerified","annex12WebHeadAuthorityRestored"};
   bool[] flags=new bool[]{annex12ExportMainZeroMatched,annex12ExportShapeMatched,annex12ExportSchemaVerified,annex12NonzeroEditsMatched,annex12NonzeroSecondShapeMatched,annex12NonzeroSecondSchemaVerified,annex12WebImportSheetMatched,annex12WebBaselineSchemaVerified,annex12WebReexportSchemaVerified,annex12WebHeadAuthorityRestored};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(flags[index]));
-  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask","annex12WebHeadAuthorityRepairCount","annex12WebHeadAuthorityFailureMask","annex12WebHeadAuthorityComboMask"};
-  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask,annex12WebHeadAuthorityRepairCount,annex12WebHeadAuthorityFailureMask,annex12WebHeadAuthorityComboMask};
+  names=new string[]{"annex12NonzeroExportCount","annex12NonzeroSecondExportBytes","annex12WebImportGroupCount","annex12WebImportRowCount","annex12WebImportDisplayEmptyMask","annex12WebHeadAuthorityRepairCount","annex12WebHeadAuthorityFailureMask","annex12WebHeadAuthorityComboMask","annex12WebHeadAuthorityListMask"};
+  int[] counts=new int[]{annex12NonzeroExportCount,annex12NonzeroSecondExportBytes,annex12WebImportGroupCount,annex12WebImportRowCount,annex12WebImportDisplayEmptyMask,annex12WebHeadAuthorityRepairCount,annex12WebHeadAuthorityFailureMask,annex12WebHeadAuthorityComboMask,annex12WebHeadAuthorityListMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   json.Append(","+q+"annex12NonzeroSecondExportSha256"+q+":"+q+annex12NonzeroSecondExportSha256+q);return json.ToString();
  }
@@ -269,7 +276,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
      int row=start+j,ordinal=seen+j;if(ordinal>=Annex12MaxRestoredRows)throw new InvalidOperationException();string ward=Annex12ExpectedWard(ordinal),cqt=Annex12WardCqtName(ward),head=Annex12WardHeadName(ward),headCode=Annex12WardHeadCode(ward);
      annex12WebHeadAuthorityFailureMask=(annex12WebHeadAuthorityFailureMask&2048)|((ordinal+1)<<6);Record();
      if(CellText(annex,row,17)==String.Empty){
-      try{SelectImportedAnnex12Combo(grid,annex,row,17,head);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
+      try{SelectImportedAnnex12Head(grid,annex,row,head,headCode);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;Record();
      }
      // Runs 42206910531/42206915586 stopped right after the second combo action: the original
@@ -309,7 +316,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
       // 91/79/G1/G4/71/01; D1 is not exempt, so confirming the value already processed is a no-op.
       // A user then picks a neighbouring entry of the same original list and picks the head CQT
       // again: both are real changes, so the original handler runs and writes AJ from ItemData.
-      try{SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head);SelectImportedAnnex12Combo(grid,annex,row,17,head);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
+      try{SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head,headCode);SelectImportedAnnex12Combo(grid,annex,row,17,head,headCode);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;annex12WebHeadAuthorityComboMask|=64;Record();
       MoveImportedAnnex12Cell(grid,annex,row,18);
       if(CellText(annex,row,18)!=cqt){
@@ -334,11 +341,13 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // (Add("","")), then the ward's head CQT, then the two nationwide CQTs 82500/82700. The entry before
  // the head CQT is that blank, which a user cannot use (winFpSpread_ComboCloseUp skips cellChange for
  // an empty cell), so the nearest non-empty entry after it is picked, as a user would.
- private void SelectImportedAnnex12NeighbourEntry(Control grid,object annex,int row,int column,string value){
+ private void SelectImportedAnnex12NeighbourEntry(Control grid,object annex,int row,int column,string value,string code){
   if(column!=17)throw new InvalidOperationException();
   object type=Get(Cell(annex,row,column),"CellType");string[] items=type==null?null:Get(type,"Items") as string[];
   if(items==null||items.Length<2||items.Length>4096)throw new InvalidOperationException();
-  int at=Array.IndexOf(items,value);if(at<0||Array.LastIndexOf(items,value)!=at)throw new InvalidOperationException();
+  int at=Array.IndexOf(items,value);if(at<0)throw new InvalidOperationException();
+  // A text listed twice (merged tỉnh, case 24) is located by its ItemData code; a unique text as before.
+  if(Array.LastIndexOf(items,value)!=at){at=Annex12CodedIndex(items,Get(type,"ItemData") as string[],value,code);if(at<0)throw new InvalidOperationException();}
   string neighbour=null;
   for(int step=1;step<items.Length&&neighbour==null;step++){
    foreach(int candidate in new int[]{at-step,at+step}){
@@ -349,7 +358,34 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(String.IsNullOrEmpty(neighbour)||neighbour==value)throw new InvalidOperationException();
   SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);
  }
- private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){
+ private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){SelectImportedAnnex12Combo(grid,annex,row,column,value,null);}
+ // The single index whose Items text is ``value`` and whose ItemData is ``code`` (ItemData aligned with Items), else -1.
+ private static int Annex12CodedIndex(string[] items,string[] data,string value,string code){
+  if(items==null||data==null||data.Length!=items.Length||String.IsNullOrEmpty(code))return -1;int found=-1;
+  for(int index=0;index<items.Length;index++)if(items[index]==value&&data[index]==code){if(found>=0)return -1;found=index;}
+  return found;
+ }
+ private static int Annex12ItemCount(string[] items,string value){int count=0;if(items!=null)foreach(string item in items)if(item==value)count++;return count;}
+ // The FIRST pick of R (head CQT) of an imported row. A head text listed once in R's current Items (every Hà Nội row) is picked
+ // exactly as before. Otherwise (absent, or a merged tỉnh's text listed twice) R is entered by one real Left key from S first
+ // (EnterImportedAnnex12HeadByKey: winFpSpread_EnterCell installs the ward's list with ItemData), and a text still listed twice is
+ // picked at the single entry whose ItemData is the head code the case data pins. Only original list entries are selected.
+ private void SelectImportedAnnex12Head(Control grid,object annex,int row,string head,string headCode){
+  object type=Get(Cell(annex,row,17),"CellType");int count=Annex12ItemCount(type==null?null:Get(type,"Items") as string[],head);
+  annex12WebHeadAuthorityListMask=count==0?1:count==1?2:4;Record();
+  if(count==1){SelectImportedAnnex12Combo(grid,annex,row,17,head);return;}
+  EnterImportedAnnex12HeadByKey(grid,annex,row);annex12WebHeadAuthorityListMask|=8;
+  type=Get(Cell(annex,row,17),"CellType");string[] items=type==null?null:Get(type,"Items") as string[];string[] data=type==null?null:Get(type,"ItemData") as string[];
+  if(items!=null&&data!=null&&data.Length==items.Length)annex12WebHeadAuthorityListMask|=16;
+  int keyed=Annex12ItemCount(items,head);if(keyed==1)annex12WebHeadAuthorityListMask|=32;else if(keyed>1)annex12WebHeadAuthorityListMask|=64;
+  if(Annex12CodedIndex(items,data,head,headCode)>=0)annex12WebHeadAuthorityListMask|=128;Record();
+  if(keyed==1){SelectImportedAnnex12Combo(grid,annex,row,17,head);return;}
+  if(keyed<1||(annex12WebHeadAuthorityListMask&128)==0)throw new InvalidOperationException();
+  annex12WebHeadAuthorityListMask|=256;Record();SelectImportedAnnex12Combo(grid,annex,row,17,head,headCode);
+ }
+ // ``code`` (head CQT only): when ``value`` is listed more than once, the entry whose ItemData is ``code``; null keeps the old rule
+ // (exactly one entry with the text).
+ private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value,string code){
   Form owner=grid.FindForm();uint pid;
   if((column!=17&&column!=18)||owner==null||owner!=roundtripOwner||!owner.Visible||!owner.Enabled||!grid.Visible||!grid.Enabled||Get(grid,"ActiveSheet")!=annex||OriginalMessageVisible()||Annex12CellLocked(annex,row,column))throw new InvalidOperationException();
   grid.Focus();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||!grid.ContainsFocus)throw new InvalidOperationException();
@@ -360,7 +396,15 @@ public sealed partial class HtkkGuiReferenceAutomation {
   Control vendor=FindVendorCombo(editor,0);if(vendor==null)throw new InvalidOperationException();editorKind="combo";SetPublic(vendor,"DroppedDown",true);
   object list=Get(vendor,"List");System.Collections.IList sequence=list as System.Collections.IList;int count=sequence!=null?sequence.Count:Convert.ToInt32(Get(list,"Count"));
   if(count<1||count>4096)throw new InvalidOperationException();PropertyInfo entryItem=list.GetType().GetProperty("Item",new Type[]{typeof(int)});if(entryItem==null&&sequence==null)throw new InvalidOperationException();int selected=-1;
-  for(int offset=0;offset<count;offset++){object entry=sequence!=null?sequence[offset]:entryItem.GetValue(list,new object[]{offset});if(entry!=null&&entry.ToString()==value){if(selected>=0)throw new InvalidOperationException();selected=offset;}}
+  int matches=0;
+  for(int offset=0;offset<count;offset++){object entry=sequence!=null?sequence[offset]:entryItem.GetValue(list,new object[]{offset});if(entry!=null&&entry.ToString()==value){if(selected<0)selected=offset;matches++;}}
+  if(matches>1){
+   // Only for a code-pinned head CQT: the vendor list must be the cell's Items (same count, same text at the index).
+   object type=Get(Cell(annex,row,column),"CellType");string[] items=type==null?null:Get(type,"Items") as string[];
+   if(code==null||column!=17||items==null||items.Length!=count)throw new InvalidOperationException();
+   selected=Annex12CodedIndex(items,Get(type,"ItemData") as string[],value,code);
+   if(selected<0)throw new InvalidOperationException();object chosen=sequence!=null?sequence[selected]:entryItem.GetValue(list,new object[]{selected});if(chosen==null||chosen.ToString()!=value)throw new InvalidOperationException();
+  }
   if(selected<0)throw new InvalidOperationException();GetWindowThreadProcessId(GetForegroundWindow(),out pid);if(pid!=(uint)Process.GetCurrentProcess().Id||OriginalMessageVisible())throw new InvalidOperationException();
   SetPublic(vendor,"SelectedIndex",selected);SetPublic(vendor,"DroppedDown",false);
   grid.GetType().GetMethod("StopCellEditing",Type.EmptyTypes).Invoke(grid,null);Application.DoEvents();grid.Focus();

@@ -1726,6 +1726,7 @@
     "annex12WebHeadAuthorityRepairCount",
     "annex12WebHeadAuthorityFailureMask",
     "annex12WebHeadAuthorityComboMask",
+    "annex12WebHeadAuthorityListMask",
     "annex10ImportSheetObserved",
     "annex10ImportSheetActive",
     "annex10ImportPurchaseRows",
@@ -2385,6 +2386,16 @@
       "default": 0,
       "minimum": 0,
       "maximum": 2047,
+      "activeModes": [
+        "gtgt-web-import-inspect",
+        "gtgt-amendment-khbs-inspect"
+      ]
+    },
+    "annex12WebHeadAuthorityListMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 511,
       "activeModes": [
         "gtgt-web-import-inspect",
         "gtgt-amendment-khbs-inspect"

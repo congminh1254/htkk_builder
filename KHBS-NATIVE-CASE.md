@@ -410,6 +410,20 @@ the annex web cases run as before; the Bắc Ninh ward has head CQT 22100 "Thu�
 checks AH/AJ/AK of each imported row against the same data. An unknown ward still fails closed. If the run matches, htkk_web has a
 native case for a plant in another tỉnh (the web already accepts it inside the released verified scope).
 
+**Run 44122393792 (release 8f6e9ee): not ready at `gtgt-annex12-web-import-checking`.** The import matched (sheet matched, two
+groups, five rows; AH 221, AJ 22100, AK 22117 re-read on the Bắc Ninh rows; display-empty mask 8659208 = only R blank, as in every
+Hà Nội case). Failure mask 2752 = 2048 | 512 | (2+1)<<6: rows 1-2 (Hà Nội) were restored, the FIRST R pick of row 3, the first
+Bắc Ninh row, threw. Combo mask 2027 still carries 64|128 of row 2's completed re-pick, so row 3 never reached the retry: neither
+code 22100 nor the combo shape of that row was the cause. The public catalogue (`Catalogue_CQT_Dia_Ban.xml` as htkk_web pins it)
+lists the head CQT of every merged tỉnh twice under one name (22100 and 22300 are both "Thuế thành phố Bắc Ninh"), while "Thuế
+Thành phố Hà Nội" is listed once; `SelectImportedAnnex12Combo` refuses a text found twice in the vendor list. Fix (`work/provfix`):
+`SelectImportedAnnex12Head` keeps the old pick when R's Items list the head text once (every Hà Nội row, byte-for-byte the same
+calls); otherwise R is entered by the proven real Left key first (EnterCell installs the ward's list), and a text still listed
+twice is picked at the single entry whose ItemData is the pinned head code (22100). The retry's neighbour/re-pick uses the same
+code rule. New bounded result `annex12WebHeadAuthorityListMask` (0..511) reports the list shape at that first pick (text 0/1/2+
+times, key entry, ItemData aligned, text count after it, code entry found, pick by code), so a further failure names its cause
+without any item text.
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe

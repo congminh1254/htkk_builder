@@ -426,7 +426,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   block=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):]
   loop=block[:block.index(' private void SelectImportedAnnex12Combo(')]
-  order=[loop.index(x) for x in ('SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','SelectImportedAnnex12Combo(grid,annex,row,18,','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,ordinal,1.0)','PassImportedAnnex12Percentage(grid,annex,row)')]
+  order=[loop.index(x) for x in ('SelectImportedAnnex12Head(grid,annex,row,head,headCode);','MoveImportedAnnex12Cell(grid,annex,row,18);','SelectImportedAnnex12Combo(grid,annex,row,18,','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,ordinal,1.0)','PassImportedAnnex12Percentage(grid,annex,row)')]
   self.assertEqual(order,sorted(order))
   self.assertIn('annex12WebHeadAuthorityFailureMask&=2048;annex12WebHeadAuthorityRestored=true;',loop)
   move=block[block.index(' private void MoveImportedAnnex12Cell('):block.index(' private void PassImportedAnnex12Percentage(')]
@@ -488,7 +488,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12NeighbourEntry(')]
   retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)==head){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
-  order=[retry.index(x) for x in ('EnterImportedAnnex12HeadByKey(grid,annex,row);','SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head);','SelectImportedAnnex12Combo(grid,annex,row,17,head);','annex12WebHeadAuthorityComboMask|=64','MoveImportedAnnex12Cell(grid,annex,row,18);','annex12WebHeadAuthorityComboMask|=128')]
+  order=[retry.index(x) for x in ('EnterImportedAnnex12HeadByKey(grid,annex,row);','SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head,headCode);','SelectImportedAnnex12Combo(grid,annex,row,17,head,headCode);','annex12WebHeadAuthorityComboMask|=64','MoveImportedAnnex12Cell(grid,annex,row,18);','annex12WebHeadAuthorityComboMask|=128')]
   self.assertEqual(order,sorted(order))
   helper=annex[annex.index(' private void SelectImportedAnnex12NeighbourEntry('):annex.index(' private void SelectImportedAnnex12Combo(')]
   self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);',helper)
@@ -514,5 +514,59 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   self.assertEqual(pick(['','HEAD','DNL','TMDT'],'HEAD'),'DNL')
   self.assertEqual(pick(['A','HEAD',''],'HEAD'),'A')
   self.assertIsNone(pick(['','HEAD'],'HEAD'))
+
+class DuplicateHeadCqtText(unittest.TestCase):
+ """Run 44122393792 (KHBS case 24, plant 2 in Bắc Ninh): stage gtgt-annex12-web-import-checking, failure mask 2752 =
+ 2048|512|(2+1)<<6: rows 1-2 (Hà Nội) were restored, the FIRST R pick of row 3 (the first Bắc Ninh row) threw. The combo mask 2027
+ carries 64|128 of row 2's completed re-pick, so row 3 never reached its retry; the import itself matched (AH 221, AJ 22100, AK
+ 22117 re-read; display-empty mask 8659208 = R blank on every row, as in the Hà Nội cases). The public catalogue lists the head
+ CQTs of every merged tỉnh twice (22100 and 22300 are both "Thuế thành phố Bắc Ninh"); "Thuế Thành phố Hà Nội" once. The
+ vendor pick refuses a text listed twice, so the driver now picks such a text by its ItemData code."""
+ def annex(self):return (ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
+ def test_masks_of_the_run_decode_to_the_first_pick_of_the_first_bac_ninh_row(self):
+  mask=2752;self.assertEqual((mask&63,(mask>>6)&7,bool(mask&512),bool(mask&1024),bool(mask&2048)),(0,3,True,False,True))
+  self.assertEqual([i for i in range(11) if 2027>>i&1],[0,1,3,5,6,7,8,9,10])  # 64 and 128: an earlier row's retry completed
+  self.assertEqual([[8659208>>(o*5+k)&1 for k in range(5)] for o in range(5)],[[0,0,0,1,0]]*5)  # only R blank, every row
+ def test_unique_text_keeps_the_old_pick_and_a_repeated_text_is_picked_by_code(self):
+  annex=self.annex()
+  restore=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' // Picks the nearest other non-empty entry')]
+  self.assertIn('try{SelectImportedAnnex12Head(grid,annex,row,head,headCode);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}',restore)
+  self.assertIn('SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head,headCode);SelectImportedAnnex12Combo(grid,annex,row,17,head,headCode);',restore)
+  head=annex[annex.index(' private void SelectImportedAnnex12Head('):annex.index(' // ``code`` (head CQT only)')]
+  # Listed once (every Hà Nội row): the earlier pick, unchanged and first.
+  self.assertLess(head.index('if(count==1){SelectImportedAnnex12Combo(grid,annex,row,17,head);return;}'),head.index('EnterImportedAnnex12HeadByKey(grid,annex,row);'))
+  order=[head.index(x) for x in ('EnterImportedAnnex12HeadByKey(grid,annex,row);','|=16;','|=32;','|=128;','if(keyed==1){SelectImportedAnnex12Combo(grid,annex,row,17,head);return;}','throw new InvalidOperationException();','|=256;Record();SelectImportedAnnex12Combo(grid,annex,row,17,head,headCode);')]
+  self.assertEqual(order,sorted(order))
+  for forbidden in ('SetPublic','set_Value','"Value"','"Text",','"Formula"','SendKeys','SetActiveCell'):self.assertNotIn(forbidden,head)
+  combo=annex[annex.index(' private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value,string code){'):annex.index(' // Read-only shape of the original combo cell')]
+  for needed in ('if(matches>1){','if(code==null||column!=17||items==null||items.Length!=count)throw new InvalidOperationException();','selected=Annex12CodedIndex(items,Get(type,"ItemData") as string[],value,code);','chosen.ToString()!=value'):self.assertIn(needed,combo)
+  self.assertIn('private void SelectImportedAnnex12Combo(Control grid,object annex,int row,int column,string value){SelectImportedAnnex12Combo(grid,annex,row,column,value,null);}',annex)
+  # The local CQT (S) keeps the old single-text rule.
+  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,cqt);',restore);self.assertNotIn('row,18,cqt,',restore)
+ def test_code_rule_on_catalogue_shaped_lists(self):
+  """Python mirror of Annex12CodedIndex and of the old vendor rule on the public catalogue's head names."""
+  def coded(items,data,value,code):
+   if items is None or data is None or len(data)!=len(items) or not code:return -1
+   found=[i for i,(t,c) in enumerate(zip(items,data)) if t==value and c==code];return found[0] if len(found)==1 else -1
+  def old(items,value):
+   at=[i for i,t in enumerate(items) if t==value];return at[0] if len(at)==1 else None
+  hn=['','Thuế Thành phố Hà Nội','Chi cục Thuế doanh nghiệp lớn','Chi cục Thuế Thương mại điện tử']
+  self.assertEqual(old(hn,hn[1]),1)
+  bn=['','Thuế thành phố Bắc Ninh','Thuế thành phố Bắc Ninh','Chi cục Thuế doanh nghiệp lớn'];codes=['','22100','22300','82500']
+  self.assertIsNone(old(bn,bn[1]))
+  self.assertEqual((coded(bn,codes,bn[1],'22100'),coded(bn,codes,bn[1],'22300'),coded(bn,codes,bn[1],'22700'),coded(bn,codes[:3],bn[1],'22100'),coded(bn,None,bn[1],'22100')),(1,2,-1,-1,-1))
+  annex=self.annex()
+  self.assertIn('for(int index=0;index<items.Length;index++)if(items[index]==value&&data[index]==code){if(found>=0)return -1;found=index;}',annex)
+  self.assertIn('if(items==null||data==null||data.Length!=items.Length||String.IsNullOrEmpty(code))return -1;',annex)
+ def test_list_mask_is_a_bounded_reported_result(self):
+  registry=json.loads((ROOT/'htkk-native-automation-registry.json').read_text())
+  self.assertEqual(registry['resultFields']['annex12WebHeadAuthorityListMask'],{'kind':'integer','default':0,'minimum':0,'maximum':511,'activeModes':['gtgt-web-import-inspect','gtgt-amendment-khbs-inspect']})
+  ps=(ROOT/'Get-HtkkSafeGuiReferenceResult.ps1').read_text()
+  self.assertIn("$value['annex12WebHeadAuthorityListMask'] -gt 511",ps)
+  self.assertIn("-and $value['annex12WebHeadAuthorityListMask'] -cne 0){throw 'invalid'}",ps)
+  annex=self.annex()
+  self.assertIn('"annex12WebHeadAuthorityComboMask","annex12WebHeadAuthorityListMask"};',annex);self.assertIn('annex12WebHeadAuthorityComboMask,annex12WebHeadAuthorityListMask};',annex)
+  self.assertEqual((ROOT/'HtkkGtgtAmendmentKhbsInspection.cs').read_text(encoding='utf-8').count('annex12WebHeadAuthorityListMask=0;'),2)
+  self.assertEqual(1|2|4|8|16|32|64|128|256,511)
 
 if __name__=='__main__':unittest.main()
