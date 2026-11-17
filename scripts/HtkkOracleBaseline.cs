@@ -54,4 +54,11 @@ internal static class HtkkOracleBaseline {
  };
  // 04/GTGT TT89 PL 01-1 import-plan method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.
  internal static string[] Gtgt04Tt89AnnexMethodPins(){if(Gtgt04[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_GTGT04_UNPINNED");return (string[])Gtgt04[Current].Clone();}
+ private static readonly string[][] Ntnn03=new string[][]{
+  new string[0],
+  new string[]{"H|frmWinToKhai|winFpSpread_CellChange|0x060003b5|25029|11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d","H|frmWinToKhai|winFpSpread_EnterCell|0x060003b9|6197|ef8bb59c9b33e7c672e2b5a0f2a0d42b7066fc46f10f31dbbdf044dc78dbcdc4","H|WinDoWorkEvent|CellChange|0x06000063|291|45a40a1819c94b7ad5ad5a7153092d368b3884faf585325431ac7c59aefce33f"},
+  new string[]{"H|frmWinToKhai|winFpSpread_CellChange|0x060003b7|25029|a6b31586c53942e4c969df82c23a9e4f4db681878a3147b2b3472094adf52d5a","H|frmWinToKhai|winFpSpread_EnterCell|0x060003bb|6197|eb1a35784150a38cfd5533f10d008c6bdaadd4f9ebd413f916e8e26913a48a5b","H|WinDoWorkEvent|CellChange|0x06000063|291|91ec9d71eac4d4b54725c1de9c391f8e378cfa69e0ccb748023f54c9251853a5"}
+ };
+ // 03/NTNN (J1) KHBS rate-edit method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.
+ internal static string[] Ntnn03KhbsRateMethodPins(){if(Ntnn03[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_NTNN03_UNPINNED");return (string[])Ntnn03[Current].Clone();}
 }

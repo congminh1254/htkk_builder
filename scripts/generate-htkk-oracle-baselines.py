@@ -40,7 +40,12 @@ GTGT04_PREFIX = 'gtgt04tt89-582-'
 GTGT04_IDS = ('gtgt04tt89-582-grid-cellchange', 'gtgt04tt89-582-enter-cell', 'gtgt04tt89-582-dowork-cellchange', 'gtgt04tt89-582-import-selected',
               'gtgt04tt89-582-finish-import', 'gtgt04tt89-582-rate-name', 'gtgt04tt89-582-cellchange', 'gtgt04tt89-582-rates', 'gtgt04tt89-582-revenue',
               'gtgt04tt89-582-tax')
-LATER = (TICK_PREFIX, PBT_PREFIX, GTGT04_PREFIX)
+# 03/NTNN (J1) KHBS import plan (5.8.2 oracle): the rates (9) BU34/BU35 typed again through the original editor after each
+# import, because Ntnn03TT80Nckt308.FinishImportXML clears them. Only the HTKK.exe editor path is pinned (the same bodies as the
+# gtgt04tt89 pins); the J1 business methods are not, the native cases observe them.
+NTNN03_PREFIX = 'ntnn03-582-'
+NTNN03_IDS = ('ntnn03-582-grid-cellchange', 'ntnn03-582-enter-cell', 'ntnn03-582-dowork-cellchange')
+LATER = (TICK_PREFIX, PBT_PREFIX, GTGT04_PREFIX, NTNN03_PREFIX)
 ADDED = 'added-reviewed'
 
 
@@ -120,6 +125,8 @@ def validate(data):
         require(tuple(x['id'] for x in methods if x['id'].startswith(PBT_PREFIX)) in ((), PBT_IDS), version + ' pbt pin set')
         require(all(x['status'] == ADDED for x in methods if x['id'].startswith(GTGT04_PREFIX)), version + ' gtgt04 pins must be added-reviewed')
         require(tuple(x['id'] for x in methods if x['id'].startswith(GTGT04_PREFIX)) in ((), GTGT04_IDS), version + ' gtgt04 pin set')
+        require(all(x['status'] == ADDED for x in methods if x['id'].startswith(NTNN03_PREFIX)), version + ' ntnn03 pins must be added-reviewed')
+        require(tuple(x['id'] for x in methods if x['id'].startswith(NTNN03_PREFIX)) in ((), NTNN03_IDS), version + ' ntnn03 pin set')
         require(set(ids) - {x['id'] for x in added} == set(reviewed), version + ' method set')
         for x in methods:
             if x['status'] == ADDED:
@@ -182,6 +189,11 @@ def pbt_pins(value):
 def gtgt04_pins(value):
     """04/GTGT TT89 PL 01-1 import-plan pins (asm|type|method|token|ilBytes|ilSha256) of one version; empty for 5.8.1."""
     return ['|'.join((x['assembly'], x['type'], x['method'], x['token'], str(x['ilBytes']), x['ilSha256'])) for x in value['methods'] if x['id'].startswith(GTGT04_PREFIX)]
+
+
+def ntnn03_pins(value):
+    """03/NTNN (J1) KHBS rate-edit pins (asm|type|method|token|ilBytes|ilSha256) of one version; empty for 5.8.1."""
+    return ['|'.join((x['assembly'], x['type'], x['method'], x['token'], str(x['ilBytes']), x['ilSha256'])) for x in value['methods'] if x['id'].startswith(NTNN03_PREFIX)]
 
 
 def render(data):
@@ -252,6 +264,11 @@ def render(data):
     c += [' };',
           ' // 04/GTGT TT89 PL 01-1 import-plan method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.',
           ' internal static string[] Gtgt04Tt89AnnexMethodPins(){if(Gtgt04[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_GTGT04_UNPINNED");return (string[])Gtgt04[Current].Clone();}',
+          ' private static readonly string[][] Ntnn03=new string[][]{']
+    c.append(',\n'.join(('  new string[]{' + ','.join(cs(p) for p in ntnn03_pins(v)) + '}') if ntnn03_pins(v) else '  new string[0]' for v in data['versions'].values()))
+    c += [' };',
+          ' // 03/NTNN (J1) KHBS rate-edit method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.',
+          ' internal static string[] Ntnn03KhbsRateMethodPins(){if(Ntnn03[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_NTNN03_UNPINNED");return (string[])Ntnn03[Current].Clone();}',
           '}']
     return ps_text, '\n'.join(c) + '\n'
 

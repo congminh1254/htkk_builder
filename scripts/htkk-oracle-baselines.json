@@ -855,6 +855,39 @@
      "ilSha256": "f2a3c75c6e3ba5d82753f0d9312f0460181c492dc0a02dad3cc3163593cdfa6b",
      "status": "added-reviewed",
      "review": "Copies the hidden formulas AW87:AW90 (ROUND(revenue x rate - reduction)) into [23], [25], [27], [29]. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2)."
+    },
+    {
+     "id": "ntnn03-582-grid-cellchange",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_CellChange",
+     "token": "0x060003b5",
+     "ilBytes": 25029,
+     "ilSha256": "11f3119f460a0e8f727fe77b9649631664410defb206b43a791c2fba0b6eb88d",
+     "status": "added-reviewed",
+     "review": "03/NTNN (J1) KHBS import plan: the rate (9) cell BU of ThueNTNN, typed again through the original editor after each import because FinishImportXML clears it, ends its edit in this handler. Pinned as the same body as gtgt04tt89-582-grid-cellchange; the J1 business branch (Ntnn03TT80Nckt308) is not pinned (no payload of this release on the review machine), the native case observes it."
+    },
+    {
+     "id": "ntnn03-582-enter-cell",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_EnterCell",
+     "token": "0x060003b9",
+     "ilBytes": 6197,
+     "ilSha256": "ef8bb59c9b33e7c672e2b5a0f2a0d42b7066fc46f10f31dbbdf044dc78dbcdc4",
+     "status": "added-reviewed",
+     "review": "03/NTNN (J1) KHBS import plan: selecting the rate cell BU of an imported ThueNTNN row before it is typed runs this handler. Pinned as the same body as gtgt04tt89-582-enter-cell; the J1 business branch is not pinned, the native case observes it."
+    },
+    {
+     "id": "ntnn03-582-dowork-cellchange",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "CellChange",
+     "token": "0x06000063",
+     "ilBytes": 291,
+     "ilSha256": "45a40a1819c94b7ad5ad5a7153092d368b3884faf585325431ac7c59aefce33f",
+     "status": "added-reviewed",
+     "review": "03/NTNN (J1) KHBS import plan: calls CellChange_<sheet index> of the business class by reflection (CellChange_0 of Ntnn03TT80Nckt308 for sheet 01) after the rate edit. Pinned as the same body as gtgt04tt89-582-dowork-cellchange; the called J1 method is not pinned, the native case observes it."
     }
    ]
   },
@@ -1482,6 +1515,39 @@
      "ilSha256": "0ac2a6b5422e0442d78511755c4f330fcfb120647fc46196de07d14b2310e64d",
      "status": "added-reviewed",
      "review": "Copies the hidden formulas AW87:AW90 (ROUND(revenue x rate - reduction)) into [23], [25], [27], [29]. Reviewed against the 04/GTGT TT89 PL 01-1 import plan (static reading of HTKK 5.8.2). HTKK 5.8.3: the same instructions as this reviewed 5.8.2 body once metadata tokens are resolved to names (token-normalised diff, inert data); pinned as itself for 5.8.3."
+    },
+    {
+     "id": "ntnn03-582-grid-cellchange",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_CellChange",
+     "token": "0x060003b7",
+     "ilBytes": 25029,
+     "ilSha256": "a6b31586c53942e4c969df82c23a9e4f4db681878a3147b2b3472094adf52d5a",
+     "status": "added-reviewed",
+     "review": "03/NTNN (J1) KHBS import plan: the rate (9) cell BU of ThueNTNN, typed again through the original editor after each import because FinishImportXML clears it, ends its edit in this handler. Pinned as the same body as gtgt04tt89-582-grid-cellchange; the J1 business branch (Ntnn03TT80Nckt308) is not pinned (no payload of this release on the review machine), the native case observes it. HTKK 5.8.3: pinned as itself, the same body as the 5.8.3 gtgt04tt89 pin."
+    },
+    {
+     "id": "ntnn03-582-enter-cell",
+     "assembly": "H",
+     "type": "frmWinToKhai",
+     "method": "winFpSpread_EnterCell",
+     "token": "0x060003bb",
+     "ilBytes": 6197,
+     "ilSha256": "eb1a35784150a38cfd5533f10d008c6bdaadd4f9ebd413f916e8e26913a48a5b",
+     "status": "added-reviewed",
+     "review": "03/NTNN (J1) KHBS import plan: selecting the rate cell BU of an imported ThueNTNN row before it is typed runs this handler. Pinned as the same body as gtgt04tt89-582-enter-cell; the J1 business branch is not pinned, the native case observes it. HTKK 5.8.3: pinned as itself, the same body as the 5.8.3 gtgt04tt89 pin."
+    },
+    {
+     "id": "ntnn03-582-dowork-cellchange",
+     "assembly": "H",
+     "type": "WinDoWorkEvent",
+     "method": "CellChange",
+     "token": "0x06000063",
+     "ilBytes": 291,
+     "ilSha256": "91ec9d71eac4d4b54725c1de9c391f8e378cfa69e0ccb748023f54c9251853a5",
+     "status": "added-reviewed",
+     "review": "03/NTNN (J1) KHBS import plan: calls CellChange_<sheet index> of the business class by reflection (CellChange_0 of Ntnn03TT80Nckt308 for sheet 01) after the rate edit. Pinned as the same body as gtgt04tt89-582-dowork-cellchange; the called J1 method is not pinned, the native case observes it. HTKK 5.8.3: pinned as itself, the same body as the 5.8.3 gtgt04tt89 pin."
     }
    ]
   }

@@ -145,8 +145,9 @@ internal static class HtkkDeclarationCasePlans {
   "01CNKD-khbs-increase-Q3-2026","01CNKD-khbs-decrease-Q3-2026","01CNKD-khbs-lan2-Q3-2026","01CNKD-PL01-khbs-Q3-2026",
   "02QTT-khbs-increase-Y2025","02QTT-khbs-lan2-Y2025","02QTT-khbs-decrease-Y2025","02QTT-khbs-refund-Y2025",
   "05QTT-khbs-increase-Y2025","05QTT-khbs-lan2-Y2025","05QTT-khbs-decrease-Y2025",
-  "03TNDN-khbs-increase-Y2025","03TNDN-khbs-lan2-Y2025","03TNDN-khbs-decrease-Y2025","03TNDN-khbs-rate15-Y2025"};
- internal static int KhbsSoLan(string caseId){return caseId=="01NTNN-khbs-lan2-M09-2026"||caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"||caseId=="05KK-khbs-lan2-Q3-2026"||caseId=="02QTT-khbs-lan2-Y2025"||caseId=="05QTT-khbs-lan2-Y2025"||caseId=="03TNDN-khbs-lan2-Y2025"||caseId=="01CNKD-khbs-lan2-Q3-2026"?2:Array.IndexOf(KhbsCaseIds,caseId)>=0?1:0;}
+  "03TNDN-khbs-increase-Y2025","03TNDN-khbs-lan2-Y2025","03TNDN-khbs-decrease-Y2025","03TNDN-khbs-rate15-Y2025",
+  "03NTNN-khbs-increase-M09-2026","03NTNN-khbs-lan2-M09-2026","03NTNN-khbs-decrease-M09-2026"};
+ internal static int KhbsSoLan(string caseId){return caseId=="01NTNN-khbs-lan2-M09-2026"||caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"||caseId=="05KK-khbs-lan2-Q3-2026"||caseId=="02QTT-khbs-lan2-Y2025"||caseId=="05QTT-khbs-lan2-Y2025"||caseId=="03TNDN-khbs-lan2-Y2025"||caseId=="03NTNN-khbs-lan2-M09-2026"||caseId=="01CNKD-khbs-lan2-Q3-2026"?2:Array.IndexOf(KhbsCaseIds,caseId)>=0?1:0;}
  // Whether a bổ sung round runs the original "Tổng hợp KHBS": not for 01/CNKD (U5 KieuKHBS "" in the 5.8.2 Menu.xml;
  // frmWinToKhai.LoadButton shows btnTongHopKHBS only for LoaiToKhai B with a non-empty KieuKHBS).
  internal static bool KhbsSummary(string caseId){return Array.IndexOf(KhbsCaseIds,caseId)>=0&&!caseId.StartsWith("01CNKD-",StringComparison.Ordinal);}
@@ -156,6 +157,7 @@ internal static class HtkkDeclarationCasePlans {
   if(caseId.StartsWith("02QTT-",StringComparison.Ordinal))return Qtt02KhbsPlan(caseId);
   if(caseId.StartsWith("05QTT-",StringComparison.Ordinal))return Qtt05KhbsPlan(caseId);
   if(caseId.StartsWith("03TNDN-khbs-",StringComparison.Ordinal))return Tndn03KhbsPlan(caseId);
+  if(caseId.StartsWith("03NTNN-khbs-",StringComparison.Ordinal))return Ntnn03KhbsPlan(caseId);
   bool i9=caseId.StartsWith("01NTNN-khbs-",StringComparison.Ordinal);
   int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"?253:caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?227:178;
   if(i9)return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","09","01/09/2026","30/09/2026",false,
@@ -227,6 +229,16 @@ internal static class HtkkDeclarationCasePlans {
    "InterfaceTemplates/excel/03_TNDN_TT80_294.xls","f7482448c4628bb56120eaa0cda5c245474c45f770b1d9f1c1b4caf31c319476","InterfaceTemplates/xml/03_TNDN_TT80_294.xml","cc05576d5356323c4f76e486814b72a3d48dd597523c1a0c11fba956e18be568",
    "Validate/KHBS_03_TNDN_TT80_294.xsd","42f72f6af7b53d74113c7005a1284ba1dacfd9267eae5ca50ad1d0b4f9558ba2",TKhaiThue,TKhaiThueSha256,WorkbookService,425,new string[0],new string[0]);
  }
+ // 03/NTNN KHBS (J1 3.0.8 tháng 09/2026; htkk_web docs/KE-KHAI-BO-SUNG-03-NTNN.md, KHBS-NATIVE-CASE.md "03/NTNN"): the plan of
+ // the lần đầu case 03NTNN-no-rate-M10-2026 (KieuKy 18, no annex, same workbook and layout pins) for kỳ 09/2026, the KHBS schema
+ // KHBS_03_NTNN_TT80_308.xsd (J1 KieuKHBS 3: GetToKhaiInfo takes the KHBS schema for LoaiToKhai B), no cell or XML checks, and the
+ // web B file leaf count (contract leafTarget + 4 service leaves). Every round is completed by KhbsImportTick (the rates again).
+ private static HtkkDeclarationCasePlan Ntnn03KhbsPlan(string caseId){
+  return new HtkkDeclarationCasePlan(caseId,"J1","3.0.8","840","Ntnn03TT80Nckt308",new string[]{"101","101_8","J1"},"month","18","2026","09","01/09/2026","30/09/2026",false,
+   new string[0],new string[]{"01|Tờ khai"},
+   "InterfaceTemplates/excel/03_NTNN_TT80_308.xls","ef4451f19a8a74ad667add7fd580ac83be149f7d35e65bbbe12aa42ccad11142","InterfaceTemplates/xml/03_NTNN_TT80_308.xml","41c8c6c92a684485aff87790739958948c94bf966cc5e56b6150a17f6beac550",
+   "Validate/KHBS_03_NTNN_TT80_308.xsd","c99ad92ba68a08a8e319e52e6c617970d978882885bd746be01a67f8425d7272",TKhaiThue,TKhaiThueSha256,WorkbookService,172,new string[0],new string[0]);
+ }
  // 05/KK-TNCN with 05-1/PBT: every imported round leaves Thuế tỉnh/CCT empty (no XML leaf), so the import is completed with the
  // reviewed combo edits of 05KK-PBT-two-provinces-Q3-2026 (the same two rows, offices unchanged between the versions).
  // 01/CNKD with PL 01: the giảm thuế ticks (AJ, no XML leaf) are made again after each import with the reviewed plan of the lần
@@ -236,7 +248,15 @@ internal static class HtkkDeclarationCasePlans {
  // RefreshDeclarationTickLocks (unlocked, unticked, CE 0: the empty TMĐT row; HTKK clears it again, no daySangPLGiamThue for it).
  // Run 43758208221 showed the fixed AJ341 is not that cell once table_1 has three rows. Null: no refresh.
  internal static string KhbsTickRefresh(string caseId){return caseId=="01CNKD-PL01-khbs-Q3-2026"?"AJ":null;}
- internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):caseId=="01CNKD-PL01-khbs-Q3-2026"?ImportTick("01CNKD-TT50-310-pl01-three-groups-Q3-2026"):null;}
+ // 03/NTNN (J1): Ntnn03TT80Nckt308.FinishImportXML (0x6001937) sets every imported rate [9] BU := getThuSuatByMa(CR, "DC_97") = ""
+ // (CR has no XML leaf), so after each import the two rates of the case files (BU34 5, BU35 2: rows 34-35 of ThueNTNN) are typed
+ // again through the original editor; TAB ends the edit (winFpSpread_CellChange -> WinDoWorkEvent.CellChange -> CellChange_0).
+ // Method pins: the editor path of HTKK.exe only (HtkkOracleBaseline.Ntnn03KhbsRateMethodPins).
+ internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):caseId=="01CNKD-PL01-khbs-Q3-2026"?ImportTick("01CNKD-TT50-310-pl01-three-groups-Q3-2026"):Ntnn03KhbsRateTick(caseId);}
+ private static HtkkDeclarationTickPlan Ntnn03KhbsRateTick(string caseId){
+  if(caseId!="03NTNN-khbs-increase-M09-2026"&&caseId!="03NTNN-khbs-lan2-M09-2026"&&caseId!="03NTNN-khbs-decrease-M09-2026")return null;
+  return new HtkkDeclarationTickPlan(new string[]{"number|BU34|5","number|BU35|2"},new string[0],new string[0],new string[0],HtkkOracleBaseline.Ntnn03KhbsRateMethodPins());
+ }
  // Y8 KHBS rounds are TYPED (the original import resets the Y8 tables, release 238): round 0 the lần đầu rows, round 1 the bổ
  // sung rows, every planned cell typed again (the B sheet opens on the saved lần đầu, possibly reset). Values = the htkk_web
  // producer rows (generate-htkk-web-ntnn-khbs-reference.mjs); ngày ký 13/11/2026 as in the files. I9 rounds are imported: null.
@@ -271,7 +291,8 @@ internal static class HtkkDeclarationCasePlans {
    case "01CNKD-khbs-increase-Q3-2026":case "01CNKD-khbs-decrease-Q3-2026":case "01CNKD-khbs-lan2-Q3-2026":case "01CNKD-PL01-khbs-Q3-2026":
    case "02QTT-khbs-increase-Y2025":case "02QTT-khbs-lan2-Y2025":case "02QTT-khbs-decrease-Y2025":case "02QTT-khbs-refund-Y2025":
    case "05QTT-khbs-increase-Y2025":case "05QTT-khbs-lan2-Y2025":case "05QTT-khbs-decrease-Y2025":
-   case "03TNDN-khbs-increase-Y2025":case "03TNDN-khbs-lan2-Y2025":case "03TNDN-khbs-decrease-Y2025":case "03TNDN-khbs-rate15-Y2025":return KhbsPlan(caseId);
+   case "03TNDN-khbs-increase-Y2025":case "03TNDN-khbs-lan2-Y2025":case "03TNDN-khbs-decrease-Y2025":case "03TNDN-khbs-rate15-Y2025":
+   case "03NTNN-khbs-increase-M09-2026":case "03NTNN-khbs-lan2-M09-2026":case "03NTNN-khbs-decrease-M09-2026":return KhbsPlan(caseId);
    // N8 03/TNDN TT80: KieuKy 11 = SetLayoutToKhaiNamTuNgayDenNgay (year + from/to date).
    case "03TNDN-profit20-Y2025":return new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,
     new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},

@@ -743,3 +743,33 @@ retention was refused (`XML_PRIVACY`, first ct3_ten path, text-other). MapMCT ha
 cell C70 is ="…(C9 =(C7 x "&R66&"%) + (C8 x C8a))": htkk_web now writes the C9 caption with the case's rate (15%), the rate15 web pin
 changed (11201 bytes, 918e23b7…1036), and `CATALOGUE_TEXTS` takes the C9 caption for 15/17/20% (space or line break) so the next
 export is retained even if that reading is wrong.
+
+## 03/NTNN (J1 3.0.8): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (docs/KE-KHAI-BO-SUNG-03-NTNN.md, `lib/htkk-ntnn01-khbs.ts` with `data/htkk-03-ntnn-khbs-rules.json`, hidden behind
+`KHBS_03NTNN_RELEASED` / `KHBS_03NTNN_LATER_RELEASED` = false) reads the KHBS of J1 statically: Menu.xml `KieuKHBS="3"`, VersionKHBS 3.0.8,
+tờ khai MaHoSo 0046, the generic workbook `KHBS_TT80_308.xls` (the formulas of the I9 `KHBS_TT80_251.xls`), the I9/Y8 output templates
+and schema `Validate/KHBS_03_NTNN_TT80_308.xsd` (c99ad92b…7272). MapMCT J1: four DYNAMIC items of ThueNTNN, (8) ThueTNDN/ct8, (9) the
+rate ThueTNDN/ct9, (10) ThueTNDN/ct10, (11) ThueTNDN/ct11 (LoaiThue 0), key TCTPath ct1a…ct5, ct7; MapMCT_TieuMuc gives (11) tiểu mục
+1052. The J1 entries were read from the 5.8.1 payload (J1 is class (a) in HTKK-5.8.2-IMPACT.md and HTKK-5.8.3-IMPACT.md); these runs
+also check that they hold on 5.8.2. Kỳ 09/2026: hạn 20/10/2026, 24 late days to 13/11/2026.
+
+`scripts/htkk_ntnn03_khbs_web_cases.py` holds the pins (sizes and SHA-256, never the files), per-case settings (no annex,
+`khbs-web-xml-import-tick-reexport`) and the public J1 catalogue texts (`CATALOGUE_TEXTS`), merged into `htkk_ntnn_khbs_web_cases.py`
+(`test_ntnn03_khbs_web_cases.py`). Registered with adapters `03-ntnn-tt80-3.0.8-khbs`, `-khbs-lan2` (HTKK 5.8.2, `tick`), `releaseGate: false`.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `03NTNN-khbs-increase-M09-2026` (row A (6), (8) 800tr → 900tr at 5%: (8), (11); 1052 +5tr, ct3b 36.000) | original, web | 168 |
+| `03NTNN-khbs-lan2-M09-2026` (lần 2 on the increase case: row A (8) → 1 tỷ; 1052 +5tr, ct3b 36.000) | original, prior (= the increase web file), web | 168 |
+| `03NTNN-khbs-decrease-M09-2026` (row B (10) 1tr miễn giảm: (10), (11); 1052 −1tr, ct3b −7.200) | original, web | 168 |
+
+Driver: the rounds of the I9 cases with the plan of `03NTNN-no-rate-M10-2026` for tháng 09/2026 (menu 101 → 101_8 → J1, KieuKy 18, no
+annex), KHBS schema above, "Tổng hợp KHBS" in each bổ sung round. Ntnn03TT80Nckt308.FinishImportXML (0x6001937) clears every imported rate
+[9] (BU := getThuSuatByMa(CR, "DC_97") = ""), so after EVERY import (C0, the intermediate lần 1 of the lần-2 case, the last round)
+`HtkkDeclarationCasePlans.KhbsImportTick` types the rates of the files again through the original editor: `number|BU34|5`,
+`number|BU35|2` (`$HtkkNtnnKhbsTickCases`; method pins `HtkkOracleBaseline.Ntnn03KhbsRateMethodPins`, the HTKK.exe editor path only:
+the same bodies as the gtgt04tt89 pins; the J1 business methods are not pinned, no payload of 5.8.2 was on the review machine). No other
+driver change. What only these runs decide (web predictions in its golden): the J1 MapMCT/MapMCT_TieuMuc of 5.8.2, the text of
+`ct3_2_ten` with the empty ct3 / ct7 parts, `ct9` of a typed rate ("5.00" in the web file), no (9) row when the rate is typed again
+equal, and the J1 tiền chậm nộp.
