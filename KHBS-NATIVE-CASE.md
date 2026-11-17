@@ -773,3 +773,38 @@ the same bodies as the gtgt04tt89 pins; the J1 business methods are not pinned, 
 driver change. What only these runs decide (web predictions in its golden): the J1 MapMCT/MapMCT_TieuMuc of 5.8.2, the text of
 `ct3_2_ten` with the empty ct3 / ct7 parts, `ct9` of a typed rate ("5.00" in the web file), no (9) row when the rate is typed again
 equal, and the J1 tiền chậm nộp.
+
+## 01/TCKT TT89/2026 3.1.0 (Y7 on HTKK 5.8.2): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+htkk_web (`lib/htkk-tckt01-khbs.ts`, docs/NGHIEP-VU-HKD.md "Kê khai bổ sung 01/TCKT 3.1.0", hidden behind `KHBS_01TCKT_TT89_RELEASED` /
+`_LATER_RELEASED` = false) reads Y7 from the HTKK 5.8.2 Menu.xml (f26c2ea2…): `KieuKHBS="3"`, VersionXML and VersionKHBS 3.1.0, sheets
+01-KHBS and 01-1/KHBS. So unlike U5 (KieuKHBS "") the bổ sung carries 01/KHBS and 01-1/KHBS, the rounds run "Tổng hợp KHBS" and the B file
+is checked against `Validate/KHBS_01_TCKT_TT89_310.xsd` (52067 bytes, 4631d4c3…5020: the 3.1.0 tree plus PL01_KHBS / PL01_1_KHBS; the web
+rebuilt it from the 5.8.2 main schema and the 5.8.1 KHBS block and checked it against the SHA-256 of the 5.8.2 payload and the MsiFileHash
+entry). KHBS workbook `KHBS_TT80_310.xls` (same bytes as the 5.8.1 `KHBS_TT80_309.xls`, formulas of the 5.8.2 `KHBS_TT80_309.xls`), templates
+`KHBS_01_TT80_xml.xml` / `KHBS_01_1_TT80_xml.xml`. The MapMCT / MapMCT_TieuMuc / DM_MaTM the web read are the 5.8.1 files (the 5.8.2 ones
+were not available to it): main items [07] [08] [09] [11] [12] [13] static (tiểu mục [09] 1003, [12] 1701, [13] 1014), 01/BK-KTHTKD items
+[04]…[09] dynamic keyed ct04 - ct05 - ct06_ten, 02/BK-KTBĐS items [05]…[12] keyed ct05 - ct06.
+
+`scripts/htkk_tckt01_khbs_web_cases.py` holds the pins (sizes and SHA-256, never the files), per-case settings (annexParts
+`PLuc_HKD_CNKD` / `PLuc_CANHAN_TTS`, import), the public Y7 catalogue texts (`CATALOGUE_TEXTS`: sheet names and MaHoSo, every MapMCT Y7 code
+and caption with and without its "[nn] - " prefix, the DM_MaTM names of 1003 / 1701 / 1014) and `exportDates` (TKhaiThue/ngayKy is the
+export day for Y7, as in the lần đầu cases), merged into `htkk_ntnn_khbs_web_cases.py` (`compare_tree` now passes a case's exportDates;
+`test_tckt01_khbs_web_cases.py`). Registered with adapters `01-tckt-tt89-3.1.0-khbs-bk1`, `-khbs-bk1-lan2`, `-khbs-bk2` (HTKK 5.8.2),
+`releaseGate: false`.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `01TCKT-310-khbs-hop-tac-kd-Q4-2026` (01/BK-KTHTKD quý 4/2026, row A 300tr → 350tr; 1003 +1tr) | original, web | 224 |
+| `01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026` (lần 2 on the case above, 350tr → 380tr; 1003 +600.000) | original, prior (= the case above's web file), web | 224 |
+| `01TCKT-310-khbs-decrease-hop-tac-kd-Q4-2026` (row B [08] 110tr → 100tr; 1003 −100.000) | original, web | 198 |
+| `01TCKT-310-khbs-bds-M10-2026` (02/BK-KTBĐS tháng 10/2026, lessor A [08] +20tr; 1701 +1tr, 1014 +1tr) | original, web | 242 |
+
+Driver: the rounds of the other KHBS cases with the plans of `01TCKT-310-hop-tac-kd-two-individuals-Q4-2026` (menu 101 → 101_37 → Y7, quý
+4/2026, 01/BK-KTHTKD) and `01TCKT-310-bds-three-lessors-M10-2026` (tháng 10/2026, 02/BK-KTBĐS; tỉnh/xã panel of the period dialog), KHBS
+schema above, every round imported (both bảng kê import with every leaf, runs 44044889464, 44044893474), 0699 closed as for the lần đầu
+cases, "Tổng hợp KHBS" in each bổ sung round (no driver change; `Tckt01KhbsPlan`). Ngày lập 13/11/2026 is before both hạn nộp (quý 4/2026
+01/02/2027, tháng 10/2026 20/11/2026): ct3a_1 written, 0 days, ct3b 0. What only these runs decide (web predictions in its golden): whether
+the 5.8.2 MapMCT adds Y7 3.1.0 items (ct09a / ct12a, PL 01-3) to 01-1/KHBS; the static ct3_ten with its "[07] - " prefix (CollectionStatic
+adds " - Tiểu mục" only with a TCTPath); the row key texts (the nhóm ngành name with its double space); the hồ sơ groups 0252 "01/TCKT",
+025201 "01/BK-KTHTKD", 025202 "02/BK-KTBĐS"; tiểu mục 1003 / 1701 / 1014 and their names.
