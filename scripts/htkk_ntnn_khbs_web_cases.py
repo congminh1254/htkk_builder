@@ -20,7 +20,8 @@ are merged the same way from htkk_cnkd_khbs_web_cases.py; their B files carry no
 KieuKHBS "" in HTKK 5.8.2, so its bổ sung is the declaration itself with loaiTKhai B). The 02/QTT-TNCN KHBS cases (B8, KieuKHBS
 3, 02-1/BK-QTT-TNCN before the two fragments) are merged the same way from htkk_qtt02_khbs_web_cases.py, the 05/QTT-TNCN ones
 (B9, 05-1 and 05-3 before the fragments) from htkk_qtt05_khbs_web_cases.py, and the 03/TNDN KHBS
-cases (N8, KieuKHBS 3, 03-1A/TNDN before the two fragments) from htkk_tndn03_khbs_web_cases.py."""
+cases (N8, KieuKHBS 3, 03-1A/TNDN before the two fragments) from htkk_tndn03_khbs_web_cases.py; the 01/TCKT 3.1.0 KHBS cases (Y7,
+KieuKHBS 3, its bảng kê before the two fragments, ngayKy compared as an export date) from htkk_tckt01_khbs_web_cases.py."""
 import hashlib
 import importlib.util
 import io
@@ -106,6 +107,15 @@ CASES.update(tndn03.CASES)
 MENUS.update(tndn03.MENUS)
 PERIODS.update(tndn03.PERIODS)
 TNDN03_CASES = tuple(tndn03.CASES)
+_tckt01_spec = importlib.util.spec_from_file_location('htkk_tckt01_khbs_web_cases_data', pathlib.Path(__file__).with_name('htkk_tckt01_khbs_web_cases.py'))
+tckt01 = importlib.util.module_from_spec(_tckt01_spec)
+_tckt01_spec.loader.exec_module(tckt01)
+if set(tckt01.CASES) & set(CASES) or set(tckt01.MENUS) & set(MENUS):
+    raise ValueError('CASE_POLICY')
+CASES.update(tckt01.CASES)
+MENUS.update(tckt01.MENUS)
+PERIODS.update(tckt01.PERIODS)
+TCKT01_CASES = tuple(tckt01.CASES)
 KHBS_FRAGMENTS = ('PL01_KHBS', 'PL01_1_KHBS')
 for _spec in CASES.values():
     _spec.setdefault('khbsParts', KHBS_FRAGMENTS)
@@ -348,7 +358,7 @@ KEY_PATH_SUFFIX = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
 
 
 def catalogue_texts(case_id, items, allowed):
-    """Extra texts a case's native export may carry (02/QTT-TNCN and 03/TNDN only, ``catalogueTexts``): the public HTKK catalogue texts of the
+    """Extra texts a case's native export may carry (02/QTT-TNCN, 05/QTT-TNCN, 03/TNDN and 01/TCKT only, ``catalogueTexts``): the public HTKK catalogue texts of the
     menu, and on the 01-1/KHBS row key leaf a ' - '-joined key whose every piece is empty, a text of the case's files or a bounded
     number/code/date shape. Every other case gets none."""
     spec = case(case_id)
@@ -363,7 +373,8 @@ def catalogue_texts(case_id, items, allowed):
 
 def compare_tree(web_body, native_body, case_id):
     """Whole-tree comparison of the native B export with the case's web B file, checked against its pin first (declaration rule:
-    creation date and the four service leaves normalised in memory; every other leaf, ngày lập KHBS and late days included, exact)."""
+    creation date and the four service leaves normalised in memory; every other leaf, ngày lập KHBS and late days included, exact;
+    a case's ``exportDates`` leaves (01/TCKT: TKhaiThue/ngayKy) must equal their own document's creation date)."""
     validate_xml(web_body, case_id, 'web')
-    return declaration().compare_tree(web_body, native_body, ())
+    return declaration().compare_tree(web_body, native_body, case(case_id).get('exportDates', ()))
 

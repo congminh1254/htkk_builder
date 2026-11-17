@@ -34,7 +34,7 @@ def manifest(case_id, module=m):
 class NtnnKhbsWebCases(unittest.TestCase):
     def test_five_cases_with_exact_staged_names(self):
         # The 05/KK-TNCN cases are merged from htkk_kk05_khbs_web_cases.py (test_kk05_khbs_web_cases.py).
-        self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES))
+        self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES + m.TCKT01_CASES))
         self.assertEqual(sorted(m.NTNN_CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
                                                   '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026']))
         for case_id, c in m.CASES.items():
@@ -120,10 +120,14 @@ class NtnnKhbsWebCases(unittest.TestCase):
 
 
 def native_of(case_id, created='2026-11-15'):
-    """In-memory native-shaped copy of the synthetic web B file: original service identity and current creation date."""
+    """In-memory native-shaped copy of the synthetic web B file: original service identity and current creation date (and, for a
+    case with export-date leaves, 01/TCKT ngayKy, that day there too, as the original export writes it)."""
     d = sm.declaration(); text = support.files(sm, case_id)[sm.WEB_NAME].decode('utf-8')
     for web, native in zip(sm.SERVICE, (*d.native_service('5.8.2'), 'A' * 32)):
         text = text.replace('>' + web + '<', '>' + native + '<', 1)
+    for path in sm.CASES[case_id].get('exportDates', ()):
+        name = path.rsplit('/', 1)[1]
+        text = text.replace('<%s>%s<' % (name, sm.FIXED_DATE), '<%s>%s<' % (name, created), 1)
     return text.replace('<ngayLapTKhai>' + sm.FIXED_DATE + '<', '<ngayLapTKhai>' + created + '<', 1).encode('utf-8')
 
 

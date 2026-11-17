@@ -59,7 +59,8 @@ class Registry(unittest.TestCase):
                  '01CNKD-khbs-increase-Q3-2026', '01CNKD-khbs-decrease-Q3-2026', '01CNKD-khbs-lan2-Q3-2026', '01CNKD-PL01-khbs-Q3-2026',
                  '02QTT-khbs-increase-Y2025', '02QTT-khbs-lan2-Y2025', '02QTT-khbs-decrease-Y2025', '02QTT-khbs-refund-Y2025',
                  '05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025',
-                 '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025'}
+                 '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025',
+                 '01TCKT-310-khbs-hop-tac-kd-Q4-2026', '01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026', '01TCKT-310-khbs-decrease-hop-tac-kd-Q4-2026', '01TCKT-310-khbs-bds-M10-2026'}
 
         # HTKK 5.8.3 observation cases: X9/Y1 with đến ngày 07/10/2026 and Y8 with one part II table (HTKK-5.8.3-IMPACT.md);
         # C9/D6 to 06/10/2026 (0719) and X9/Y1 with từ ngày before 01/07/2026 (no 0441 in 5.8.3).

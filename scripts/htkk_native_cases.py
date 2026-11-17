@@ -29,6 +29,9 @@ QTT05_KHBS_PRODUCER='scripts/generate-htkk-web-qtt05-khbs-reference.mjs'
 # Kê khai bổ sung of 03/TNDN TT80 (N8 2.9.4, năm 2025; htkk_tndn03_khbs_web_cases.py, merged the same way;
 # KHBS-NATIVE-CASE.md "03/TNDN"): own producer; KieuKHBS 3, so the rounds run "Tổng hợp KHBS".
 TNDN03_KHBS_PRODUCER='scripts/generate-htkk-web-tndn03-khbs-reference.mjs'
+# Kê khai bổ sung of 01/TCKT TT89/2026 3.1.0 (Y7, kỳ quý 01/BK-KTHTKD and kỳ tháng 02/BK-KTBĐS; htkk_tckt01_khbs_web_cases.py, merged
+# the same way; KHBS-NATIVE-CASE.md "01/TCKT"): own producer; KieuKHBS 3, so the rounds run "Tổng hợp KHBS".
+TCKT01_KHBS_PRODUCER='scripts/generate-htkk-web-tckt01-khbs-reference.mjs'
 _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('10/2026',),'quarter':('4/2026',)}}
 # Native-case input modes of the declaration driver: the original "Nhập từ XML" of the web XML, or
 # typing a compiled fixed plan into the original grid (HtkkDeclarationCasePlans.Entry) when the
@@ -146,6 +149,11 @@ TRUSTED_ADAPTERS={
  # KHBS 03/TNDN: N8 2.9.4 năm 2025 with 03-1A/TNDN (chosen in the period dialog), every round imported; lần 2 has its own adapter.
  '03-tndn-2.9.4-khbs':{'producer':TNDN03_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['03-1A'],'driver':NTNN_KHBS_DRIVER,'menuId':'N8','xmlVersion':'2.9.4','periods':{'year':('2025',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
  '03-tndn-2.9.4-khbs-lan2':{'producer':TNDN03_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['03-1A'],'driver':NTNN_KHBS_DRIVER,'menuId':'N8','xmlVersion':'2.9.4','periods':{'year':('2025',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
+ # KHBS 01/TCKT 3.1.0: Y7 with one bảng kê chosen in the period dialog (01-1 quý 4/2026, 01-2 tháng 10/2026), every round imported;
+ # lần 2 has its own adapter.
+ '01-tckt-tt89-3.1.0-khbs-bk1':{'producer':TCKT01_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['01-1'],'driver':NTNN_KHBS_DRIVER,'menuId':'Y7','xmlVersion':'3.1.0','periods':{'quarter':('4/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
+ '01-tckt-tt89-3.1.0-khbs-bk1-lan2':{'producer':TCKT01_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['01-1'],'driver':NTNN_KHBS_DRIVER,'menuId':'Y7','xmlVersion':'3.1.0','periods':{'quarter':('4/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
+ '01-tckt-tt89-3.1.0-khbs-bk2':{'producer':TCKT01_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':['01-2'],'driver':NTNN_KHBS_DRIVER,'menuId':'Y7','xmlVersion':'3.1.0','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
  # J1 03/NTNN 3.0.8 (non-gating): KieuKy 18 like I9; FinishImportXML clears rate [9], so the case uses rate 0.
  '03-ntnn-tt80-3.0.8':_declaration('J1','3.0.8',{'month':('10/2026',),'day':('20/10/2026',)},[]),
  # D6/Y1 04/NTNN quyết toán (non-gating): KieuKy 22 = SetLayoutToKhaiTuNgayDenNgay, period 'range' (from-to

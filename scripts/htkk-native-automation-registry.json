@@ -3441,7 +3441,11 @@
         "02NTNN-TT80-two-annexes-to-06-10-2026",
         "04NTNN-TT80-one-subcontractor-to-06-10-2026",
         "02NTNN-TT89-two-annexes-from-01-06-2026",
-        "04NTNN-TT89-one-subcontractor-from-01-06-2026"
+        "04NTNN-TT89-one-subcontractor-from-01-06-2026",
+        "01TCKT-310-khbs-hop-tac-kd-Q4-2026",
+        "01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026",
+        "01TCKT-310-khbs-decrease-hop-tac-kd-Q4-2026",
+        "01TCKT-310-khbs-bds-M10-2026"
       ]
     },
     "webCaseEditCount": {
