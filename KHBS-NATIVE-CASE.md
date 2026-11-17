@@ -435,9 +435,9 @@ KHBS of both menus statically from HTKK 5.8.2: KieuKHBS 3 like D1, but every Map
 `KHBS_TT80_309.xls` (same formulas as D1, AA38 included), output `KHBS_01_TT80_xml.xml` / `KHBS_01_1_TT80_xml.xml`, schemas
 `KHBS_01_NTNN_TT80_251.xsd` / `KHBS_01_NTNN_NCCNN_TT89_309.xsd`.
 
-`scripts/htkk_ntnn_khbs_web_cases.py` is the reviewed INPUT half of six cases (sizes and SHA-256 of every staged file pinned,
+`scripts/htkk_ntnn_khbs_web_cases.py` is the reviewed INPUT half of eight cases (sizes and SHA-256 of every staged file pinned,
 bounded structural checks; the reviewed bytes themselves in `htkk_ntnn_khbs_web_inputs.json`; `test_ntnn_khbs_web_cases.py`).
-The six cases are registered in `htkk-native-cases.json` (adapters `01-ntnn-tt80-2.5.1-khbs`, `01-ntnn-tt80-2.5.1-khbs-lan2`,
+The eight cases are registered in `htkk-native-cases.json` (adapters `01-ntnn-tt80-2.5.1-khbs`, `01-ntnn-tt80-2.5.1-khbs-lan2`,
 `01-ntnn-nccnn-tt89-3.0.9-khbs`, `01-ntnn-nccnn-tt89-3.0.9-khbs-lan2`; driver `declaration-amendment-khbs-inspect`, HTKK 5.8.2) with `releaseGate: false`: they are
 observation cases, dispatched by the cohort but never in `GATE_CASES`, so a mismatch neither blocks a release nor turns Assess red.
 
@@ -449,6 +449,16 @@ observation cases, dispatched by the cohort but never in `GATE_CASES`, so a mism
 | `01NTNN-NCCNN-khbs-part1-M10-2026` | Y8 | original, web | 265 |
 | `01NTNN-NCCNN-khbs-part2-M10-2026` | Y8 | original, web | 249 |
 | `01NTNN-NCCNN-khbs-lan2-M10-2026` | Y8 | original, prior (= `01NTNN-NCCNN-khbs-part1-M10-2026`'s web file), web | 223 |
+| `01NTNN-NCCNN-khbs-part1-nodate-M10-2026` | Y8 | original, web | 265 |
+| `01NTNN-NCCNN-khbs-part2-nodate-M10-2026` | Y8 | original, web | 249 |
+
+The two `nodate` cases check the trimmed 01-1/KHBS row key (`ct3_2_ten`) when its LAST part is empty. HTKK builds the key as
+`ListToString(parts, " - ")` and exports every cell with `GetValueExportXML(...).ToString().Trim()` (see "03/NTNN" below), so a
+key ending in an empty part is written without its trailing space. `part1-nodate` is the phần I case with (4) ngày hợp đồng left
+empty (W60 never typed, contract HD-GL-202): key `… -  - HD-GL-202 -`. `part2-nodate` is the phần II case with the supplier's (6)
+ngày thanh toán left empty (AE78 never typed, contract HD-GL-005): key `… - 01/09/2026 - 200000000 -`. Amounts, rows, tiểu mục and
+leaf counts are those of their base cases; before htkk_web trimmed the cells (`lib/htkk-khbs-fragments.ts` `dotNetTrim`) the web
+file would have ended these keys with a space.
 
 Driver (`scripts/HtkkDeclarationKhbs.cs` on the declaration driver; step mask bits listed there):
 
@@ -543,7 +553,7 @@ dynamic (key MST - xã - tỉnh - CQT) and [14] feeds Muc_I.2 (`CollectionDetail
 `KHBS_05_KK_TNCN_TT80_293.xsd` / `KHBS_05_KK_TNCN_TT89_309.xsd`.
 
 `scripts/htkk_kk05_khbs_web_cases.py` holds the pins (sizes and SHA-256 of every staged file, never the files) and per-case
-settings of five cases; `htkk_ntnn_khbs_web_cases.py` merges them, so fetch, publishers and the probe lists check them exactly like
+settings of seven cases; `htkk_ntnn_khbs_web_cases.py` merges them, so fetch, publishers and the probe lists check them exactly like
 the 01/NTNN cases (`test_kk05_khbs_web_cases.py`). Registered in `htkk-native-cases.json` (adapters `05-kk-tncn-2.9.3-khbs`,
 `-khbs-lan2`, `-khbs-pbt`, `05-kk-tncn-tt89-3.0.9-khbs`; HTKK 5.8.2) with `releaseGate: false`.
 
@@ -554,6 +564,12 @@ the 01/NTNN cases (`test_kk05_khbs_web_cases.py`). Registered in `htkk-native-ca
 | `05KK-khbs-decrease-Q3-2026` | L7 | original, web | 161 |
 | `05KK-TT89-khbs-increase-Q4-2026` | Z8 | original, web | 174 |
 | `05KK-PBT-khbs-Q3-2026` | L7 + 05-1/PBT | original, web | 230 |
+| `05KK-PBT-nomst-khbs-Q3-2026` | L7 + 05-1/PBT | original, web | 230 |
+
+`05KK-PBT-nomst-khbs-Q3-2026` is the PBT case with the branch's MST (ct08) left empty in both versions (L7 TT80 does not require it;
+TT89 Validate_1 does, E_43). Its 01-1/KHBS row key (ct08, ten_xa, ct08b_tinh_ten, ct09_cqt_ten) then starts with an empty part and
+is written trimmed, `- Phường Đồ Sơn - Thành phố Hải Phòng - Thuế cơ sở 6 Thành phố Hải Phòng`, and its Muc_I.2 row has an empty
+ct3 (MST). Same rounds and KhbsImportTick plan as the PBT case.
 
 Driver: the rounds of the 01/NTNN cases with the plans of `05KK-withheld-Q3-2026` / `05KK-TT89-withheld-Q4-2026` (menu 101 →
 101_11 → L7/Z8, quý 3/2026 or quý 4/2026), every round imported. The PBT case ticks 05-1/PBT-KK-TNCN in the period dialog and, after

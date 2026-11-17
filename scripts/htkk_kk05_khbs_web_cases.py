@@ -35,6 +35,11 @@ CASES = {
     '05KK-PBT-khbs-Q3-2026': {'producerCase': 'kk05-pbt-khbs-q3-2026', 'menuId': 'L7', 'soLan': 1, 'web': (7460, 'f27e9cf3168a94295e6a80344d7e983ef45554fc3260bd1b5aaa7e9252bcb806'), 'original': (3541, '7f42c909ac6ba799691bf3f560211ce3fb20b4fa94a52ad7b4cc5c5fda70c69e'), 'prior': None, 'leafTarget': 230,
         'annexParts': (PBT,), 'inputMode': IMPORT_TICK,
         'expected': {'rows': ['[29]', '[30]', '[14]'], 'subitems': [['1001', '1000000']], 'allocation': [['00001', '10300', '1000000']], 'ct10': '1000000', 'ct11': '1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '14', 'ct3b': '4200'}},
+    # The 05-1/PBT case with the branch's MST (ct08) empty (TT80 does not require it): its 01-1/KHBS key starts with an empty part,
+    # written trimmed by the web file (htkk_web lib/htkk-khbs-fragments.ts dotNetTrim) as HTKK exports cells; Muc_I.2 MST empty.
+    '05KK-PBT-nomst-khbs-Q3-2026': {'producerCase': 'kk05-pbt-nomst-khbs-q3-2026', 'menuId': 'L7', 'soLan': 1, 'web': (7431, 'b04f39670dc346f449478eb09c0c3b63473ed847e941e8448c7aab4f5f50c68e'), 'original': (3545, 'af7979790358175e67f9e7751902827db28e2376ffe04d29cea97c984b0b97b3'), 'prior': None, 'leafTarget': 230,
+        'annexParts': (PBT,), 'inputMode': IMPORT_TICK,
+        'expected': {'rows': ['[29]', '[30]', '[14]'], 'subitems': [['1001', '1000000']], 'allocation': [['', '10300', '1000000']], 'ct10': '1000000', 'ct11': '1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '14', 'ct3b': '4200'}},
 }
 for _spec in CASES.values():
     _spec.setdefault('annexParts', ())

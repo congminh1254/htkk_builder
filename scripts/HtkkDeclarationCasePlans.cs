@@ -141,7 +141,8 @@ internal static class HtkkDeclarationCasePlans {
  // "05/KK-TNCN") run on the same rounds: every round is the original import of the staged file, the 05-1/PBT case then chooses
  // Thuế tỉnh/CCT and CQT quản lý again (KhbsImportTick: path_15 has no XML leaf).
  internal static readonly string[] KhbsCaseIds=new string[]{"01NTNN-khbs-grossup-lan1-M09-2026","01NTNN-khbs-lan2-M09-2026","01NTNN-khbs-decrease-M09-2026","01NTNN-NCCNN-khbs-part1-M10-2026","01NTNN-NCCNN-khbs-part2-M10-2026","01NTNN-NCCNN-khbs-lan2-M10-2026",
-  "05KK-khbs-increase-Q3-2026","05KK-khbs-lan2-Q3-2026","05KK-khbs-decrease-Q3-2026","05KK-TT89-khbs-increase-Q4-2026","05KK-PBT-khbs-Q3-2026","05KK-khbs-increase-M03-2026",
+  "01NTNN-NCCNN-khbs-part1-nodate-M10-2026","01NTNN-NCCNN-khbs-part2-nodate-M10-2026",
+  "05KK-khbs-increase-Q3-2026","05KK-khbs-lan2-Q3-2026","05KK-khbs-decrease-Q3-2026","05KK-TT89-khbs-increase-Q4-2026","05KK-PBT-khbs-Q3-2026","05KK-khbs-increase-M03-2026","05KK-PBT-nomst-khbs-Q3-2026",
   "01CNKD-khbs-increase-Q3-2026","01CNKD-khbs-decrease-Q3-2026","01CNKD-khbs-lan2-Q3-2026","01CNKD-PL01-khbs-Q3-2026",
   "02QTT-khbs-increase-Y2025","02QTT-khbs-lan2-Y2025","02QTT-khbs-decrease-Y2025","02QTT-khbs-refund-Y2025",
   "05QTT-khbs-increase-Y2025","05QTT-khbs-lan2-Y2025","05QTT-khbs-decrease-Y2025",
@@ -161,7 +162,7 @@ internal static class HtkkDeclarationCasePlans {
   if(caseId.StartsWith("03NTNN-khbs-",StringComparison.Ordinal))return Ntnn03KhbsPlan(caseId);
   if(caseId.StartsWith("01TCKT-310-khbs-",StringComparison.Ordinal))return Tckt01KhbsPlan(caseId);
   bool i9=caseId.StartsWith("01NTNN-khbs-",StringComparison.Ordinal);
-  int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"?253:caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?227:178;
+  int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part2-nodate-M10-2026"?253:caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?227:178;
   if(i9)return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","09","01/09/2026","30/09/2026",false,
    new string[0],new string[]{"01|Tờ khai"},
    "InterfaceTemplates/excel/01_NTNN_TT80_251.xls","feebf2a918138aad860b52fb409232716027dc7ba59ec8aed861714d7e7de652","InterfaceTemplates/xml/01_NTNN_TT80_251.xml","cb8f1c83df2ebb590e314b2ca71fde4751760906e57df666e92086d6a1f9983c",
@@ -175,12 +176,12 @@ internal static class HtkkDeclarationCasePlans {
  // 05KK-TT89-withheld-Q4-2026 / 05KK-PBT-two-provinces-Q3-2026 with the KHBS schema of the form (KHBS_05_KK_TNCN_TT80_293.xsd,
  // KHBS_05_KK_TNCN_TT89_309.xsd), no cell or XML checks, and the web B file leaf count (contract leafTarget + 4 service leaves).
  private static HtkkDeclarationCasePlan Kk05KhbsPlan(string caseId){
-  int leaves=caseId=="05KK-khbs-increase-Q3-2026"||caseId=="05KK-khbs-increase-M03-2026"?217:caseId=="05KK-TT89-khbs-increase-Q4-2026"?178:caseId=="05KK-PBT-khbs-Q3-2026"?234:165;
+  int leaves=caseId=="05KK-khbs-increase-Q3-2026"||caseId=="05KK-khbs-increase-M03-2026"?217:caseId=="05KK-TT89-khbs-increase-Q4-2026"?178:caseId=="05KK-PBT-khbs-Q3-2026"||caseId=="05KK-PBT-nomst-khbs-Q3-2026"?234:165;
   if(caseId=="05KK-TT89-khbs-increase-Q4-2026")return new HtkkDeclarationCasePlan(caseId,"Z8","3.0.9","2036","TncnKk05TT89Nckt309",new string[]{"101","101_11","Z8"},"quarter","14","2026","4","01/10/2026","31/12/2026",false,
    new string[0],new string[]{"01|Tờ khai"},
    "InterfaceTemplates/excel/05_KK_TNCN_TT89_309.xls","316a2c02e2d93ed254583775e5b8db2ab8909460b932a565f9a27c5d1a1b6c91","InterfaceTemplates/xml/05_KK_TNCN_TT89_309.xml","420921c52f38b929b432ca8fecc60fd6453b8b14702777612fd251cc2873fa2d",
    "Validate/KHBS_05_KK_TNCN_TT89_309.xsd","619a2ecf3228d80742e9dbea5c3939308f74fea55a94073e33bbc7efb23bdf97",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,leaves,new string[0],new string[0]);
-  bool pbt=caseId=="05KK-PBT-khbs-Q3-2026",month=caseId=="05KK-khbs-increase-M03-2026";
+  bool pbt=caseId=="05KK-PBT-khbs-Q3-2026"||caseId=="05KK-PBT-nomst-khbs-Q3-2026",month=caseId=="05KK-khbs-increase-M03-2026";
   // KieuKy 19 = SetLayoutToKhaiThangQuy: the monthly case picks tháng 03/2026 (monthly first declarations are refused only from
   // tháng 4/2026, 0682).
   return new HtkkDeclarationCasePlan(caseId,"L7","2.9.3","864","TncnKk05TT80Nckt293",new string[]{"101","101_11","L7"},month?"month":"quarter","19","2026",month?"03":"3",month?"01/03/2026":"01/07/2026",month?"31/03/2026":"30/09/2026",false,
@@ -267,7 +268,7 @@ internal static class HtkkDeclarationCasePlans {
  // (CR has no XML leaf), so after each import the two rates of the case files (BU34 5, BU35 2: rows 34-35 of ThueNTNN) are typed
  // again through the original editor; TAB ends the edit (winFpSpread_CellChange -> WinDoWorkEvent.CellChange -> CellChange_0).
  // Method pins: the editor path of HTKK.exe only (HtkkOracleBaseline.Ntnn03KhbsRateMethodPins).
- internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):caseId=="01CNKD-PL01-khbs-Q3-2026"?ImportTick("01CNKD-TT50-310-pl01-three-groups-Q3-2026"):Ntnn03KhbsRateTick(caseId);}
+ internal static HtkkDeclarationTickPlan KhbsImportTick(string caseId){return caseId=="05KK-PBT-khbs-Q3-2026"||caseId=="05KK-PBT-nomst-khbs-Q3-2026"?ImportTick("05KK-PBT-two-provinces-Q3-2026"):caseId=="01CNKD-PL01-khbs-Q3-2026"?ImportTick("01CNKD-TT50-310-pl01-three-groups-Q3-2026"):Ntnn03KhbsRateTick(caseId);}
  private static HtkkDeclarationTickPlan Ntnn03KhbsRateTick(string caseId){
   if(caseId!="03NTNN-khbs-increase-M09-2026"&&caseId!="03NTNN-khbs-lan2-M09-2026"&&caseId!="03NTNN-khbs-decrease-M09-2026")return null;
   return new HtkkDeclarationTickPlan(new string[]{"number|BU34|5","number|BU35|2"},new string[0],new string[0],new string[0],HtkkOracleBaseline.Ntnn03KhbsRateMethodPins());
@@ -278,30 +279,41 @@ internal static class HtkkDeclarationCasePlans {
  // The Y8 lần-2 case (01NTNN-NCCNN-khbs-lan2-M10-2026) is phần I with three typed rounds: round 0 the lần đầu, round 1 the
  // rows of bổ sung lần 1 (= 01NTNN-NCCNN-khbs-part1-M10-2026's bổ sung, saved and closed as an intermediate round; the staged
  // .web-prior.xml is that case's web file, verified but not imported), round 2 the lần 2 rows (TNDN revenue AZ 240.000.000).
+ // The two "nodate" cases leave one date of the row key empty in every round, so the 01-1/KHBS key ends with an empty part (HTKK
+ // exports the cell trimmed): phần I (01NTNN-NCCNN-khbs-part1-nodate-M10-2026) never types W60 (4) ngày hợp đồng, contract
+ // HD-GL-202; phần II (01NTNN-NCCNN-khbs-part2-nodate-M10-2026) never types AE78 (6) ngày thanh toán of the supplier, HD-GL-005.
  internal static HtkkDeclarationEntryPlan KhbsEntry(string caseId,int round){
-  bool lan2=caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026",part1=caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||lan2,part2=caseId=="01NTNN-NCCNN-khbs-part2-M10-2026";
+  bool lan2=caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026",noContractDate=caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026",noPaymentDate=caseId=="01NTNN-NCCNN-khbs-part2-nodate-M10-2026";
+  bool part1=caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||lan2||noContractDate,part2=caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"||noPaymentDate;
   if(!part1&&!part2||round<0||round>KhbsSoLan(caseId))return null;
   string[] entries;
   if(part1){
    string amount=round==0?"200000000":"220000000",tndn=round==2?"240000000":amount;
-   entries=new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|HD-GL-201","date|W60|01/09/2026","number|Y60|"+amount,
+   entries=noContractDate?new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|HD-GL-202","number|Y60|"+amount,
+    "date|AE60|15/10/2026","number|AJ60|"+amount,"number|AN60|5","number|AZ60|"+tndn,"number|BD60|5","date-optional|AY98|13/11/2026"}:
+    new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|HD-GL-201","date|W60|01/09/2026","number|Y60|"+amount,
     "date|AE60|15/10/2026","number|AJ60|"+amount,"number|AN60|5","number|AZ60|"+tndn,"number|BD60|5","date-optional|AY98|13/11/2026"};
    return new HtkkDeclarationEntryPlan("M6","M8","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
     new string[]{"ThueNTNN|60|1|0","ThueNCCNN|78|1|1","ThueCNKCT|86|1|1"},new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},entries,HtkkOracleBaseline.EntryMethodPins());
   }
   string revenue=round==0?"200000000":"240000000";
-  entries=new string[]{
+  string[] supplier=noPaymentDate?new string[]{
+   "text|C78|NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP","combo|L78|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX78|01","text|S78|HD-GL-005","date|W78|01/09/2026","number|Y78|200000000",
+   "number|AJ78|"+revenue,"number|AN78|5","number|AZ78|"+revenue,"number|BD78|5"}:new string[]{
    "text|C78|NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP","combo|L78|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX78|01","text|S78|HD-GL-003","date|W78|01/09/2026","number|Y78|200000000",
-   "date|AE78|15/10/2026","number|AJ78|"+revenue,"number|AN78|5","number|AZ78|"+revenue,"number|BD78|5",
+   "date|AE78|15/10/2026","number|AJ78|"+revenue,"number|AN78|5","number|AZ78|"+revenue,"number|BD78|5"};
+  string[] individual=new string[]{
    "text|C86|CA NHAN KHONG CU TRU D - GIẢ LẬP","combo|L86|4|H|Hoạt động kinh doanh khác|BX86|05","text|S86|HD-GL-004","date|W86|02/09/2026","number|Y86|100000000",
    "date|AE86|16/10/2026","number|AJ86|100000000","number|AN86|5","number|AZ86|100000000","number|BD86|2",
    "date-optional|AY98|13/11/2026"};
+  entries=new string[supplier.Length+individual.Length];supplier.CopyTo(entries,0);individual.CopyTo(entries,supplier.Length);
   return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
    new string[]{"ThueNTNN|60|1|1","ThueNCCNN|78|1|0","ThueCNKCT|86|1|0"},new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},entries,HtkkOracleBaseline.EntryMethodPins());
  }
  internal static HtkkDeclarationCasePlan Find(string caseId){
   switch(caseId){
    case "01NTNN-khbs-grossup-lan1-M09-2026":case "01NTNN-khbs-lan2-M09-2026":case "01NTNN-khbs-decrease-M09-2026":case "01NTNN-NCCNN-khbs-part1-M10-2026":case "01NTNN-NCCNN-khbs-part2-M10-2026":case "01NTNN-NCCNN-khbs-lan2-M10-2026":
+   case "01NTNN-NCCNN-khbs-part1-nodate-M10-2026":case "01NTNN-NCCNN-khbs-part2-nodate-M10-2026":case "05KK-PBT-nomst-khbs-Q3-2026":
    case "05KK-khbs-increase-Q3-2026":case "05KK-khbs-lan2-Q3-2026":case "05KK-khbs-decrease-Q3-2026":case "05KK-TT89-khbs-increase-Q4-2026":case "05KK-PBT-khbs-Q3-2026":case "05KK-khbs-increase-M03-2026":
    case "01CNKD-khbs-increase-Q3-2026":case "01CNKD-khbs-decrease-Q3-2026":case "01CNKD-khbs-lan2-Q3-2026":case "01CNKD-PL01-khbs-Q3-2026":
    case "02QTT-khbs-increase-Y2025":case "02QTT-khbs-lan2-Y2025":case "02QTT-khbs-decrease-Y2025":case "02QTT-khbs-refund-Y2025":

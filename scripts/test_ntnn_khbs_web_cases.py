@@ -36,7 +36,8 @@ class NtnnKhbsWebCases(unittest.TestCase):
         # The 05/KK-TNCN cases are merged from htkk_kk05_khbs_web_cases.py (test_kk05_khbs_web_cases.py).
         self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES + m.NTNN03_CASES + m.TCKT01_CASES))
         self.assertEqual(sorted(m.NTNN_CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
-                                                  '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026']))
+                                                  '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026',
+                                                  '01NTNN-NCCNN-khbs-part1-nodate-M10-2026', '01NTNN-NCCNN-khbs-part2-nodate-M10-2026']))
         for case_id, c in m.CASES.items():
             self.assertEqual(m.names(case_id)[-2:], (m.WEB_NAME, m.MANIFEST_NAME))
             self.assertEqual(m.names(case_id)[0], m.ORIGINAL_NAME)
@@ -345,10 +346,10 @@ class NtnnKhbsY8Lan2Plan(unittest.TestCase):
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
         self.assertRegex(plans, r'KhbsSoLan\(string caseId\)\{return [^;]*caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"[^;]*\?2:')
         self.assertIn('caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?%d:' % (m.tax_leaf_count(self.LAN2) + 4), plans)
-        self.assertIn('caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"?%d:' % (m.tax_leaf_count(self.LAN1) + 4), plans)
+        self.assertIn('caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026"?%d:' % (m.tax_leaf_count(self.LAN1) + 4), plans)
         self.assertEqual(m.input_mode(self.LAN2), 'khbs-original-entry-export')
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
-        self.assertEqual(probe.count("@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026')"), 2)
+        self.assertEqual(probe.count("@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026')"), 2)
 
     @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
     def test_compiled_entry_rounds(self):
@@ -371,6 +372,43 @@ class NtnnKhbsY8Lan2Plan(unittest.TestCase):
         lan1, lan2 = rounds[(self.LAN1, 1)], rounds[(self.LAN2, 2)]
         self.assertEqual([(a, b) for a, b in zip(lan1, lan2) if a != b], [('number|AZ60|220000000', 'number|AZ60|240000000')])
         self.assertEqual(len(lan1), len(lan2))
+
+
+class NtnnKhbsY8NoDatePlan(unittest.TestCase):
+    """Y8 cases whose 01-1/KHBS row key ends with an empty part: phần I without (4) ngày hợp đồng (W60), phần II without the
+    supplier's (6) ngày thanh toán (AE78). Each types the rounds of its base case minus that date, with its own contract number."""
+    PAIRS = (('01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part1-nodate-M10-2026', 'date|W60|01/09/2026', ('text|S60|HD-GL-201', 'text|S60|HD-GL-202')),
+             ('01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-part2-nodate-M10-2026', 'date|AE78|15/10/2026', ('text|S78|HD-GL-003', 'text|S78|HD-GL-005')))
+
+    def test_pins_leaf_counts_and_lists(self):
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        for base, case_id, _date, _contract in self.PAIRS:
+            c, b = m.CASES[case_id], m.CASES[base]
+            self.assertEqual((c['menuId'], c['soLan'], c['prior'], c['expected'], c['leafTarget']), ('Y8', 1, None, b['expected'], b['leafTarget']))
+            self.assertNotEqual(c['web'], b['web'])
+            self.assertEqual(m.input_mode(case_id), 'khbs-original-entry-export')
+            self.assertIn('caseId=="%s"||caseId=="%s"?%d:' % (base, case_id, m.tax_leaf_count(case_id) + 4), plans)
+            self.assertIn('case "%s":' % case_id, plans)
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_entry_rounds(self):
+        ids = [case_id for pair in self.PAIRS for case_id in pair[:2]]
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory)
+            (folder / 'P.cs').write_text('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.2");foreach(string id in new string[]{%s})for(int r=-1;r<3;r++){HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.KhbsEntry(id,r);Console.WriteLine(id+"\\t"+r+"\\t"+(e==null?"-":e.ChoiceCell+"\\t"+String.Join("\\t",e.Entries)));}}}' % ','.join('"%s"' % i for i in ids), encoding='utf-8')
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs'), str(ROOT / 'HtkkOracleBaseline.cs')], check=True, capture_output=True)
+            run = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True)
+        rounds = {}
+        for line in run.stdout.decode('utf-8', 'replace').splitlines():
+            case_id, number, *entries = line.split('\t')
+            rounds[(case_id, int(number))] = None if entries == ['-'] else entries
+        for base, case_id, date, (contract, own) in self.PAIRS:
+            for number in (-1, 2):
+                self.assertIsNone(rounds[(case_id, number)])
+            for number in (0, 1):
+                expected = [own if entry == contract else entry for entry in rounds[(base, number)] if entry != date]
+                self.assertIn(date, rounds[(base, number)])
+                self.assertEqual(rounds[(case_id, number)], expected)
 
 
 if __name__ == '__main__':

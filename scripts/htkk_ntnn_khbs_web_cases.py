@@ -57,6 +57,12 @@ CASES = {
         'leafTarget': 249, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1052', '4000000']], 'ct10': '4000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
     '01NTNN-NCCNN-khbs-lan2-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-lan2-m10-2026', 'menuId': 'Y8', 'soLan': 2, 'web': (7918, '0b55fe92318e50f6918a404436e903382847d871c1ba09147ae795b152e4e130'), 'original': (3742, '84942b95573d8c64dc60c9c765674765ec253b340716320a3fb0908ff688dd03'), 'prior': (9307, '349aec81f924153b9c0a4d57bca8f026d57e5698504083e0a22f9c1a5a9e412d'),
         'leafTarget': 223, 'expected': {'rows': ['(10)', '(13)', '(14)'], 'subitems': [['1052', '1000000']], 'ct10': '1000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
+    # Y8 phần I with (4) ngày hợp đồng empty and phần II with the supplier's (6) ngày thanh toán empty: the 01-1/KHBS row key ends
+    # with an empty part; the web file writes it trimmed (htkk_web lib/htkk-khbs-fragments.ts dotNetTrim), as HTKK exports cells.
+    '01NTNN-NCCNN-khbs-part1-nodate-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part1-nodate-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (9241, 'ed1267aac880d97619af5990dc7852fdd1da1878fb573b91becc9d5bf04615f1'), 'original': (3742, 'b0f72ea65da9ed252686a318e5f92e96b20a4b170434ddc0af9491fb4daa6358'), 'prior': None,
+        'leafTarget': 265, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '1000000'], ['1052', '1000000']], 'ct10': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
+    '01NTNN-NCCNN-khbs-part2-nodate-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part2-nodate-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (8693, '73ca63d4b97869ac7acfed4c6d5d9befe068113fc8da7061ed1563c0029193d3'), 'original': (3940, '8b1416a35f005db14bfb54cc3e9f61fa14a21cab0fe1c9ce30e00025eabdd497'), 'prior': None,
+        'leafTarget': 249, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1052', '4000000']], 'ct10': '4000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
 }
 for _spec in CASES.values():
     _spec.setdefault('annexParts', ())
