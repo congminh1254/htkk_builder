@@ -214,7 +214,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   declarationEntryActionCount=0;declarationEntryComboCount=0;declarationEntryMismatchMask=0;declarationEntryLockedMask=0;declarationEntryCellTypeMismatchMask=0;declarationEntryRowInsertCount=0;
   // A 05-1/PBT round (KhbsImportTick) chooses its Thuế tỉnh/CCT again after each import: the tick state starts afresh.
   declarationTickClock=null;declarationTickMethodPinsMatched=false;declarationTickEditsMatched=false;declarationTickTicksMatched=false;declarationTickReadbackMatched=false;
-  declarationTickPlannedCount=0;declarationTickActionCount=0;declarationTickMethodPinMask=0;declarationTickReadbackMask=0;declarationTickComboMask=0;declarationTickComboListCount=0;declarationTickComboOpenMask=0;declarationTickEntryMask=0;declarationTickEntryStartOffset=0;declarationTickEntryKeyOffset=0;declarationTickLockShape=0;declarationTickRefreshMask=0;declarationTickRefreshRowOffset=0;
+  declarationTickPlannedCount=0;declarationTickActionCount=0;declarationTickMethodPinMask=0;declarationTickReadbackMask=0;declarationTickComboMask=0;declarationTickComboListCount=0;declarationTickComboOpenMask=0;declarationTickEntryMask=0;declarationTickEntryStartOffset=0;declarationTickEntryKeyOffset=0;declarationTickLockShape=0;declarationTickRefreshMask=0;declarationTickRefreshRowOffset=0;declarationTickGuardMask=0;declarationTickPreviousListDropped=false;
   declarationFlowStarted=false;declarationPhase="not-started";navigationPhase="decl-main-menu-again";menuStep=0;
   SetStage(HtkkAutomationStage.DeclarationKhbsReopening);Record();
  }

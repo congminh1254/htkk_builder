@@ -249,8 +249,9 @@ class Driver(unittest.TestCase):
         # 10 tick fields plus the five 05-1/PBT combo diagnostics (declarationTickComboMask, declarationTickComboListCount,
         # declarationTickEntryMask, declarationTickEntryStartOffset, declarationTickEntryKeyOffset), plus declarationTickLockShape
         # (the value-free shape of a locked tick cell, 01/CNKD PL 01 bổ sung) and declarationTickRefreshMask, declarationTickRefreshRowOffset (its one refresh),
-        # and declarationTickComboOpenMask (how a cleared catalogue list was opened, Z3 PL 01-1).
-        self.assertEqual(len(names), 19)
+        # and declarationTickComboOpenMask (how a cleared catalogue list was opened, Z3 PL 01-1), declarationTickGuardMask (the
+        # parts of the guard at the start of a combo edit, Z3 PL 01-1 E31).
+        self.assertEqual(len(names), 20)
         for name in names:
             self.assertIn(name, automation['keys'])
             self.assertEqual(fields[name]['activeModes'], [MODE, KHBS_MODE])
@@ -478,3 +479,33 @@ class ComboNothingSelected(unittest.TestCase):
         self.assertIn('"declarationTickComboOpenMask"', ENTRY)
         self.assertEqual(automation['resultFields']['declarationTickComboOpenMask']['maximum'], 65535)
         self.assertGreaterEqual(automation['resultFields']['declarationTickComboMask']['maximum'], 32768 | 16384 | 8191)
+
+
+class ComboGuardAfterPreviousEdit(unittest.TestCase):
+    def test_combo_guard_reports_its_parts_and_refocuses_the_grid_only_for_a_missing_focus(self):
+        # Runs 44036861361 .. 44137145483 (Z3 PL 01-1): E30 passed (action count 1), E31 stopped with code 10 at the guard right
+        # after the entry-32768 shortcut (entry mask without 16384), every release. The guard parts are now recorded.
+        body = CODE[CODE.index('private void EditDeclarationTickCombo('):CODE.index('private void TickDeclarationImport(')]
+        entry = body.index('int entry=DeclarationTickEnterByKey(grid,sheet,row,column);')
+        guard = body.index('if(!DeclarationEntryActive(sheet,row,column)||!DeclarationTickComboGuard(grid)){DeclarationTickFail(10);return;}')
+        self.assertLess(entry, guard); self.assertLess(guard, body.index('DeclarationComboCellItems(Cell(sheet,row,column)'))
+        self.assertNotIn('if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}', body)
+        # The previous combo's list state after its commit (TAB or list ENTER), read only.
+        self.assertLess(body.index('if(!committed){'), body.index('declarationTickPreviousListDropped=Convert.ToBoolean(Get(vendor,"DroppedDown"));'))
+        helper = CODE[CODE.index('private bool DeclarationTickComboGuard('):CODE.index('private void DeclarationTickCombo(')]
+        # The full original guard decides; one grid.Focus() only when the grid focus is the sole missing part and the owner is active.
+        self.assertEqual(helper.count('DeclarationEntryGuard(grid)'), 2)
+        self.assertEqual(helper.count('grid.Focus()'), 1)
+        self.assertIn('if((state&(1|2|4|16|32))==0&&(state&(8|64))==(8|64)){', helper)
+        self.assertLess(helper.index('if((state&(1|2|4|16|32))==0'), helper.index('grid.Focus()'))
+        for forbidden in ('SendKeys', 'Value', 'Text', 'SetActiveCell', 'PostMessage'):
+            self.assertNotIn(forbidden, helper)
+        state = CODE[CODE.index('private int DeclarationGuardState('):CODE.index('private bool DeclarationTickComboGuard(')]
+        for forbidden in ('SendKeys', '"Value"', '"Text"', '.Text', '.Focus()', 'PostMessage'):
+            self.assertNotIn(forbidden, state)
+        field = automation['resultFields']['declarationTickGuardMask']
+        self.assertEqual((field['kind'], field['default'], field['minimum'], field['maximum']), ('integer', 0, 0, 65535))
+        self.assertEqual(field['activeModes'], [MODE, KHBS_MODE])
+        self.assertIn('"declarationTickGuardMask"', ENTRY)
+        khbs = (ROOT / 'HtkkDeclarationKhbs.cs').read_text(encoding='utf-8')
+        self.assertIn('declarationTickGuardMask=0;declarationTickPreviousListDropped=false;', khbs)

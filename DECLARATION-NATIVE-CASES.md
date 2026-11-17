@@ -803,6 +803,36 @@ Câu hỏi cho lần chạy: hộp kỳ Z3 ghi `nganhNgheKD` gì khi để trố
 (`DiaChiBds`, khóa khi không chọn bất động sản) kết xuất một dòng `stt` 1 như web không; không kèm PL thì `FinishImportXML` không
 tính lại [23]..[29] (giữ số trong tệp); `ct10` rỗng web ghi `xsi:nil`.
 
+**PL 01-1, các run sau 333a96b** (44036861361, 44044935702, 44060099791, 44075962763, 44088558646, 44101830760, 44122596112,
+44137145483; builder c0ab30e đến 8234136): cả tám lần dừng giống hệt nhau ở `declaration-import-tick-not-matched`, mã 10 (chốt
+foreground/focus). Nhập XML thành công, ghim khớp, kế hoạch 5 thao tác, làm được 1. Giải mã:
+
+- E30 xong. `declarationTickComboMask` 54251 = 1, 2, 8, 32, 64, 128, 256, 512, 4096, 16384, 32768: vào ô bằng phím, ô có danh sách
+  của dòng (4 mục, có mã), không chọn gì lúc vào, danh sách mở, chọn đúng mục; sau khi xác nhận ô hiện "1", I30 = 1.
+  `declarationTickComboOpenMask` 25603 = 1, 2, 1024, 8192, 16384: F4 mở danh sách (lưới mất focus khi danh sách mở, như dự kiến),
+  ENTER chọn đúng mục; **bit 32768 (danh sách đóng sau ENTER) không bật**: một giây sau ENTER, FpCombo vẫn báo `DroppedDown`,
+  dù chốt đầy đủ (lưới có focus) đã qua. Sau đó TAB xác nhận ô.
+- E31 dừng. `declarationTickEntryMask` 32768 (TAB của E30 đã đưa ô hiện hành sang E31, ô có danh sách của dòng nên không bấm
+  phím), `declarationTickEntryStartOffset` 128 (cột hiện hành = E). Không có bit 16384, mà bit này được ghi ngay sau chốt
+  `DeclarationEntryActive || DeclarationEntryGuard` đầu thao tác combo; vậy mã 10 đến từ `DeclarationEntryGuard` ở đúng chỗ đó,
+  trước khi đọc danh sách hay gửi phím nào cho E31.
+
+Kết luận: lỗi ở driver (trạng thái focus sau thao tác combo trước), không phải web ghi khác HTKK, cũng chưa có dấu hiệu HTKK
+không làm được: HTKK đã nhận E30 và ghi mã. Log không đủ để biết phần nào của chốt hỏng (focus của lưới, cửa sổ foreground hay
+thông báo gốc). Thêm chẩn đoán không giá trị `declarationTickGuardMask` (0..65535) ở chốt đầu mỗi thao tác combo
+(`DeclarationTickComboGuard`): 1 owner không phải cửa sổ tờ khai, 2 owner ẩn/khóa, 4 lưới ẩn/khóa, 8 lưới không có focus,
+16 foreground ngoài tiến trình, 32 thông báo gốc, 64 `Form.ActiveForm` là owner, 128 focus ở control khác của owner, 256 không
+control managed nào giữ focus (`GetFocus`), 512 lưới có `EditingControl`, 1024 FpCombo của nó báo `DroppedDown`, 2048 FpCombo
+của thao tác combo trước vẫn báo `DroppedDown` sau khi xác nhận, 16384 đã ghi; dính qua các thao tác: 32768 chốt hỏng,
+4096 đã gọi `grid.Focus()` một lần, 8192 chốt đầy đủ qua sau đó. `grid.Focus()` là đúng lời gọi `DeclarationEntrySelect` làm
+trước mọi thao tác khác; chỉ gọi khi phần hỏng duy nhất là focus của lưới và owner là form đang hoạt động, rồi kiểm lại toàn bộ
+chốt; không thử lại gì khác. Các ca đã qua chốt (05-1/PBT L7/Z8, U5) không đi vào nhánh này.
+
+Lần chạy tới, đọc `declarationTickGuardMask`: có 4096|8192 mà ca qua E31 thì nguyên nhân là focus nằm ngoài lưới sau TAB của E30;
+có 8 mà thiếu 64 (form đang hoạt động không phải owner) hoặc có 1024/2048 thì danh sách thả xuống của FpCombo còn giữ focus,
+cần đóng danh sách trước khi xác nhận ô; có 16 thì foreground đã ra ngoài tiến trình HTKK; có 32 thì HTKK hiện thông báo sau khi chọn thuế suất (đọc `importRejectedMessageId` và các mã thông
+báo).
+
 ## HTKK 5.8.3 — bốn ca quan sát, không chặn phát hành (`htkkVersion` 5.8.3)
 
 Theo `HTKK-5.8.3-IMPACT.md` §3. Nhà sản xuất `htkk_web` nhánh `work/htkk-583-phase2` (thiết kế trong

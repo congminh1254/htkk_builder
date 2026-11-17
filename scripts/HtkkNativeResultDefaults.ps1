@@ -282,6 +282,7 @@ function New-HtkkNativeResultDefaults {
   declarationTickLockShape=0
   declarationTickRefreshMask=0
   declarationTickRefreshRowOffset=0
+  declarationTickGuardMask=0
   declarationTreeAttributeMask=0
   declarationTreeTextMismatchCount=0
   declarationTreeFirstMismatchOrdinal=0

@@ -379,7 +379,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private HtkkDeclarationTickPlan declarationTickPlan=null;
  private Stopwatch declarationTickClock=null;
  private bool declarationTickMethodPinsMatched=false,declarationTickEditsMatched=false,declarationTickTicksMatched=false,declarationTickReadbackMatched=false;
- private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickComboOpenMask=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0,declarationTickRefreshRowOffset=0;
+ private int declarationTickPlannedCount=0,declarationTickActionCount=0,declarationTickFailureCode=0,declarationTickMethodPinMask=0,declarationTickMismatchMask=0,declarationTickReadbackMask=0,declarationTickComboMask=0,declarationTickComboListCount=0,declarationTickComboOpenMask=0,declarationTickEntryMask=0,declarationTickEntryStartOffset=0,declarationTickEntryKeyOffset=0,declarationTickLockShape=0,declarationTickRefreshMask=0,declarationTickRefreshRowOffset=0,declarationTickGuardMask=0;
+ private bool declarationTickPreviousListDropped=false;
  // Failure codes (declarationTickFailureCode), value-free:
  //  1 method pin   3 tick cell not a CheckBoxCellType   7 tick cell locked   12 tick cell already ticked   14 tick row hidden
  //  4 tick not applied   5 ticks/clear cells changed afterwards
@@ -418,6 +419,17 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Bits: 1 attempted, 2 refresh cell is a CheckBoxCellType, 4 it was unlocked, 8 it was unticked, 16 SPACE sent, 32 refresh cell
  // unticked again afterwards, 64 the target tick cell unlocked afterwards, 128 an original message appeared, 256 recorded, 512 the
  // refresh cell was found by the scan (declarationTickRefreshRowOffset = its row minus the target row, value-free).
+ // declarationTickGuardMask (value-free; the foreground/focus guard at the start of each combo edit, after the key entry or the
+ // entry-32768 shortcut). Runs 44036861361 .. 44137145483 (Z3 PL 01-1): E30 passed, E31 stopped there every time with code 10
+ // (entry mask 32768 without 16384: the guard failed before the cell list was read). Bits 1..2048 and 16384 describe the last
+ // check: 1 owner is not the declaration window, 2 owner hidden or disabled, 4 grid hidden or disabled, 8 grid without focus,
+ // 16 foreground window outside this process, 32 original message, 64 Form.ActiveForm is the owner, 128 the focused window is
+ // a managed control of the owner outside the grid, 256 no managed control of this thread has the focus (GetFocus), 512 the grid
+ // has an EditingControl, 1024 its FpCombo reports DroppedDown, 2048 the previous combo edit's FpCombo still reported
+ // DroppedDown after its commit (E30: list-closed bit 32768 of declarationTickComboOpenMask was clear), 16384 recorded.
+ // Sticky over the edits: 32768 the guard failed, 4096 the grid was focused once (grid.Focus(), as DeclarationEntrySelect does
+ // before every other edit; only when the sole failing part is the grid focus and the owner is the active form), 8192 the
+ // whole guard held after that.
  // declarationTickMismatchMask: bit = action index (edits first, then ticks). declarationTickReadbackMask: bits 0-7
  // readback cell i differs (diagnostic only), bits 8-11 tick i no longer ticked, bits 12-15 clear cell i ticked.
  private string DeclarationTickJson(){
@@ -425,8 +437,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[] names=new string[]{"declarationTickMethodPinsMatched","declarationTickEditsMatched","declarationTickTicksMatched","declarationTickReadbackMatched"};
   bool[] values=new bool[]{declarationTickMethodPinsMatched,declarationTickEditsMatched,declarationTickTicksMatched,declarationTickReadbackMatched};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+Bool(values[index]));
-  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickComboOpenMask","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask","declarationTickRefreshRowOffset"};
-  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickComboOpenMask,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask,declarationTickRefreshRowOffset};
+  names=new string[]{"declarationTickPlannedCount","declarationTickActionCount","declarationTickFailureCode","declarationTickMethodPinMask","declarationTickMismatchMask","declarationTickReadbackMask","declarationTickComboMask","declarationTickComboListCount","declarationTickComboOpenMask","declarationTickEntryMask","declarationTickEntryStartOffset","declarationTickEntryKeyOffset","declarationTickLockShape","declarationTickRefreshMask","declarationTickRefreshRowOffset","declarationTickGuardMask"};
+  int[] counts=new int[]{declarationTickPlannedCount,declarationTickActionCount,declarationTickFailureCode,declarationTickMethodPinMask,declarationTickMismatchMask,declarationTickReadbackMask,declarationTickComboMask,declarationTickComboListCount,declarationTickComboOpenMask,declarationTickEntryMask,declarationTickEntryStartOffset,declarationTickEntryKeyOffset,declarationTickLockShape,declarationTickRefreshMask,declarationTickRefreshRowOffset,declarationTickGuardMask};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
   return json.ToString();
  }
@@ -541,7 +553,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   int activation=DeclarationTickActivate(grid,sheet);if(activation!=0){DeclarationTickFail(activation);return;}
   // Entering the cell by a real arrow key raises winFpSpread_EnterCell, which rebuilds this cell's list from the row.
   int entry=DeclarationTickEnterByKey(grid,sheet,row,column);if(entry!=0){declarationTickMismatchMask|=1<<index;DeclarationTickCombo(0,0);DeclarationTickFail(entry);return;}
-  if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}
+  if(!DeclarationEntryActive(sheet,row,column)||!DeclarationTickComboGuard(grid)){DeclarationTickFail(10);return;}
   int mask=(declarationTickEntryMask&32768)!=0?0:4096;string[] items,data;DeclarationComboCellItems(Cell(sheet,row,column),out items,out data,ref mask);
   if((mask&8)!=0){declarationTickEntryMask|=16384;Record();}
   // The editor EditModePermanent opened on entry is used; if its list is not the cell's (rebuilt) list, it is closed
@@ -655,6 +667,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!DeclarationEntryGuard(grid)){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(10);return;}
    SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
   }
+  declarationTickPreviousListDropped=Convert.ToBoolean(Get(vendor,"DroppedDown"));
   if(OriginalMessageVisible()){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(17);return;}
   Stopwatch clock=Stopwatch.StartNew();
   while(CellText(sheet,code[0],code[1])!=parts[5]&&clock.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
@@ -708,6 +721,34 @@ public sealed partial class HtkkGuiReferenceAutomation {
   if(Get(grid,"EditingControl")==null)state|=256;if(!DeclarationEntryActive(sheet,row,column))state|=512;if(!grid.ContainsFocus)state|=1024;
   if(pid!=(uint)Process.GetCurrentProcess().Id)state|=2048;if(OriginalMessageVisible())state|=4096;
   return state;
+ }
+ // Value-free parts of DeclarationEntryGuard and of the focus (declarationTickGuardMask bits 1..2048), read only.
+ private int DeclarationGuardState(Control grid){
+  int state=0;Form owner=grid.FindForm();uint pid;GetWindowThreadProcessId(GetForegroundWindow(),out pid);
+  if(owner==null||owner!=roundtripOwner||owner.GetType().FullName!="HTKK.frmWinToKhai")state|=1;else if(!owner.Visible||!owner.Enabled)state|=2;
+  if(!grid.Visible||!grid.Enabled)state|=4;if(!grid.ContainsFocus)state|=8;
+  if(pid!=(uint)Process.GetCurrentProcess().Id)state|=16;if(OriginalMessageVisible())state|=32;
+  if(owner!=null&&Form.ActiveForm==owner)state|=64;
+  Control focused=Control.FromHandle(GetFocus());
+  if(focused==null)state|=256;else if(owner!=null&&owner.Contains(focused)&&focused!=grid&&!grid.Contains(focused))state|=128;
+  Control editing=Get(grid,"EditingControl") as Control;
+  if(editing!=null){state|=512;Control dropped=FindVendorCombo(editing,0);if(dropped!=null&&Convert.ToBoolean(Get(dropped,"DroppedDown")))state|=1024;}
+  if(declarationTickPreviousListDropped)state|=2048;
+  return state;
+ }
+ // DeclarationEntryGuard at the start of a combo edit, with its value-free parts recorded. When only the grid focus is missing
+ // while the owner is the active form, the grid is focused once (grid.Focus(), the call DeclarationEntrySelect makes before every
+ // other edit) and the whole guard is checked again; nothing else is retried.
+ private bool DeclarationTickComboGuard(Control grid){
+  int sticky=declarationTickGuardMask&(4096|8192|32768),state=DeclarationGuardState(grid)|16384;
+  if(DeclarationEntryGuard(grid)){declarationTickGuardMask=sticky|state;Record();return true;}
+  sticky|=32768;
+  if((state&(1|2|4|16|32))==0&&(state&(8|64))==(8|64)){
+   sticky|=4096;declarationTickGuardMask=sticky|state;Record();
+   grid.Focus();Application.DoEvents();
+   if(DeclarationEntryGuard(grid)){sticky|=8192;declarationTickGuardMask=sticky|state;Record();return true;}
+  }
+  declarationTickGuardMask=sticky|state;Record();return false;
  }
  private void DeclarationTickCombo(int mask,int count){declarationTickComboMask=mask;declarationTickComboListCount=Math.Min(count,4096);Record();}
  // SPACE on an open, unticked original checkbox: FpSpread.ButtonClicked -> frmWinToKhai.winFpSpread_ButtonClicked
