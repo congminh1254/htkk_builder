@@ -63,6 +63,7 @@ $HtkkNativeCaseFormats=@{
  '01GTGT-khbs-annex12-capture-M09-2026'='htkk-web-khbs-annex12-capture-m09-input-v1'
  '01GTGT-khbs-annex12-lan2-ct10-M09-2026'='htkk-web-khbs-annex12-lan2-ct10-m09-input-v1'
  '01GTGT-khbs-annex12-lan2-zero-ct10-M10-2026'='htkk-web-khbs-annex12-lan2-zero-ct10-input-v1'
+ '01GTGT-khbs-annex12-other-province-M10-2026'='htkk-web-khbs-annex12-other-province-input-v1'
  '05KK-PBT-two-provinces-Q3-2026'='htkk-web-tncn05kk-pbt-two-provinces-q3-2026-input-v1'
  '05KK-TT89-PBT-two-provinces-Q4-2026'='htkk-web-tncn05kk-tt89-pbt-two-provinces-q4-2026-input-v1'
  '02QTT-refund-transfer-Y2025'='htkk-web-tncn02qtt-refund-transfer-y2025-input-v1'

@@ -156,6 +156,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
   string[][] wards=null;
   if(KhbsAnnexLan2Case()&&khbsRound==2&&KhbsAnnexWideCaseId(webCaseId)||webCaseId==KhbsAnnex12Lan1AddPlantCaseId&&!khbsC0Import)KhbsAnnexWideRound2(out names,out codes,out parents,out percentages,out types,out wards);
   if(KhbsAnnexRoundCase())KhbsAnnexRound(out names,out codes,out parents,out percentages,out types,out wards);
+  // Case 24: the proven two-plant annex with plant 2's three rows in another tỉnh.
+  if(webCaseId==KhbsAnnex12OtherProvinceCaseId){string w=Annex12FixedWard,b=Annex12OtherProvinceWard;wards=new string[][]{new string[]{w,w},new string[]{b,b,b}};}
   if(wards==null){wards=new string[types.Length][];for(int i=0;i<types.Length;i++){wards[i]=new string[types[i].Length];for(int j=0;j<wards[i].Length;j++)wards[i][j]=Annex12FixedWard;}}
   List<string> expectedWards=new List<string>();
   System.Collections.IList infos=Get(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)return false;object info=null;
@@ -179,7 +181,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
     int[] display=new int[]{2,12,16,17,18};int ordinal=seen+j;
     // The mask keeps the state right after the original import, before any restoration.
     for(int k=0;k<display.Length;k++)if(!annex12WebHeadAuthorityRestored&&ordinal<5&&CellText(annex,row,display[k])==String.Empty)annex12WebImportDisplayEmptyMask|=1<<(ordinal*5+k);
-    if(CellText(annex,row,1)!=id+"."+(j+1).ToString(CultureInfo.InvariantCulture)||CellText(annex,row,32)!=types[i][j]||CellText(annex,row,33)!="101"||CellText(annex,row,42)!=wards[i][j]||CellText(annex,row,35)!="10100"||CellText(annex,row,36)!=Annex12WardCqtCode(wards[i][j])||CellText(annex,row,4)!=String.Empty||CellText(annex,row,9)!=String.Empty||!Annex12NumberMatched(annex,row,20,percentages[i][j]))return false;
+    if(CellText(annex,row,1)!=id+"."+(j+1).ToString(CultureInfo.InvariantCulture)||CellText(annex,row,32)!=types[i][j]||CellText(annex,row,33)!=Annex12WardProvinceCode(wards[i][j])||CellText(annex,row,42)!=wards[i][j]||CellText(annex,row,35)!=Annex12WardHeadCode(wards[i][j])||CellText(annex,row,36)!=Annex12WardCqtCode(wards[i][j])||CellText(annex,row,4)!=String.Empty||CellText(annex,row,9)!=String.Empty||!Annex12NumberMatched(annex,row,20,percentages[i][j]))return false;
     // Child: source-locked name/MST/amount and allocated tax; only the percentage is editable.
     if(!Annex12CellLocked(annex,row,4)||!Annex12CellLocked(annex,row,9)||!Annex12CellLocked(annex,row,19)||Annex12CellLocked(annex,row,20)||!Annex12CellLocked(annex,row,23))return false;
    }
@@ -190,11 +192,26 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Fixed synthetic places of the annex cases (public HTKK 5.8.2 catalogues): the proven ward, and the second ward of the
  // KHBS two-places variant (same tỉnh and head CQT 10100, its own local CQT). Any other ward fails closed.
  private const string Annex12FixedWard="10129087",Annex12SecondWard="10131091";
+ // Case 24's ward in ANOTHER tỉnh (Bắc Ninh): its head CQT is not the Hà Nội one, so the restore takes it from Annex12Places.
+ private const string Annex12OtherProvinceWard="22117047";
+ // What the case data of each fixed ward pins, as the public HTKK 5.8.2 catalogues name it (htkk_web data/htkk-taxpayer-profile.json:
+ // Catalogue_Dia_Ban_Tinh_Moi.xml, Catalogue_Dia_Ban_Xa_Moi.xml, Catalogue_CQT_Dia_Ban.xml): ward, tỉnh code (AH), head CQT code (AJ,
+ // which GetParentCodeFromChildCellInTable writes as the ward's first three digits + "00") and its display text (R: the cấp cục
+ // entry loadCqtCapCucTheoDiaBanXa lists for the ward), local CQT code (AK) and display text (S). Display texts are copied exactly,
+ // letter case included ("Thuế thành phố Bắc Ninh"); no code is written, every code is re-read from the original cells.
+ private static readonly string[][] Annex12Places=new string[][]{
+  new string[]{Annex12FixedWard,"101","10100","Thuế Thành phố Hà Nội","10129","Thuế cơ sở 16 Thành phố Hà Nội"},
+  new string[]{Annex12SecondWard,"101","10100","Thuế Thành phố Hà Nội","10131","Thuế cơ sở 25 Thành phố Hà Nội"},
+  new string[]{Annex12OtherProvinceWard,"221","22100","Thuế thành phố Bắc Ninh","22117","Thuế cơ sở 2 thành phố Bắc Ninh"}};
+ private static string[] Annex12Place(string ward){foreach(string[] place in Annex12Places)if(place[0]==ward)return place;throw new InvalidOperationException();}
+ private static string Annex12WardProvinceCode(string ward){return Annex12Place(ward)[1];}
+ private static string Annex12WardHeadCode(string ward){return Annex12Place(ward)[2];}
+ private static string Annex12WardHeadName(string ward){return Annex12Place(ward)[3];}
  // At most seven imported rows (case 6: 2+3+2); the failure mask keeps the 1-based ordinal in bits 6-8.
  private const int Annex12MaxRestoredRows=7;
  private string[] annex12ExpectedWards=new string[0];
- private static string Annex12WardCqtCode(string ward){if(ward==Annex12FixedWard)return "10129";if(ward==Annex12SecondWard)return "10131";throw new InvalidOperationException();}
- private static string Annex12WardCqtName(string ward){if(ward==Annex12FixedWard)return "Thuế cơ sở 16 Thành phố Hà Nội";if(ward==Annex12SecondWard)return "Thuế cơ sở 25 Thành phố Hà Nội";throw new InvalidOperationException();}
+ private static string Annex12WardCqtCode(string ward){return Annex12Place(ward)[4];}
+ private static string Annex12WardCqtName(string ward){return Annex12Place(ward)[5];}
  private string Annex12ExpectedWard(int ordinal){if(ordinal<0||ordinal>=annex12ExpectedWards.Length)throw new InvalidOperationException();return annex12ExpectedWards[ordinal];}
  // Round 2 of the KHBS wider-scope cases 6-9: the B2 annex variant (htkk_annex12_web_cases VARIANTS), plants in document order.
  private void KhbsAnnexWideRound2(out string[] names,out string[] codes,out decimal[] parents,out decimal[][] percentages,out string[][] types,out string[][] wards){
@@ -225,8 +242,9 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Runs 42182681228/42182684607: after the ORIGINAL import every child R was blank (mask
  // 264 / 8659208) and the reexport was refused with 0016 (Header row 83: R44 required).
  // R is the parent-catalogue display of the imported child CQT; the XML carries only
- // ct09_cqt_ma/ten. Select the same fixed synthetic head CQT through the original combo
- // editor, as a user must, then the same local CQT if the original change handler
+ // ct09_cqt_ma/ten. Select the head CQT the case data pins for the row's ward (Annex12Places:
+ // "Thuế Thành phố Hà Nội" for the Hà Nội wards, the Bắc Ninh one for case 24) through the original
+ // combo editor, as a user must, then the same local CQT if the original change handler
  // cleared it. Codes are re-read, never written; the XML comparison stays exact.
  private void RestoreImportedAnnex12HeadAuthorities(){
   if((!Annex12WebCase()&&!KhbsAnnexCase())||annex12WebHeadAuthorityRestored||!roundtripImportSucceeded||!annex12WebImportSheetMatched)throw new InvalidOperationException();
@@ -248,10 +266,10 @@ public sealed partial class HtkkGuiReferenceAutomation {
     System.Collections.IList rows=Get(tables[i],"RowsValues") as System.Collections.IList;if(rows==null||rows.Count<1||rows.Count>5)throw new InvalidOperationException();
     int start=Convert.ToInt32(Get(Get(tables[i],"Location"),"DataLocationTemplateRowStart"))-1;
     for(int j=0;j<rows.Count;j++){
-     int row=start+j,ordinal=seen+j;if(ordinal>=Annex12MaxRestoredRows)throw new InvalidOperationException();string cqt=Annex12WardCqtName(Annex12ExpectedWard(ordinal));
+     int row=start+j,ordinal=seen+j;if(ordinal>=Annex12MaxRestoredRows)throw new InvalidOperationException();string ward=Annex12ExpectedWard(ordinal),cqt=Annex12WardCqtName(ward),head=Annex12WardHeadName(ward),headCode=Annex12WardHeadCode(ward);
      annex12WebHeadAuthorityFailureMask=(annex12WebHeadAuthorityFailureMask&2048)|((ordinal+1)<<6);Record();
      if(CellText(annex,row,17)==String.Empty){
-      try{SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
+      try{SelectImportedAnnex12Combo(grid,annex,row,17,head);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;Record();
      }
      // Runs 42206910531/42206915586 stopped right after the second combo action: the original
@@ -279,11 +297,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
      // 8: loadCqtCapCucTheoDiaBanXa → GeneralFunctions.InsertCombobox(dictionary)), which the
      // vendor raises for a user's move into the cell, not for a programmatic SetActiveCell. Enter R
      // as a user does, with one real Left key from S, then re-confirm the same entry once.
-     if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){
-      annex12WebHeadAuthorityComboMask=ImportedAnnex12ComboShape(annex,row,17,"Thuế Thành phố Hà Nội","10100");Record();
+     if((unmet&4)!=0&&CellText(annex,row,17)==head){
+      annex12WebHeadAuthorityComboMask=ImportedAnnex12ComboShape(annex,row,17,head,headCode);Record();
       EnterImportedAnnex12HeadByKey(grid,annex,row);annex12WebHeadAuthorityComboMask|=256;
-      int keyed=ImportedAnnex12ComboShape(annex,row,17,"Thuế Thành phố Hà Nội","10100");if((keyed&4)!=0)annex12WebHeadAuthorityComboMask|=512;if((keyed&16)!=0)annex12WebHeadAuthorityComboMask|=1024;Record();
-      if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội")throw new InvalidOperationException();
+      int keyed=ImportedAnnex12ComboShape(annex,row,17,head,headCode);if((keyed&4)!=0)annex12WebHeadAuthorityComboMask|=512;if((keyed&16)!=0)annex12WebHeadAuthorityComboMask|=1024;Record();
+      if(CellText(annex,row,17)!=head)throw new InvalidOperationException();
       // Release 222 (both cases, combo mask 1899 = 107|256|512|1024, still no 128): after the keyed
       // entry ItemData held code 10100, yet the same-entry re-confirm wrote nothing. Original
       // frmWinToKhai.cellChange (and winFpSpread_ComboSelChange) return early when the cell text
@@ -291,7 +309,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
       // 91/79/G1/G4/71/01; D1 is not exempt, so confirming the value already processed is a no-op.
       // A user then picks a neighbouring entry of the same original list and picks the head CQT
       // again: both are real changes, so the original handler runs and writes AJ from ItemData.
-      try{SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,"Thuế Thành phố Hà Nội");SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
+      try{SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head);SelectImportedAnnex12Combo(grid,annex,row,17,head);}catch{annex12WebHeadAuthorityFailureMask|=512;Record();throw;}
       annex12WebHeadAuthorityRepairCount++;annex12WebHeadAuthorityComboMask|=64;Record();
       MoveImportedAnnex12Cell(grid,annex,row,18);
       if(CellText(annex,row,18)!=cqt){
@@ -367,11 +385,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
  }
  private int ImportedAnnex12HeadAuthorityUnmet(object annex,int row,int ordinal){
   int unmet=0;string ward=Annex12ExpectedWard(ordinal);
-  if(CellText(annex,row,17)!="Thuế Thành phố Hà Nội")unmet|=1;
+  if(CellText(annex,row,17)!=Annex12WardHeadName(ward))unmet|=1;
   if(CellText(annex,row,18)!=Annex12WardCqtName(ward))unmet|=2;
-  if(CellText(annex,row,35)!="10100")unmet|=4;
+  if(CellText(annex,row,35)!=Annex12WardHeadCode(ward))unmet|=4;
   if(CellText(annex,row,36)!=Annex12WardCqtCode(ward))unmet|=8;
-  if(CellText(annex,row,33)!="101")unmet|=16;
+  if(CellText(annex,row,33)!=Annex12WardProvinceCode(ward))unmet|=16;
   if(CellText(annex,row,42)!=ward)unmet|=32;
   return unmet;
  }

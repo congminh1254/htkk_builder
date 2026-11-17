@@ -386,19 +386,22 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   keyed=block[block.index(' private void EnterImportedAnnex12HeadByKey('):block.index(' // Opens and closes the original percentage editor')]
   self.assertEqual(keyed.count('SendKeys'),1);self.assertIn('SendKeys.SendWait("{LEFT}")',keyed)
   block=block.replace(keyed,'')
-  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội")',block)
-  # The local CQT is the one of the row's fixed synthetic ward (the proven ward, or the KHBS two-places variant's second ward).
-  self.assertIn('string cqt=Annex12WardCqtName(Annex12ExpectedWard(ordinal));',block);self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,cqt)',block)
-  names=annex[annex.index(' private static string Annex12WardCqtCode('):annex.index(' private string Annex12ExpectedWard(')]
-  self.assertIn('if(ward==Annex12FixedWard)return "Thuế cơ sở 16 Thành phố Hà Nội";if(ward==Annex12SecondWard)return "Thuế cơ sở 25 Thành phố Hà Nội";throw new InvalidOperationException();',names)
-  self.assertIn('if(ward==Annex12FixedWard)return "10129";if(ward==Annex12SecondWard)return "10131";throw new InvalidOperationException();',names)
+  # The head CQT (R) and the local CQT (S) are those the case data pins for the row's fixed synthetic ward (Annex12Places: the
+  # proven ward and the KHBS two-places variant's second ward keep "Thuế Thành phố Hà Nội"/10100; KHBS case 24's Bắc Ninh ward).
+  self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,17,head)',block)
+  self.assertIn('string ward=Annex12ExpectedWard(ordinal),cqt=Annex12WardCqtName(ward),head=Annex12WardHeadName(ward),headCode=Annex12WardHeadCode(ward);',block);self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,18,cqt)',block)
+  names=annex[annex.index(' private static string[] Annex12Place('):annex.index(' private string Annex12ExpectedWard(')]
+  for accessor in ('Annex12WardProvinceCode(string ward){return Annex12Place(ward)[1];}','Annex12WardHeadCode(string ward){return Annex12Place(ward)[2];}','Annex12WardHeadName(string ward){return Annex12Place(ward)[3];}',
+                   'Annex12WardCqtCode(string ward){return Annex12Place(ward)[4];}','Annex12WardCqtName(string ward){return Annex12Place(ward)[5];}','throw new InvalidOperationException();'):self.assertIn(accessor,names)
+  self.assertIn('new string[]{Annex12FixedWard,"101","10100","Thuế Thành phố Hà Nội","10129","Thuế cơ sở 16 Thành phố Hà Nội"},',annex)
+  self.assertIn('new string[]{Annex12SecondWard,"101","10100","Thuế Thành phố Hà Nội","10131","Thuế cơ sở 25 Thành phố Hà Nội"},',annex)
   self.assertIn('private const string Annex12FixedWard="10129087",Annex12SecondWard="10131091";',annex)
   self.assertIn('SetPublic(vendor,"SelectedIndex",selected)',block);self.assertIn('FindVendorCombo(editor,0)',block)
   # Only the vendor combo index and the public sheet selection are set; never a cell value or code.
   for forbidden in ('set_Value','"Value",','"Text",','"Formula"','InsertTable','SendKeys'):self.assertNotIn(forbidden,block)
   self.assertEqual(block.count('SetValue('),1);self.assertIn('active.SetValue(grid,found,null)',block)
   self.assertIn('if((column!=17&&column!=18)',block)
-  for code in ('CellText(annex,row,35)!="10100"','CellText(annex,row,36)!=Annex12WardCqtCode(ward)','CellText(annex,row,33)!="101"','CellText(annex,row,42)!=ward','string ward=Annex12ExpectedWard(ordinal);'):self.assertIn(code,block)
+  for code in ('CellText(annex,row,17)!=Annex12WardHeadName(ward)','CellText(annex,row,35)!=Annex12WardHeadCode(ward)','CellText(annex,row,36)!=Annex12WardCqtCode(ward)','CellText(annex,row,33)!=Annex12WardProvinceCode(ward)','CellText(annex,row,42)!=ward','string ward=Annex12ExpectedWard(ordinal);'):self.assertIn(code,block)
   phase=roundtrip[roundtrip.index('if(roundtripPhase=="waiting-reexport-ready"){'):]
   self.assertLess(phase.index('RestoreImportedAnnex12HeadAuthorities()'),phase.index('Named(roundtripOwner,"cmdExport")'))
   self.assertIn('if(!annex12WebHeadAuthorityRestored&&ordinal<5',annex)
@@ -442,7 +445,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   user action, no cell write), then S, and records the bounded combo shape."""
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12Combo(')]
-  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
+  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)==head){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
   order=[retry.index(x) for x in ('ImportedAnnex12ComboShape(annex,row,17,','SelectImportedAnnex12Combo(grid,annex,row,17,','MoveImportedAnnex12Cell(grid,annex,row,18);','MoveImportedAnnex12Cell(grid,annex,row,20);','WaitImportedAnnex12HeadAuthority(annex,row,ordinal,2.0)')]
   self.assertEqual(order,sorted(order))
   for forbidden in ('set_Value','"Text",','SendKeys','Cell.Value'):self.assertNotIn(forbidden,retry)
@@ -463,7 +466,7 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   bits=[i for i in range(11) if 107>>i&1];self.assertEqual(bits,[0,1,3,5,6])
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12Combo(')]
-  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
+  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)==head){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
   order=[retry.index(x) for x in ('ImportedAnnex12ComboShape(annex,row,17,','EnterImportedAnnex12HeadByKey(grid,annex,row);','annex12WebHeadAuthorityComboMask|=256','SelectImportedAnnex12Combo(grid,annex,row,17,','annex12WebHeadAuthorityComboMask|=64','annex12WebHeadAuthorityComboMask|=128')]
   self.assertEqual(order,sorted(order))
   for bit in ('|=512;','|=1024;'):self.assertIn('annex12WebHeadAuthorityComboMask'+bit,retry)
@@ -484,8 +487,8 @@ class ImportedHeadAuthorityContract(unittest.TestCase):
   self.assertEqual([i for i in range(11) if 1899>>i&1],[0,1,3,5,6,8,9,10])
   annex=(ROOT/'HtkkGtgtAnnex12ExportInspection.cs').read_text(encoding='utf-8')
   loop=annex[annex.index(' private void RestoreImportedAnnex12HeadAuthorities('):annex.index(' private void SelectImportedAnnex12NeighbourEntry(')]
-  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)=="Thuế Thành phố Hà Nội"){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
-  order=[retry.index(x) for x in ('EnterImportedAnnex12HeadByKey(grid,annex,row);','SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,"Thuế Thành phố Hà Nội");','SelectImportedAnnex12Combo(grid,annex,row,17,"Thuế Thành phố Hà Nội");','annex12WebHeadAuthorityComboMask|=64','MoveImportedAnnex12Cell(grid,annex,row,18);','annex12WebHeadAuthorityComboMask|=128')]
+  retry=loop[loop.index('if((unmet&4)!=0&&CellText(annex,row,17)==head){'):loop.index('if(unmet!=0){annex12WebHeadAuthorityFailureMask|=unmet;')]
+  order=[retry.index(x) for x in ('EnterImportedAnnex12HeadByKey(grid,annex,row);','SelectImportedAnnex12NeighbourEntry(grid,annex,row,17,head);','SelectImportedAnnex12Combo(grid,annex,row,17,head);','annex12WebHeadAuthorityComboMask|=64','MoveImportedAnnex12Cell(grid,annex,row,18);','annex12WebHeadAuthorityComboMask|=128')]
   self.assertEqual(order,sorted(order))
   helper=annex[annex.index(' private void SelectImportedAnnex12NeighbourEntry('):annex.index(' private void SelectImportedAnnex12Combo(')]
   self.assertIn('SelectImportedAnnex12Combo(grid,annex,row,column,neighbour);',helper)

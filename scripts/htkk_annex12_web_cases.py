@@ -29,6 +29,10 @@ def reject(code,field='pluc'):raise AnnexWebContractError(code,field)
 # A second fixed synthetic place in the same tỉnh, used only by the KHBS two-places variant (public HTKK 5.8.2 catalogues
 # Catalogue_Dia_Ban_Xa_Moi.xml and the CQT list of that ward, as htkk_web data/htkk-taxpayer-profile.json pins them).
 SECOND_LOCATION={**FIXED_LOCATION,'ma_xa':'10131091','ten_xa':'Xã Phúc Lộc','ct09_cqt_ma':'10131','ct09_cqt_ten':'Thuế cơ sở 25 Thành phố Hà Nội'}
+# A fixed synthetic place in ANOTHER tỉnh (Bắc Ninh), used only by the KHBS other-province variant (public HTKK 5.8.2 catalogues
+# Catalogue_Dia_Ban_Tinh_Moi.xml 221, Catalogue_Dia_Ban_Xa_Moi.xml 22117047 and the CQT of that ward, as htkk_web
+# data/htkk-taxpayer-profile.json pins them). Its head CQT (22100 "Thuế thành phố Bắc Ninh") is not an XML leaf of 01-2.
+OTHER_PROVINCE_LOCATION={**FIXED_LOCATION,'ma_xa':'22117047','ten_xa':'Phường Việt Yên','ct08_tinh_ma':'221','ct08_tinh_ten':'Thành phố Bắc Ninh','ct09_cqt_ma':'22117','ct09_cqt_ten':'Thuế cơ sở 2 thành phố Bắc Ninh'}
 # Plant 3 exists only in the KHBS add-plant variant.
 EXTRA_PLANT_NAMES=PLANT_NAMES+('NHA MAY GIA LAP 3 - KHONG NOP',)
 EXTRA_PLANT_CODES=PLANT_CODES+('99996',)
@@ -70,6 +74,9 @@ ROUND_B2_VARIANT='01GTGT-annex12-round-khbs-lan2'
 # "4" / "5" / "4"); the lần-2 annex keeps plant 1 at [10] 6 ([12] 3/3) and removes plants 2 and 3.
 ROUND3_B1_VARIANT='01GTGT-annex12-round3-khbs'
 NEG_ROUND_B2_VARIANT='01GTGT-annex12-neg-round-khbs-lan2'
+# Case 24 (htkk_khbs_web_cases ANNEX12_OTHER_PROVINCE_CASE): the proven two-plant annex with plant 2's three rows at
+# OTHER_PROVINCE_LOCATION.
+OTHER_PROVINCE_VARIANT='01GTGT-annex12-other-province-khbs'
 _PLANT1=lambda:plant(0,'ID_1','7',[location('1.1','01','33.33','2','ID_1'),location('1.2','02','66.67','5','ID_2')])
 VARIANTS={
  TWO_PLANTS_CHANGED_VARIANT:{'plants':[
@@ -102,6 +109,9 @@ VARIANTS={
    plant(2,'ID_3','7',[location('3.1','01','50.00','4','ID_1'),location('3.2','02','50.00','4','ID_2')]),
   ],'ct13':'23','ct14':'23','totalLeaves':184,'taxLeaves':180,'groupRows':(2,2,2)},
  NEG_ROUND_B2_VARIANT:{'plants':[plant(0,'ID_1','6',[location('1.1','01','50.00','3','ID_1'),location('1.2','02','50.00','3','ID_2')])],'ct13':'6','ct14':'6','totalLeaves':112,'taxLeaves':108,'groupRows':(2,)},
+ OTHER_PROVINCE_VARIANT:{'plants':[_PLANT1(),
+   plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1',OTHER_PROVINCE_LOCATION),location('2.2','02','25.00','1','ID_2',OTHER_PROVINCE_LOCATION),location('2.3','02','25.00','1','ID_3',OTHER_PROVINCE_LOCATION)]),
+  ],'ct13':'10','ct14':'10','totalLeaves':163,'taxLeaves':159,'groupRows':(2,3)},
  DISPLAY_SAME_VARIANT:{'plants':[
    plant(0,'ID_1','7',[location('1.1','01','35.00','2','ID_1'),location('1.2','02','65.00','5','ID_2')]),
    plant(1,'ID_2','3',[location('2.1','01','50.00','2','ID_1'),location('2.2','02','25.00','1','ID_2'),location('2.3','02','25.00','1','ID_3')]),

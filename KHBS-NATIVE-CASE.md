@@ -393,6 +393,23 @@ open `KHBS_01GTGT_ANNEX_MONTH_LATE_RELEASED` (case 22 is the first native ct3b w
 `KHBS_01GTGT_ANNEX_ZERO_CT10_RELEASED`. Not covered: more than eleven Muc_I.2 rows (P71 would then be the tỉnh text of an inserted
 Muc_I.2 row, so AA38 is not determined statically).
 
+## Case 24: a plant in another tỉnh (non-gating; htkk_web issue 422)
+
+`01GTGT-khbs-annex12-other-province-M10-2026` (`khbs-annex12-other-province`, adapter `01-gtgt-2.8.3-khbs-annex12`, M10/2026,
+amendmentOrder 1): case 4's flow and checks (zero C0, B1 adds 01-2, on time, 504 leaves) with plant 2 (99997, all three rows) at a
+place outside Hà Nội: xã 22117047 Phường Việt Yên, tỉnh 221 "Thành phố Bắc Ninh", CQT 22117 "Thuế cơ sở 2 thành phố Bắc Ninh"
+(`OTHER_PROVINCE_VARIANT`; public HTKK 5.8.2 catalogues as htkk_web `data/htkk-taxpayer-profile.json` pins them). htkk_web computes
+the 01-1/KHBS keys and Muc_I.2 by (plant, xã, tỉnh, CQT) only, so the fragments are case 4's with that place (plant 2's Muc_I.2 row
+carries ct05 221 and ct06 22117). Rows generated from htkk_web's golden.
+
+Driver: `RestoreImportedAnnex12HeadAuthorities` no longer pins "Thuế Thành phố Hà Nội". Every text and code it selects or checks
+comes from the case data of the row's ward (`Annex12Places`: ward, tỉnh code AH, head CQT code AJ and display R, local CQT code AK
+and display S). The two Hà Nội wards keep exactly the earlier values (10100 "Thuế Thành phố Hà Nội", 10129/10131), so cases 1-23 and
+the annex web cases run as before; the Bắc Ninh ward has head CQT 22100 "Thuế thành phố Bắc Ninh" (the catalogue's own lower-case
+"thành phố"; AJ = the ward's first three digits + "00", as `GetParentCodeFromChildCellInTable` writes it). `InspectOriginalImportedAnnex12`
+checks AH/AJ/AK of each imported row against the same data. An unknown ward still fails closed. If the run matches, htkk_web has a
+native case for a plant in another tỉnh (the web already accepts it inside the released verified scope).
+
 ## Raw native output retention
 
 After the run reaches `gtgt-amendment-khbs-inspected` **or** `gtgt-amendment-khbs-not-matched`, the probe
