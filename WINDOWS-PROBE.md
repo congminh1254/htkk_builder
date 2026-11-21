@@ -247,6 +247,16 @@ reviewed against the entry plan (`changed-reviewed`, accepted for 5.8.3 only), a
 A case runs on 5.8.3 only when its registry entry says `"htkkVersion": "5.8.3"` (four observation cases so far,
 `DECLARATION-NATIVE-CASES.md`, "HTKK 5.8.3"); the cohort command below takes `-f htkk_version=5.8.3` the same way.
 
+### HTKK 5.8.4 (selectable per case, non-gating)
+
+`htkk_version` also takes `5.8.4` (GDT row 18/11/2026, Fshare `JT65WVCUY1WA`, archive folder `HTKK_v5.8.4_DLL_signed`, pins in
+`scripts/htkk-oracle-baselines.json`, review in `HTKK-5.8.4-IMPACT.md`). Same separation: run title ` [HTKK 5.8.4]`,
+concurrency/output suffix `-htkk584`, status context `@htkk584`; the default oracle stays 5.8.1. Method pins: the Y8 entry pins
+`AutoBindData_0`, `ButtonClick_0`, `LockUnlock` (reset argument, header cells no longer locked), `winFpSpread_CellChange` (control
+102 branch) and `ProcessCmdKey` (Z5/Z6 branches) really changed and were reviewed against the entry plan (`changed-reviewed`,
+accepted for 5.8.4 only); everything else has the instructions of the reviewed 5.8.3 body. No registry case names 5.8.4 yet; a
+manual run takes `-f htkk_version=5.8.4` as below, and only from `main`.
+
 ### Running the 5.8.2 cohort
 
 Run right after a release of the current `htkk_web` main (the inputs and callbacks must belong

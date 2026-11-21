@@ -52,5 +52,5 @@ class NativeCompilationContractTests(unittest.TestCase):
         self.assertIn('agent.Start(automationMode,OracleVersion);', host[start:end])
         self.assertIn('private const string OracleVersion="__HTKK_ORACLE_VERSION__";', host)
         self.assertIn(".Replace('__HTKK_ORACLE_VERSION__',$OracleVersion)", host)
-        self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3')][string]$OracleVersion='5.8.1'", host)
+        self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4')][string]$OracleVersion='5.8.1'", host)
         self.assertIn('originalExecutableModified=$false; originalConfigurationModified=$false', host)

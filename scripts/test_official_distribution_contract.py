@@ -8,7 +8,7 @@ class OfficialDistributionTests(unittest.TestCase):
   self.assertNotIn('getpedia',source);self.assertNotIn('Expand-Archive',source)
   # Every distribution pin comes from the ONE selected baseline, obtained before any download.
   self.assertLess(s.index(". (Join-Path $PSScriptRoot 'HtkkOracleBaseline.ps1'); $htkkOracle=Get-HtkkOracleBaseline -Version $OracleVersion"),start)
-  self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3')][string]$OracleVersion='5.8.1'",s)
+  self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4')][string]$OracleVersion='5.8.1'",s)
   for line in ("Get-PinnedFile $htkkOracle.officialUrl $rar $htkkOracle.archiveSha256","$source = Join-Path $official $htkkOracle.archiveFolder","Assert-Hash $cab $htkkOracle.cabSha256","Assert-Hash $msi $htkkOracle.msiSha256","Assert-Hash (Join-Path $source 'setup.exe') $htkkOracle.setupSha256"):
    self.assertIn(line,source)
   self.assertNotRegex(source,r'[0-9a-f]{64}')
