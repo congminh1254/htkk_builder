@@ -57,6 +57,8 @@ TRUSTED={
  # which needs a sale row with a rate, so it has no zero case.
  '04-gtgt-tt89-3.0.9':{'menuId':'Z3','businessClass':'Gtgt04TT89','xmlVersion':'3.0.9','schemaId':'Validate/04_GTGT_TT89_309_htkk582.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.2'},
  '04-gtgt-tt89-3.0.9-pl011':{'menuId':'Z3','businessClass':'Gtgt04TT89','xmlVersion':'3.0.9','schemaId':'Validate/04_GTGT_TT89_309_htkk582.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.2'},
+ # 01/GTGT TT89 (Z5 3.0.9, HTKK 5.8.4 only): KieuKy 19, tháng/quý từ 10/2026, tờ khai without phụ lục.
+ '01-gtgt-tt89-3.0.9':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.4'},
  '02-ntnn-tt80-2.5.1':{'menuId':'C9','businessClass':'Ntnn02TT80','xmlVersion':'2.5.1','schemaId':'Validate/02_NTNN_TT80_251.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
 }
 # 05-1/PBT adapters: the annex needs at least one row with loại, tỉnh, xã, Thuế tỉnh/CCT and CQT quản lý (Header B35-B39),

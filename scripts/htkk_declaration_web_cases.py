@@ -268,6 +268,10 @@ CODE = re.compile(r'[0-9]{1,18}\Z')
 TEMPLATE_TT80 = '(Ban hành kèm theo Thông tư số 80/2021/TT-BTC ngày 29 tháng 9 năm 2021 của Bộ trưởng Bộ Tài chính)'
 GTGT04_NAME = 'TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 04/GTGT)'
 GTGT04_TT89_SCHEMA = 'Validate/04_GTGT_TT89_309_htkk582.xsd'
+# 01/GTGT TT89 (Z5, HTKK 5.8.4 only): the web publishes the 5.8.4 schema under its own file name (no 5.8.1/5.8.2 copy).
+GTGT01_TT89_SCHEMA = 'Validate/01_GTGT_TT89_309.xsd'
+GTGT01_NAME = 'TỜ KHAI THUẾ GIÁ TRỊ GIA TĂNG (Mẫu số 01/GTGT)'
+GTGT01_ACTIVITY = 'Hoạt động sản xuất kinh doanh thông thường'
 # Web schema ids that publish an HTKK file under another name (the compiled plans pin the HTKK file itself).
 SCHEMA_SOURCES = {GTGT04_TT89_SCHEMA: 'Validate/04_GTGT_TT89_309.xsd'}
 TEMPLATE_TT40 = '(Ban hành kèm theo Thông tư số 40/2021/TT-BTC ngày 01/6/2021 của Bộ trưởng Bộ Tài Chính)'
@@ -502,6 +506,18 @@ CASES = {
                                                        [GTGT04_NAME, TEMPLATE_TT89, ADDRESS]),
     '04GTGT-TT89-reduction-annex-M10-2026': _case('gtgt04-tt89-reduction-annex-m10-2026', 'Z3', '2035', '3.0.9', GTGT04_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, ['PL_NQ204_GTGT'], WORKBOOK_SERVICE,
                                                   [GTGT04_NAME, TEMPLATE_TT89, ADDRESS, 'HANG HOA A - GIẢ LẬP', 'DICH VU B - GIẢ LẬP', 'SAN XUAT C - GIẢ LẬP', 'HOAT DONG D - GIẢ LẬP', 'HANG HOA E - GIẢ LẬP']),
+    # Z5 01/GTGT TT89 3.0.9 (non-gating, HTKK 5.8.4 only): KieuKy 19, tháng/quý từ 10/2026, tờ khai without phụ lục, activity
+    # 00 (ten_NganhNghe from Catalogue_DM_NNKD, tiểu mục 1701); 104 leaves (ct*_Cqt / ct*_Ghichu included).
+    '01GTGT-TT89-zero-M10-2026': _case('gtgt01-tt89-zero-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 104, [], WORKBOOK_SERVICE,
+                                       [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY]),
+    '01GTGT-TT89-sale10-M10-2026': _case('gtgt01-tt89-sale10-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 104, [], WORKBOOK_SERVICE,
+                                         [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY]),
+    '01GTGT-TT89-quarter-Q4-2026': _case('gtgt01-tt89-quarter-q4-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('Q', '4/2026', '01/10/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 104, [], WORKBOOK_SERVICE,
+                                         [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY]),
+    '01GTGT-TT89-no-activity-M11-2026': _case('gtgt01-tt89-no-activity-m11-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '11/2026', '01/11/2026', '30/11/2026'), None, '2026-10-27', '2026-10-27', 104, [], WORKBOOK_SERVICE,
+                                              [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY]),
+    '01GTGT-TT89-full-M12-2026': _case('gtgt01-tt89-full-m12-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '12/2026', '01/12/2026', '31/12/2026'), None, '2026-10-27', '2026-10-27', 104, [], WORKBOOK_SERVICE,
+                                       [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY]),
     # Y7 01/TCKT TT89 3.0.9 (non-gating, HTKK 5.8.1 oracle): KieuKy 21, one bảng kê per tờ khai: 01/BK-KTHTKD (PLuc_HKD_CNKD,
     # quý 4/2026; nhóm ngành names of DM_DUNG_CHUNG DC_185) or 02/BK-KTBĐS (PLuc_CANHAN_TTS, tháng 10/2026 and lần phát sinh
     # 15/10/2026; DiaChi_BDS xã/tỉnh = the synthetic profile ward).
@@ -541,7 +557,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
 
 
 def is_case(case_id):
@@ -1099,6 +1115,55 @@ TCKT_ROWS = {
 }
 
 
+# 01/GTGT TT89 (Z5, 01_GTGT_TT89_309 sheet 01 of HTKK 5.8.4): Decimal recomputation of the source XLS formulas and the
+# Gtgt01TT89Nckt309 handlers (never the TypeScript engine). Inputs are the synthetic design inputs of each case:
+# CellChange_0 writes [31] = ROUND([30] x 5/100) and [33] = R61 = ROUND([32] x 10/100) (no PL 204/2025/QH15, V19 = 0);
+# XuLyCheckboxCt21 sets 13 cells to 0 when [21] is ticked; [32b] J63 is locked at 0; J58 [27] = [29] + [30] + [32] + [32a] -
+# [32b], L58 [28] = [31] + [33], J65 [34] = [26] + [27] + [34a], L65 [35] = [28], L69 [36] = [35] - [25]; P = [36] - [22] + [37]
+# - [38] - [39a]: L78 [40a] = max(P, 0), L80 [40] = max([40a] - [40b], 0), L81 [41] = max(-P, 0), L83 [43] = max([41] - [42], 0).
+GTGT01_TT89_INPUTS = {
+    '01GTGT-TT89-zero-M10-2026': {},
+    '01GTGT-TT89-sale10-M10-2026': {'ct32': '1000000'},
+    '01GTGT-TT89-quarter-Q4-2026': {'ct23': '200000000', 'ct24': '20000000', 'ct25': '20000000', 'ct26': '10000000', 'ct30': '100000000', 'ct32': '50000000'},
+    '01GTGT-TT89-no-activity-M11-2026': {'ct21': '1', 'ct22': '5000000', 'ct38': '1000000'},
+    '01GTGT-TT89-full-M12-2026': {'ct22': '3000000', 'ct23': '40000000', 'ct24': '4000000', 'ct23a': '10000000', 'ct24a': '1000000', 'ct25': '4000000', 'ct26': '2000000', 'ct29': '5000000',
+                                  'ct30': '100000010', 'ct32': '200000005', 'ct32a': '1000000', 'ct34a': '700000', 'ct37': '200000', 'ct38': '100000', 'ct39a': '50000', 'ct40b': '40000'},
+}
+GTGT01_TT89_NO_ACTIVITY = ('ct23', 'ct24', 'ct23a', 'ct24a', 'ct25', 'ct26', 'ct29', 'ct30', 'ct31', 'ct32', 'ct33', 'ct32a', 'ct34a')
+GTGT01_TT89_LEAVES = ('ct22', 'ct23', 'ct24', 'ct23a', 'ct24a', 'ct25', 'ct26', 'ct27', 'ct28', 'ct29', 'ct30', 'ct31', 'ct32', 'ct33', 'ct32a', 'ct32b', 'ct34a',
+                      'ct34', 'ct35', 'ct36', 'ct37', 'ct38', 'ct39a', 'ct40a', 'ct40b', 'ct40', 'ct41', 'ct42', 'ct43')
+
+
+def gtgt01_tt89_expected(case_id):
+    """Every tax leaf of CTieuTKhaiChinh of a Z5 design case (ct21 as the exporter writes the checkbox: 1 / 0)."""
+    raw = GTGT01_TT89_INPUTS[case_id]
+    D = decimal.Decimal
+    v = {k: D(x) for k, x in raw.items() if k != 'ct21'}
+    g = lambda k: v.get(k, D(0))
+    ticked = raw.get('ct21') == '1'
+    if ticked:
+        for k in GTGT01_TT89_NO_ACTIVITY:
+            v[k] = D(0)
+    else:
+        v['ct31'], v['ct33'] = _round(g('ct30') * 5 / 100), _round(g('ct32') * 10 / 100)
+    v['ct32b'] = D(0)
+    v['ct27'] = g('ct29') + g('ct30') + g('ct32') + g('ct32a') - g('ct32b')
+    v['ct28'] = g('ct31') + g('ct33')
+    v['ct34'], v['ct35'] = g('ct26') + g('ct27') + g('ct34a'), g('ct28')
+    v['ct36'] = g('ct35') - g('ct25')
+    position = g('ct36') - g('ct22') + g('ct37') - g('ct38') - g('ct39a')
+    v['ct40a'] = max(position, D(0)); v['ct40'] = max(g('ct40a') - g('ct40b'), D(0))
+    v['ct41'] = max(-position, D(0)); v['ct43'] = max(g('ct41') - g('ct42'), D(0))
+    return {'ct21': '1' if ticked else '0', **{k: str(g(k)) for k in GTGT01_TT89_LEAVES}}
+
+
+def _gtgt01_tt89(case_id, root):
+    main = root.find('./{%s}HSoKhaiThue/{%s}CTieuTKhaiChinh' % (NS, NS))
+    for name, value in gtgt01_tt89_expected(case_id).items():
+        if [(n.text or '') for n in main.iter('{%s}%s' % (NS, name))] != [value]:
+            reject('VALUE')
+
+
 def tckt_expected(case_id):
     """Per-row leaves and totals of a Y7 design case. 3.1.0 rows (a fifth element, the NQ 43 tick) follow the 310 workbook:
     01-1 I = ROUND(H x K - H x K x 0,3) when ticked, else ROUND(H x K); 01-2 P = ROUND(AB - AB x 0,3) when ticked, else AB (the
@@ -1204,6 +1269,8 @@ def _expected(case_id, spec, root, items, raw):
             _gtgt04(case_id, root)
         if case_id in TCKT_ROWS:
             _tckt(case_id, root)
+        if case_id in GTGT01_TT89_INPUTS:
+            _gtgt01_tt89(case_id, root)
     else:
         try:
             hkd_design.validate_case_xml(case_id, raw)

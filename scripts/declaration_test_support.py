@@ -77,6 +77,10 @@ def _tree(case_id, native=False, created=None):
             row = _add(_path(main, 'CTieuTKhaiChinh/KhaiRiengDoiVoiKhoanThuHo'), 'KhoanThuHoCTGTGT', attrib={'id': 'ID_1'})
             for leaf, value in (('khoanThuHoChiuThueGTGT', ''), ('ct33', '0'), ('ct34', '0'), ('ct35', '0')):
                 _add(row, leaf, value)
+        if case_id in d.GTGT01_TT89_INPUTS:  # 01/GTGT TT89: every tax leaf of the independent oracle (design leaves included)
+            owned = set(values)
+            for name, value in d.gtgt01_tt89_expected(case_id).items():
+                _add(main, name, value)
         for name, value in values.items():
             if name not in owned:
                 if '/' in name:  # 'Group/leaf' (01/TTS CaNhanKeKhai/ctNN)

@@ -208,6 +208,11 @@ TRUSTED_ADAPTERS={
  # (HtkkDeclarationCasePlans.ImportTick), as a user corrects it; CellChange_1 recomputes [22]..[29] from the annex.
  '04-gtgt-tt89-3.0.9':{**_declaration('Z3','3.0.9',{'month':('10/2026',),'quarter':('4/2026',)},[]),'htkkVersion':'5.8.2'},
  '04-gtgt-tt89-3.0.9-pl011':{**_declaration('Z3','3.0.9',{'month':('10/2026',)},['01-1'],IMPORT_TICK_MODE),'htkkVersion':'5.8.2'},
+ # Z5 01/GTGT TT89 3.0.9 (non-gating, HTKK 5.8.4 only: Menu.xml Z5 after D1 in 101_1, Gtgt01TT89Nckt309, StartDate 01/10/2026,
+ # KieuKy 19 = SetLayoutToKhaiThangQuy). CheckToKhaiBatDauCoHieuLuc refuses periods before tháng 10 / quý 4/2026; the period
+ # dialog keeps "Hoạt động sản xuất kinh doanh thông thường" (TieuMucHachToanVal 00, tiểu mục 1701) and the CQT quản lý
+ # (0611). No phụ lục in this scope. XML import → re-export (htkk_web generate-htkk-declaration-reference.mjs gtgt01-tt89-*).
+ '01-gtgt-tt89-3.0.9':{**_declaration('Z5','3.0.9',{'month':('10/2026','11/2026','12/2026'),'quarter':('4/2026',)},[]),'htkkVersion':'5.8.4'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))
