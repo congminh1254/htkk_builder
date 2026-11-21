@@ -14,7 +14,7 @@ Releases retain verified static output on the private generated branch `htkk-net
 
 ## Oracle version
 
-Native cases use HTKK 5.8.1 by default. `probe-htkk-windows.yml` input `htkk_version` (5.8.2, 5.8.3 or 5.8.4) runs a case against that pinned installer for a separate, non-gating cohort (own statuses `@htkk582`, `@htkk583`, `@htkk584`, own output branches; 5.8.4 review in [HTKK-5.8.4-IMPACT.md](HTKK-5.8.4-IMPACT.md)). Pins live in `scripts/htkk-oracle-baselines.json`; see [WINDOWS-PROBE.md](WINDOWS-PROBE.md#selectable-oracle-version-htkk-582-non-gating).
+Native cases use HTKK 5.8.1 by default. `probe-htkk-windows.yml` input `htkk_version` (5.8.2, 5.8.3, 5.8.4 or 5.8.5) runs a case against that pinned installer for a separate, non-gating cohort (own statuses `@htkk582`, `@htkk583`, `@htkk584`, `@htkk585`, own output branches; reviews in [HTKK-5.8.4-IMPACT.md](HTKK-5.8.4-IMPACT.md) and [HTKK-5.8.5-IMPACT.md](HTKK-5.8.5-IMPACT.md)). Pins live in `scripts/htkk-oracle-baselines.json`; see [WINDOWS-PROBE.md](WINDOWS-PROBE.md#selectable-oracle-version-htkk-582-non-gating).
 
 ## Configure dedicated credentials
 

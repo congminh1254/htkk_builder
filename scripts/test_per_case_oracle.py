@@ -95,7 +95,7 @@ class Registry(unittest.TestCase):
         self.assertEqual(registry.case_version(candidate), '5.8.1')
         self.assertEqual(registry.case_version(dict(candidate, htkkVersion='5.8.2')), '5.8.2')
         # One spelling per version (absent = default), reviewed versions only, never on a release gate.
-        for bad in (dict(candidate, htkkVersion='5.8.1'), dict(candidate, htkkVersion='5.8.5'), dict(candidate, htkkVersion=''), dict(candidate, htkkVersion=582),
+        for bad in (dict(candidate, htkkVersion='5.8.1'), dict(candidate, htkkVersion='5.8.6'), dict(candidate, htkkVersion=''), dict(candidate, htkkVersion=582),
                     dict(candidate, htkkVersion=None), dict(gate, htkkVersion='5.8.2'), dict(candidate, oracle='5.8.2')):
             with self.subTest(bad=bad.get('htkkVersion', bad.get('oracle'))), self.assertRaises(ValueError):
                 registry.case_version(bad)
@@ -116,7 +116,7 @@ class Registry(unittest.TestCase):
         self.assertEqual(module.status_context(CANDIDATE), 'htkk-native/ntnn01-nccnn-entry-m10-2026@htkk582')
         self.assertEqual(module.GATE_CASES, registry.GATE_CASES)
         for mutate in (lambda r: r['cases'][index[GATE]].update(htkkVersion='5.8.2'), lambda r: r['cases'][index[CANDIDATE]].update(htkkVersion='5.8.1'),
-                       lambda r: r['cases'][index[CANDIDATE]].update(htkkVersion='5.8.5')):
+                       lambda r: r['cases'][index[CANDIDATE]].update(htkkVersion='5.8.6')):
             with self.subTest(), self.assertRaises(ValueError):
                 self.mutated(mutate)
 
@@ -154,7 +154,7 @@ class Dispatch(unittest.TestCase):
         self.assertEqual({k: v for k, v in p2['inputs'].items() if k != 'htkk_version'}, d.inputs('a' * 40, {'caseId': CANDIDATE, 'artifactCommit': '2' * 40}))
         # The probe workflow accepts exactly this input value and renders exactly this title suffix.
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text()
-        self.assertIn("options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4']", workflow); self.assertIn("inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || inputs.htkk_version == '5.8.3' && ' [HTKK 5.8.3]' || inputs.htkk_version == '5.8.4' && ' [HTKK 5.8.4]' || ''", workflow)
+        self.assertIn("options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4', '5.8.5']", workflow); self.assertIn("inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || inputs.htkk_version == '5.8.3' && ' [HTKK 5.8.3]' || inputs.htkk_version == '5.8.4' && ' [HTKK 5.8.4]' || inputs.htkk_version == '5.8.5' && ' [HTKK 5.8.5]' || ''", workflow)
 
     def test_5_8_2_dispatch_failure_reports_on_its_own_context(self):
         calls = []
@@ -215,7 +215,7 @@ class PreflightRetry(unittest.TestCase):
     def test_contexts_admit_only_reviewed_oracle_suffixes(self):
         for context in ('htkk-native/zero', 'htkk-native/zero@htkk582', 'htkk-native/zero@htkk583'):
             self.assertTrue(retry.CONTEXT.fullmatch(context))
-        for context in ('htkk-native/zero@htkk581', 'htkk-native/zero@htkk585', 'htkk-native/zero@evil', 'htkk-native/zero@htkk582@htkk582', 'other/zero@htkk582'):
+        for context in ('htkk-native/zero@htkk581', 'htkk-native/zero@htkk586', 'htkk-native/zero@evil', 'htkk-native/zero@htkk582@htkk582', 'other/zero@htkk582'):
             self.assertFalse(retry.CONTEXT.fullmatch(context), context)
             self.assertFalse(self.recover(self.fixture('5.8.1'), context))
 

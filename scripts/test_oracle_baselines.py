@@ -15,7 +15,7 @@ def load(name, file):
 generator = load('oracle_baseline_generator_test', 'generate-htkk-oracle-baselines.py')
 oracle = load('oracle_selection_test', 'htkk_oracle.py')
 DATA = json.loads((ROOT / 'htkk-oracle-baselines.json').read_text(encoding='utf-8'))
-V1, V2, V3, V4 = DATA['versions']['5.8.1'], DATA['versions']['5.8.2'], DATA['versions']['5.8.3'], DATA['versions']['5.8.4']
+V1, V2, V3, V4, V5 = DATA['versions']['5.8.1'], DATA['versions']['5.8.2'], DATA['versions']['5.8.3'], DATA['versions']['5.8.4'], DATA['versions']['5.8.5']
 
 # The exact 5.8.1 Y8 original-entry pins the driver was reviewed against (formerly inline in the plan).
 REVIEWED_ENTRY = [
@@ -173,6 +173,35 @@ class Baselines(unittest.TestCase):
         for new, method in zip(pins, [m for m in V4['methods'] if m['id'].startswith('y8-entry-')]):
             self.assertEqual(new.split('|')[3:], [method['token'], str(method['ilBytes']), method['ilSha256']])
 
+    def test_5_8_5_baseline_is_the_verified_distribution(self):
+        # Fshare 814AQNPCA7UF (GDT release row 21/11/2026), Authenticode and CRL verified, 4835 MSI rows against the CAB
+        # (HTKK-5.8.5-IMPACT.md section 1). Read as inert data; nothing executed.
+        self.assertEqual(V5['distribution'], {
+            'officialUrl': 'https://www.fshare.vn/file/814AQNPCA7UF',
+            'archiveSha256': 'b8707ec635355ee72fc9f76f1873e56191183c15f03eb6f2e6f62c7d11e8ba1f', 'archiveBytes': 90224953,
+            'archiveFolder': 'HTKK_v5.8.5_DLL_signed',
+            'setupSha256': 'e4b795616eec5880df9939a35e4bbd5b04b873d79ddf1e13eb0700fcce845ac8',
+            'msiSha256': '828bc698206842c1073731c1c81ca8c8c0e8b91bc4822ddbfe05852b5b6e1c5c',
+            'cabSha256': 'a9887d6b1956e623c6797f785a10862b523f283fead144df690924bd825114ab'})
+        self.assertEqual((V5['signer'], V5['msi']), (V4['signer'], V4['msi']))
+        self.assertEqual((V5['configVersion'], V5['serviceVersion'], V5['mainWindowCaption']), ('5.8.5', '5.8.5', 'Hỗ trợ kê khai thuế - Phiên bản 5.8.5'))
+        # 5.8.5 keeps Menu.xml and Message.xml; the executables and DM_DUNG_CHUNG change.
+        changed = {k for k in V4['files'] if V4['files'][k] != V5['files'][k]}
+        self.assertEqual(changed, {'Project/HTKK.exe', 'Project/HTKK.exe.config', 'Project/TAX.HTKK.Business.dll', 'Project/TAX.HTKK.Utilities.dll', 'InterfaceIni/DM_DUNG_CHUNG.xml'})
+
+    def test_5_8_5_methods_record_the_reviewed_lockunlock_change(self):
+        self.assertEqual([m['id'] for m in V5['methods']], [m['id'] for m in V4['methods']])
+        status = {m['id']: m['status'] for m in V5['methods']}
+        self.assertEqual(status, {m['id']: m['status'] for m in V4['methods']})
+        methods = {m['id']: m for m in V5['methods']}
+        self.assertEqual(methods['y8-entry-lockunlock']['ilBytes'], 133)
+        self.assertIn('RemoveDataOfTable', methods['y8-entry-lockunlock']['change'])
+        for key, m in methods.items():
+            if m['status'] == 'changed-reviewed':
+                self.assertIn('Accepted for 5.8.5 only.', m['review'], key)
+            if m['status'] in ('added-reviewed', 'changed-reviewed'):
+                self.assertIn('5.8.5', m['review'], key)
+
     def test_validation_refuses_loosened_or_inconsistent_data(self):
         def broken(mutate):
             data = copy.deepcopy(DATA); mutate(data)
@@ -212,20 +241,20 @@ class Baselines(unittest.TestCase):
 class Consumers(unittest.TestCase):
     def test_probe_selects_one_baseline_and_restricts_non_default_modes(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
-        self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4')][string]$OracleVersion='5.8.1'", probe)
+        self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4','5.8.5')][string]$OracleVersion='5.8.1'", probe)
         self.assertIn("if($OracleVersion -cne $HtkkOracleDefaultVersion -and $InstallAndProbe -and $GuiAutomation -notin @('gtgt-web-import-inspect','gtgt-amendment-khbs-inspect','declaration-web-import-inspect','declaration-amendment-khbs-inspect')) { throw 'ORACLE_VERSION_MODE_UNSUPPORTED' }", probe)
         for sha in list(V1['files'].values())[:4] + [V1['distribution'][k] for k in ('archiveSha256', 'setupSha256', 'msiSha256', 'cabSha256')]:
             self.assertNotIn(sha, probe)
         self.assertEqual(probe.count("$htkkOracle.files['Project/HTKK.exe']"), 2)
         # D1 web output, declaration output and KHBS output staging.
         self.assertEqual(probe.count('sourceVersion=$htkkOracle.version'), 4)
-        self.assertNotIn("'5.8.1'", probe.replace("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4')][string]$OracleVersion='5.8.1'", ''))
+        self.assertNotIn("'5.8.1'", probe.replace("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4','5.8.5')][string]$OracleVersion='5.8.1'", ''))
         for helper in ('Invoke-HtkkTaxIdOracle', 'Invoke-HtkkProfileAliasOracle', 'Invoke-HtkkCommonHeaderOracle', 'New-HtkkX86ReferenceHost', 'Invoke-HtkkSyntheticLogin'):
             call = next(line for line in probe.splitlines() if helper + ' -' in line)
             self.assertIn('-OracleVersion $OracleVersion', call, helper)
         for name in ('Test-HtkkTaxIdOracle.ps1', 'Test-HtkkProfileAliasOracle.ps1', 'Test-HtkkCommonHeaderOracle.ps1', 'New-HtkkX86ReferenceHost.ps1', 'Invoke-HtkkSyntheticLogin.ps1'):
             text = (ROOT / name).read_text(encoding='utf-8')
-            self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4')][string]$OracleVersion='5.8.1'", text, name)
+            self.assertIn("[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4','5.8.5')][string]$OracleVersion='5.8.1'", text, name)
             self.assertIn("Get-HtkkOracleBaseline -Version $OracleVersion", text, name)
             for sha in V1['files'].values():
                 self.assertNotIn(sha, text, name)
@@ -233,14 +262,14 @@ class Consumers(unittest.TestCase):
     def test_workflow_passes_one_validated_version_to_every_versioned_step(self):
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
         self.assertIn("      htkk_version:\n        description:", workflow)
-        self.assertIn("        options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4']\n        default: '5.8.1'\n", workflow)
-        self.assertIn("if ($oracleVersion -cnotin @('5.8.1','5.8.2','5.8.3','5.8.4')) { throw 'Invalid HTKK oracle version.' }", workflow)
+        self.assertIn("        options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4', '5.8.5']\n        default: '5.8.1'\n", workflow)
+        self.assertIn("if ($oracleVersion -cnotin @('5.8.1','5.8.2','5.8.3','5.8.4','5.8.5')) { throw 'Invalid HTKK oracle version.' }", workflow)
         self.assertIn('-GuiAutomation $guiAutomation -OracleVersion $oracleVersion\n', workflow)
         self.assertEqual(workflow.count('HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}'), 5)
         for script in ('publish-htkk-web-native-output.py', 'publish-htkk-declaration-native-output.py', 'publish-htkk-khbs-native-output.py', 'report-native-case.py', 'report-native-failure.py'):
             step = workflow[:workflow.index(script)]
             self.assertIn('HTKK_ORACLE_VERSION: ${{ inputs.htkk_version }}\n        run: python', step[-200:], script)
-        self.assertIn("${{ inputs.htkk_version == '5.8.2' && '-htkk582' || inputs.htkk_version == '5.8.3' && '-htkk583' || inputs.htkk_version == '5.8.4' && '-htkk584' || '' }}\n  cancel-in-progress: false", workflow)
+        self.assertIn("${{ inputs.htkk_version == '5.8.2' && '-htkk582' || inputs.htkk_version == '5.8.3' && '-htkk583' || inputs.htkk_version == '5.8.4' && '-htkk584' || inputs.htkk_version == '5.8.5' && '-htkk585' || '' }}\n  cancel-in-progress: false", workflow)
         # Release dispatch names a version only for a registry case with a non-default htkkVersion (none is
         # committed), so the default cohort is unchanged (test_per_case_oracle.py checks the bodies).
         dispatcher = (ROOT / 'dispatch-native-cases.py').read_text(encoding='utf-8')
@@ -263,7 +292,7 @@ class Consumers(unittest.TestCase):
     def test_compiled_baseline_selects_exactly_once(self):
         program = ('using System;class P{static void Main(string[] a){'
                    'try{Console.WriteLine(HtkkOracleBaseline.Version);}catch(InvalidOperationException){Console.WriteLine("unselected");}'
-                   'try{HtkkOracleBaseline.Select("5.8.5");}catch(ArgumentException){Console.WriteLine("unknown");}'
+                   'try{HtkkOracleBaseline.Select("5.8.6");}catch(ArgumentException){Console.WriteLine("unknown");}'
                    'HtkkOracleBaseline.Select(a[0]);HtkkOracleBaseline.Select(a[0]);'
                    'try{HtkkOracleBaseline.Select(a[0]=="5.8.1"?"5.8.2":"5.8.1");}catch(InvalidOperationException){Console.WriteLine("conflict");}'
                    'try{HtkkOracleBaseline.File("Project/Other.dll");}catch(ArgumentException){Console.WriteLine("unpinned");}'
@@ -285,7 +314,7 @@ class Separation(unittest.TestCase):
     def test_non_default_oracle_never_shares_context_branch_or_anchor(self):
         self.assertEqual(oracle.version({}), '5.8.1'); self.assertEqual(oracle.version({'HTKK_ORACLE_VERSION': ''}), '5.8.1')
         self.assertEqual(oracle.version({'HTKK_ORACLE_VERSION': '5.8.2'}), '5.8.2')
-        for bad in ('5.8.5', '5.8.2 ', 'latest', '5.8'):
+        for bad in ('5.8.6', '5.8.2 ', 'latest', '5.8'):
             with self.assertRaises(ValueError): oracle.version({'HTKK_ORACLE_VERSION': bad})
         self.assertEqual((oracle.status_context('htkk-native/zero', '5.8.1'), oracle.output_branch('gtgt-web-native-zero-output', '5.8.1'), oracle.suffix('5.8.1')), ('htkk-native/zero', 'gtgt-web-native-zero-output', ''))
         self.assertEqual((oracle.status_context('htkk-native/zero', '5.8.2'), oracle.output_branch('gtgt-web-native-zero-output', '5.8.2'), oracle.suffix('5.8.2')), ('htkk-native/zero@htkk582', 'gtgt-web-native-zero-output-htkk582', '-htkk582'))

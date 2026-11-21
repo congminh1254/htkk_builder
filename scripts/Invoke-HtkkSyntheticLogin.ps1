@@ -12,7 +12,7 @@ function Get-HtkkSyntheticLoginSampleSignature {
 }
 function Invoke-HtkkSyntheticLogin {
  [CmdletBinding()]
- param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory,[ValidateRange(5,90)][int]$PostLoginDeadlineSeconds=60,[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4')][string]$OracleVersion='5.8.1')
+ param([Parameter(Mandatory=$true)][int]$RootProcessId,[Parameter(Mandatory=$true)][datetime]$RootStartTime,[Parameter(Mandatory=$true)][string]$ProjectDirectory,[ValidateRange(5,90)][int]$PostLoginDeadlineSeconds=60,[ValidateSet('5.8.1','5.8.2','5.8.3','5.8.4','5.8.5')][string]$OracleVersion='5.8.1')
  $safe=[ordered]@{status='not-started';fixtureDirectoryPreexisting=$null;fixtureDirectoryCreated=$false;syntheticIdentifierOnly=$true;realTaxpayerDataUsed=$false;newIdClicked=$false;inputVerified=$false;loginClicked=$false;loginHidden=$false;profileWindowObserved=$false;nextOwnedWindowObserved=$false;nativeControlKinds=@{};postLoginControlKinds=@{};allowedLabels=@();profileInChildWindow=$false;profileRecognition='not-verified';profileMainCaptionMatched=$false;profileSaveCloseMatched=$false;profileManagedContainerCount=0;postLoginDeadlineSeconds=0;postLoginWaitSeconds=0;postLoginPollCount=0;profileRecognitionSeconds=-1;postLoginTimeline=@();postLoginTimelineTruncated=$false;runtimeRoundTrip=$false}
  $retained=$null
  try {

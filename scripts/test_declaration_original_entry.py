@@ -160,7 +160,7 @@ class EntryPlan(unittest.TestCase):
         self.assertIn('HtkkOracleBaseline.EntryMethodPins());', entry_block())
         self.assertNotRegex(entry_block(), r'"[BH]\|')  # no inline, version-blind method pin
         pins_by_version = self.entry_pins()
-        self.assertEqual(list(pins_by_version), ['5.8.1', '5.8.2', '5.8.3', '5.8.4'])
+        self.assertEqual(list(pins_by_version), ['5.8.1', '5.8.2', '5.8.3', '5.8.4', '5.8.5'])
         reviewed = pins_by_version['5.8.1']
         # The reviewed 5.8.1 list, unchanged (token, IL size, IL-code SHA-256).
         self.assertEqual(reviewed[0], 'B|Ntnn01TT89Nckt309|AutoBindData_0|0x060018f9|352|86baaca777e636dd3d76918c3b779dbcdd557467f8704bba44d89838d52068c9')
@@ -194,6 +194,11 @@ class EntryPlan(unittest.TestCase):
         entry4 = [m for m in BASELINES['versions']['5.8.4']['methods'] if m['id'].startswith('y8-entry-')]
         self.assertEqual([i for i, m in enumerate(entry4) if m['status'] == 'changed-reviewed'], [0, 1, 2, 3, 4, 8, 12])
         for new, method in zip(pins_by_version['5.8.4'], entry4):
+            self.assertEqual(new.split('|')[3:], [method['token'], str(method['ilBytes']), method['ilSha256']])
+        # HTKK 5.8.5: LockUnlock also clears the tables of the part not chosen (RemoveDataOfTable); reviewed against this plan.
+        entry5 = [m for m in BASELINES['versions']['5.8.5']['methods'] if m['id'].startswith('y8-entry-')]
+        self.assertEqual([i for i, m in enumerate(entry5) if m['status'] == 'changed-reviewed'], [0, 1, 2, 3, 4, 8, 12])
+        for new, method in zip(pins_by_version['5.8.5'], entry5):
             self.assertEqual(new.split('|')[3:], [method['token'], str(method['ilBytes']), method['ilSha256']])
         for pins in pins_by_version.values():
          self.assertEqual(len(pins), 14)

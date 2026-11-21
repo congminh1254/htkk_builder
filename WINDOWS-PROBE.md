@@ -257,6 +257,16 @@ concurrency/output suffix `-htkk584`, status context `@htkk584`; the default ora
 accepted for 5.8.4 only); everything else has the instructions of the reviewed 5.8.3 body. No registry case names 5.8.4 yet; a
 manual run takes `-f htkk_version=5.8.4` as below, and only from `main`.
 
+### HTKK 5.8.5 (selectable per case, non-gating)
+
+`htkk_version` also takes `5.8.5` (GDT row 21/11/2026, Fshare `814AQNPCA7UF`, archive folder `HTKK_v5.8.5_DLL_signed`, pins in
+`scripts/htkk-oracle-baselines.json`, review in `HTKK-5.8.5-IMPACT.md`). Same separation: run title ` [HTKK 5.8.5]`,
+concurrency/output suffix `-htkk585`, status context `@htkk585`; the default oracle stays 5.8.1. Method pins: only the Y8
+`LockUnlock` really changed (it now clears the tables of the part not chosen) and was reviewed against the entry plan
+(`changed-reviewed`, accepted for 5.8.5 only); everything else has the instructions of the reviewed 5.8.4 body. 5.8.5 also checks
+Y8 số hợp đồng, ngày hợp đồng and số tiền thanh toán and maps Y8 mục II KHBS to new tiểu mục (not pinned; see the review). No
+registry case names 5.8.5 yet; a manual run takes `-f htkk_version=5.8.5` as below, and only from `main`.
+
 ### Running the 5.8.2 cohort
 
 Run right after a release of the current `htkk_web` main (the inputs and callbacks must belong

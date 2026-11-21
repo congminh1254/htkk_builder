@@ -1,6 +1,6 @@
 name: Kiểm tra điều kiện chạy HTKK Windows
 # Public fixed case id only; lets the release dispatcher detect an already-created run before any retry.
-run-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})${{ inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || inputs.htkk_version == '5.8.3' && ' [HTKK 5.8.3]' || inputs.htkk_version == '5.8.4' && ' [HTKK 5.8.4]' || '' }}
+run-name: HTKK native case ${{ inputs.web_case_id }} (${{ inputs.gui_automation }})${{ inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || inputs.htkk_version == '5.8.3' && ' [HTKK 5.8.3]' || inputs.htkk_version == '5.8.4' && ' [HTKK 5.8.4]' || inputs.htkk_version == '5.8.5' && ' [HTKK 5.8.5]' || '' }}
 on:
   workflow_dispatch:
     inputs:
@@ -46,16 +46,16 @@ on:
         default: original
         required: true
       htkk_version:
-        description: 'Phiên bản HTKK làm oracle (5.8.1 mặc định; 5.8.2, 5.8.3, 5.8.4 chỉ cho cohort native riêng, không gate release)'
+        description: 'Phiên bản HTKK làm oracle (5.8.1 mặc định; 5.8.2, 5.8.3, 5.8.4, 5.8.5 chỉ cho cohort native riêng, không gate release)'
         type: choice
-        options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4']
+        options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4', '5.8.5']
         default: '5.8.1'
         required: false
 permissions:
   contents: read
   actions: read
 concurrency:
-  group: native-${{ inputs.web_source_sha || github.run_id }}-${{ inputs.web_case_id }}-${{ inputs.gui_automation }}${{ inputs.htkk_version == '5.8.2' && '-htkk582' || inputs.htkk_version == '5.8.3' && '-htkk583' || inputs.htkk_version == '5.8.4' && '-htkk584' || '' }}
+  group: native-${{ inputs.web_source_sha || github.run_id }}-${{ inputs.web_case_id }}-${{ inputs.gui_automation }}${{ inputs.htkk_version == '5.8.2' && '-htkk582' || inputs.htkk_version == '5.8.3' && '-htkk583' || inputs.htkk_version == '5.8.4' && '-htkk584' || inputs.htkk_version == '5.8.5' && '-htkk585' || '' }}
   cancel-in-progress: false
 jobs:
   readiness:
@@ -164,7 +164,7 @@ jobs:
           $runtimeHost = if ([string]::IsNullOrEmpty($env:PROBE_RUNTIME_HOST)) { 'original' } else { $env:PROBE_RUNTIME_HOST }
           if ($runtimeHost -notin @('original','clr2-x86-reference')) { throw 'Invalid runtime host mode.' }
           $oracleVersion = if ([string]::IsNullOrEmpty($env:PROBE_HTKK_VERSION)) { '5.8.1' } else { $env:PROBE_HTKK_VERSION }
-          if ($oracleVersion -cnotin @('5.8.1','5.8.2','5.8.3','5.8.4')) { throw 'Invalid HTKK oracle version.' }
+          if ($oracleVersion -cnotin @('5.8.1','5.8.2','5.8.3','5.8.4','5.8.5')) { throw 'Invalid HTKK oracle version.' }
           & ./scripts/probe-htkk-windows.ps1 -InstallAndProbe:$probe -RuntimeHost $runtimeHost -AcknowledgeRegistration:$ackRegistration -SyntheticLogin:$syntheticLogin -GuiAutomation $guiAutomation -OracleVersion $oracleVersion
       # Native web regressions retain only their dedicated per-case output; shared
       # startup/common-header references remain available in manual reference modes.

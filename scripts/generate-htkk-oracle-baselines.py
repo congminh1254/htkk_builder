@@ -14,7 +14,7 @@ ROOT = pathlib.Path(__file__).resolve().parent
 SOURCE = ROOT / 'htkk-oracle-baselines.json'
 PS_OUT = ROOT / 'HtkkOracleBaseline.ps1'
 CS_OUT = ROOT / 'HtkkOracleBaseline.cs'
-VERSIONS = ('5.8.1', '5.8.2', '5.8.3', '5.8.4')
+VERSIONS = ('5.8.1', '5.8.2', '5.8.3', '5.8.4', '5.8.5')
 DEFAULT = '5.8.1'
 SHA = re.compile(r'[0-9a-f]{64}')
 TOKEN = re.compile(r'0x06[0-9a-f]{6}')
@@ -84,7 +84,7 @@ def validate(data):
         d = value['distribution']
         require(set(d) == {'officialUrl', 'archiveSha256', 'archiveBytes', 'archiveFolder', 'setupSha256', 'msiSha256', 'cabSha256'}, version + ' distribution')
         require(re.fullmatch(r'https://www\.fshare\.vn/file/[A-Z0-9]{12}', d['officialUrl']) is not None, version + ' url')
-        # The archive folder of 5.8.4 is spelled HTKK_v5.8.4_DLL_signed; each version pins its own exact name.
+        # The archive folders of 5.8.4 and 5.8.5 are spelled HTKK_v<version>_DLL_signed; each version pins its own exact name.
         require(d['archiveFolder'] in ('HTKK_' + version + '_DLL_signed', 'HTKK_v' + version + '_DLL_signed'), version + ' folder')
         require(type(d['archiveBytes']) is int and 1 <= d['archiveBytes'] <= 200 * 1024 * 1024, version + ' bytes')
         for key in ('archiveSha256', 'setupSha256', 'msiSha256', 'cabSha256'):
