@@ -853,3 +853,43 @@ Chưa có ca từ chối: khuôn khổ native chỉ có ca chạy tới kết xu
 Ca nhận ở mốc 06/10/2026 của C9/D6 chưa thêm được: engine web (Menu.xml 5.8.1/5.8.2) vẫn chặn đến ngày sau 01/10/2026 nên
 nhà sản xuất không tạo được tệp; cần đổi quy tắc web, việc này để sau khi các ca trên khớp.
 
+
+## 01/GTGT TT89 (Z5, 3.0.9) — năm ca quan sát, không chặn phát hành, chỉ có trên HTKK 5.8.4 (`htkkVersion` 5.8.4)
+
+Nhà sản xuất `htkk_web` nhánh `work/gtgt01-tt89` (thiết kế trong `scripts/generate-htkk-descriptor-reference.mjs`, ca sản xuất
+`gtgt01-tt89-*` của `scripts/generate-htkk-declaration-reference.mjs` với `htkkVersion: '5.8.4'`). Menu Z5 (`Gtgt01TT89`,
+maTKhai 2032, KieuKy 19 = `SetLayoutToKhaiThangQuy`, Validity từ 01/10/2026, không EndDate) chỉ có trong Menu.xml 5.8.4, ngay
+sau D1 trong nhóm 101_1: menu 101 → 101_1 → Z5. Kế hoạch biên dịch ghim `01_GTGT_TT89_309.xls` (`5370eb12…4585`),
+`01_GTGT_TT89_309.xml` (`ba968344…638a`) và `Validate/01_GTGT_TT89_309.xsd` (`8481f7c9…da19`) của bộ cài 5.8.4 (baseline
+`htkk-oracle-baselines.json` 5.8.4); web công bố XSD đó dưới cùng tên. `CheckToKhaiBatDauCoHieuLuc` (Z5 trong danh sách 5.8.4) từ
+chối tháng trước 10/2026 và quý trước 4/2026. Hộp kỳ để nguyên "Hoạt động sản xuất kinh doanh thông thường" (TieuMucHachToanVal 00,
+tiểu mục 1701) và CQT quản lý (0611 từ chối CQT khác với hoạt động 00). Không kèm phụ lục.
+
+| Ca | Kỳ | Kiểm tra chính |
+|---|---|---|
+| `01GTGT-TT89-zero-M10-2026` | tháng 10/2026 | mọi chỉ tiêu 0; `ct*_Cqt` = 0, `ct*_Ghichu` rỗng, `ct32b` = 0 |
+| `01GTGT-TT89-sale10-M10-2026` | tháng 10/2026 | [32] 1.000.000, [33] 100.000 → [27] 1.000.000, [36] = [40a] = [40] 100.000 |
+| `01GTGT-TT89-quarter-Q4-2026` | quý 4/2026 | mua vào 200.000.000 / 20.000.000, 5% và 10%; [36] −10.000.000 → [41] = [43] 10.000.000 |
+| `01GTGT-TT89-no-activity-M11-2026` | tháng 11/2026 | [21] = 1 (13 ô về 0, khóa), [22] 5.000.000, [38] 1.000.000 → [41] = [43] 6.000.000 |
+| `01GTGT-TT89-full-M12-2026` | tháng 12/2026 | mọi ô nhập; [31] 5.000.001 và [33] 20.000.001 (làm tròn nửa xa số 0), [40a] 18.050.002, [40] 18.010.002 |
+
+Oracle độc lập: `GTGT01_TT89_INPUTS` / `gtgt01_tt89_expected` (Decimal, công thức XLS sheet 01 và `CellChange_0`,
+`XuLyCheckboxCt21` của `Gtgt01TT89Nckt309`), kiểm mọi lá thuế của `CTieuTKhaiChinh` trong XML web; kiểm XML trên bản HTKK kết xuất
+lại là 24 lá trong kế hoạch biên dịch, kiểm ô là J58, L58, J65, L65, L69, L78, L80, L81, L83. 104 lá mỗi ca.
+
+Câu hỏi cho lần chạy: HTKK 5.8.4 kết xuất `ct*_Cqt` là `0` (giá trị mẫu của ô khóa) và `ct*_Ghichu` rỗng như web không; nhập XML có
+`ct21` = 1 thì `XuLyCheckboxCt21` (gọi từ `AutoBindData_0` với isBindData) có hỏi lại không; `ct22` khác P47 (0, không có tệp kỳ
+trước) chỉ là cảnh báo Header B17; `ma_NganhNghe`/`ten_NganhNghe`/`tieuMucHachToan` = 00 / "Hoạt động sản xuất kinh doanh thông
+thường" / 1701; quý 4 ghi `kyKKhaiTuThang`/`kyKKhaiDenThang` rỗng.
+
+Chạy được khi baseline 5.8.4 có trên `main` của builder (`probe-htkk-windows.yml` chỉ chạy job trên `refs/heads/main`). Mỗi ca,
+sau khi htkk_web release sinh input bất biến (`declaration-web-reference-gtgt01-tt89-*-input`):
+
+```
+gh workflow run probe-htkk-windows.yml --ref main \
+  -f install_and_probe=true -f synthetic_login=true -f acknowledge_registration=true \
+  -f runtime_host=clr2-x86-reference -f gui_automation=declaration-web-import-inspect -f htkk_version=5.8.4 \
+  -f web_case_id=01GTGT-TT89-sale10-M10-2026 -f web_source_sha=<commit htkk_web main> -f web_artifact_commit=<commit input bất biến>
+```
+
+Status `htkk-native/gtgt01-tt89-*@htkk584`, nhánh kết quả `declaration-web-native-gtgt01-tt89-*-output-htkk584`.

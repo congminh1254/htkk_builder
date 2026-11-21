@@ -67,16 +67,20 @@ class Registry(unittest.TestCase):
         # HTKK 5.8.3 observation cases: X9/Y1 with đến ngày 07/10/2026 and Y8 with one part II table (HTKK-5.8.3-IMPACT.md);
         # C9/D6 to 06/10/2026 (0719) and X9/Y1 with từ ngày before 01/07/2026 (no 0441 in 5.8.3).
         NEWER_583 = {'02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026'}
+        # HTKK 5.8.4 observation cases: 01/GTGT TT89 (Z5), a menu that exists only in HTKK 5.8.4.
+        NEWER_584 = {'01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026'}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
-        self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583)
-        self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583)
+        self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583 | NEWER_584)
+        self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583 | NEWER_584)
+        self.assertTrue(all(registry.htkk_version(c) == '5.8.4' and not registry.CASES[c]['releaseGate'] for c in NEWER_584))
+        self.assertEqual(registry.status_context('01GTGT-TT89-sale10-M10-2026'), 'htkk-native/gtgt01-tt89-sale10-m10-2026@htkk584')
         self.assertTrue(all(registry.htkk_version(c) == '5.8.2' and not registry.CASES[c]['releaseGate'] for c in NEWER))
         self.assertTrue(all(registry.htkk_version(c) == '5.8.3' and not registry.CASES[c]['releaseGate'] for c in NEWER_583))
         self.assertEqual(registry.status_context('02NTNN-TT89-two-annexes-to-07-10-2026'), 'htkk-native/ntnn02-tt89-two-annexes-to-07-10-2026@htkk583')
         self.assertEqual(registry.status_context(U5_310), 'htkk-native/cnkd01-310-pl01-three-groups-q3-2026@htkk582')
         self.assertEqual(registry.status_context(ANNEX10), 'htkk-native/annex10-nq204@htkk582')
         self.assertEqual(registry.status_context(Z8_TT89), 'htkk-native/tncn05kk-tt89-withheld-q4-2026@htkk582')
-        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c not in NEWER | NEWER_583}, {c: v['statusContext'] for c, v in registry.CASES.items() if c not in NEWER | NEWER_583})
+        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c not in NEWER | NEWER_583 | NEWER_584}, {c: v['statusContext'] for c, v in registry.CASES.items() if c not in NEWER | NEWER_583 | NEWER_584})
 
     def test_an_adapter_of_a_later_release_runs_only_on_that_oracle(self):
         index = {c['caseId']: i for i, c in enumerate(RAW['cases'])}
