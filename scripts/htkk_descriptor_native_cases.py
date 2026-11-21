@@ -59,12 +59,14 @@ TRUSTED={
  '04-gtgt-tt89-3.0.9-pl011':{'menuId':'Z3','businessClass':'Gtgt04TT89','xmlVersion':'3.0.9','schemaId':'Validate/04_GTGT_TT89_309_htkk582.xsd','annexes':['01-1'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.2'},
  # 01/GTGT TT89 (Z5 3.0.9, HTKK 5.8.4 only): KieuKy 19, tháng/quý từ 10/2026, tờ khai without phụ lục.
  '01-gtgt-tt89-3.0.9':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':[],'mode':'web-xml-import-reexport','periodTypes':{'month','quarter'},'htkkVersion':'5.8.4'},
+ # Its PL 204/2025/QH15 adapter (Menu sheet 01_11): a reduction needs a sale row with a value (Header B104/B105), so no zero case.
+ '01-gtgt-tt89-3.0.9-nq204':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':['01_11'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.4'},
  '02-ntnn-tt80-2.5.1':{'menuId':'C9','businessClass':'Ntnn02TT80','xmlVersion':'2.5.1','schemaId':'Validate/02_NTNN_TT80_251.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
 }
 # 05-1/PBT adapters: the annex needs at least one row with loại, tỉnh, xã, Thuế tỉnh/CCT and CQT quản lý (Header B35-B39),
 # so there is no zero declaration with the annex.
 # The 02/QTT refund adapter: a refund needs số thuế nộp thừa [44] > 0 and [46] > 0, so no zero declaration either.
-NO_ZERO_CASE=frozenset({'04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2','01-tckt-tt89-3.1.0-bk1','01-tckt-tt89-3.1.0-bk2','01-tckt-tt89-3.1.0-bk1-pl013'})
+NO_ZERO_CASE=frozenset({'01-gtgt-tt89-3.0.9-nq204','04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2','01-tckt-tt89-3.1.0-bk1','01-tckt-tt89-3.1.0-bk2','01-tckt-tt89-3.1.0-bk1-pl013'})
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})
  check(value['format']=='htkk-descriptor-native-case-design-v1' and value['htkkVersion']=='5.8.1')

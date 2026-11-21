@@ -33,7 +33,8 @@
     {"adapterId": "04-gtgt-tt80-2.7.4-pl013", "htkkVersion": "5.8.2", "menuId": "D4", "businessClass": "Gtgt04TT80", "xmlVersion": "2.7.4", "schemaId": "Validate/04_GTGT_TT80_274.xsd", "annexes": ["01-3"], "mode": "web-xml-import-reexport"},
     {"adapterId": "04-gtgt-tt89-3.0.9", "htkkVersion": "5.8.2", "menuId": "Z3", "businessClass": "Gtgt04TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/04_GTGT_TT89_309_htkk582.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
     {"adapterId": "04-gtgt-tt89-3.0.9-pl011", "htkkVersion": "5.8.2", "menuId": "Z3", "businessClass": "Gtgt04TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/04_GTGT_TT89_309_htkk582.xsd", "annexes": ["01-1"], "mode": "web-xml-import-reexport"},
-    {"adapterId": "01-gtgt-tt89-3.0.9", "htkkVersion": "5.8.4", "menuId": "Z5", "businessClass": "Gtgt01TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/01_GTGT_TT89_309.xsd", "annexes": [], "mode": "web-xml-import-reexport"}
+    {"adapterId": "01-gtgt-tt89-3.0.9", "htkkVersion": "5.8.4", "menuId": "Z5", "businessClass": "Gtgt01TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/01_GTGT_TT89_309.xsd", "annexes": [], "mode": "web-xml-import-reexport"},
+    {"adapterId": "01-gtgt-tt89-3.0.9-nq204", "htkkVersion": "5.8.4", "menuId": "Z5", "businessClass": "Gtgt01TT89", "xmlVersion": "3.0.9", "schemaId": "Validate/01_GTGT_TT89_309.xsd", "annexes": ["01_11"], "mode": "web-xml-import-reexport"}
   ],
   "cases": [
     {"caseId": "05KK-zero-Q3-2026", "adapterId": "05-kk-tncn-2.9.3", "releaseGate": false,
@@ -314,6 +315,11 @@
      "unit": {"menuId": "Z5", "adapterVersion": "3.0.9", "periodType": "month", "periodValue": "12/2026", "activityCode": "00", "annexes": [], "amendmentOrder": 0},
      "expectedLeaves": {"ct21": "0", "ct22": "3000000", "ct23": "40000000", "ct24": "4000000", "ct25": "4000000", "ct26": "2000000", "ct27": "306000015", "ct28": "25000002", "ct29": "5000000", "ct30": "100000010", "ct31": "5000001", "ct32": "200000005", "ct33": "20000001", "ct32a": "1000000", "ct32b": "0", "ct34a": "700000", "ct34": "308700015", "ct35": "25000002", "ct37": "200000", "ct38": "100000", "ct40a": "18050002", "ct40": "18010002", "ct41": "0", "ct43": "0"},
      "question": "Tháng 12/2026, mọi ô nhập của tờ khai: [31] = ROUND(5.000.000,5), [33] = ROUND(20.000.000,5) làm tròn nửa xa số 0, [32a], [34a], [37], [38], [39a], [40b]; nhập XML giữ [31]/[33] của tệp?"},
+    {"caseId": "01GTGT-TT89-nq204-M12-2026", "adapterId": "01-gtgt-tt89-3.0.9-nq204", "htkkVersion": "5.8.4", "releaseGate": false,
+     "unit": {"menuId": "Z5", "adapterVersion": "3.0.9", "periodType": "month", "periodValue": "12/2026", "activityCode": "00", "annexes": ["01_11"], "amendmentOrder": 0},
+     "expectedLeaves": {"ct21": "0", "ct22": "0", "ct23": "50000000", "ct24": "4000000", "ct25": "4000000", "ct26": "0", "ct27": "300000025", "ct28": "24000002", "ct29": "0", "ct30": "0", "ct31": "0", "ct32": "300000025", "ct33": "24000002", "ct32a": "0", "ct32b": "0", "ct34a": "0", "ct34": "300000025", "ct35": "24000002", "ct37": "0", "ct38": "0", "ct40a": "20000002", "ct40": "20000002", "ct41": "0", "ct43": "0"},
+     "expectedRows": {"PL_NQ142_GTGT/HH_DV_MuaVaoTrongKy/BangKeTenHHDV": 1, "PL_NQ142_GTGT/HH_DV_BanRaTrongKy/BangKeTenHHDV": 2},
+     "question": "PL 204/2025/QH15 đính kèm (V19 = 1): nhập XML giữ [32] = J9 = 300.000.025 và [33] = R61 = ROUND([32] x 10% − [08] 6.000.001) = 24.000.002 của tệp; bảng II (6) = ROUND(D x 2%) làm tròn nửa xa số 0 (2.000.001); kết xuất lại PL_NQ142_GTGT giữ nguyên cây?"},
     {"caseId": "02QTT-refund-transfer-Y2026", "adapterId": "02-qtt-tncn-2.7.3-refund", "htkkVersion": "5.8.2", "releaseGate": false,
      "unit": {"menuId": "B8", "adapterVersion": "2.7.3", "periodType": "year", "periodValue": "2026", "activityCode": "00", "annexes": ["02-1"], "amendmentOrder": 0},
      "expectedLeaves": {"ct21": "300000000", "ct24": "2", "ct27": "79200000", "ct31": "88800000", "ct32": "5880000", "ct33": "20000000", "ct44": "14120000", "ct45": "14120000", "ct46": "14120000", "ct47": "0", "ct48": "0", "soTienHoanTra": "14120000", "chuyenKhoan": "1", "tienMat": "0", "soTaiKhoan": "9999000011112"},

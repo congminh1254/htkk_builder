@@ -113,6 +113,18 @@ def _tree(case_id, native=False, created=None):
                     for leaf, value in totals.items():
                         _add(node, leaf, value)
                 continue
+            if case_id in d.GTGT01_TT89_NQ204:  # 01/GTGT TT89 PL 204/2025/QH15 (PL_NQ142_GTGT): both tables and [09] of the oracle
+                p_rows, p_tot, s_rows, s_tot, ct9 = d.gtgt01_tt89_nq204_expected(case_id)
+                for table_name, rows_, totals in (('HH_DV_MuaVaoTrongKy', p_rows, p_tot), ('HH_DV_BanRaTrongKy', s_rows, s_tot)):
+                    table = _add(node, table_name)
+                    for index, row in enumerate(rows_):
+                        row_ = _add(table, 'BangKeTenHHDV', attrib={'ID': 'ID_%d' % (index + 1)})
+                        for leaf, value in row.items():
+                            _add(row_, leaf, value)
+                    for leaf, value in totals.items():
+                        _add(table, leaf, value)
+                _add(_add(node, 'ChenhLech'), 'ct9', ct9)
+                continue
             if case_id in d.GTGT04_ROWS:  # PL 01-3 (PL_NQ142_GTGT): sale rows and totals of the oracle, no purchase rows
                 _, sale_rows, totals = d.gtgt04_expected(case_id)
                 _add(_add(node, 'HH_DV_MuaVaoTrongKy'), 'tongCongThueGTGTHHDV', '0')

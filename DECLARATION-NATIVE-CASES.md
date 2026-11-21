@@ -872,10 +872,14 @@ tiểu mục 1701) và CQT quản lý (0611 từ chối CQT khác với hoạt �
 | `01GTGT-TT89-quarter-Q4-2026` | quý 4/2026 | mua vào 200.000.000 / 20.000.000, 5% và 10%; [36] −10.000.000 → [41] = [43] 10.000.000 |
 | `01GTGT-TT89-no-activity-M11-2026` | tháng 11/2026 | [21] = 1 (13 ô về 0, khóa), [22] 5.000.000, [38] 1.000.000 → [41] = [43] 6.000.000 |
 | `01GTGT-TT89-full-M12-2026` | tháng 12/2026 | mọi ô nhập; [31] 5.000.001 và [33] 20.000.001 (làm tròn nửa xa số 0), [40a] 18.050.002, [40] 18.010.002 |
+| `01GTGT-TT89-nq204-M12-2026` | tháng 12/2026 | kèm PL 204/2025/QH15 (adapter `01-gtgt-tt89-3.0.9-nq204`, sheet Menu 01_11 = sheet XLS 01_10, `PLuc/PL_NQ142_GTGT`): bảng I một dòng 50.000.000 / 4.000.000, bảng II hai dòng, (6) 2.000.001 (làm tròn nửa xa số 0); [32] = J9 300.000.025, [33] = R61 = ROUND([32] × 10% − [08] 6.000.001) = 24.000.002; 122 lá |
 
 Oracle độc lập: `GTGT01_TT89_INPUTS` / `gtgt01_tt89_expected` (Decimal, công thức XLS sheet 01 và `CellChange_0`,
 `XuLyCheckboxCt21` của `Gtgt01TT89Nckt309`), kiểm mọi lá thuế của `CTieuTKhaiChinh` trong XML web; kiểm XML trên bản HTKK kết xuất
 lại là 24 lá trong kế hoạch biên dịch, kiểm ô là J58, L58, J65, L65, L69, L78, L80, L81, L83. 104 lá mỗi ca.
+Ca PL 204/2025/QH15: `GTGT01_TT89_NQ204` / `gtgt01_tt89_nq204_expected` tính lại mọi lá của `PL_NQ142_GTGT` (hai bảng, tổng, [09])
+và [32]/[33] theo `CellChange_9` → `TinhLaiChiTieu32_TK`, `TinhCt33TrenToKhai`; kiểm ô thêm V19, R61 và F20, D22, F22, G31, D33, G33,
+D36 của sheet 01_10 (hai dòng bảng II đẩy dòng tổng xuống 33 và [09] xuống 36). Hộp kỳ tích phụ lục "PL 204/2025/QH15".
 
 Câu hỏi cho lần chạy: HTKK 5.8.4 kết xuất `ct*_Cqt` là `0` (giá trị mẫu của ô khóa) và `ct*_Ghichu` rỗng như web không; nhập XML có
 `ct21` = 1 thì `XuLyCheckboxCt21` (gọi từ `AutoBindData_0` với isBindData) có hỏi lại không; `ct22` khác P47 (0, không có tệp kỳ
