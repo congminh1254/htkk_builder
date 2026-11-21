@@ -202,6 +202,30 @@ class Baselines(unittest.TestCase):
             if m['status'] in ('added-reviewed', 'changed-reviewed'):
                 self.assertIn('5.8.5', m['review'], key)
 
+    def test_later_releases_re_pin_only_the_reviewed_declaration_workbooks(self):
+        y7, y8 = 'InterfaceTemplates/excel/01_TCKT_TT89_310.xls', 'InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls'
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        reviewed = {y7: '95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7', y8: '53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1'}
+        for path, sha in reviewed.items():
+            # The plans keep the reviewed 5.8.2/5.8.3 workbook; a re-pin replaces exactly that hash.
+            self.assertIn('"' + path + '","' + sha + '"', plans)
+        for v in (V1, V2, V3):
+            self.assertNotIn('workbooks', v)
+        self.assertEqual([(w['path'], w['replaces'], w['sha256']) for w in V4['workbooks']], [(y7, reviewed[y7], '651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9')])
+        self.assertEqual([(w['path'], w['replaces'], w['sha256']) for w in V5['workbooks']], [(y7, reviewed[y7], '651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9'), (y8, reviewed[y8], '035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86')])
+        self.assertIn("IF('01-1'!G58=0,0,1)", V4['workbooks'][0]['change'])
+        self.assertIn('Nhập số >0', V5['workbooks'][1]['change'])
+        self.assertIn('HtkkOracleBaseline.Workbook(plan.WorkbookFile,plan.WorkbookSha256)', (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8'))
+        def broken(mutate):
+            data = copy.deepcopy(DATA); mutate(data)
+            with self.assertRaises(generator.BaselineError): generator.validate(data)
+        broken(lambda d: d['versions']['5.8.1'].update(workbooks=copy.deepcopy(V4['workbooks'])))
+        broken(lambda d: d['versions']['5.8.4']['workbooks'][0].update(path='InterfaceTemplates/excel/01_GTGT_TT80_283.xls'))
+        broken(lambda d: d['versions']['5.8.4']['workbooks'][0].update(sha256=reviewed[y7]))
+        broken(lambda d: d['versions']['5.8.4']['workbooks'][0].pop('review'))
+        broken(lambda d: d['versions']['5.8.4']['workbooks'][0].update(change='short'))
+        broken(lambda d: d['versions']['5.8.5']['workbooks'].append(copy.deepcopy(d['versions']['5.8.5']['workbooks'][0])))
+
     def test_validation_refuses_loosened_or_inconsistent_data(self):
         def broken(mutate):
             data = copy.deepcopy(DATA); mutate(data)
@@ -298,7 +322,8 @@ class Consumers(unittest.TestCase):
                    'try{HtkkOracleBaseline.File("Project/Other.dll");}catch(ArgumentException){Console.WriteLine("unpinned");}'
                    'Console.WriteLine(HtkkOracleBaseline.File("Project/HTKK.exe")+" "+HtkkOracleBaseline.ServiceVersion);'
                    'Console.WriteLine(String.Join(";",HtkkOracleBaseline.EntryMethodPins()));'
-                   'HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry("01NTNN-NCCNN-entry-M10-2026");Console.WriteLine(e.MethodPins.Length);}}')
+                   'HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry("01NTNN-NCCNN-entry-M10-2026");Console.WriteLine(e.MethodPins.Length);'
+                   'Console.WriteLine(HtkkOracleBaseline.Workbook("InterfaceTemplates/excel/01_TCKT_TT89_310.xls","95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7")+" "+HtkkOracleBaseline.Workbook("InterfaceTemplates/excel/01_TCKT_TT89_310.xls","other"));}}')
         with tempfile.TemporaryDirectory() as directory:
             folder = pathlib.Path(directory); (folder / 'P.cs').write_text(program)
             subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkOracleBaseline.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs')], check=True, capture_output=True)
@@ -308,6 +333,8 @@ class Consumers(unittest.TestCase):
                 self.assertEqual(out[4], value['files']['Project/HTKK.exe'] + ' ' + version)
                 self.assertEqual(out[5].split(';'), generator.entry_pins(value, {m['id']: m for m in V1['methods']}))
                 self.assertEqual(out[6], '14')
+                repin = [w['sha256'] for w in value.get('workbooks', []) if w['path'].endswith('01_TCKT_TT89_310.xls')]
+                self.assertEqual(out[7], (repin[0] if repin else '95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7') + ' other')
 
 
 class Separation(unittest.TestCase):

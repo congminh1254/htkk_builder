@@ -73,4 +73,14 @@ internal static class HtkkOracleBaseline {
  };
  // 03/NTNN (J1) KHBS rate-edit method pins (added-reviewed, 5.8.2 and later); none for 5.8.1, which refuses the plan.
  internal static string[] Ntnn03KhbsRateMethodPins(){if(Ntnn03[Current].Length==0)throw new InvalidOperationException("HTKK_ORACLE_NTNN03_UNPINNED");return (string[])Ntnn03[Current].Clone();}
+ private static readonly string[][] Workbooks=new string[][]{
+  new string[0],
+  new string[0],
+  new string[0],
+  new string[]{"InterfaceTemplates/excel/01_TCKT_TT89_310.xls|95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7|651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9"},
+  new string[]{"InterfaceTemplates/excel/01_TCKT_TT89_310.xls|95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7|651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9","InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls|53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1|035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86"}
+ };
+ // Declaration input workbook of the selected version: the reviewed re-pin of a later release when one replaces
+ // exactly the plan pin, else the plan pin itself (any other bytes then fail the plan source-pin check).
+ internal static string Workbook(string path,string planSha256){foreach(string pin in Workbooks[Current]){string[] p=pin.Split('|');if(p[0]==path&&p[1]==planSha256)return p[2];}return planSha256;}
 }

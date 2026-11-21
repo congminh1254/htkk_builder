@@ -2215,6 +2215,15 @@
      "status": "added-reviewed",
      "review": "03/NTNN (J1) KHBS import plan: calls CellChange_<sheet index> of the business class by reflection (CellChange_0 of Ntnn03TT80Nckt308 for sheet 01) after the rate edit. Pinned as the same body as gtgt04tt89-582-dowork-cellchange; the called J1 method is not pinned, the native case observes it. HTKK 5.8.4: the same instructions as this reviewed 5.8.3 body once metadata tokens are resolved to names (token-normalised diff, inert data); pinned as itself for 5.8.4."
     }
+   ],
+   "workbooks": [
+    {
+     "path": "InterfaceTemplates/excel/01_TCKT_TT89_310.xls",
+     "replaces": "95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7",
+     "sha256": "651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9",
+     "change": "01/TCKT TT89 3.1.0 (Y7) input workbook. Against the reviewed 5.8.2/5.8.3 workbook (LibreOffice xlsx conversion of both, every cell value and formula compared) the only difference is the Header rule row 26 ('Dữ liệu bắt buộc nhập'): B26 was IF('01-1'!G58=0,0,1) with C26 = '01-1'!G58, i.e. [07] Doanh thu trả trong kỳ of the first 01/BK-KTHTKD row must not be 0; HTKK 5.8.4 makes B26 the constant 1 and C26 empty, so that rule no longer fires.",
+     "review": "The driver plan neither types nor checks cells of the Header sheet; the 01-1 rows it imports carry a non-zero [07], so the removed rule never fired for them. Output template, XSD and Tckt01TT89Nckt310 are unchanged. Accepted for the declaration plans of this version only; the native tree comparison still decides."
+    }
    ]
   },
   "5.8.5": {
@@ -2880,6 +2889,22 @@
      "ilSha256": "9e9043c8aa38b8d89b8cf0fa0cec251bf25f25a78588e99749b1d6f3c58d5f5c",
      "status": "added-reviewed",
      "review": "03/NTNN (J1) KHBS import plan: calls CellChange_<sheet index> of the business class by reflection (CellChange_0 of Ntnn03TT80Nckt308 for sheet 01) after the rate edit. Pinned as the same body as gtgt04tt89-582-dowork-cellchange; the called J1 method is not pinned, the native case observes it. HTKK 5.8.4: the same instructions as this reviewed 5.8.3 body once metadata tokens are resolved to names (token-normalised diff, inert data). HTKK 5.8.5: the same instructions as this reviewed 5.8.4 body once metadata tokens are resolved to names (token-normalised diff, inert data); pinned as itself for 5.8.5."
+    }
+   ],
+   "workbooks": [
+    {
+     "path": "InterfaceTemplates/excel/01_TCKT_TT89_310.xls",
+     "replaces": "95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7",
+     "sha256": "651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9",
+     "change": "Byte-identical to the 5.8.4 workbook. 01/TCKT TT89 3.1.0 (Y7) input workbook. Against the reviewed 5.8.2/5.8.3 workbook (LibreOffice xlsx conversion of both, every cell value and formula compared) the only difference is the Header rule row 26 ('Dữ liệu bắt buộc nhập'): B26 was IF('01-1'!G58=0,0,1) with C26 = '01-1'!G58, i.e. [07] Doanh thu trả trong kỳ of the first 01/BK-KTHTKD row must not be 0; HTKK 5.8.4 makes B26 the constant 1 and C26 empty, so that rule no longer fires.",
+     "review": "The driver plan neither types nor checks cells of the Header sheet; the 01-1 rows it imports carry a non-zero [07], so the removed rule never fired for them. Output template, XSD and Tckt01TT89Nckt310 are unchanged. Accepted for the declaration plans of this version only; the native tree comparison still decides."
+    },
+    {
+     "path": "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls",
+     "replaces": "53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1",
+     "sha256": "035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86",
+     "change": "01/NTNN, NCCNN TT89 (Y8) input workbook. Against the reviewed 5.8.1-5.8.4 workbook (LibreOffice xlsx conversion, every cell value and formula compared) the only difference is the message text Header!E25, 'Dữ liệu bắt buộc nhập' -> 'Nhập số >0' (the E_25 message of checkTKChinh, HTKK-5.8.5-IMPACT.md).",
+     "review": "A message text only; no formula, value, lock or layout cell changed. The entry and KHBS plans type and check no Header cell; whether checkTKChinh accepts the case is observed by the run itself (export or a refusal message). Accepted for the declaration plans of 5.8.5 only."
     }
    ]
   }

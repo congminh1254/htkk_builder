@@ -352,7 +352,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void InspectDeclarationSheet(){if(declarationSheetBusy)return;declarationSheetBusy=true;try{InspectDeclarationSheetCore();}finally{declarationSheetBusy=false;}}
  private bool DeclarationPinsMatched(){
   HtkkDeclarationCasePlan plan=declarationPlan;string root=Path.GetDirectoryName(project);
-  return Hash(Path.Combine(root,plan.WorkbookFile))==plan.WorkbookSha256&&Hash(Path.Combine(root,plan.LayoutFile))==plan.LayoutSha256&&Hash(Path.Combine(root,"InterfaceTemplates/"+plan.SchemaFile))==plan.SchemaSha256&&Hash(Path.Combine(root,"InterfaceTemplates/"+plan.BaseSchemaFile))==plan.BaseSchemaSha256&&Hash(Path.Combine(root,"InterfaceTemplates/xmldsig-core-schema.xsd"))==HtkkDeclarationCasePlans.XmldsigSha256;
+  // A later release may re-pin the workbook (reviewed, per version): HtkkOracleBaseline.Workbook.
+  return Hash(Path.Combine(root,plan.WorkbookFile))==HtkkOracleBaseline.Workbook(plan.WorkbookFile,plan.WorkbookSha256)&&Hash(Path.Combine(root,plan.LayoutFile))==plan.LayoutSha256&&Hash(Path.Combine(root,"InterfaceTemplates/"+plan.SchemaFile))==plan.SchemaSha256&&Hash(Path.Combine(root,"InterfaceTemplates/"+plan.BaseSchemaFile))==plan.BaseSchemaSha256&&Hash(Path.Combine(root,"InterfaceTemplates/xmldsig-core-schema.xsd"))==HtkkDeclarationCasePlans.XmldsigSha256;
  }
  private bool DeclarationIdentity(){
   HtkkDeclarationCasePlan plan=declarationPlan;object business=Global("InstanceClass"),info=Global("ToKhaiInfo"),period=Global("TTPeriodInfo");
