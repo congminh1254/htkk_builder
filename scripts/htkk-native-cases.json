@@ -2759,11 +2759,33 @@
       "outputBranch": "declaration-web-native-gtgt01-tt89-full-m12-2026-output",
       "statusContext": "htkk-native/gtgt01-tt89-full-m12-2026",
       "releaseGate": false,
+      "notBefore": "2026-12-01",
       "unit": {
         "menuId": "Z5",
         "adapterVersion": "3.0.9",
         "periodType": "month",
         "periodValue": "12/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-TT89-full-M10-2026",
+      "producerCase": "gtgt01-tt89-full-m10-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9",
+      "htkkVersion": "5.8.4",
+      "format": "htkk-web-gtgt01-tt89-full-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-full-m10-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-full-m10-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-full-m10-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-full-m10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
         "activityCode": "00",
         "annexes": [],
         "amendmentOrder": 0
@@ -2780,11 +2802,33 @@
       "outputBranch": "declaration-web-native-gtgt01-tt89-nq204-m12-2026-output",
       "statusContext": "htkk-native/gtgt01-tt89-nq204-m12-2026",
       "releaseGate": false,
+      "notBefore": "2026-12-01",
       "unit": {
         "menuId": "Z5",
         "adapterVersion": "3.0.9",
         "periodType": "month",
         "periodValue": "12/2026",
+        "activityCode": "00",
+        "annexes": ["01_11"],
+        "amendmentOrder": 0
+      }
+    },
+    {
+      "caseId": "01GTGT-TT89-nq204-M10-2026",
+      "producerCase": "gtgt01-tt89-nq204-m10-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9-nq204",
+      "htkkVersion": "5.8.4",
+      "format": "htkk-web-gtgt01-tt89-nq204-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-nq204-m10-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-nq204-m10-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-nq204-m10-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-nq204-m10-2026",
+      "releaseGate": false,
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
         "activityCode": "00",
         "annexes": ["01_11"],
         "amendmentOrder": 0

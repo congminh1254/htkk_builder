@@ -5,7 +5,7 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8','9','a','b','c','9','1','2','3','4','5','6','7','a','b','c','d','e','f','1','2','3','8','9','a','b','c','d','e','f','4','5','6','7','8','9','0','8','9','a','b','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','5','6','7','8','9','a','b','6','7','8','9','a','b'))]}
+def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8','9','a','b','c','9','1','2','3','4','5','6','7','a','b','c','d','e','f','1','2','3','8','9','a','b','c','d','e','f','4','5','6','7','8','9','0','8','9','a','b','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','5','6','7','8','9','a','b','6','7','8','9','a','b','c','d'))]}
 import datetime
 DECEMBER=datetime.datetime(2026,12,1,0,0,5,tzinfo=datetime.timezone.utc)
 NOVEMBER=datetime.datetime(2026,11,30,23,59,59,tzinfo=datetime.timezone.utc)
@@ -22,7 +22,8 @@ class NativeCases(unittest.TestCase):
  def test_deferred_cases_get_no_dispatch_and_no_status_before_not_before(self):
   # 02/QTT năm 2026: HTKK CheckTuThangDenThang refuses đến tháng 12/2026 before 01/12/2026 (0471, runs 43642303269/43642305532).
   deferred={c for c,v in d.case_registry.CASES.items() if 'notBefore' in v}
-  self.assertEqual(deferred,{'02QTT-dependants-Y2026','02QTT-refund-transfer-Y2026'})
+  # 01/GTGT TT89 tháng 12/2026: frmHTKKPeriod.CheckPeriod refuses a month after DateTime.Today.Month (0044).
+  self.assertEqual(deferred,{'02QTT-dependants-Y2026','02QTT-refund-transfer-Y2026','01GTGT-TT89-full-M12-2026','01GTGT-TT89-nq204-M12-2026'})
   for case in deferred:
    self.assertEqual(d.case_registry.CASES[case]['notBefore'],'2026-12-01');self.assertIs(d.case_registry.CASES[case]['releaseGate'],False)
    self.assertEqual(d.deferred(case,NOVEMBER),'2026-12-01');self.assertIsNone(d.deferred(case,DECEMBER))
@@ -32,7 +33,7 @@ class NativeCases(unittest.TestCase):
   value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[];printed=[]
   with patch('builtins.print',lambda *a,**k:printed.append(a[0])):
    count=d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args),now=lambda:NOVEMBER)
-  self.assertEqual(count,len(d.CASES)-2);self.assertEqual(len(calls),2*count)
+  self.assertEqual(count,len(d.CASES)-len(deferred));self.assertEqual(len(calls),2*count)
   touched={args[2].get('context') for args in calls}|{args[2].get('inputs',{}).get('web_case_id') for args in calls}
   for case in deferred:
    self.assertNotIn(d.context(case),touched);self.assertNotIn(case,touched)

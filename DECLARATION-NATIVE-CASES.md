@@ -873,6 +873,12 @@ tiểu mục 1701) và CQT quản lý (0611 từ chối CQT khác với hoạt �
 | `01GTGT-TT89-no-activity-M11-2026` | tháng 11/2026 | [21] = 1 (13 ô về 0, khóa), [22] 5.000.000, [38] 1.000.000 → [41] = [43] 6.000.000 |
 | `01GTGT-TT89-full-M12-2026` | tháng 12/2026 | mọi ô nhập; [31] 5.000.001 và [33] 20.000.001 (làm tròn nửa xa số 0), [40a] 18.050.002, [40] 18.010.002 |
 | `01GTGT-TT89-nq204-M12-2026` | tháng 12/2026 | kèm PL 204/2025/QH15 (adapter `01-gtgt-tt89-3.0.9-nq204`, sheet Menu 01_11 = sheet XLS 01_10, `PLuc/PL_NQ142_GTGT`): bảng I một dòng 50.000.000 / 4.000.000, bảng II hai dòng, (6) 2.000.001 (làm tròn nửa xa số 0); [32] = J9 300.000.025, [33] = R61 = ROUND([32] × 10% − [08] 6.000.001) = 24.000.002; 122 lá |
+| `01GTGT-TT89-full-M10-2026` | tháng 10/2026 | bản tháng 10 của `-full-M12-2026` (cùng số liệu, cùng kết quả) |
+| `01GTGT-TT89-nq204-M10-2026` | tháng 10/2026 | bản tháng 10 của `-nq204-M12-2026`; tiêu đề và thuế suất PL 204 như tháng 12 (năm 2026) |
+
+Hai ca tháng 12/2026 có `notBefore` 2026-12-01: `frmHTKKPeriod.CheckPeriod` (HTKK.exe 5.8.4) từ chối năm lớn hơn
+`DateTime.Today.Year` hoặc tháng lớn hơn `DateTime.Today.Month` (0044 "Kỳ tính thuế không được lớn hơn kỳ hiện tại"), nên tháng
+12/2026 chạy được từ 01/12/2026; trước đó dispatch bỏ qua, không ghi status.
 
 Oracle độc lập: `GTGT01_TT89_INPUTS` / `gtgt01_tt89_expected` (Decimal, công thức XLS sheet 01 và `CellChange_0`,
 `XuLyCheckboxCt21` của `Gtgt01TT89Nckt309`), kiểm mọi lá thuế của `CTieuTKhaiChinh` trong XML web; kiểm XML trên bản HTKK kết xuất
