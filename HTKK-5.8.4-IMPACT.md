@@ -217,6 +217,51 @@ is possible until this commit reaches main.
    per menu (`HTKK584_IMPORT_MENUS`).
 4. 01/GTGT TT89 (Z5): plan in htkk_web `docs/HTKK-5.8.4-DANH-GIA.md`.
 
+## 7a. Results on Windows (21/11/2026)
+
+Dispatched by hand on builder main with `htkk_version=5.8.4`, web source e8213c86 and the immutable inputs of its release run
+44907866326; builder 6ea218d. All 18 matched every tax leaf at the first attempt and were retained privately (`-output-htkk584`);
+htkk_web keeps the raw files and now imports 5.8.4 files of D1, N8, A2, 78, L7, Z8, B9, B8, I9, J1, G7, D4, Z3, U5 3.1.0, Y7 3.1.0
+and Y8. No leaf differs from what the web produces.
+
+| Case | Menu | Run | Leaves |
+|---|---|---|---|
+| `01GTGT-sale10-M10-2026` | D1 | 44911476543 | money matched, re-export byte-exact |
+| `03TNDN-profit20-Y2025` | N8 | 44911479251 | 143 |
+| `BCTC133-B01a-basic-Y2025` | A2 | 44911481932 | 971 |
+| `BCTC200-LT-basic-Y2025` | 78 | 44911484951 | 566 |
+| `05KK-withheld-Q3-2026` | L7 | 44911487585 | 52 |
+| `05KK-TT89-withheld-Q4-2026` | Z8 | 44911490180 | 65 |
+| `05QTT-two-employees-Y2025` | B9 | 44911493054 | 158 |
+| `02QTT-dependants-Y2025` | B8 | 44911496415 | 126 |
+| `01NTNN-two-contractors-M09-2026` | I9 | 44911499423 | 70 |
+| `03NTNN-no-rate-M10-2026` | J1 | 44911502742 | 61 |
+| `01TTS-individual-one-contract-Y2025` | G7 | 44911505925 | 206 |
+| `04GTGT-TT80-one-group-M09-2026` | D4 | 44911508934 | 59 |
+| `04GTGT-TT89-one-group-M10-2026` | Z3 | 44911512660 | 70 |
+| `01CNKD-TT50-310-pl01-three-groups-Q3-2026` | U5 | 44911515394 | 295 |
+| `01TCKT-310-hop-tac-kd-two-individuals-Q4-2026` | Y7 | 44911518734 | 63 |
+| `01NTNN-NCCNN-entry-M10-2026` | Y8 | 44911522487 | 103 |
+| `01NTNN-NCCNN-entry-part-II1-M10-2026` | Y8 | 44911525960 | 103 |
+| `01NTNN-NCCNN-entry-part-II2-M10-2026` | Y8 | 44911528732 | 103 |
+
+- An earlier round on web 77de126 (runs 44904513876 to 44904593610) matched the same 17 trees but retained nothing: web main moved
+  while the runs were queued and every retention step refused with `STALE_SOURCE`.
+- **Y7** first stopped at `declaration-sheet-contract-not-matched` (run 44904582124): the plan pins the 5.8.2/5.8.3 bytes of
+  `01_TCKT_TT89_310.xls`. Builder 6ea218d re-pins that workbook per version (`htkk-oracle-baselines.json` `workbooks`,
+  `HtkkOracleBaseline.Workbook`). A formula-level diff (LibreOffice xlsx conversion of both workbooks) shows the only change:
+  `Header!B26` was `IF('01-1'!G58=0,0,1)` with `C26 = '01-1'!G58` ([07] Doanh thu trả trong kỳ of the first 01/BK-KTHTKD row must not
+  be 0); 5.8.4 makes it the constant 1. The web keeps the 5.8.3 rule, so it is stricter than 5.8.4 for a first row with [07] = 0;
+  the export of a valid declaration is the same.
+- **Y8**: the three changed entry pins (`LockUnlock` reset argument, header cells) change nothing the plan observes: locks, rows,
+  values and all 103 leaves match.
+- **01/GTGT TT89 (Z5)**, dispatched by that release run (builder 16b1323): `zero-M10` 44910694464, `quarter-Q4` 44910698528,
+  `no-activity-M11` 44910700830 matched 100/100 leaves; `sale10-M10` 44910696369 stalled after the export click on attempt 1 (no
+  selector, UI thread blocked 113 s, `declarationUiWaitMask` 1791) and matched 100/100 on its one rerun; `full-M12-2026` 44910703016
+  was refused by the period dialog with 0044 "Kỳ tính thuế không được lớn hơn kỳ hiện tại" (December 2026 is after the run date). The
+  case can only run from December 2026 or with an earlier period (a new case id in both repos).
+- Not run: C9, D6, X9, Y1 on 5.8.4, and the negative D1 tháng 01/2027 case.
+
 ## 8. HTKK 5.8.5 (21/11/2026), seen during this intake
 
 Fshare `814AQNPCA7UF`, archive SHA-256 `b8707ec635355ee72fc9f76f1873e56191183c15f03eb6f2e6f62c7d11e8ba1f` (90,224,953 bytes), folder
@@ -228,9 +273,9 @@ Fshare `814AQNPCA7UF`, archive SHA-256 `b8707ec635355ee72fc9f76f1873e56191183c15
 
 ## 9. Not verified
 
-- Windows behaviour of 5.8.4: nothing was run; every rule above comes from Menu.xml and IL reading.
+- Windows behaviour of 5.8.4: one case per family ran (7a); the period rules (D1 after 12/2026, C9, D6, X9, Y1) are still read
+  from Menu.xml and IL only.
 - Which 01/GTGT form eTax accepts or requires for tháng 10–12/2026 and quý 4/2026. HTKK offers both; the legal transition rule for
   01/GTGT was not looked up in an official text during this intake.
 - The notice attachments (relay 504).
-- What `Header!B26` of the Y7 workbook validates.
-- XLS formulas (xlrd compares values only).
+- XLS formulas of the other workbooks (xlrd compares values only; only the Y7 and Y8 workbooks were compared formula by formula).

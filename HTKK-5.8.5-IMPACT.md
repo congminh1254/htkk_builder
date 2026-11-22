@@ -151,9 +151,25 @@ Non-gating, `htkk_version=5.8.5`, after a release of the web commit that carries
 4. Y7: `01TCKT-310-hop-tac-kd-two-individuals-Q4-2026`, `01TCKT-310-bds-three-lessors-M10-2026` (dialog defaults, 3.3).
 5. One case per other family as in the 5.8.4 plan, for the import evidence (`HTKK585_IMPORT_MENUS`).
 
+### Results (21/11/2026)
+
+Web source e8213c86, builder 6ea218d (which re-pins the Y8 workbook for 5.8.5: only the message text `Header!E25` changed, and the
+Y7 workbook, byte-identical to 5.8.4). 22 of 24 matched at the first attempt and were retained (`-output-htkk585`); htkk_web now
+imports 5.8.5 files of the same 16 menus as 5.8.4. No rerun.
+
+- Matched: the 14 families of the 5.8.4 plan (runs 44911538957 to 44911578517, same leaf counts as 5.8.4), Y7 `hop-tac-kd` 63 leaves
+  (44911608589) and `bds-three-lessors` 78 (44911611604), Y8 entry, part-II1, part-II2 and occurrence 103 each (44911581343,
+  44911585060, 44911588097, 44911591344), Y8 KHBS part1 265 (44911594616) and lan2 223 (44911598224).
+- `01NTNN-NCCNN-khbs-part2-M10-2026` (44911601565): tree mismatch as expected, first difference at leaf 155 in the 01-1/KHBS section
+  (mask 48); the retention step refused with `XML_PRIVACY` (leaf 127), so the file was not kept and the leaves were not read one by
+  one. `HTKK585_Y8_KHBS_RELEASED` stays false until a 5.8.5-rule producer case exists.
+- `01NTNN-NCCNN-khbs-part1-nodate-M10-2026` (44911605612): saving the original declaration gave 0015 "Thông tin kê khai sai, có muốn
+  ghi lại không?", consistent with the new E_13 on ngày hợp đồng of mục I.
+- Not run: C9, D6, X9, Y1; a Y8 case with a contract date before the run date (needed before `HTKK585_Y8_CONTRACT_DATE_RELEASED`).
+
 ## 7. Not verified
 
-- Windows behaviour of 5.8.5: nothing was run.
+- Windows behaviour of 5.8.5 beyond the cases above.
 - Whether the Catalogue_CQT_Dia_Ban row 20118124 is a data error (the commune catalogue keeps 20115124).
 - What HTKK does with an empty Y (Convert.ToDouble("") throws); the web treats empty as 0.
 - The notice attachments (relay 504).

@@ -893,3 +893,48 @@ gh workflow run probe-htkk-windows.yml --ref main \
 ```
 
 Status `htkk-native/gtgt01-tt89-*@htkk584`, nhánh kết quả `declaration-web-native-gtgt01-tt89-*-output-htkk584`.
+
+Kết quả (21/11/2026, release run 44907866326 của web e8213c86, builder 16b1323): `zero-M10` run 44910694464, `quarter-Q4`
+44910698528, `no-activity-M11` 44910700830 khớp 100/100 lá ngay lần đầu. `sale10-M10` 44910696369 lần đầu dừng ở
+`declaration-export-command-invoking`: hai lần bấm Kết xuất đều trả về mà không mở hộp lưu, rồi luồng giao diện đứng 113 giây
+(`declarationUiWaitMask` 1791, form hiện duy nhất là tờ khai); lần chạy lại duy nhất khớp 100/100. `full-M12-2026` 44910703016 bị hộp
+kỳ từ chối với 0044 "Kỳ tính thuế không được lớn hơn kỳ hiện tại": tháng 12/2026 sau ngày chạy. Ca này chỉ chạy được từ tháng 12/2026,
+hoặc đổi sang kỳ đã qua (đổi id ca ở cả hai repo). Trả lời các câu hỏi trên: với bốn ca đã khớp, HTKK 5.8.4 ghi `ct*_Cqt`, `ct*_Ghichu`,
+ngành nghề, tiểu mục và kỳ quý như web (cây trùng).
+
+## HTKK 5.8.4 và 5.8.5 — mỗi họ một ca, không chặn phát hành (21/11/2026)
+
+Chạy tay trên `main` với `-f htkk_version=5.8.4` / `5.8.5`, nguồn web e8213c86 và input bất biến của release run 44907866326, builder
+6ea218d (ghim workbook Y7 theo bản 5.8.4/5.8.5 và workbook Y8 theo 5.8.5, `htkk-oracle-baselines.json` `workbooks`). Mọi tệp kết
+xuất gốc giữ ở nhánh private `-output-htkk584` / `-output-htkk585`; htkk_web giữ tệp gốc để mở nhập tệp 5.8.4, 5.8.5 theo menu.
+
+| Ca | Menu | 5.8.4 run | 5.8.5 run | Lá |
+|---|---|---|---|---|
+| `01GTGT-sale10-M10-2026` | D1 | 44911476543 | 44911538957 | khớp tiền, tái xuất trùng byte |
+| `03TNDN-profit20-Y2025` | N8 | 44911479251 | 44911541487 | 143 |
+| `BCTC133-B01a-basic-Y2025` | A2 | 44911481932 | 44911544540 | 971 |
+| `BCTC200-LT-basic-Y2025` | 78 | 44911484951 | 44911547724 | 566 |
+| `05KK-withheld-Q3-2026` | L7 | 44911487585 | 44911550271 | 52 |
+| `05KK-TT89-withheld-Q4-2026` | Z8 | 44911490180 | 44911553162 | 65 |
+| `05QTT-two-employees-Y2025` | B9 | 44911493054 | 44911557068 | 158 |
+| `02QTT-dependants-Y2025` | B8 | 44911496415 | 44911559954 | 126 |
+| `01NTNN-two-contractors-M09-2026` | I9 | 44911499423 | 44911563232 | 70 |
+| `03NTNN-no-rate-M10-2026` | J1 | 44911502742 | 44911566577 | 61 |
+| `01TTS-individual-one-contract-Y2025` | G7 | 44911505925 | 44911569692 | 206 |
+| `04GTGT-TT80-one-group-M09-2026` | D4 | 44911508934 | 44911572781 | 59 |
+| `04GTGT-TT89-one-group-M10-2026` | Z3 | 44911512660 | 44911575715 | 70 |
+| `01CNKD-TT50-310-pl01-three-groups-Q3-2026` | U5 | 44911515394 | 44911578517 | 295 |
+| `01TCKT-310-hop-tac-kd-two-individuals-Q4-2026` | Y7 | 44911518734 | 44911608589 | 63 |
+| `01TCKT-310-bds-three-lessors-M10-2026` | Y7 | — | 44911611604 | 78 |
+| `01NTNN-NCCNN-entry-M10-2026` | Y8 | 44911522487 | 44911581343 | 103 |
+| `01NTNN-NCCNN-entry-part-II1-M10-2026` | Y8 | 44911525960 | 44911585060 | 103 |
+| `01NTNN-NCCNN-entry-part-II2-M10-2026` | Y8 | 44911528732 | 44911588097 | 103 |
+| `01NTNN-NCCNN-occurrence-D20-10-2026` | Y8 | — | 44911591344 | 103 |
+| `01NTNN-NCCNN-khbs-part1-M10-2026` | Y8 | — | 44911594616 | 265 |
+| `01NTNN-NCCNN-khbs-lan2-M10-2026` | Y8 | — | 44911598224 | 223 |
+| `01NTNN-NCCNN-khbs-part2-M10-2026` | Y8 | — | 44911601565 | không khớp: lệch đầu ở lá 155, phần 01-1/KHBS (mask 48), không giữ tệp (`XML_PRIVACY`) |
+| `01NTNN-NCCNN-khbs-part1-nodate-M10-2026` | Y8 | — | 44911605612 | HTKK báo 0015 khi ghi tờ khai gốc (mục I thiếu ngày hợp đồng) |
+
+Không ca nào chạy lại. Hai ca 5.8.5 không khớp đúng như dự đoán ở `HTKK-5.8.5-IMPACT.md` §6. Đợt trước trên web 77de126 (run
+44904513876 đến 44904593610) khớp cùng 17 cây nhưng không giữ được tệp vì web main đổi giữa chừng (`STALE_SOURCE`); ca Y7 khi đó dừng
+ở bước kiểm nguồn vì workbook 5.8.4 khác pin, đã sửa ở 6ea218d.
