@@ -22,7 +22,9 @@ KieuKHBS "" in HTKK 5.8.2, so its bổ sung is the declaration itself with loaiT
 (B9, 05-1 and 05-3 before the fragments) from htkk_qtt05_khbs_web_cases.py, and the 03/TNDN KHBS
 cases (N8, KieuKHBS 3, 03-1A/TNDN before the two fragments) from htkk_tndn03_khbs_web_cases.py, the 03/NTNN KHBS cases (J1,
 KieuKHBS 3 like I9, no annex; every import completed by the rates typed again) from htkk_ntnn03_khbs_web_cases.py; the 01/TCKT 3.1.0
-KHBS cases (Y7, KieuKHBS 3, its bảng kê before the two fragments, ngayKy compared as an export date) from htkk_tckt01_khbs_web_cases.py."""
+KHBS cases (Y7, KieuKHBS 3, its bảng kê before the two fragments, ngayKy compared as an export date) from htkk_tckt01_khbs_web_cases.py;
+the 01/GTGT TT89/2026 KHBS cases (Z5, KieuKHBS 3, no phụ lục, the HTKK 5.8.4 oracle named by the case's ``htkkVersion``) from
+htkk_gtgt01_tt89_khbs_web_cases.py."""
 import hashlib
 import importlib.util
 import io
@@ -132,6 +134,15 @@ CASES.update(tckt01.CASES)
 MENUS.update(tckt01.MENUS)
 PERIODS.update(tckt01.PERIODS)
 TCKT01_CASES = tuple(tckt01.CASES)
+_gtgt01_tt89_spec = importlib.util.spec_from_file_location('htkk_gtgt01_tt89_khbs_web_cases_data', pathlib.Path(__file__).with_name('htkk_gtgt01_tt89_khbs_web_cases.py'))
+gtgt01_tt89 = importlib.util.module_from_spec(_gtgt01_tt89_spec)
+_gtgt01_tt89_spec.loader.exec_module(gtgt01_tt89)
+if set(gtgt01_tt89.CASES) & set(CASES) or set(gtgt01_tt89.MENUS) & set(MENUS):
+    raise ValueError('CASE_POLICY')
+CASES.update(gtgt01_tt89.CASES)
+MENUS.update(gtgt01_tt89.MENUS)
+PERIODS.update(gtgt01_tt89.PERIODS)
+GTGT01_TT89_CASES = tuple(gtgt01_tt89.CASES)
 KHBS_FRAGMENTS = ('PL01_KHBS', 'PL01_1_KHBS')
 for _spec in CASES.values():
     _spec.setdefault('khbsParts', KHBS_FRAGMENTS)
@@ -169,7 +180,7 @@ def manifest_fields(case_id):
     """The fixed manifest values of the producer (manifestFor); sourceCommit, producerSha256 and the sizes/hashes vary."""
     spec = case(case_id)
     return {'format': 'htkk-web-' + spec['producerCase'] + '-input-v1', 'sourceRepository': 'htkk-net/htkk_web', 'sourceVersion': '0.9.2',
-            'caseId': case_id, 'menuId': spec['menuId'], 'htkkVersion': '5.8.2', 'exporter': spec['exporter'], 'producer': spec['producer'],
+            'caseId': case_id, 'menuId': spec['menuId'], 'htkkVersion': spec.get('htkkVersion', '5.8.2'), 'exporter': spec['exporter'], 'producer': spec['producer'],
             'soLan': spec['soLan'], 'ngayLapKHBS': FIXED_DATE, 'expected': spec['expected'], 'inputsSynthetic': True, 'nativeAmendmentVerified': False}
 
 

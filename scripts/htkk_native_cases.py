@@ -35,6 +35,9 @@ NTNN03_KHBS_PRODUCER='scripts/generate-htkk-web-ntnn03-khbs-reference.mjs'
 # Kê khai bổ sung of 01/TCKT TT89/2026 3.1.0 (Y7, kỳ quý 01/BK-KTHTKD and kỳ tháng 02/BK-KTBĐS; htkk_tckt01_khbs_web_cases.py, merged
 # the same way; KHBS-NATIVE-CASE.md "01/TCKT"): own producer; KieuKHBS 3, so the rounds run "Tổng hợp KHBS".
 TCKT01_KHBS_PRODUCER='scripts/generate-htkk-web-tckt01-khbs-reference.mjs'
+# Kê khai bổ sung of 01/GTGT TT89/2026 (Z5 3.0.9, tháng 10/2026, HTKK 5.8.4 only; htkk_gtgt01_tt89_khbs_web_cases.py, merged the same
+# way; KHBS-NATIVE-CASE.md "01/GTGT TT89"): own producer; KieuKHBS 3, so the rounds run "Tổng hợp KHBS".
+GTGT01_TT89_KHBS_PRODUCER='scripts/generate-htkk-web-gtgt01-tt89-khbs-reference.mjs'
 _d1={'driver':D1_DRIVER,'menuId':'D1','xmlVersion':'2.8.3','periods':{'month':('10/2026',),'quarter':('4/2026',)}}
 # Native-case input modes of the declaration driver: the original "Nhập từ XML" of the web XML, or
 # typing a compiled fixed plan into the original grid (HtkkDeclarationCasePlans.Entry) when the
@@ -215,6 +218,9 @@ TRUSTED_ADAPTERS={
  '01-gtgt-tt89-3.0.9':{**_declaration('Z5','3.0.9',{'month':('10/2026','11/2026','12/2026'),'quarter':('4/2026',)},[]),'htkkVersion':'5.8.4'},
  # With PL 204/2025/QH15 (Menu sheet 01_11, ticked in the period dialog): XML import → re-export keeps [32]/[33] of the file
  # (FinishImportXML does not run CellChange_9); htkk_web gtgt01-tt89-nq204-m12-2026.
+ # KHBS 01/GTGT TT89: Z5 without phụ lục, bổ sung lần 1 of tháng 10/2026, every round imported (the lần đầu as
+ # 01GTGT-TT89-sale10-M10-2026). HTKK 5.8.4 only, like the lần đầu adapter.
+ '01-gtgt-tt89-3.0.9-khbs':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.4'},
  '01-gtgt-tt89-3.0.9-nq204':{**_declaration('Z5','3.0.9',{'month':('10/2026','12/2026')},['01_11']),'htkkVersion':'5.8.4'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
@@ -277,9 +283,10 @@ check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for 
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in ANNEX16_CSSX_CASES))
 KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId'] in ('01-gtgt-2.8.3-khbs','01-gtgt-2.8.3-khbs-lan2','01-gtgt-2.8.3-khbs-annex12','01-gtgt-2.8.3-khbs-annex12-lan2'))
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in KHBS_CASES))
-# Kê khai bổ sung 01/NTNN cases (driver NTNN_KHBS_DRIVER): observation cases, never a release gate, HTKK 5.8.2 only.
+# Kê khai bổ sung 01/NTNN cases (driver NTNN_KHBS_DRIVER): observation cases, never a release gate, HTKK 5.8.2, except a form that
+# exists only from a later release (Z5 01/GTGT TT89: HTKK 5.8.4), which runs on its adapter's oracle.
 NTNN_KHBS_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==NTNN_KHBS_DRIVER)
-check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in NTNN_KHBS_CASES))
+check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])==TRUSTED_ADAPTERS[CASES[id]['adapterId']]['htkkVersion'] in ('5.8.2','5.8.4') for id in NTNN_KHBS_CASES))
 # Those of them whose import is completed by fixed original grid edits (05-1/PBT Thuế tỉnh/CCT, HtkkDeclarationCasePlans.KhbsImportTick).
 NTNN_KHBS_TICK_CASES=tuple(id for id in NTNN_KHBS_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']].get('tick') is True)
 # Those whose bổ sung rounds have no original "Tổng hợp KHBS" (U5: KieuKHBS "", frmWinToKhai.LoadButton hides the button).

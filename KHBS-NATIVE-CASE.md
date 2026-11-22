@@ -898,3 +898,42 @@ was imported, saved and closed (step mask 519, round 1, sheet count 7), then the
 case. The driver now closes it once per period dialog (`declarationPeriodInfoClosed`, cleared by `BeginDeclarationKhbsRound`); the
 predicate is unchanged (Y7 and 699 only), `declarationPeriodInfoMessageId` keeps the recorded id, and any other message, or a second 0699
 in the same confirmation, is still a refusal.
+
+## 01/GTGT TT89/2026 (Z5 3.0.9 on HTKK 5.8.4): mode `declaration-amendment-khbs-inspect` (observation cases)
+
+Z5 has KieuKHBS 3 and VersionKHBS 3.0.9 in the HTKK 5.8.4 Menu.xml (sheets 01-KHBS `KHBS_01_01_GTGT_TT89`, 01-1/KHBS
+`KHBS_01_1_01_GTGT_TT89`), so a B file carries PL01_KHBS and PL01_1_KHBS and the bổ sung rounds run "Tổng hợp KHBS". htkk_web read
+HTKK 5.8.4 statically (`lib/htkk-gtgt01-tt89-khbs.ts`, `data/htkk-01-gtgt-tt89-khbs-rules.json`, nothing executed): for MenuID in
+"Z5,Z6," `WinFnProcess.GetHTKKSheetInfo`, `WinLoadFromFile`, `Createa_PL_KHBS` and `WinDoWorkEvent.WinDoWorkGetExportSheetXML` take the
+KHBS workbook `KHBS_DIA_BAN_THU_HOI_HOAN_309.xls`, the 01-KHBS control `KHBS_01_DIA_BAN_THU_HOI_HOAN_309.xml` and the output template
+`KHBS_01_DIA_BAN_THU_HOI_HOAN_xml.xml` (Muc_B is the table `DsThuHoiHoan/CTietDsThuHoiHoan`, written with its default row); 01-1/KHBS
+keeps `KHBS_01_1_TT80_309.xml` / `KHBS_01_1_TT80_xml.xml`. The KHBS workbook formulas are those of D1's `KHBS_01_TT80_DIA_BAN_283.xls`
+(the signature cells ten rows lower). `Validate/KHBS_01_GTGT_TT89_309.xsd` is byte-identical to `Validate/01_GTGT_TT89_309.xsd`
+(8481f7c9…). The "Tổng hợp KHBS" methods are the D1 ones (same IL in 5.8.2, 5.8.4 and 5.8.5); every file above is the same in 5.8.5.
+
+`scripts/htkk_gtgt01_tt89_khbs_web_cases.py` holds the pins (sizes and SHA-256, never the files), per-case settings (no annexParts,
+import, `htkkVersion` 5.8.4 written into the manifest) and the public Z5 catalogue texts (`CATALOGUE_TEXTS`: the tờ khai sheet name
+and MaHoSo, the MapMCT Z5 MauToKhai, MCT codes and captions as written there, the DM_MaTM names of 1701 / 7551), merged into
+`htkk_ntnn_khbs_web_cases.py` (`manifest_fields` reads a case's `htkkVersion`, 5.8.2 by default;
+`test_gtgt01_tt89_khbs_web_cases.py`). Registered with adapter `01-gtgt-tt89-3.0.9-khbs` (HTKK 5.8.4), `releaseGate: false`; the
+NTNN-KHBS case check now accepts the adapter's own oracle (5.8.2, or 5.8.4 for Z5).
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `01GTGT-TT89-khbs-increase-M10-2026` (tháng 10/2026, [32] 1tr → 3tr, [33] 100.000 → 300.000; ct7 +200.000 on [40]) | original, web | 304 |
+| `01GTGT-TT89-khbs-decrease-M10-2026` (purchases added: [23] 2tr, path ct24 200.000, [25] 200.000; [40] 100.000 → 0, [43] 0 → 100.000) | original, web | 291 |
+
+Lần đầu of both: the inputs of `01GTGT-TT89-sale10-M10-2026` (native-matched on 5.8.4 and 5.8.5), ngày lập 13/11/2026. Driver: the rounds
+of the other KHBS cases with the plan of `01GTGT-TT89-sale10-M10-2026` (menu 101 → 101_1 → Z5, tháng 10/2026, no phụ lục), KHBS schema
+above, every round imported, "Tổng hợp KHBS" in the bổ sung round (no driver change; `Gtgt01Tt89KhbsPlan`). Tháng 12/2026 is not used:
+HTKK refuses it before 01/12/2026 (0044). What only these runs decide (web predictions in its files):
+
+- the tiểu mục of [40] and [43]: MapMCT_TieuMuc Z5 gives MaTieuMucPath `path_1` (copied from D1), but no static cell of
+  `01_GTGT_TT89_309.xml` has Path `path_1` (D1's control has `L_27`; Z5 keeps 1701 at P_24 with Path `tieuMucHachToan`).
+  `TimTieuMucStatic` then returns "", and `ChuyenTu_01_1_KHBS_Sang_01_KHBS` skips a row whose tiểu mục is empty (its fallback looks only
+  at rows of the same sheet, MCTPath and BX). The web files therefore keep 01/KHBS Muc_I.1 and Muc_II at their default row:
+  `tongCong_ct10` 0, `ct3a_1` nil, `ct3a_2` 0, `ct3b` 0, while 01-1/KHBS `tongCong_7` is +200.000 / −100.000;
+- the MapMCT Z5 labels as written: the path `GiaTriVaThueGTGTHHDVMuaVao/ct24` ([24] on the form) is "[23a] Trong đó: Giá trị hàng hóa,
+  dịch vụ hàng hóa nhập khẩu" and `HangHoaDichVuNhapKhau/ct23a` ([23a] on the form) is "[24] Thuế giá trị gia tăng của hàng hóa, dịch
+  vụ mua vào" (the decrease case has the ct24 row);
+- the Muc_B default row of `DsThuHoiHoan` (ct_1, ct_4, ct_5 0; dates nil; texts empty).

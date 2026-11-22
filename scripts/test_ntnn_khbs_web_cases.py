@@ -34,7 +34,7 @@ def manifest(case_id, module=m):
 class NtnnKhbsWebCases(unittest.TestCase):
     def test_five_cases_with_exact_staged_names(self):
         # The 05/KK-TNCN cases are merged from htkk_kk05_khbs_web_cases.py (test_kk05_khbs_web_cases.py).
-        self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES + m.NTNN03_CASES + m.TCKT01_CASES))
+        self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES + m.NTNN03_CASES + m.TCKT01_CASES + m.GTGT01_TT89_CASES))
         self.assertEqual(sorted(m.NTNN_CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
                                                   '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026',
                                                   '01NTNN-NCCNN-khbs-part1-nodate-M10-2026', '01NTNN-NCCNN-khbs-part2-nodate-M10-2026']))
@@ -65,7 +65,9 @@ class NtnnKhbsWebCases(unittest.TestCase):
         self.assertEqual(set(rows), set(m.CASES))
         for case_id, row in rows.items():
             self.assertIs(row['releaseGate'], False)
-            self.assertEqual(row['htkkVersion'], '5.8.2')
+            # 01/GTGT TT89 (Z5) exists only from HTKK 5.8.4; every other KHBS case runs on 5.8.2.
+            self.assertEqual(row['htkkVersion'], '5.8.4' if case_id in m.GTGT01_TT89_CASES else '5.8.2')
+            self.assertEqual(m.manifest_fields(case_id)['htkkVersion'], row['htkkVersion'])
             self.assertEqual(row['format'], m.manifest_fields(case_id)['format'])
             self.assertEqual(row['unit']['amendmentOrder'], m.CASES[case_id]['soLan'])
             self.assertEqual(adapters[row['adapterId']]['driver'], 'declaration-amendment-khbs-inspect')

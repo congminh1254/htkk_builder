@@ -512,6 +512,16 @@
       "profilePolicy": "synthetic-9999999997-v1"
     },
     {
+      "adapterId": "01-gtgt-tt89-3.0.9-khbs",
+      "htkkVersion": "5.8.4",
+      "menuId": "Z5",
+      "xmlVersion": "3.0.9",
+      "producer": "scripts/generate-htkk-web-gtgt01-tt89-khbs-reference.mjs",
+      "driver": "declaration-amendment-khbs-inspect",
+      "privacyValidator": "ntnn-khbs-v1",
+      "profilePolicy": "synthetic-9999999997-v1"
+    },
+    {
       "adapterId": "01-tts-tt40-2.8.3-bk1",
       "htkkVersion": "5.8.2",
       "menuId": "G7",
@@ -3635,6 +3645,48 @@
         "periodValue": "10/2026",
         "activityCode": "00",
         "annexes": ["01-2"],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01GTGT-TT89-khbs-increase-M10-2026",
+      "producerCase": "gtgt01-tt89-khbs-increase-m10-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9-khbs",
+      "format": "htkk-web-gtgt01-tt89-khbs-increase-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-khbs-increase-m10-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-khbs-increase-m10-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-khbs-increase-m10-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-khbs-increase-m10-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.4",
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01GTGT-TT89-khbs-decrease-M10-2026",
+      "producerCase": "gtgt01-tt89-khbs-decrease-m10-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9-khbs",
+      "format": "htkk-web-gtgt01-tt89-khbs-decrease-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-khbs-decrease-m10-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-khbs-decrease-m10-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-khbs-decrease-m10-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-khbs-decrease-m10-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.4",
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
         "amendmentOrder": 1
       }
     }
