@@ -2905,6 +2905,13 @@
      "sha256": "035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86",
      "change": "01/NTNN, NCCNN TT89 (Y8) input workbook. Against the reviewed 5.8.1-5.8.4 workbook (LibreOffice xlsx conversion, every cell value and formula compared) the only difference is the message text Header!E25, 'Dữ liệu bắt buộc nhập' -> 'Nhập số >0' (the E_25 message of checkTKChinh, HTKK-5.8.5-IMPACT.md).",
      "review": "A message text only; no formula, value, lock or layout cell changed. The entry and KHBS plans type and check no Header cell; whether checkTKChinh accepts the case is observed by the run itself (export or a refusal message). Accepted for the declaration plans of 5.8.5 only."
+    },
+    {
+     "path": "InterfaceTemplates/excel/01_GTGT_TT89_309.xls",
+     "replaces": "5370eb12c05cc2770e85ccc1bee7e6a7dc6138065f4c0fc4e0a418d3d9ee4585",
+     "sha256": "13a0760730756add1034cc72eaa590578bdfba2e58b0f2f5b4f445022f6a2af7",
+     "change": "01/GTGT TT89 (Z5) input workbook. Against the reviewed 5.8.4 workbook (LibreOffice xlsx conversion, every cell value and formula of all 13 sheets compared) only 28 Header cells differ, all rules of the 01-8 sheets: B129, B155 (AI122 > AC122 of 01_8_1/01_8_2) and B158, B171 (AI128 < AF47 of 01_8_2/01_8_3) become the constant 1; new rows B234-B237 require 01_8_1/01_8_2 W47 and N47 (Chỉ tiêu bắt buộc nhập). No cell of sheet 01 or of the PL 204/2025/QH15 sheet 01_10 changed.",
+     "review": "The Z5 plans attach no 01-8 sheet (the main-form cases attach nothing, the nq204 cases attach 01_10 only), and HTKK evaluates a Header row only when its sheet is attached, so none of the changed rules runs for them. Layout 01_GTGT_TT89_309.xml and XSD are byte-identical to 5.8.4. Accepted for the declaration plans of 5.8.5 only; the native tree comparison still decides."
     }
    ]
   }

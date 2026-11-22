@@ -50,7 +50,8 @@ LATER = (TICK_PREFIX, PBT_PREFIX, GTGT04_PREFIX, NTNN03_PREFIX)
 # (HtkkDeclarationCasePlans pins the reviewed workbook; HtkkDeclarationWebImport.DeclarationPinsMatched asks
 # HtkkOracleBaseline.Workbook for the selected version). Only these paths may be re-pinned per version; each entry
 # names the plan's reviewed SHA-256 it replaces and carries its change and review notes.
-WORKBOOKS = ('InterfaceTemplates/excel/01_TCKT_TT89_310.xls', 'InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls')
+WORKBOOKS = ('InterfaceTemplates/excel/01_TCKT_TT89_310.xls', 'InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls',
+             'InterfaceTemplates/excel/01_GTGT_TT89_309.xls')
 ADDED = 'added-reviewed'
 
 

@@ -78,7 +78,7 @@ internal static class HtkkOracleBaseline {
   new string[0],
   new string[0],
   new string[]{"InterfaceTemplates/excel/01_TCKT_TT89_310.xls|95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7|651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9"},
-  new string[]{"InterfaceTemplates/excel/01_TCKT_TT89_310.xls|95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7|651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9","InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls|53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1|035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86"}
+  new string[]{"InterfaceTemplates/excel/01_TCKT_TT89_310.xls|95ecbc2cd702100d49d946fd526ae71916a53229f25b335b358c4e35c3c48cd7|651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9","InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls|53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1|035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86","InterfaceTemplates/excel/01_GTGT_TT89_309.xls|5370eb12c05cc2770e85ccc1bee7e6a7dc6138065f4c0fc4e0a418d3d9ee4585|13a0760730756add1034cc72eaa590578bdfba2e58b0f2f5b4f445022f6a2af7"}
  };
  // Declaration input workbook of the selected version: the reviewed re-pin of a later release when one replaces
  // exactly the plan pin, else the plan pin itself (any other bytes then fail the plan source-pin check).

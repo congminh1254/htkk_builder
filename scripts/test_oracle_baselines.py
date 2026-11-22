@@ -212,7 +212,11 @@ class Baselines(unittest.TestCase):
         for v in (V1, V2, V3):
             self.assertNotIn('workbooks', v)
         self.assertEqual([(w['path'], w['replaces'], w['sha256']) for w in V4['workbooks']], [(y7, reviewed[y7], '651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9')])
-        self.assertEqual([(w['path'], w['replaces'], w['sha256']) for w in V5['workbooks']], [(y7, reviewed[y7], '651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9'), (y8, reviewed[y8], '035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86')])
+        z5 = 'InterfaceTemplates/excel/01_GTGT_TT89_309.xls'
+        reviewed[z5] = '5370eb12c05cc2770e85ccc1bee7e6a7dc6138065f4c0fc4e0a418d3d9ee4585'
+        self.assertIn('"' + z5 + '","' + reviewed[z5] + '"', plans)
+        self.assertEqual([(w['path'], w['replaces'], w['sha256']) for w in V5['workbooks']], [(y7, reviewed[y7], '651cf669e82f8ef4bc0e6d1846570262519356d77f9856dc044b2c08d495a5a9'), (y8, reviewed[y8], '035413f232b6d12f516af05ca00ef813ef1a17d02a7b98279983e6bd31960b86'), (z5, reviewed[z5], '13a0760730756add1034cc72eaa590578bdfba2e58b0f2f5b4f445022f6a2af7')])
+        self.assertIn('No cell of sheet 01', V5['workbooks'][2]['change'])
         self.assertIn("IF('01-1'!G58=0,0,1)", V4['workbooks'][0]['change'])
         self.assertIn('Nhập số >0', V5['workbooks'][1]['change'])
         self.assertIn('HtkkOracleBaseline.Workbook(plan.WorkbookFile,plan.WorkbookSha256)', (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8'))
