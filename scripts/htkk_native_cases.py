@@ -213,6 +213,9 @@ TRUSTED_ADAPTERS={
  # dialog keeps "Hoạt động sản xuất kinh doanh thông thường" (TieuMucHachToanVal 00, tiểu mục 1701) and the CQT quản lý
  # (0611). No phụ lục in this scope. XML import → re-export (htkk_web generate-htkk-declaration-reference.mjs gtgt01-tt89-*).
  '01-gtgt-tt89-3.0.9':{**_declaration('Z5','3.0.9',{'month':('10/2026','11/2026','12/2026'),'quarter':('4/2026',)},[]),'htkkVersion':'5.8.4'},
+ # With PL 204/2025/QH15 (Menu sheet 01_11, ticked in the period dialog): XML import → re-export keeps [32]/[33] of the file
+ # (FinishImportXML does not run CellChange_9); htkk_web gtgt01-tt89-nq204-m12-2026.
+ '01-gtgt-tt89-3.0.9-nq204':{**_declaration('Z5','3.0.9',{'month':('12/2026',)},['01_11']),'htkkVersion':'5.8.4'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))
