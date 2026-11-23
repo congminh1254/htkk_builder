@@ -854,7 +854,7 @@ Ca nhận ở mốc 06/10/2026 của C9/D6 chưa thêm được: engine web (Men
 nhà sản xuất không tạo được tệp; cần đổi quy tắc web, việc này để sau khi các ca trên khớp.
 
 
-## 01/GTGT TT89 (Z5, 3.0.9) — năm ca quan sát, không chặn phát hành, chỉ có trên HTKK 5.8.4 (`htkkVersion` 5.8.4)
+## 01/GTGT TT89 (Z5, 3.0.9) — các ca quan sát, không chặn phát hành, chỉ có trên HTKK 5.8.4 (`htkkVersion` 5.8.4)
 
 Nhà sản xuất `htkk_web` nhánh `work/gtgt01-tt89` (thiết kế trong `scripts/generate-htkk-descriptor-reference.mjs`, ca sản xuất
 `gtgt01-tt89-*` của `scripts/generate-htkk-declaration-reference.mjs` với `htkkVersion: '5.8.4'`). Menu Z5 (`Gtgt01TT89`,
@@ -875,6 +875,9 @@ tiểu mục 1701) và CQT quản lý (0611 từ chối CQT khác với hoạt �
 | `01GTGT-TT89-nq204-M12-2026` | tháng 12/2026 | kèm PL 204/2025/QH15 (adapter `01-gtgt-tt89-3.0.9-nq204`, sheet Menu 01_11 = sheet XLS 01_10, `PLuc/PL_NQ142_GTGT`): bảng I một dòng 50.000.000 / 4.000.000, bảng II hai dòng, (6) 2.000.001 (làm tròn nửa xa số 0); [32] = J9 300.000.025, [33] = R61 = ROUND([32] × 10% − [08] 6.000.001) = 24.000.002; 122 lá |
 | `01GTGT-TT89-full-M10-2026` | tháng 10/2026 | bản tháng 10 của `-full-M12-2026` (cùng số liệu, cùng kết quả) |
 | `01GTGT-TT89-nq204-M10-2026` | tháng 10/2026 | bản tháng 10 của `-nq204-M12-2026`; tiêu đề và thuế suất PL 204 như tháng 12 (năm 2026) |
+| `01GTGT-TT89-pl016-cssx-M10-2026` | tháng 10/2026 | kèm PL 01-6/GTGT (CSSX) (adapter `01-gtgt-tt89-3.0.9-pl016-cssx`, sheet Menu 01_6 = sheet XLS 01_6_GTGT_CSSX, `PLuc/Pluc_01_6_GTGT_CSSX`): [30] 400.000.000, [32] 600.000.000, [06] 50.000.000, [07] 900.000.000; ba dòng Hải Phòng, Thái Nguyên, Hải Phòng (dòng 3 chọn CQT cấp cục 10300); nhánh công thức: [17] 5.000.002 / 3.000.002 / 1 (làm tròn nửa xa số 0), [18] 5.000.003 / 3.000.002, [19] 8.000.005, [20] 41.999.995; 165 lá |
+| `01GTGT-TT89-pl016-cssx-ratio-M10-2026` | tháng 10/2026 | như trên, nhánh tỷ lệ của `TinhCot_17_21_Pl_01_6CSSX` (Σ công thức [17] 83.333.333 > [06] 70.000.001): [17] = 0, [21] 30.000.000 / 15.000.000 / 3.333.333, [22] 33.333.333 / 15.000.000, [23] 48.333.333, [24] 21.666.668; [30] 2 tỷ, [32] 6 tỷ, [07] 7 tỷ; 165 lá |
+| `01GTGT-TT89-pl016-dtvt-M10-2026` | tháng 10/2026 | kèm PL 01-6/GTGT (ĐTVT) (adapter `01-gtgt-tt89-3.0.9-pl016-dtvt`, sheet Menu 01_6_2 = sheet XLS 01_6_GTGT_DVVT, `PLuc/Pluc_01_6_GTGT_DVVT`): [32] 600.000.000, [06] 30.000.000, [07] và [14] khóa ở 0; [17] 4.000.001 / 3.000.002 / 1, [18] 4.000.002 / 3.000.002, [19] 7.000.004, [20] 22.999.996; 165 lá |
 
 Hai ca tháng 12/2026 có `notBefore` 2026-12-01: `frmHTKKPeriod.CheckPeriod` (HTKK.exe 5.8.4) từ chối năm lớn hơn
 `DateTime.Today.Year` hoặc tháng lớn hơn `DateTime.Today.Month` (0044 "Kỳ tính thuế không được lớn hơn kỳ hiện tại"), nên tháng
@@ -886,6 +889,15 @@ lại là 24 lá trong kế hoạch biên dịch, kiểm ô là J58, L58, J65, L
 Ca PL 204/2025/QH15: `GTGT01_TT89_NQ204` / `gtgt01_tt89_nq204_expected` tính lại mọi lá của `PL_NQ142_GTGT` (hai bảng, tổng, [09])
 và [32]/[33] theo `CellChange_9` → `TinhLaiChiTieu32_TK`, `TinhCt33TrenToKhai`; kiểm ô thêm V19, R61 và F20, D22, F22, G31, D33, G33,
 D36 của sheet 01_10 (hai dòng bảng II đẩy dòng tổng xuống 33 và [09] xuống 36). Hộp kỳ tích phụ lục "PL 204/2025/QH15".
+Ca PL 01-6/GTGT: `GTGT01_TT89_PL016` / `gtgt01_tt89_pl016_expected` tính lại (Decimal) mọi lá của `Pluc_01_6_GTGT_CSSX` /
+`_DVVT`: [16] = [14] + [15], [17] = ROUND([14] × 1%) + ROUND([15] × 2%), nhánh [17]/[21] của CSSX, bảng cộng theo tỉnh theo thứ tự
+xuất hiện, [19]–[24]. Theo htkk_web `data/htkk-01-gtgt-tt89-annex16-contract.json`, file điều khiển, mẫu kết xuất, XSD, công thức dòng
+và IL của các hàm 01-6 trùng D1 (HTKK 5.8.2, các ca annex16 đã khớp); khác ở Z5: cột H (Chi cục Thuế khu vực) bị ẩn nên sau khi nhập
+không chọn lại gì; danh sách CQT cột I theo xã (cấp cục của CQT xã, CQT xã, 82500, 82700); `checkPL1_6` thêm E_125 (tỉnh của dòng
+khác `maTinhNNT`), nên các dòng không ở Hà Nội. Kiểm ô: R19/S19 = 1, R20/S20, U20, J58, L58, L80 và các ô [17]/[21] dòng 22:24, [18]/[22]
+dòng 29:30, [19]/[23] dòng 35, [20]/[24] dòng 36 (ba dòng bảng 1 và hai dòng bảng theo tỉnh đẩy các dòng xuống). Hộp kỳ tích phụ lục
+"01-6/GTGT (CSSX)" hoặc "01-6/GTGT (ĐTVT)". Câu hỏi cho lần chạy: nhập XML có giữ CQT cấp cục 10300 của dòng 3 không; tên tỉnh của
+bảng theo tỉnh (`ct18_tinh_ten`) có là tên tỉnh như D1 không.
 
 Câu hỏi cho lần chạy: HTKK 5.8.4 kết xuất `ct*_Cqt` là `0` (giá trị mẫu của ô khóa) và `ct*_Ghichu` rỗng như web không; nhập XML có
 `ct21` = 1 thì `XuLyCheckboxCt21` (gọi từ `AutoBindData_0` với isBindData) có hỏi lại không; `ct22` khác P47 (0, không có tệp kỳ

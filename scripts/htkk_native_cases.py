@@ -225,6 +225,12 @@ TRUSTED_ADAPTERS={
  # 01GTGT-TT89-sale10-M10-2026). HTKK 5.8.4 only, like the lần đầu adapter.
  '01-gtgt-tt89-3.0.9-khbs':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.4'},
  '01-gtgt-tt89-3.0.9-nq204':{**_declaration('Z5','3.0.9',{'month':('10/2026','12/2026')},['01_11']),'htkkVersion':'5.8.4'},
+ # With PL 01-6/GTGT (CSSX: Menu sheet 01_6, ĐTVT: 01_6_2, ticked in the period dialog; XML PLuc/Pluc_01_6_GTGT_CSSX / _DVVT): XML
+ # import → re-export (FinishImportXML runs TinhTongTheoTinhPl01_3 / TinhCot_17_21_Pl_01_6CSSX / TinhTongTheoTinhPl01_4). Column H
+ # (Chi cục Thuế khu vực, no XML leaf) is hidden on the Z5 sheets, so nothing is chosen again after the import (D1 cases do).
+ # htkk_web gtgt01-tt89-pl016-*-m10-2026.
+ '01-gtgt-tt89-3.0.9-pl016-cssx':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_6']),'htkkVersion':'5.8.4'},
+ '01-gtgt-tt89-3.0.9-pl016-dtvt':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_6_2']),'htkkVersion':'5.8.4'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))

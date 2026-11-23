@@ -301,6 +301,11 @@ def _case(producer, menu, ma, version, schema, period, dates, sign, created, lea
 
 
 WORKBOOK_SERVICE = 'Công cụ Kê khai'
+# PL 01-6/GTGT of Z5: the rows of the three cases (synthetic units and branch MSTs; catalogue names of lib/htkk-catalogue.ts).
+PL016_HP = ('10309019', 'Phường Đồ Sơn', '103', 'Thành phố Hải Phòng', '10309', 'Thuế cơ sở 6 Thành phố Hải Phòng')
+PL016_HP_CUC = ('10309019', 'Phường Đồ Sơn', '103', 'Thành phố Hải Phòng', '10300', 'Thuế Thành phố Hải Phòng')
+PL016_TN = ('21501001', 'Phường Phan Đình Phùng', '215', 'Tỉnh Thái Nguyên', '21501', 'Thuế cơ sở 1 tỉnh Thái Nguyên')
+PL016_TEXTS = ['CO SO GIA LAP %d - KHONG NOP' % n for n in (1, 2, 3)] + ['9999999997-00%d' % n for n in (1, 2, 3)] + sorted({x for place in (PL016_HP, PL016_HP_CUC, PL016_TN) for x in place[1::2]})
 PBT_TEXTS = ['TRU SO CHINH GIA LAP', 'CHI NHANH GIA LAP', 'Thành phố Hà Nội', 'Phường Sơn Tây', 'Thuế cơ sở 16 Thành phố Hà Nội', 'Thành phố Hải Phòng', 'Phường Đồ Sơn', 'Thuế cơ sở 6 Thành phố Hải Phòng']
 CASES = {
     '03TNDN-profit20-Y2025': _case('tndn03-profit20-y2025', 'N8', '892', '2.9.4', 'Validate/03_TNDN_TT80_294.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-03-20', '2026-03-20', 147, ['PLuc_03_1A_TNDN'], WORKBOOK_SERVICE,
@@ -531,6 +536,15 @@ CASES = {
                                         [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY, 'VAT TU A - GIẢ LẬP', 'HANG HOA B - GIẢ LẬP', 'DICH VU C - GIẢ LẬP']),
     '01GTGT-TT89-nq204-M10-2026': _case('gtgt01-tt89-nq204-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 122, ['PL_NQ142_GTGT'], WORKBOOK_SERVICE,
                                         [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY, 'VAT TU A - GIẢ LẬP', 'HANG HOA B - GIẢ LẬP', 'DICH VU C - GIẢ LẬP']),
+    # PL 01-6/GTGT of Z5 (Menu sheets 01_6 / 01_6_2, XML PLuc/Pluc_01_6_GTGT_CSSX / _DVVT; htkk_web lib/htkk-gtgt01-tt89-annex16.ts,
+    # draft field pl016): 104 + 61 annex leaves (4 head, 3 rows x 15, 2 provinces x 4, 4 totals). Texts: the synthetic unit names and
+    # branch MSTs, and the catalogue names of the two provinces, wards and offices (Hải Phòng, Thái Nguyên).
+    '01GTGT-TT89-pl016-cssx-M10-2026': _case('gtgt01-tt89-pl016-cssx-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 165, ['Pluc_01_6_GTGT_CSSX'], WORKBOOK_SERVICE,
+                                             [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY] + PL016_TEXTS),
+    '01GTGT-TT89-pl016-cssx-ratio-M10-2026': _case('gtgt01-tt89-pl016-cssx-ratio-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 165, ['Pluc_01_6_GTGT_CSSX'], WORKBOOK_SERVICE,
+                                                   [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY] + PL016_TEXTS),
+    '01GTGT-TT89-pl016-dtvt-M10-2026': _case('gtgt01-tt89-pl016-dtvt-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 165, ['Pluc_01_6_GTGT_DVVT'], WORKBOOK_SERVICE,
+                                             [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY] + PL016_TEXTS),
     # Y7 01/TCKT TT89 3.0.9 (non-gating, HTKK 5.8.1 oracle): KieuKy 21, one bảng kê per tờ khai: 01/BK-KTHTKD (PLuc_HKD_CNKD,
     # quý 4/2026; nhóm ngành names of DM_DUNG_CHUNG DC_185) or 02/BK-KTBĐS (PLuc_CANHAN_TTS, tháng 10/2026 and lần phát sinh
     # 15/10/2026; DiaChi_BDS xã/tỉnh = the synthetic profile ward).
@@ -570,7 +584,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '01GTGT-TT89-nq204-M12-2026', '05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '01GTGT-TT89-pl016-cssx-M10-2026', '01GTGT-TT89-pl016-cssx-ratio-M10-2026', '01GTGT-TT89-pl016-dtvt-M10-2026', '01GTGT-TT89-nq204-M12-2026', '05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
 
 
 def is_case(case_id):
@@ -1150,6 +1164,19 @@ GTGT01_TT89_INPUTS = {
                                   'ct30': '100000010', 'ct32': '200000005', 'ct32a': '1000000', 'ct34a': '700000', 'ct37': '200000', 'ct38': '100000', 'ct39a': '50000', 'ct40b': '40000'},
     '01GTGT-TT89-nq204-M12-2026': {'ct23': '50000000', 'ct24': '4000000', 'ct25': '4000000'},
     '01GTGT-TT89-nq204-M10-2026': {'ct23': '50000000', 'ct24': '4000000', 'ct25': '4000000'},
+    '01GTGT-TT89-pl016-cssx-M10-2026': {'ct30': '400000000', 'ct32': '600000000'},
+    '01GTGT-TT89-pl016-cssx-ratio-M10-2026': {'ct30': '2000000000', 'ct32': '6000000000'},
+    '01GTGT-TT89-pl016-dtvt-M10-2026': {'ct32': '600000000'},
+}
+# PL 01-6/GTGT of a Z5 case: (sheet, [06], [07], rows (place, [14], [15])). Same formulas as D1's 01-6 (htkk_web
+# data/htkk-01-gtgt-tt89-annex16-contract.json): [16] = [14] + [15]; formula [17] = ROUND([14] x 1%) + ROUND([15] x 2%); CSSX:
+# when [06] >= sum of [17] (TinhCot_17_21_Pl_01_6CSSX) [17] stays, [21] = 0, else [17] = 0 and [21] = ROUND([06] x [16] / [07]);
+# one province row per tỉnh in order of first appearance ([18] / [22] sums); [19] / [23] their sums, [20] = [06] - [19], [24] =
+# [06] - [23]. ĐTVT has no [21] branch.
+GTGT01_TT89_PL016 = {
+    '01GTGT-TT89-pl016-cssx-M10-2026': ('CSSX', '50000000', '900000000', ((PL016_HP, '100000050', '200000050'), (PL016_TN, '0', '150000075'), (PL016_HP_CUC, '50', '0'))),
+    '01GTGT-TT89-pl016-cssx-ratio-M10-2026': ('CSSX', '70000001', '7000000000', ((PL016_HP, '1000000000', '2000000001'), (PL016_TN, '0', '1500000000'), (PL016_HP_CUC, '333333333', '0'))),
+    '01GTGT-TT89-pl016-dtvt-M10-2026': ('DVVT', '30000000', '0', ((PL016_HP, '0', '200000050'), (PL016_TN, '0', '150000075'), (PL016_HP_CUC, '0', '50'))),
 }
 # PL 204/2025/QH15 (workbook sheet 01_10, XML PL_NQ142_GTGT) of a Z5 case: (purchase rows, sale rows) as (name, value). Table I:
 # (4) = ROUND(D x 8/100); table II: (4) = 10, (5) = ROUND(10 x 80/100, 1) = 8, (6) = ROUND(D x (10 - 8)/100); [05]..[08] are the
@@ -1202,6 +1229,52 @@ def gtgt01_tt89_nq204_expected(case_id):
     return p_rows, p_tot, s_rows, s_tot, str(D(s_tot['tongCongThueGTGTDuocGiam']) - D(p_tot['tongCongThueGTGTHHDV']))
 
 
+def gtgt01_tt89_pl016_expected(case_id):
+    """Pluc_01_6_GTGT_<sheet> of a Z5 case: (node, head, rows, provinces, totals) from the XLS formulas, exact decimals."""
+    D = decimal.Decimal
+    sheet, ct06, ct07, table = GTGT01_TT89_PL016[case_id]
+    o15, o16 = D(ct06), D(ct07)
+    base = [(place, D(k), D(l), D(k) + D(l), _round(D(k) * 1 / 100) + _round(D(l) * 2 / 100)) for place, k, l in table]
+    formula = sheet == 'DVVT' or o15 - sum(row[4] for row in base) >= 0
+    rows, order = [], []
+    for n, (place, k, l, m, z) in enumerate(base, 1):
+        ct21 = D(0) if formula else _round(o15 * m / o16)
+        rows.append({'ct09': 'CO SO GIA LAP %d - KHONG NOP' % n, 'ct10': '9999999997-00%d' % n, 'ma_xa': place[0], 'ten_xa': place[1], 'ct11_huyen_ma': '', 'ct11_huyen_ten': '',
+                     'ct12_tinh_ma': place[2], 'ct12_tinh_ten': place[3], 'ct13_cqt_ma': place[4], 'ct13_cqt_ten': place[5], 'ct14': str(k), 'ct15': str(l), 'ct16': str(m),
+                     'ct17': str(z if formula else D(0)), 'ct21': str(ct21)})
+        if (place[2], place[3]) not in order:
+            order.append((place[2], place[3]))
+    provinces = [{'ct18': str(sum(D(r['ct17']) for r in rows if r['ct12_tinh_ma'] == code)), 'ct22': str(sum(D(r['ct21']) for r in rows if r['ct12_tinh_ma'] == code)), 'ct18_tinh_ma': code, 'ct18_tinh_ten': name} for code, name in order]
+    ct19, ct23 = sum(D(p['ct18']) for p in provinces), sum(D(p['ct22']) for p in provinces)
+    totals = {'ct19': str(ct19), 'ct23': str(ct23), 'ct20': str(o15 - ct19 if formula else D(0)), 'ct24': str(D(0) if formula else o15 - ct23)}
+    head = {'ct10a_csxs': '1' if sheet == 'CSSX' else '0', 'ct10a_dvvt': '0' if sheet == 'CSSX' else '1', 'ct06': ct06, 'ct07': ct07}
+    return 'Pluc_01_6_GTGT_' + sheet, head, rows, provinces, totals
+
+
+def _gtgt01_tt89_pl016(case_id, root):
+    node, head, rows, provinces, totals = gtgt01_tt89_pl016_expected(case_id)
+    annex = root.find(_xpath('HSoKhaiThue/PLuc/' + node))
+    if annex is None:
+        reject('STRUCTURE')
+    for name, value in head.items():
+        if [(n.text or '') for n in annex.findall('{%s}%s' % (NS, name))] != [value]:
+            reject('VALUE')
+    for table, expected in (('NoiDungBangPhanBo', rows), ('cong_ct18', provinces)):
+        found = annex.findall('{%s}%s' % (NS, table))
+        if len(found) != len(expected):
+            reject('VALUE')
+        for k, (element, row) in enumerate(zip(found, expected), 1):
+            if element.attrib != {'id': 'ID_%d' % k}:
+                reject('VALUE')
+            for name, value in row.items():
+                if [(n.text or '') for n in element.findall('{%s}%s' % (NS, name))] != [value]:
+                    reject('VALUE')
+    for group, names in (('CongCacTinh', ('ct19', 'ct23')), ('SoThuePhaiNop', ('ct20', 'ct24'))):
+        for name in names:
+            if [(n.text or '') for n in annex.findall(_xpath(group + '/' + name))] != [totals[name]]:
+                reject('VALUE')
+
+
 def _gtgt01_tt89(case_id, root):
     main = root.find('./{%s}HSoKhaiThue/{%s}CTieuTKhaiChinh' % (NS, NS))
     for name, value in gtgt01_tt89_expected(case_id).items():
@@ -1225,6 +1298,8 @@ def _gtgt01_tt89(case_id, root):
                     reject('VALUE')
         if [(n.text or '') for n in annex.findall(_xpath('ChenhLech/ct9'))] != [ct9]:
             reject('VALUE')
+    if case_id in GTGT01_TT89_PL016:
+        _gtgt01_tt89_pl016(case_id, root)
 
 
 def tckt_expected(case_id):
