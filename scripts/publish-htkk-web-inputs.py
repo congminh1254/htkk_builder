@@ -27,6 +27,15 @@ def fail(code):raise PublicationError(code)
 def sha(value):
  if not isinstance(value,str) or not re.fullmatch('[0-9a-f]{40}',value):fail('SOURCE_COMMIT')
  return value
+# Fixed names of the publication steps. A failure names the step it happened in (and nothing about the remote
+# reply), so a rejected publication says which call was refused: e.g. a 422 from tree creation versus a ref write.
+STEPS=('inputs','case-plan','repository','source-commit','main-check','producer','package','plan','blob','tree','commit','immutable-ref','branch-read','branch-create','branch-update','result')
+def mark_step(error,step):
+ # The innermost step wins; only a fixed name is ever attached.
+ if step in STEPS and getattr(error,'htkk_step',None) not in STEPS:
+  try:error.htkk_step=step
+  except Exception:pass
+ return error
 def safe_failure(error):
  code='INTERNAL';extra={}
  if isinstance(error,PublicationError):code=error.code if error.code in CODES else 'INTERNAL'
@@ -36,6 +45,8 @@ def safe_failure(error):
   if type(error.code) is int and 100<=error.code<=599:extra['httpStatus']=error.code
  elif isinstance(error,urllib.error.URLError):code='NETWORK'
  elif isinstance(error,OSError):code='IO'
+ step=getattr(error,'htkk_step',None)
+ if isinstance(step,str) and step in STEPS:extra['step']=step
  return {'format':'htkk-web-input-publication-status-v1','status':'rejected','code':code,**extra}
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -138,6 +149,12 @@ def assert_current(fetch,token,source_commit):
  if sha(current['object'].get('sha'))!=source_commit:fail('STALE_SOURCE')
 
 def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,retain_immutable=False):
+ step=['inputs']
+ def at(name):step[0]=name
+ try:return _publish(inputs,source_commit,token,fetch,request_id,plan,retain_immutable,at)
+ except Exception as error:raise mark_step(error,step[0])
+
+def _publish(inputs,source_commit,token,fetch,request_id,plan,retain_immutable,at):
  sha(source_commit)
  if not isinstance(token,str) or not token:fail('AUTH')
  # Require callers to use the validated fixed-case order and unchanged bytes.
@@ -153,26 +170,26 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
  if request_id is not None and (not isinstance(request_id,str)or not re.fullmatch('[1-9][0-9]*',request_id)):fail('MANIFEST')
  if plan is not None:reader.case_registry.validate_plan(plan)
  fetch=fetch or api
- info=fetch('',token)
+ at('repository');info=fetch('',token)
  if not isinstance(info,dict) or info.get('private') is not True or info.get('full_name')!=REPO:fail('PRIVATE_REPO')
- source=fetch('/git/commits/'+source_commit,token)
+ at('source-commit');source=fetch('/git/commits/'+source_commit,token)
  if not isinstance(source,dict) or source.get('sha')!=source_commit:fail('SOURCE_COMMIT')
- assert_current(fetch,token,source_commit)
+ at('main-check');assert_current(fetch,token,source_commit)
  query='?ref='+source_commit
  # ContentsAPI path is nested; reader deliberately accepts only root paths.
- producer_hashes={}
+ producer_hashes={};at('producer')
  for path in sorted(set(CASE_PRODUCERS.values())):
   envelope=fetch('/contents/'+path+query,token)
   if not isinstance(envelope,dict) or envelope.get('path')!=path:fail('SOURCE_PRODUCER')
   name=path.rsplit('/',1)[-1];normalized=dict(envelope);normalized['path']=name
   producer_hashes[path]=hashlib.sha256(reader.content_file(normalized,name,MAX_PRODUCER)).hexdigest()
- package=reader.content_file(fetch('/contents/package.json'+query,token),'package.json',reader.MAX_MANIFEST)
+ at('package');package=reader.content_file(fetch('/contents/package.json'+query,token),'package.json',reader.MAX_MANIFEST)
  metadata=reader.json_object(package,'API_JSON')
  if any(item[3]['producerSha256']!=producer_hashes[CASE_PRODUCERS[item[0]]] for item in inputs):fail('SOURCE_PRODUCER')
  if any(metadata.get('version')!=item[3]['sourceVersion'] for item in inputs):fail('SOURCE_VERSION')
  plan_sha=None
  if plan is not None:
-  envelope=fetch('/contents/data/htkk-case-plan.json'+query,token)
+  at('plan');envelope=fetch('/contents/data/htkk-case-plan.json'+query,token)
   if not isinstance(envelope,dict)or envelope.get('path')!='data/htkk-case-plan.json':fail('SOURCE_PRODUCER')
   normalized=dict(envelope);normalized['path']='htkk-case-plan.json';raw_plan=reader.content_file(normalized,'htkk-case-plan.json',2_000_000)
   if reader.json_object(raw_plan,'MANIFEST')!=plan:fail('MANIFEST')
@@ -186,34 +203,35 @@ def publish(inputs,source_commit,token,fetch=None,request_id=None,plan=None,reta
    context={'format':'htkk-case-context-v1','sourceCommit':source_commit,'requestId':request_id,'caseId':case,'adapterId':c['adapterId'],'unit':c['unit'],'profilePolicy':a['profilePolicy'],'producerSha256':producer_hashes[CASE_PRODUCERS[case]],'xmlSha256':manifest['xmlSha256'],'planSha256':plan_sha}
    published['case-context.json']=(json.dumps(context,sort_keys=True,separators=(',',':'))+'\n').encode()
   for name,body in published.items():
-   blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
+   at('blob');blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
    if not isinstance(blob,dict) or sha(blob.get('sha'))!=hashlib.sha1(b'blob '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest():fail('HASH')
    entries.append({'path':name,'mode':'100644','type':'blob','sha':blob['sha']})
-  tree=fetch('/git/trees',token,{'tree':entries})
+  at('tree');tree=fetch('/git/trees',token,{'tree':entries})
   if not isinstance(tree,dict):fail('API_SHAPE')
   tree_sha=sha(tree.get('sha'))
-  commit=fetch('/git/commits',token,{'message':'Synthetic web reference input '+case+' '+source_commit,'tree':tree_sha,'parents':[]})
+  at('commit');commit=fetch('/git/commits',token,{'message':'Synthetic web reference input '+case+' '+source_commit,'tree':tree_sha,'parents':[]})
   if not isinstance(commit,dict):fail('API_SHAPE')
   artifact=sha(commit.get('sha'))
-  assert_current(fetch,token,source_commit)
+  at('main-check');assert_current(fetch,token,source_commit)
+  at('immutable-ref')
   if retain_immutable:immutable_refs.retain(fetch,token,'input',source_commit,case,artifact)
   # GitHub PATCH of a missing ref can return 422. Only an explicit GET 404
   # establishes absence; never reinterpret a failed mutation as permission to
   # create a ref or retry authorization/validation errors.
-  missing=False
+  missing=False;at('branch-read')
   try:existing=fetch('/git/ref/heads/'+branch,token)
   except urllib.error.HTTPError as error:
    if error.code!=404:raise
    missing=True
   if missing:
-   updated=fetch('/git/refs',token,{'ref':'refs/heads/'+branch,'sha':artifact})
+   at('branch-create');updated=fetch('/git/refs',token,{'ref':'refs/heads/'+branch,'sha':artifact})
   else:
    if not isinstance(existing,dict) or existing.get('ref')!='refs/heads/'+branch or not isinstance(existing.get('object'),dict) or existing['object'].get('type')!='commit':fail('API_SHAPE')
    sha(existing['object'].get('sha'))
-   updated=fetch('/git/refs/heads/'+branch,token,{'sha':artifact,'force':True},'PATCH')
+   at('branch-update');updated=fetch('/git/refs/heads/'+branch,token,{'sha':artifact,'force':True},'PATCH')
   if not isinstance(updated,dict) or updated.get('ref')!='refs/heads/'+branch or not isinstance(updated.get('object'),dict) or updated['object'].get('type')!='commit' or updated['object'].get('sha')!=artifact:fail('API_SHAPE')
   cases.append({'caseId':case,'artifactCommit':artifact})
- assert_current(fetch,token,source_commit)
+ at('main-check');assert_current(fetch,token,source_commit)
  return {'format':'htkk-web-input-publication-v1','sourceCommit':source_commit,'cases':cases}
 
 def save_result(result,runner_temp):
@@ -233,10 +251,15 @@ def main():
   if os.environ.get('GITHUB_REPOSITORY')!=BUILDER:fail('BUILDER')
   source=sha(os.environ.get('COMMIT_SHA'));token=os.environ.get('SOURCE_PUBLISH_TOKEN') or os.environ.get('SOURCE_READ_TOKEN')
   if not token:fail('AUTH')
-  runner_temp=os.environ['RUNNER_TEMP'];inputs=read_inputs(runner_temp,source)
+  runner_temp=os.environ['RUNNER_TEMP']
+  try:inputs=read_inputs(runner_temp,source)
+  except Exception as error:raise mark_step(error,'inputs')
   plan_path=pathlib.Path(runner_temp)/'htkk-source-case-plan.json'
-  plan=reader.json_object(safe_read(plan_path,2_000_000),'MANIFEST')if plan_path.exists()else None
-  result=publish(inputs,source,token,request_id=os.environ['GITHUB_RUN_ID'],plan=plan,retain_immutable=True);save_result(result,runner_temp)
+  try:plan=reader.json_object(safe_read(plan_path,2_000_000),'MANIFEST')if plan_path.exists()else None
+  except Exception as error:raise mark_step(error,'case-plan')
+  result=publish(inputs,source,token,request_id=os.environ['GITHUB_RUN_ID'],plan=plan,retain_immutable=True)
+  try:save_result(result,runner_temp)
+  except Exception as error:raise mark_step(error,'result')
   print(json.dumps({'format':'htkk-web-input-publication-status-v1','status':'published','sourceCommit':source,'caseCount':len(result['cases'])},separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')))

@@ -252,4 +252,63 @@ class PublicationTests(unittest.TestCase):
    with self.assertRaises(p.PublicationError):p.save_result(result,temporary)
    self.assertEqual(json.loads(path.read_bytes()),result)
 
+class FailureStepTests(unittest.TestCase):
+ """A rejected publication names the fixed step that failed, never the remote text, a path or a token."""
+ def failing_at(self,match,error):
+  fetch,calls,_=fake_api()
+  def failing(path,token,payload=None,method=None):
+   if match(path,payload,method):calls.append((path,token,payload,method));raise error
+   return fetch(path,token,payload,method)
+  with self.assertRaises(Exception) as raised:p.publish(fixtures(),SHA,'synthetic-token',failing)
+  return raised.exception,calls
+ def test_each_remote_step_is_named(self):
+  def tree_or_commit(path):return lambda q,b,m:q==path
+  cases={
+   'repository':lambda q,b,m:q=='',
+   'source-commit':lambda q,b,m:q=='/git/commits/'+SHA,
+   'producer':lambda q,b,m:q.startswith('/contents/scripts/'),
+   'package':lambda q,b,m:q.startswith('/contents/package.json'),
+   'blob':lambda q,b,m:q=='/git/blobs',
+   'tree':tree_or_commit('/git/trees'),
+   'commit':tree_or_commit('/git/commits'),
+   'branch-read':lambda q,b,m:q=='/git/ref/heads/'+p.CASES[0][2],
+   'branch-update':lambda q,b,m:m=='PATCH',
+  }
+  for step,match in cases.items():
+   with self.subTest(step=step):
+    error,_=self.failing_at(match,urllib.error.HTTPError('https://api.github.com/repos/x/y/git/trees',422,'SECRET PRIVATE REMOTE BODY /tmp/x.xml',{},None))
+    report=p.safe_failure(error)
+    self.assertEqual(report,{'format':'htkk-web-input-publication-status-v1','status':'rejected','code':'HTTP','httpStatus':422,'step':step})
+    text=json.dumps(report);self.assertNotIn('SECRET',text);self.assertNotIn('synthetic-token',text);self.assertNotIn('/',text);self.assertNotIn('xml',text)
+ def test_branch_create_and_main_check_named(self):
+  fetch,calls,_=fake_api(existing=False)
+  def failing(path,token,payload=None,method=None):
+   if path=='/git/refs':raise urllib.error.HTTPError('https://api.github.com/',422,'SECRET',{},None)
+   return fetch(path,token,payload,method)
+  with self.assertRaises(urllib.error.HTTPError) as raised:p.publish(fixtures(),SHA,'synthetic-token',failing)
+  self.assertEqual(p.safe_failure(raised.exception)['step'],'branch-create')
+  fetch,_,_=fake_api(main='b'*40)
+  with self.assertRaises(p.PublicationError) as raised:p.publish(fixtures(),SHA,'synthetic-token',fetch)
+  self.assertEqual(p.safe_failure(raised.exception),{'format':'htkk-web-input-publication-status-v1','status':'rejected','code':'STALE_SOURCE','step':'main-check'})
+ def test_immutable_ref_step_named(self):
+  fetch,_,_=fake_api()
+  def failing(path,token,payload=None,method=None):
+   if path.startswith('/git/ref/tags/'):raise urllib.error.HTTPError('https://api.github.com/',422,'SECRET',{},None)
+   return fetch(path,token,payload,method)
+  with self.assertRaises(urllib.error.HTTPError) as raised:p.publish(fixtures(),SHA,'synthetic-token',failing,retain_immutable=True)
+  self.assertEqual(p.safe_failure(raised.exception)['step'],'immutable-ref')
+ def test_only_fixed_step_names_are_reported(self):
+  error=urllib.error.HTTPError('https://api.github.com/',422,'SECRET',{},None);error.htkk_step='/tmp/private.xml'
+  self.assertNotIn('step',p.safe_failure(error))
+  self.assertEqual(p.mark_step(ValueError('x'),'not-a-step').__dict__.get('htkk_step'),None)
+  inner=p.mark_step(ValueError('x'),'tree');p.mark_step(inner,'inputs');self.assertEqual(inner.htkk_step,'tree')
+ def test_main_prints_the_step_and_nothing_private(self):
+  import io,contextlib,os
+  with tempfile.TemporaryDirectory() as temporary:
+   env={'GITHUB_REPOSITORY':p.BUILDER,'COMMIT_SHA':SHA,'SOURCE_PUBLISH_TOKEN':'synthetic-token','RUNNER_TEMP':temporary,'GITHUB_RUN_ID':'1'}
+   out=io.StringIO()
+   with patch.dict(os.environ,env),contextlib.redirect_stdout(out),self.assertRaises(SystemExit):p.main()
+  report=json.loads(out.getvalue().strip().splitlines()[-1])
+  self.assertEqual(report['step'],'inputs');self.assertNotIn(temporary,out.getvalue());self.assertNotIn('synthetic-token',out.getvalue())
+
 if __name__=='__main__':unittest.main()
