@@ -587,7 +587,8 @@ public sealed partial class HtkkGuiReferenceAutomation {
  // Poll-thread watchdog: the UI thread has not run a queued dispatch for `seconds`. Records only while it is
  // stalled (so no UI-thread mutation races the snapshot), at most once per 5 s of stall.
  internal void ObserveDeclarationUiStall(double seconds){
-  if(!DeclarationMode()||finished||!declarationPhase.StartsWith("export-",StringComparison.Ordinal))return;
+  // Also after the original import (import-inspect): Z5 PL 01-6 runs 45257929186, 45257934535 stalled there with the UI timer silent.
+  if(!DeclarationMode()||finished||!(declarationPhase.StartsWith("export-",StringComparison.Ordinal)||declarationPhase=="import-inspect"))return;
   if(seconds<5){declarationStallRecordedSeconds=0;return;}
   int value=Math.Min(255,(int)seconds);if(value>declarationUiStallSeconds)declarationUiStallSeconds=value;declarationUiWaitMask|=64;
   if(value-declarationStallRecordedSeconds<5)return;declarationStallRecordedSeconds=value;
