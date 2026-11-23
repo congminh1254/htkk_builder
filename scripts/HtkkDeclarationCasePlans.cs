@@ -146,7 +146,7 @@ internal static class HtkkDeclarationCasePlans {
   "01CNKD-khbs-increase-Q3-2026","01CNKD-khbs-decrease-Q3-2026","01CNKD-khbs-lan2-Q3-2026","01CNKD-PL01-khbs-Q3-2026",
   "02QTT-khbs-increase-Y2025","02QTT-khbs-lan2-Y2025","02QTT-khbs-decrease-Y2025","02QTT-khbs-refund-Y2025",
   "05QTT-khbs-increase-Y2025","05QTT-khbs-lan2-Y2025","05QTT-khbs-decrease-Y2025",
-  "03TNDN-khbs-increase-Y2025","03TNDN-khbs-lan2-Y2025","03TNDN-khbs-decrease-Y2025","03TNDN-khbs-rate15-Y2025",
+  "03TNDN-khbs-increase-Y2025","03TNDN-khbs-lan2-Y2025","03TNDN-khbs-decrease-Y2025","03TNDN-khbs-rate15-Y2025","03TNDN-khbs-negative-Y2025",
   "03NTNN-khbs-increase-M09-2026","03NTNN-khbs-lan2-M09-2026","03NTNN-khbs-decrease-M09-2026",
   "01TCKT-310-khbs-hop-tac-kd-Q4-2026","01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026","01TCKT-310-khbs-decrease-hop-tac-kd-Q4-2026","01TCKT-310-khbs-bds-M10-2026",
   "01GTGT-TT89-khbs-increase-M10-2026","01GTGT-TT89-khbs-decrease-M10-2026"};
@@ -229,10 +229,12 @@ internal static class HtkkDeclarationCasePlans {
  // layout pins), the KHBS schema KHBS_03_TNDN_TT80_294.xsd (N8 KieuKHBS 3: GetToKhaiInfo takes the KHBS schema for LoaiToKhai B), no
  // cell or XML checks, and the web B file leaf count (contract leafTarget + 4 service leaves).
  private static HtkkDeclarationCasePlan Tndn03KhbsPlan(string caseId){
+  // 03TNDN-khbs-negative-Y2025 changes fewer items (12 rows, no B1 / B2 / B13): its web B file has 386 compared leaves.
+  int leaves=caseId=="03TNDN-khbs-negative-Y2025"?386:425;
   return new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,
    new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},
    "InterfaceTemplates/excel/03_TNDN_TT80_294.xls","f7482448c4628bb56120eaa0cda5c245474c45f770b1d9f1c1b4caf31c319476","InterfaceTemplates/xml/03_TNDN_TT80_294.xml","cc05576d5356323c4f76e486814b72a3d48dd597523c1a0c11fba956e18be568",
-   "Validate/KHBS_03_TNDN_TT80_294.xsd","42f72f6af7b53d74113c7005a1284ba1dacfd9267eae5ca50ad1d0b4f9558ba2",TKhaiThue,TKhaiThueSha256,WorkbookService,425,new string[0],new string[0]);
+   "Validate/KHBS_03_TNDN_TT80_294.xsd","42f72f6af7b53d74113c7005a1284ba1dacfd9267eae5ca50ad1d0b4f9558ba2",TKhaiThue,TKhaiThueSha256,WorkbookService,leaves,new string[0],new string[0]);
  }
  // 03/NTNN KHBS (J1 3.0.8 tháng 09/2026; htkk_web docs/KE-KHAI-BO-SUNG-03-NTNN.md, KHBS-NATIVE-CASE.md "03/NTNN"): the plan of
  // the lần đầu case 03NTNN-no-rate-M10-2026 (KieuKy 18, no annex, same workbook and layout pins) for kỳ 09/2026, the KHBS schema
@@ -331,7 +333,7 @@ internal static class HtkkDeclarationCasePlans {
    case "01CNKD-khbs-increase-Q3-2026":case "01CNKD-khbs-decrease-Q3-2026":case "01CNKD-khbs-lan2-Q3-2026":case "01CNKD-PL01-khbs-Q3-2026":
    case "02QTT-khbs-increase-Y2025":case "02QTT-khbs-lan2-Y2025":case "02QTT-khbs-decrease-Y2025":case "02QTT-khbs-refund-Y2025":
    case "05QTT-khbs-increase-Y2025":case "05QTT-khbs-lan2-Y2025":case "05QTT-khbs-decrease-Y2025":
-   case "03TNDN-khbs-increase-Y2025":case "03TNDN-khbs-lan2-Y2025":case "03TNDN-khbs-decrease-Y2025":case "03TNDN-khbs-rate15-Y2025":
+   case "03TNDN-khbs-increase-Y2025":case "03TNDN-khbs-lan2-Y2025":case "03TNDN-khbs-decrease-Y2025":case "03TNDN-khbs-rate15-Y2025":case "03TNDN-khbs-negative-Y2025":
    case "03NTNN-khbs-increase-M09-2026":case "03NTNN-khbs-lan2-M09-2026":case "03NTNN-khbs-decrease-M09-2026":
    case "01TCKT-310-khbs-hop-tac-kd-Q4-2026":case "01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026":case "01TCKT-310-khbs-decrease-hop-tac-kd-Q4-2026":case "01TCKT-310-khbs-bds-M10-2026":
    case "01GTGT-TT89-khbs-increase-M10-2026":case "01GTGT-TT89-khbs-decrease-M10-2026":return KhbsPlan(caseId);

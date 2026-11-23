@@ -60,7 +60,7 @@ class Registry(unittest.TestCase):
                  '01CNKD-khbs-increase-Q3-2026', '01CNKD-khbs-decrease-Q3-2026', '01CNKD-khbs-lan2-Q3-2026', '01CNKD-PL01-khbs-Q3-2026',
                  '02QTT-khbs-increase-Y2025', '02QTT-khbs-lan2-Y2025', '02QTT-khbs-decrease-Y2025', '02QTT-khbs-refund-Y2025',
                  '05QTT-khbs-increase-Y2025', '05QTT-khbs-lan2-Y2025', '05QTT-khbs-decrease-Y2025',
-                 '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025',
+                 '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025', '03TNDN-khbs-negative-Y2025',
                  '03NTNN-khbs-increase-M09-2026', '03NTNN-khbs-lan2-M09-2026', '03NTNN-khbs-decrease-M09-2026',
                  '01TCKT-310-khbs-hop-tac-kd-Q4-2026', '01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026', '01TCKT-310-khbs-decrease-hop-tac-kd-Q4-2026', '01TCKT-310-khbs-bds-M10-2026',
                  '01GTGT-khbs-negative-zero-to-purchase-M10-2026'}

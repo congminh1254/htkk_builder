@@ -35,6 +35,11 @@ CASES = {
     # Thuế suất 15% (C66 / ctC7_thueSuat 15) on both versions: [C9] 39tr → 40,5tr; the C9 caption names 15% (run 43871378439).
     '03TNDN-khbs-rate15-Y2025': {'producerCase': 'tndn03-khbs-rate15-y2025', 'menuId': 'N8', 'soLan': 1, 'web': (11201, '918e23b7fab67d28156b773a190a0c8d06f9d8330f6e80d322e7398b93e21036'), 'original': (4067, '5cd78b7576a7a1e48eeeb03b162dc7d98369f0b5c0e296dfcc489efd2e4a84e9'), 'prior': None, 'leafTarget': 421,
         'expected': {'rows': _ROWS, 'subitems': [['1052', '1500000']], 'ct10': '1500000', **_LATE, 'ct3b': '102150'}},
+    # NEGATIVE amounts (observation): [B14] = [C7] 1,2 tỷ → 900tr lowers [E1] 240tr → 180tr, below the tạm nộp 200tr, so [I1] and [I]
+    # go from +40tr to −20tr: negative ct05 and ct06 on 01-1/KHBS. Their cells are InsertCurrencyCell cells (MinValue
+    # −9.999.999.999.999.999), which set no NegativeFormat; the web writes "-20.000.000" and the run shows HTKK's text.
+    '03TNDN-khbs-negative-Y2025': {'producerCase': 'tndn03-khbs-negative-y2025', 'menuId': 'N8', 'soLan': 1, 'web': (10457, '649b76973d2b31a8accbdfd93b9c8bd95f897f176baf3b9d1a8aa3b2a8738035'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 382,
+        'expected': {'rows': ['B14', 'C1', 'C4', 'C6', 'C9', 'C17', 'E', 'E1', 'H1', 'I', 'I1', 'E1_PN'], 'subitems': [['1052', '-60000000']], 'ct10': '-60000000', **_LATE, 'ct3b': '-4086000'}},
 }
 # Public HTKK 5.8.2 catalogue texts of N8 that the native 01/KHBS / 01-1/KHBS may carry beyond the reviewed files (the B8 cases
 # needed them to retain the export, cohorts e0ad917 / fc800a2): Project/Menu.xml sheet names of N8, Project/MapMCT.xml Map N8 (its

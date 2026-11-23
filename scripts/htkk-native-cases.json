@@ -3710,6 +3710,27 @@
         "annexes": [],
         "amendmentOrder": 1
       }
+    },
+    {
+      "caseId": "03TNDN-khbs-negative-Y2025",
+      "producerCase": "tndn03-khbs-negative-y2025",
+      "adapterId": "03-tndn-2.9.4-khbs",
+      "format": "htkk-web-tndn03-khbs-negative-y2025-input-v1",
+      "stagingDirectory": "htkk-web-reference-tndn03-khbs-negative-y2025-input",
+      "inputBranch": "declaration-web-reference-tndn03-khbs-negative-y2025-input",
+      "outputBranch": "declaration-web-native-tndn03-khbs-negative-y2025-output",
+      "statusContext": "htkk-native/tndn03-khbs-negative-y2025",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "N8",
+        "adapterVersion": "2.9.4",
+        "periodType": "year",
+        "periodValue": "2025",
+        "activityCode": "00",
+        "annexes": ["03-1A"],
+        "amendmentOrder": 1
+      }
     }
   ]
 }

@@ -23,7 +23,8 @@ tndn03 = load('htkk_tndn03_khbs_web_cases_test', 'htkk_tndn03_khbs_web_cases.py'
 support = load('ntnn_khbs_test_support_tndn03', 'ntnn_khbs_test_support.py')
 sm = support.pin(load('htkk_ntnn_khbs_web_cases_tndn03_pinned', 'htkk_ntnn_khbs_web_cases.py'))
 registry = load('htkk_native_cases_tndn03', 'htkk_native_cases.py')
-CASES = ('03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025')
+CASES = ('03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-decrease-Y2025', '03TNDN-khbs-rate15-Y2025', '03TNDN-khbs-negative-Y2025')
+NEGATIVE = '03TNDN-khbs-negative-Y2025'
 INCREASE, LAN2, RATE15 = '03TNDN-khbs-increase-Y2025', '03TNDN-khbs-lan2-Y2025', '03TNDN-khbs-rate15-Y2025'
 ANNEX = 'PLuc_03_1A_TNDN'
 
@@ -58,10 +59,13 @@ class Tndn03KhbsWebCases(unittest.TestCase):
             # Năm 2025 is due 31/03/2026 (GetHanNopToKhai, N8 branch): 227 days to ngày lập 13/11/2026.
             self.assertEqual((c['expected']['ct3a_1'], c['expected']['ct3a_2']), ('2026-11-13', '227'))
             self.assertEqual(c['expected']['subitems'][0][0], '1052')
-            self.assertEqual(m.tax_leaf_count(case_id), 421)
+            # The negative case changes 12 items (no B1 / B2 / B13), so its B file has fewer leaves.
+            self.assertEqual(m.tax_leaf_count(case_id), 382 if case_id == NEGATIVE else 421)
         self.assertEqual(m.CASES[LAN2]['prior'], m.CASES[INCREASE]['web'])
         self.assertEqual(len({m.CASES[c]['original'] for c in CASES if c != RATE15}), 1)
         self.assertNotEqual(m.CASES[RATE15]['original'], m.CASES[INCREASE]['original'])
+        neg = m.CASES[NEGATIVE]['expected']
+        self.assertEqual((neg['rows'][-3:], neg['subitems'], neg['ct10'], neg['ct3b']), (['I', 'I1', 'E1_PN'], [['1052', '-60000000']], '-60000000', '-4086000'))
 
     def test_registered_as_observation_cases_with_summary(self):
         for case_id in CASES:
@@ -121,7 +125,8 @@ class Tndn03KhbsDriverWiring(unittest.TestCase):
         body = plans[plans.index('private static HtkkDeclarationCasePlan Tndn03KhbsPlan('):]
         body = body[:body.index('\n }\n')]
         self.assertIn('"Validate/KHBS_03_TNDN_TT80_294.xsd","42f72f6af7b53d74113c7005a1284ba1dacfd9267eae5ca50ad1d0b4f9558ba2"', body)
-        self.assertIn('WorkbookService,%d,new string[0],new string[0]' % (m.tax_leaf_count(INCREASE) + 4), body)
+        self.assertIn('int leaves=caseId=="%s"?%d:%d;' % (NEGATIVE, m.tax_leaf_count(NEGATIVE) + 4, m.tax_leaf_count(INCREASE) + 4), body)
+        self.assertIn('WorkbookService,leaves,new string[0],new string[0]', body)
         self.assertIn('new HtkkDeclarationCasePlan(caseId,"N8","2.9.4","892","Tndn03TT80Nckt294",new string[]{"101","101_2","N8"},"year","11","2025","","01/01/2025","31/12/2025",false,', body)
         self.assertIn('new string[]{"03-1A/TNDN"},new string[]{"03|Tờ khai","03-1A|03-1A/TNDN"},', body)
         first = plans[plans.index('case "03TNDN-profit20-Y2025":'):]

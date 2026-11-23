@@ -969,3 +969,14 @@ file. Cause (HTKK.exe, the same IL in 5.8.2 and 5.8.4): `CollectionStatic01_1_KH
 (`GeneralFunctions.UpsertCellType`), `FormatCol4567` puts it on ct04/ct05, and `WinSpreadProcess.InsertNumberCell` made that
 cell with `NegativeFormat` 0 ("(n)"). htkk_web now writes "(100.000)"; `ROWS_NEGATIVE_ZERO_TO_PURCHASE` carries it, web file 7176
 bytes. No other D1 case has a negative ct04/ct05, so their files are unchanged.
+
+## 03/TNDN negative amounts: `03TNDN-khbs-negative-Y2025` (observation, adapter `03-tndn-2.9.4-khbs`, HTKK 5.8.2)
+
+Lần đầu as the other N8 cases (03TNDN-profit20-Y2025). The bổ sung lowers [B14] = [C7] from 1,2 tỷ to 900tr ([B2] unchanged): [C9] and
+[E1] 240tr → 180tr, below the tạm nộp 200tr, so [I] and [I1] go from +40tr to −20tr. 01-1/KHBS rows B14 C1 C4 C6 C9 C17 E E1 H1 I I1
+E1_PN; 1052 −60.000.000, 227 late days, ct3b −4.086.000. Web file 10457 bytes, 382 compared leaves (plan 386). The [I] / [I1] cells
+are InsertCurrencyCell cells (MinValue −9.999.999.999.999.999), which set no NegativeFormat, so unlike D1 / Z5 no rule says how HTKK
+writes their negative text; the web keeps "-20.000.000" and this run shows HTKK's text.
+
+01/TCKT 3.1.0 (Y7) gets no such case: its [07]…[13] are totals of bảng kê columns with MinValue 0, and a bổ sung with PL 01-3 (whose
+cells may be negative) is outside the app's KHBS scope, so no input makes a negative ct04/ct05 there.
