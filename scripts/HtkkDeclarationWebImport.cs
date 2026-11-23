@@ -622,7 +622,11 @@ public sealed partial class HtkkGuiReferenceAutomation {
    return;
   }
   if(declarationPhase=="import-inspect"){
-   if(!OriginalRoundtripOwnerReady())return;
+   // An original message after the import (other than the success message being closed) is recorded and ends the run, and an
+   // owner that stays unavailable for 20 s records the visible forms and the foreground kind (runs 45253348604 .. 45254460397,
+   // Z5 PL 01-6: the phase never settled and the probe ended without either).
+   if(DeclarationMessage(out message,out text)&&text!="Nhập dữ liệu từ XML thành công."){importRejectedMessageId=OriginalMessageCatalogueId(text);DeclarationTerminal(HtkkAutomationStage.DeclarationImportOriginalMessageRejected);return;}
+   if(!OriginalRoundtripOwnerReady()){if(declarationClock.Elapsed.TotalSeconds>=20){declarationUiVisibleForms=VisibleFormCount();declarationUiForegroundKind=ManagedForegroundKind();DeclarationTerminal(HtkkAutomationStage.DeclarationImportSheetNotMatched);}return;}
    declarationImportSheetMatched=InspectDeclarationGrid();roundtripImportSheetMatched=declarationImportSheetMatched;Record();
    // Original recalculation after import may settle on a later UI turn; bounded wait.
    if(!declarationImportSheetMatched&&declarationClock.Elapsed.TotalSeconds<3)return;
