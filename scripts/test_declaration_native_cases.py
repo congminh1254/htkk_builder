@@ -93,6 +93,15 @@ class Registry(unittest.TestCase):
 
 
 class CompiledPlans(unittest.TestCase):
+    def test_every_cell_check_names_a_whole_a1_cell(self):
+        # InspectDeclarationGrid throws (failure operation-not-established) on a check whose cell is not A1 with a row: the Z5
+        # PL 01-6 plans once checked "01|R|1" / "01|S|1" (runs 45253348604 .. 45263189958) instead of R19 / S19.
+        checks = re.findall(r'"([A-Za-z0-9_\-]+)\|([^|"]*)\|(-?[0-9]+)"', PLANS)
+        self.assertGreater(len(checks), 100)
+        bad = [c for c in checks if not re.fullmatch(r'[A-Z]{1,3}[1-9][0-9]{0,4}', c[1])]
+        self.assertEqual(bad, [])
+        for flag, case in (('R19', '01GTGT-TT89-pl016-cssx-M10-2026'), ('R19', '01GTGT-TT89-pl016-cssx-ratio-M10-2026'), ('S19', '01GTGT-TT89-pl016-dtvt-M10-2026')):
+            self.assertIn('"01|' + flag + '|1"', plan_block(case), case)
     def test_compiled_case_ids_and_identity_match_the_trusted_registry(self):
         ids = re.search(r'CaseIds=new string\[\]\{([^}]*)\}', PLANS).group(1)
         self.assertEqual(re.findall(r'"([^"]+)"', ids), list(CASES))
