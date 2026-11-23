@@ -32,7 +32,7 @@ CASES = {
     '01GTGT-TT89-khbs-increase-M10-2026': {'producerCase': 'gtgt01-tt89-khbs-increase-m10-2026', 'menuId': 'Z5', 'soLan': 1, 'web': (8504, 'c8979d63cedfaf4803cce8bc35f0cb3ff983ab9d10ed46d688ceb3e6ec261ca9'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 304,
         'expected': {'rows': ['[27]', '[28]', '[32]', '[33]', '[34]', '[35]', '[36]', '[40a]', '[40]'], 'subitems': [], 'tongCong7': '200000', 'tongCong8': '0', 'ct10': '0', 'ct3a_1': '', 'ct3a_2': '0', 'ct3b': '0'}},
     # Purchases [23] 2.000.000, path ct24 200.000 (MapMCT "[23a]"), [25] 200.000: [40a]/[40] 100.000 -> 0, [41]/[43] 0 -> 100.000.
-    '01GTGT-TT89-khbs-decrease-M10-2026': {'producerCase': 'gtgt01-tt89-khbs-decrease-m10-2026', 'menuId': 'Z5', 'soLan': 1, 'web': (8203, 'b9be9542fa2426e3dfe07029b6ec84f9474eb6efb555519ad78903757a5bd8bf'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 291,
+    '01GTGT-TT89-khbs-decrease-M10-2026': {'producerCase': 'gtgt01-tt89-khbs-decrease-m10-2026', 'menuId': 'Z5', 'soLan': 1, 'web': (8204, 'e9cf8a4fcd07516504defa20143e7ca54a3adfc3c8f762a56eab27aea88dcab9'), 'original': _ORIGINAL, 'prior': None, 'leafTarget': 291,
         'expected': {'rows': ['[23]', '[23a]', '[25]', '[36]', '[40a]', '[40]', '[41]', '[43]'], 'subitems': [], 'tongCong7': '-100000', 'tongCong8': '100000', 'ct10': '0', 'ct3a_1': '', 'ct3a_2': '0', 'ct3b': '0'}},
 }
 # Public HTKK catalogue texts of Z5: Menu.xml sheet name and MaHoSo of the tờ khai, the MapMCT Z5 MauToKhai, the MCT codes and

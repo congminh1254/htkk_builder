@@ -937,3 +937,13 @@ HTKK refuses it before 01/12/2026 (0044). What only these runs decide (web predi
   dịch vụ hàng hóa nhập khẩu" and `HangHoaDichVuNhapKhau/ct23a` ([23a] on the form) is "[24] Thuế giá trị gia tăng của hàng hóa, dịch
   vụ mua vào" (the decrease case has the ct24 row);
 - the Muc_B default row of `DsThuHoiHoan` (ct_1, ct_4, ct_5 0; dates nil; texts empty).
+
+Runs on HTKK 5.8.4 (web 9f373274, builder c1e4d90): `01GTGT-TT89-khbs-increase-M10-2026` run 45088687164 matched the whole tree, so
+HTKK wrote the predicted 01/KHBS (Muc_I.1 default row, `tongCong_ct10` 0, `ct3a_1` nil, no tiền chậm nộp) although [40] rose by
+200.000. `01GTGT-TT89-khbs-decrease-M10-2026` run 45088690753: `declarationTreeMismatchMask` 16 (PLuc), one text mismatch, code 28554 =
+web element ordinal 285, kind 5 (leaf text), native class 4 = `PL01_1_KHBS/.../ChiTiet/ct05` of the [36] row (web "-100.000"); first
+text shape 36 = native length 9, no prefix relation. `WinSpreadProcess.InsertNumberCell` sets `NegativeFormat` 0 (the .NET pattern
+"(n)"), so HTKK shows and exports "(100.000)". Retention then refused the output (`XML_PRIVACY`, section 16, `numeric-other`):
+"(100.000)" is no text of the staged files; `leafOrdinal` 196 is the first leaf of the same path (`_where` reports the first leaf at
+the path, the [23] row's ct05), not a second problem. htkk_web now writes a negative ct04/ct05 of Z5 in parentheses; the decrease web
+pin changed (8204 bytes), the lần đầu and the increase file are unchanged, leaf targets unchanged.
