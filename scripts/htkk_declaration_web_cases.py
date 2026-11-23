@@ -305,7 +305,12 @@ WORKBOOK_SERVICE = 'Công cụ Kê khai'
 PL016_HP = ('10309019', 'Phường Đồ Sơn', '103', 'Thành phố Hải Phòng', '10309', 'Thuế cơ sở 6 Thành phố Hải Phòng')
 PL016_HP_CUC = ('10309019', 'Phường Đồ Sơn', '103', 'Thành phố Hải Phòng', '10300', 'Thuế Thành phố Hải Phòng')
 PL016_TN = ('21501001', 'Phường Phan Đình Phùng', '215', 'Tỉnh Thái Nguyên', '21501', 'Thuế cơ sở 1 tỉnh Thái Nguyên')
-PL016_TEXTS = ['CO SO GIA LAP %d - KHONG NOP' % n for n in (1, 2, 3)] + ['9999999997-00%d' % n for n in (1, 2, 3)] + sorted({x for place in (PL016_HP, PL016_HP_CUC, PL016_TN) for x in place[1::2]})
+# ĐTVT rows carry the district of their ward (ct11_huyen_ma / ct11_huyen_ten, HTKK Catalogue_Dia_Ban_Huyen_<tỉnh>): checkPL1_6 reads
+# column R, which on the ĐTVT sheet is that district code, and HTKK 5.8.4 refused the rows without it (0016 on E22:E24, runs
+# 45264873351 / 45264897479).
+PL016_HP_DISTRICT = ('10309', 'Quận Đồ Sơn')
+PL016_TN_DISTRICT = ('21501', 'Thành phố Thái Nguyên')
+PL016_TEXTS = ['CO SO GIA LAP %d - KHONG NOP' % n for n in (1, 2, 3)] + ['9999999997-00%d' % n for n in (1, 2, 3)] + sorted({x for place in (PL016_HP, PL016_HP_CUC, PL016_TN) for x in place[1::2]}) + [PL016_HP_DISTRICT[1], PL016_TN_DISTRICT[1]]
 PBT_TEXTS = ['TRU SO CHINH GIA LAP', 'CHI NHANH GIA LAP', 'Thành phố Hà Nội', 'Phường Sơn Tây', 'Thuế cơ sở 16 Thành phố Hà Nội', 'Thành phố Hải Phòng', 'Phường Đồ Sơn', 'Thuế cơ sở 6 Thành phố Hải Phòng']
 CASES = {
     '03TNDN-profit20-Y2025': _case('tndn03-profit20-y2025', 'N8', '892', '2.9.4', 'Validate/03_TNDN_TT80_294.xsd', ('Y', '2025', '01/01/2025', '31/12/2025'), None, '2026-03-20', '2026-03-20', 147, ['PLuc_03_1A_TNDN'], WORKBOOK_SERVICE,
@@ -1176,7 +1181,7 @@ GTGT01_TT89_INPUTS = {
 GTGT01_TT89_PL016 = {
     '01GTGT-TT89-pl016-cssx-M10-2026': ('CSSX', '50000000', '900000000', ((PL016_HP, '100000050', '200000050'), (PL016_TN, '0', '150000075'), (PL016_HP_CUC, '50', '0'))),
     '01GTGT-TT89-pl016-cssx-ratio-M10-2026': ('CSSX', '70000001', '7000000000', ((PL016_HP, '1000000000', '2000000001'), (PL016_TN, '0', '1500000000'), (PL016_HP_CUC, '333333333', '0'))),
-    '01GTGT-TT89-pl016-dtvt-M10-2026': ('DVVT', '30000000', '0', ((PL016_HP, '0', '200000050'), (PL016_TN, '0', '150000075'), (PL016_HP_CUC, '0', '50'))),
+    '01GTGT-TT89-pl016-dtvt-M10-2026': ('DVVT', '30000000', '0', ((PL016_HP, '0', '200000050', PL016_HP_DISTRICT), (PL016_TN, '0', '150000075', PL016_TN_DISTRICT), (PL016_HP_CUC, '0', '50', PL016_HP_DISTRICT))),
 }
 # PL 204/2025/QH15 (workbook sheet 01_10, XML PL_NQ142_GTGT) of a Z5 case: (purchase rows, sale rows) as (name, value). Table I:
 # (4) = ROUND(D x 8/100); table II: (4) = 10, (5) = ROUND(10 x 80/100, 1) = 8, (6) = ROUND(D x (10 - 8)/100); [05]..[08] are the
@@ -1234,12 +1239,12 @@ def gtgt01_tt89_pl016_expected(case_id):
     D = decimal.Decimal
     sheet, ct06, ct07, table = GTGT01_TT89_PL016[case_id]
     o15, o16 = D(ct06), D(ct07)
-    base = [(place, D(k), D(l), D(k) + D(l), _round(D(k) * 1 / 100) + _round(D(l) * 2 / 100)) for place, k, l in table]
+    base = [(row[0], D(row[1]), D(row[2]), D(row[1]) + D(row[2]), _round(D(row[1]) * 1 / 100) + _round(D(row[2]) * 2 / 100), row[3] if len(row) > 3 else ('', '')) for row in table]
     formula = sheet == 'DVVT' or o15 - sum(row[4] for row in base) >= 0
     rows, order = [], []
-    for n, (place, k, l, m, z) in enumerate(base, 1):
+    for n, (place, k, l, m, z, district) in enumerate(base, 1):
         ct21 = D(0) if formula else _round(o15 * m / o16)
-        rows.append({'ct09': 'CO SO GIA LAP %d - KHONG NOP' % n, 'ct10': '9999999997-00%d' % n, 'ma_xa': place[0], 'ten_xa': place[1], 'ct11_huyen_ma': '', 'ct11_huyen_ten': '',
+        rows.append({'ct09': 'CO SO GIA LAP %d - KHONG NOP' % n, 'ct10': '9999999997-00%d' % n, 'ma_xa': place[0], 'ten_xa': place[1], 'ct11_huyen_ma': district[0], 'ct11_huyen_ten': district[1],
                      'ct12_tinh_ma': place[2], 'ct12_tinh_ten': place[3], 'ct13_cqt_ma': place[4], 'ct13_cqt_ten': place[5], 'ct14': str(k), 'ct15': str(l), 'ct16': str(m),
                      'ct17': str(z if formula else D(0)), 'ct21': str(ct21)})
         if (place[2], place[3]) not in order:
