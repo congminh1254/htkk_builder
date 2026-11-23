@@ -974,9 +974,22 @@ bytes. No other D1 case has a negative ct04/ct05, so their files are unchanged.
 
 Lần đầu as the other N8 cases (03TNDN-profit20-Y2025). The bổ sung lowers [B14] = [C7] from 1,2 tỷ to 900tr ([B2] unchanged): [C9] and
 [E1] 240tr → 180tr, below the tạm nộp 200tr, so [I] and [I1] go from +40tr to −20tr. 01-1/KHBS rows B14 C1 C4 C6 C9 C17 E E1 H1 I I1
-E1_PN; 1052 −60.000.000, 227 late days, ct3b −4.086.000. Web file 10457 bytes, 382 compared leaves (plan 386). The [I] / [I1] cells
-are InsertCurrencyCell cells (MinValue −9.999.999.999.999.999), which set no NegativeFormat, so unlike D1 / Z5 no rule says how HTKK
-writes their negative text; the web keeps "-20.000.000" and this run shows HTKK's text.
+E1_PN; 1052 −60.000.000, 227 late days, ct3b −4.086.000. 382 compared leaves (plan 386).
+
+Runs 45159198564 and 45165450375 (HTKK 5.8.2) both differed in two leaves only: ct05 of the [I] and [I1] rows of 01-1/KHBS (input
+positions 408 and 422). The web text was "-20.000.000" (11 characters); HTKK's was 12 characters with no shared prefix, i.e.
+"(20.000.000)" (not retained, `XML_PRIVACY`). Cause (HTKK.exe, FarPoint.Win.Spread.dll, FarPoint.Win.dll; the same in 5.8.2, 5.8.4
+and 5.8.5): a controltype 16 cell wider than ±999.999.999.999.999 goes from `WinSpreadProcess.InsertNumberCell` to
+`InsertCurrencyCell`, whose `CurrencyCellType` leaves NegativeFormat at −1; `CurrencyCellType.GetNegativeFormatValue` then takes
+`RegionalSettings.DefaultSettings`, built from `CultureInfo.CurrentCulture`, and HTKK's `Program.Main` sets that to
+`InvariantCulture`, whose CurrencyNegativePattern 0 is "($n)" (no symbol shown). So both numeric cell types write a negative in
+parentheses. htkk_web now writes "(20.000.000)" for N8 (web file 10459 bytes, sha256 08a3eb9d…); the four matched N8 cases have no
+negative ct04/ct05 and keep their bytes.
+
+Every other released KHBS form was re-checked against the 5.8.2 control files and workbooks (table in htkk_web
+docs/KE-KHAI-BO-SUNG-01-GTGT.md "Số âm ở ct04/ct05"): L7, Z8, B8, B9, I9, Y8, J1 have MinValue 0 on every numeric cell of the tờ khai
+and the bảng kê in the giải trình, and their only subtractions are clamped at 0 in the formula or bounded by a blocking check
+(B8 [33], [48]; B9 [24], [32]); U5 has no 01-1/KHBS. None gets a negative ct04/ct05, so no further case is added.
 
 01/TCKT 3.1.0 (Y7) gets no such case: its [07]…[13] are totals of bảng kê columns with MinValue 0, and a bổ sung with PL 01-3 (whose
 cells may be negative) is outside the app's KHBS scope, so no input makes a negative ct04/ct05 there.
