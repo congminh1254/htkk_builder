@@ -274,6 +274,13 @@ for c in CASES.values():
  check(type(c['releaseGate'])is bool)
 for key in ('producerCase','stagingDirectory','inputBranch','outputBranch','statusContext'):check(len({c[key]for c in CASES.values()})==len(CASES))
 GATE_CASES=tuple(id for id,c in CASES.items() if c['releaseGate'])
+# Size cap of the release's input publication ($RUNNER_TEMP/htkk-web-input-publication.json): written by
+# publish-htkk-web-inputs.py and read by dispatch-native-cases.py and native_batch.py in the same job. It is a local
+# file, not a workflow input or step output (each native case is dispatched with its own nine inputs), so no GitHub
+# limit applies; the cap only bounds what the readers parse. One case costs at most 174 bytes compact (a 100-character
+# caseId, the registry maximum, and a 40-hex artifactCommit), so 128 KiB holds at least 750 cases (about 1,200 at the
+# current average caseId length). The old 16384 held about 153.
+PUBLICATION_MAX_BYTES=131072
 CANDIDATE_CASES=tuple(id for id,c in CASES.items() if not c['releaseGate'])
 check(GATE_CASES and list(CASES)[:len(GATE_CASES)]==list(GATE_CASES))
 ANNEX12_CASES=tuple(id for id,c in CASES.items() if c['adapterId']=='01-gtgt-2.8.3-annex12')

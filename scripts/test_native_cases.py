@@ -40,9 +40,20 @@ class NativeCases(unittest.TestCase):
    self.assertIn('Native case '+case+' deferred until 2026-12-01 (HTKK refuses its period before that day); not dispatched, no status.',printed)
   self.assertFalse(any(args[2].get('state')=='success' for args in calls))
  def test_compact_publication_of_every_registered_case_fits_the_dispatch_limit(self):
-  # publish-htkk-web-inputs.py save_result writes the publication compactly; dispatch refuses a body over 16384 bytes.
+  # publish-htkk-web-inputs.py save_result writes the publication compactly; dispatch and native_batch refuse a body
+  # over PUBLICATION_MAX_BYTES. Fails once the registry outgrows the cap.
+  limit=d.case_registry.PUBLICATION_MAX_BYTES;self.assertEqual(limit,131072)
   body=(json.dumps(document(),separators=(',',':'))+'\n').encode('ascii')
-  self.assertLessEqual(len(body),16384);self.assertEqual(len(d.publication(body,'a'*40)['cases']),len(d.CASES))
+  self.assertLessEqual(len(body),limit);self.assertEqual(len(d.publication(body,'a'*40)['cases']),len(d.CASES))
+ def test_publication_cap_holds_400_worst_case_entries_and_stays_a_cap(self):
+  limit=d.case_registry.PUBLICATION_MAX_BYTES
+  # 400 cases, each with a caseId of the registry maximum (100 characters).
+  worst={'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':('C%03d'%i).ljust(100,'x'),'artifactCommit':'b'*40} for i in range(400)]}
+  self.assertLessEqual(len((json.dumps(worst,separators=(',',':'))+'\n').encode('ascii')),limit)
+  # One byte over the cap is refused before parsing, by the reader and by main()'s file check.
+  body=(json.dumps(document(),separators=(',',':'))+'\n').encode('ascii')
+  with self.assertRaises(ValueError):d.publication(body+b' '*(limit+1-len(body)),'a'*40)
+  self.assertEqual(len(d.publication(body+b' '*(limit-len(body)),'a'*40)['cases']),len(d.CASES))
  def test_not_before_is_a_reviewed_date_on_candidates_only(self):
   import copy
   base=copy.deepcopy(d.case_registry.CASES['02QTT-dependants-Y2026'])

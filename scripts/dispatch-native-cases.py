@@ -20,7 +20,7 @@ def sha(value):
  return value
 def publication(body,expected):
  sha(expected)
- if not isinstance(body,bytes) or len(body)>16384:raise ValueError('PUBLICATION')
+ if not isinstance(body,bytes) or len(body)>case_registry.PUBLICATION_MAX_BYTES:raise ValueError('PUBLICATION')
  def unique(pairs):
   value={}
   for key,item in pairs:
@@ -138,7 +138,7 @@ def main():
  try:
   if os.environ.get('GITHUB_REPOSITORY')!=BUILDER:raise ValueError('BUILDER')
   path=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-web-input-publication.json'
-  if path.is_symlink() or not path.is_file() or path.stat().st_size>16384:raise ValueError('PUBLICATION')
+  if path.is_symlink() or not path.is_file() or path.stat().st_size>case_registry.PUBLICATION_MAX_BYTES:raise ValueError('PUBLICATION')
   value=publication(path.read_bytes(),os.environ['COMMIT_SHA'])
   count=dispatch(value,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'),builder=sha(os.environ.get('GITHUB_SHA')))
   print(str(count)+' immutable synthetic native cases dispatched'+('' if count==len(CASES) else ', '+str(len(CASES)-count)+' deferred (no status)')+'; results use separate commit statuses.')

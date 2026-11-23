@@ -251,6 +251,14 @@ class PublicationTests(unittest.TestCase):
    self.assertEqual(json.loads(path.read_bytes()),result)
    with self.assertRaises(p.PublicationError):p.save_result(result,temporary)
    self.assertEqual(json.loads(path.read_bytes()),result)
+ def test_result_over_the_dispatch_cap_is_refused_before_writing(self):
+  fetch,_,_=fake_api();result=p.publish(fixtures(),SHA,'synthetic-token',fetch)
+  size=len(json.dumps(result,separators=(',',':')))+1
+  with tempfile.TemporaryDirectory() as temporary,patch.object(p.reader.case_registry,'PUBLICATION_MAX_BYTES',size-1):
+   with self.assertRaises(p.PublicationError) as error:p.save_result(result,temporary)
+   self.assertEqual(error.exception.code,'STAGING');self.assertFalse((pathlib.Path(temporary)/p.OUTPUT).exists())
+  with tempfile.TemporaryDirectory() as temporary,patch.object(p.reader.case_registry,'PUBLICATION_MAX_BYTES',size):
+   p.save_result(result,temporary);self.assertEqual(len((pathlib.Path(temporary)/p.OUTPUT).read_bytes()),size)
 
 class FailureStepTests(unittest.TestCase):
  """A rejected publication names the fixed step that failed, never the remote text, a path or a token."""

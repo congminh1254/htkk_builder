@@ -237,11 +237,14 @@ def _publish(inputs,source_commit,token,fetch,request_id,plan,retain_immutable,a
 def save_result(result,runner_temp):
  parent=pathlib.Path(runner_temp);path=parent/OUTPUT
  if unsafe_path(parent) or not parent.is_dir() or path.exists() or path.is_symlink():fail('STAGING')
+ body=(json.dumps(result,separators=(',',':'))+'\n').encode('ascii')
+ # The readers (dispatch-native-cases.py, native_batch.py) refuse a larger file: fail here, before any dispatch.
+ if len(body)>reader.case_registry.PUBLICATION_MAX_BYTES:fail('STAGING')
  # Fresh exclusive fixed-path write; a failed run never leaves usable metadata.
  created=False
  try:
   with path.open('xb') as stream:
-   created=True;stream.write((json.dumps(result,separators=(',',':'))+'\n').encode('ascii'))
+   created=True;stream.write(body)
  except Exception:
   if created:path.unlink(missing_ok=True)
   raise
