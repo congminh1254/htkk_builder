@@ -425,6 +425,12 @@ CASES = {
     '01NTNN-NCCNN-entry-part-II2-M10-2026': _case('ntnn01-nccnn-entry-part-ii2-m10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
                                          ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
                                           TEMPLATE_TT89, ADDRESS, 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-004', 'Hoạt động kinh doanh khác']),
+    # HTKK 5.8.5 Y8 (original entry, htkkVersion 5.8.5): the entry case with both contracts dated 31/12/2027, after any run day.
+    # Ntnn01TT89Nckt309.checkTKChinh 5.8.5 no longer tests a given (4) ngày hợp đồng (5.8.4: E_33 format, E_36 not before today); own contract numbers HD-GL-007 / HD-GL-008.
+    '01NTNN-NCCNN-entry-future-contract-M10-2026': _case('ntnn01-nccnn-entry-future-contract-m10-2026', 'Y8', '2012', '3.0.9', 'Validate/01_NTNN_NCCNN_TT89_309.xsd', ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 107, [], WORKBOOK_SERVICE,
+                                         ['TỜ KHAI THUẾ NHÀ THẦU NƯỚC NGOÀI; NHÀ CUNG CẤP NƯỚC NGOÀI, CÁ NHÂN KHÔNG CƯ TRÚ CÓ HOẠT ĐỘNG KINH DOANH TRỂN NỀN TẢNG THƯƠNG MẠI ĐIỆN TỬ, NỀN TẢNG SỐ KHÁC - MẪU SỐ 01/NTNN, NCCNN',
+                                          TEMPLATE_TT89, ADDRESS, 'NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP', 'CA NHAN KHONG CU TRU D - GIẢ LẬP', 'HD-GL-007', 'HD-GL-008',
+                                          'Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm', 'Hoạt động kinh doanh khác']),
     # C9 02/NTNN quyết toán TT80 (non-gating): KieuKy 22 like D6 (Menu.xml EndDate 01/10/2026); annexes 02-1 (one foreign
     # contractor: nước cư trú Nhật / JP, control 56; địa điểm Thành phố Hà Nội / 101, control 100) and 02-2 (one Vietnamese
     # subcontractor, địa điểm Thành phố Hải Phòng / 103). 02-1 ct10 is the labour count (5), not an amount.
@@ -564,7 +570,7 @@ for _id, _c in CASES.items():
 
 # Cases whose web manifest names the HTKK oracle ('htkkVersion', htkk_web generate-htkk-declaration-reference.mjs writes
 # it only for a case whose spec carries it). The value must equal the registry case htkkVersion (fetch validate_manifest).
-MANIFEST_HTKK_VERSION_CASES = frozenset({'01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '01GTGT-TT89-nq204-M12-2026', '05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
+MANIFEST_HTKK_VERSION_CASES = frozenset({'01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '01GTGT-TT89-nq204-M12-2026', '05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026'})
 
 
 def is_case(case_id):
@@ -711,13 +717,14 @@ NTNN_ROWS = {
         {'ct1b_ma': '01', 'ct5': '1000000000', 'ct7': '1000000000', 'ct8': '5.00', 'ct10': '1000000000', 'ct11': '5.00', 'ct12': '0'},
         {'ct1b_ma': '02', 'ct5': '500000000', 'ct7': '500000000', 'ct8': '3.00', 'ct10': '500000000', 'ct11': '2.00', 'ct12': '2000000'},
     )),),
-    # Y8 (original entry): the reviewed rows of the design case; the driver's fixed entry plan is checked against them.
+    # Y8 (original entry): the reviewed rows of the design case; the driver's fixed entry plan is checked against them. (4) ngày hợp
+    # đồng ct4 is checked too (W78 01/09/2026, W86 02/09/2026; the HTKK 5.8.5 future-contract case differs only there and in ct3).
     '01NTNN-NCCNN-entry-M10-2026': (
         (_MAIN + '/BKThueNTNN/ThueNTNN', _MAIN, 'mucI_tong_', (_EMPTY_ROW,)),
         (_MAIN + '/ThueNCCNN_CNKCT/BKThueNCCNN/ThueNCCNN', _MAIN + '/ThueNCCNN_CNKCT', 'mucI_tong_', (
-            {'ct1b_ma': '01', 'ct5': '200000000', 'ct7': '200000000', 'ct8': '5.00', 'ct10': '200000000', 'ct11': '5.00', 'ct12': '0'},)),
+            {'ct1b_ma': '01', 'ct4': '2026-09-01', 'ct5': '200000000', 'ct7': '200000000', 'ct8': '5.00', 'ct10': '200000000', 'ct11': '5.00', 'ct12': '0'},)),
         (_MAIN + '/ThueNCCNN_CNKCT/BKThueCNKCT/ThueCNKCT', _MAIN + '/ThueNCCNN_CNKCT', 'mucII_tong_', (
-            {'ct1b_ma': '05', 'ct5': '100000000', 'ct7': '100000000', 'ct8': '5.00', 'ct10': '100000000', 'ct11': '2.00', 'ct12': '0'},)),
+            {'ct1b_ma': '05', 'ct4': '2026-09-02', 'ct5': '100000000', 'ct7': '100000000', 'ct8': '5.00', 'ct10': '100000000', 'ct11': '2.00', 'ct12': '0'},)),
     ),
     # J1 03/NTNN (formula '03'): ct11 = IF(ct8*ct9/100 - ct10 < 0, 0, ROUND(ct8*ct9/100 - ct10, 0)); totals
     # tongct6/8/10/11. Rate ct9 = 0 (FinishImportXML clears every imported rate), so ct11 = 0.
@@ -739,6 +746,10 @@ NTNN_ROWS['01NTNN-NCCNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, 
 _Y8_ENTRY = NTNN_ROWS['01NTNN-NCCNN-entry-M10-2026']
 NTNN_ROWS['01NTNN-NCCNN-entry-part-II1-M10-2026'] = (_Y8_ENTRY[0], _Y8_ENTRY[1], _Y8_ENTRY[2][:3] + ((_EMPTY_ROW,),))
 NTNN_ROWS['01NTNN-NCCNN-entry-part-II2-M10-2026'] = (_Y8_ENTRY[0], _Y8_ENTRY[1][:3] + ((_EMPTY_ROW,),), _Y8_ENTRY[2])
+# HTKK 5.8.5 Y8 entry with both contracts dated 31/12/2027: the entry rows, (4) ngày hợp đồng checked in the XML date form.
+_FUTURE_CONTRACT = '2027-12-31'
+NTNN_ROWS['01NTNN-NCCNN-entry-future-contract-M10-2026'] = tuple((path, parent, prefix, tuple(row if row is _EMPTY_ROW else dict(row, ct4=_FUTURE_CONTRACT) for row in rows), *rest)
+                                                              for path, parent, prefix, rows, *rest in _Y8_ENTRY)
 NTNN_ROWS['03NTNN-occurrence-D20-10-2026'] = tuple((path, parent, prefix, tuple(dict(row, ct7=_OCCURRENCE_DAY) for row in rows), *rest)
                                                 for path, parent, prefix, rows, *rest in NTNN_ROWS['03NTNN-no-rate-M10-2026'])
 
@@ -755,8 +766,8 @@ def _computed03(row):
 
 
 def _computed(row):
-    # ct6 (01/NTNN) is the payment date, not an amount.
-    n = {k: decimal.Decimal(v) for k, v in row.items() if k not in ('ct1b_ma', 'ct6')}
+    # ct4 / ct6 (01/NTNN) are the contract and payment dates, not amounts.
+    n = {k: decimal.Decimal(v) for k, v in row.items() if k not in ('ct1b_ma', 'ct4', 'ct6')}
     ct9 = _round(n['ct7'] * n['ct8'] / 100)
     ct13 = max(decimal.Decimal(0), _round(n['ct10'] * n['ct11'] / 100) - n['ct12'])
     return {**row, 'ct9': str(ct9), 'ct13': str(ct13), 'ct14': str(ct9 + ct13)}

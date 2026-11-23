@@ -31,6 +31,8 @@ CASE = '01NTNN-NCCNN-entry-M10-2026'
 OCCURRENCE = '01NTNN-NCCNN-occurrence-D20-10-2026'
 # HTKK 5.8.3 cases typing one part II table only (II-I row 78 or II-II row 86).
 PART_II1, PART_II2 = '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026'
+# HTKK 5.8.5 case typing the rows of CASE with both (4) ngày hợp đồng 31/12/2027 (checkTKChinh 5.8.5 no longer tests the date).
+FUTURE = '01NTNN-NCCNN-entry-future-contract-M10-2026'
 BASE = '01NTNN-NCCNN-two-parts-M10-2026'
 MODE = 'declaration-web-import-inspect'
 # The kê khai bổ sung mode of the same driver (HtkkDeclarationKhbs.cs) reports every declaration field too.
@@ -57,7 +59,7 @@ def entries():
 
 class Registration(unittest.TestCase):
     def test_entry_case_is_the_only_y8_case_non_gating_and_of_its_own_mode(self):
-        self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE, OCCURRENCE, PART_II1, PART_II2))
+        self.assertEqual(registry.DECLARATION_ENTRY_CASES, (CASE, OCCURRENCE, PART_II1, PART_II2, FUTURE))
         self.assertIn(CASE, registry.DECLARATION_CASES)
         self.assertIs(registry.CASES[CASE]['releaseGate'], False)
         self.assertNotIn(CASE, registry.GATE_CASES)
@@ -65,16 +67,18 @@ class Registration(unittest.TestCase):
         self.assertEqual(registry.driver(CASE), MODE)
         self.assertEqual(registry.CASES[CASE]['producerCase'], 'ntnn01-nccnn-entry-m10-2026')
         # The import-based Y8 case was removed after release 242 (HTKK resets the tables on import).
-        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8' and c not in registry.NTNN_KHBS_CASES], [CASE, OCCURRENCE, PART_II1, PART_II2])
+        self.assertEqual([c for c, v in registry.CASES.items() if v['unit']['menuId'] == 'Y8' and c not in registry.NTNN_KHBS_CASES], [CASE, OCCURRENCE, PART_II1, PART_II2, FUTURE])
         for case in (PART_II1, PART_II2):
             self.assertEqual((registry.input_mode(case), registry.CASES[case]['releaseGate'], registry.htkk_version(case)), (registry.ENTRY_MODE, False, '5.8.3'))
         self.assertEqual(registry.input_mode(OCCURRENCE), registry.ENTRY_MODE); self.assertIs(registry.CASES[OCCURRENCE]['releaseGate'], False)
+        self.assertEqual((registry.input_mode(FUTURE), registry.CASES[FUTURE]['releaseGate'], registry.htkk_version(FUTURE)), (registry.ENTRY_MODE, False, '5.8.5'))
+        self.assertIn(FUTURE, d.MANIFEST_HTKK_VERSION_CASES)
         self.assertNotIn(BASE, registry.CASES); self.assertNotIn(BASE, d.CASES); self.assertNotIn('01-ntnn-nccnn-tt89-3.0.9', registry.TRUSTED_ADAPTERS)
         self.assertNotIn(BASE, automation['resultFields']['webCaseId']['values'])
         adapters = {a['adapterId']: a['mode'] for a in design.DESIGN['adapters']}
         self.assertEqual(adapters['01-ntnn-nccnn-tt89-3.0.9-entry'], 'original-entry-export')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text()
-        self.assertIn("$HtkkDeclarationEntryCases=@('" + "','".join((CASE, OCCURRENCE, PART_II1, PART_II2)) + "')", formats); self.assertNotIn(BASE, formats)
+        self.assertIn("$HtkkDeclarationEntryCases=@('" + "','".join((CASE, OCCURRENCE, PART_II1, PART_II2, FUTURE)) + "')", formats); self.assertNotIn(BASE, formats)
 
     def test_entry_input_is_the_reviewed_design_case(self):
         designs = {c['caseId']: c['expectedLeaves'] for c in design.DESIGN['cases']}
@@ -83,6 +87,30 @@ class Registration(unittest.TestCase):
         reader.validate_web_xml(body, case_id=CASE)
         own = json.dumps(dfx.declaration_manifest(body, CASE), ensure_ascii=False).encode()
         self.assertEqual(reader.validate_manifest(own)['caseId'], CASE)
+
+
+class FutureContractEntryPlan(unittest.TestCase):
+    """HTKK 5.8.5: the entry case's plan and rows with both (4) ngày hợp đồng dated 31/12/2027, after any run day."""
+
+    def test_same_plan_as_the_entry_case_with_future_contract_dates(self):
+        # Its own plan block, the entry case's plan with the case id.
+        self.assertEqual(plan_block(FUTURE), plan_block(CASE))
+        self.assertIn('bool futureContract=caseId=="%s";' % FUTURE, PLANS)
+        self.assertIn('if(entry.Entries[i].StartsWith("date|W",StringComparison.Ordinal))entry.Entries[i]=entry.Entries[i].Substring(0,entry.Entries[i].LastIndexOf(\'|\')+1)+"31/12/2027";', PLANS)
+        self.assertIn('else if(entry.Entries[i]=="text|S78|HD-GL-003")entry.Entries[i]="text|S78|HD-GL-007";', PLANS)
+        self.assertIn('else if(entry.Entries[i]=="text|S86|HD-GL-004")entry.Entries[i]="text|S86|HD-GL-008";', PLANS)
+        self.assertEqual([e for e in entries() if e.startswith('text|S')], ['text|S78|HD-GL-003', 'text|S86|HD-GL-004'])
+        self.assertEqual([e for e in entries() if e.startswith('date|W')], ['date|W78|01/09/2026', 'date|W86|02/09/2026'])
+        self.assertIn('"' + FUTURE + '"', PLANS.split('internal static readonly string[] CaseIds=')[1].split('\n')[0])
+        base, future = d.ntnn_tables(CASE), d.ntnn_tables(FUTURE)
+        self.assertEqual(future[0], base[0])
+        for (path, parent, rows, totals), (bpath, bparent, brows, btotals) in zip(future[1:], base[1:]):
+            self.assertEqual((path, parent, totals), (bpath, bparent, btotals))
+            self.assertEqual(rows, [dict(row, ct4='2027-12-31') for row in brows])
+            self.assertEqual([row['ct4'] for row in brows], ['2026-09-01'] if path.endswith('ThueNCCNN') else ['2026-09-02'])
+        self.assertEqual(d.case(FUTURE)['texts'], frozenset({'HD-GL-003': 'HD-GL-007', 'HD-GL-004': 'HD-GL-008'}.get(t, t) for t in d.case(CASE)['texts']))
+        designs = {c['caseId']: c['expectedLeaves'] for c in design.DESIGN['cases']}
+        self.assertEqual(designs[FUTURE], designs[CASE])
 
 
 class EntryPlan(unittest.TestCase):
@@ -216,7 +244,7 @@ class EntryPlan(unittest.TestCase):
     def test_compiled_plans_construct_and_select_the_entry_mode(self):
         with tempfile.TemporaryDirectory() as directory:
             folder = pathlib.Path(directory)
-            (folder / 'P.cs').write_text('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.1");foreach(string id in HtkkDeclarationCasePlans.CaseIds){HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find(id);HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry(id);Console.WriteLine(id+" "+(p!=null)+" "+(e==null?0:e.Entries.Length)+" "+(e==null?0:e.MethodPins.Length));}foreach(string id in new string[]{"01NTNN-NCCNN-entry-M10-2026","01NTNN-NCCNN-occurrence-D20-10-2026"})Console.Error.WriteLine(id+"\t"+String.Join("\t",HtkkDeclarationCasePlans.Entry(id).Entries));}}')
+            (folder / 'P.cs').write_text('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.1");foreach(string id in HtkkDeclarationCasePlans.CaseIds){HtkkDeclarationCasePlan p=HtkkDeclarationCasePlans.Find(id);HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.Entry(id);Console.WriteLine(id+" "+(p!=null)+" "+(e==null?0:e.Entries.Length)+" "+(e==null?0:e.MethodPins.Length));}foreach(string id in new string[]{"01NTNN-NCCNN-entry-M10-2026","01NTNN-NCCNN-occurrence-D20-10-2026","01NTNN-NCCNN-entry-future-contract-M10-2026"})Console.Error.WriteLine(id+"\t"+String.Join("\t",HtkkDeclarationCasePlans.Entry(id).Entries));}}')
             subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs'), str(ROOT / 'HtkkOracleBaseline.cs')], check=True, capture_output=True)
             run = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True, text=True); lines = run.stdout.split('\n')
         typed = {line.split('\t')[0]: line.split('\t')[1:] for line in run.stderr.split('\n') if line}
@@ -224,11 +252,16 @@ class EntryPlan(unittest.TestCase):
         for monthly, occurrence in zip(typed[CASE], typed[OCCURRENCE]):
             self.assertEqual(occurrence, monthly if not monthly.startswith('date|AE') else monthly.rsplit('|', 1)[0] + '|20/10/2026')
         self.assertEqual([e for e in typed[OCCURRENCE] if e.startswith('date|AE')], ['date|AE78|20/10/2026', 'date|AE86|20/10/2026'])
+        # The 5.8.5 future-contract entry types the same values except both (4) ngày hợp đồng (W78, W86), 31/12/2027, and its
+        # own contract numbers (S78, S86).
+        own = {'text|S78|HD-GL-003': 'text|S78|HD-GL-007', 'text|S86|HD-GL-004': 'text|S86|HD-GL-008'}
+        for monthly, future in zip(typed[CASE], typed[FUTURE]):
+            self.assertEqual(future, monthly.rsplit('|', 1)[0] + '|31/12/2027' if monthly.startswith('date|W') else own.get(monthly, monthly))
         rows = {line.split()[0]: line.split()[1:] for line in lines if line}
         self.assertEqual(list(rows), list(registry.DECLARATION_CASES))
         for case, (found, count, pins) in rows.items():
             self.assertEqual(found, 'True')
-            self.assertEqual((count, pins), ('21', '14') if case in (CASE, OCCURRENCE) else ('11', '14') if case in (PART_II1, PART_II2) else ('0', '0'))
+            self.assertEqual((count, pins), ('21', '14') if case in (CASE, OCCURRENCE, FUTURE) else ('11', '14') if case in (PART_II1, PART_II2) else ('0', '0'))
 
 
 class Driver(unittest.TestCase):

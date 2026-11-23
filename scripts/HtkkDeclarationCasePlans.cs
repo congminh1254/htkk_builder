@@ -64,7 +64,7 @@ internal static class HtkkDeclarationCasePlans {
  private const string WorkbookService="Công cụ Kê khai",CnkdService="Công cụ Kê khai";
  private const string Main="HSoThueDTu/HSoKhaiThue/CTieuTKhaiChinh/";
  // Fixed case IDs, in registry order. Kept identical to htkk-native-cases.json (tested offline).
- internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026","02QTT-refund-transfer-Y2025","02QTT-dependants-Y2026","02QTT-refund-transfer-Y2026","01TTS-individual-one-contract-Y2025","01TTS-individual-two-contracts-Y2025","01TTS-organization-two-individuals-Q3-2026","01TTS-organization-monthly-M10-2026","01TCKT-hop-tac-kd-two-individuals-Q4-2026","01TCKT-bds-three-lessors-M10-2026","01TCKT-bds-occurrence-D15-10-2026","01TCKT-310-hop-tac-kd-two-individuals-Q4-2026","01TCKT-310-bds-three-lessors-M10-2026","01TCKT-310-bds-occurrence-D15-10-2026","01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026","04GTGT-TT80-one-group-M09-2026","04GTGT-TT80-quarter-Q3-2026","04GTGT-TT80-four-groups-rounding-M08-2026","04GTGT-TT80-reduction-annex-Q2-2026","04GTGT-TT89-one-group-M10-2026","04GTGT-TT89-quarter-Q4-2026","04GTGT-TT89-four-groups-rounding-M10-2026","04GTGT-TT89-reduction-annex-M10-2026","01GTGT-TT89-zero-M10-2026","01GTGT-TT89-sale10-M10-2026","01GTGT-TT89-quarter-Q4-2026","01GTGT-TT89-no-activity-M11-2026","01GTGT-TT89-full-M12-2026","01GTGT-TT89-full-M10-2026","01GTGT-TT89-nq204-M12-2026","01GTGT-TT89-nq204-M10-2026","02NTNN-TT89-two-annexes-to-07-10-2026","04NTNN-TT89-one-subcontractor-to-07-10-2026","01NTNN-NCCNN-entry-part-II1-M10-2026","01NTNN-NCCNN-entry-part-II2-M10-2026","02NTNN-TT80-two-annexes-to-06-10-2026","04NTNN-TT80-one-subcontractor-to-06-10-2026","02NTNN-TT89-two-annexes-from-01-06-2026","04NTNN-TT89-one-subcontractor-from-01-06-2026"};
+ internal static readonly string[] CaseIds=new string[]{"03TNDN-profit20-Y2025","BCTC133-B01a-basic-Y2025","BCTC200-LT-basic-Y2025","05KK-withheld-Q3-2026","05KK-TT89-withheld-Q4-2026","05QTT-two-employees-Y2025","01CNKD-TT50-revenue-two-groups-Q3-2026","02QTT-dependants-Y2025","01NTNN-two-contractors-M09-2026","03NTNN-no-rate-M10-2026","01NTNN-NCCNN-entry-M10-2026","04NTNN-TT80-one-subcontractor-2026","04NTNN-TT89-one-subcontractor-2026","02NTNN-TT89-two-annexes-2026","02NTNN-TT80-two-annexes-2026","01NTNN-occurrence-D20-09-2026","01NTNN-NCCNN-occurrence-D20-10-2026","03NTNN-occurrence-D20-10-2026","01CNKD-TT50-310-pl01-three-groups-Q3-2026","01CNKD-TT50-310-pl03-two-groups-Q3-2026","03TNDN-rate15-Y2025","03TNDN-rate17-Y2025","05KK-PBT-two-provinces-Q3-2026","05KK-TT89-PBT-two-provinces-Q4-2026","02QTT-refund-transfer-Y2025","02QTT-dependants-Y2026","02QTT-refund-transfer-Y2026","01TTS-individual-one-contract-Y2025","01TTS-individual-two-contracts-Y2025","01TTS-organization-two-individuals-Q3-2026","01TTS-organization-monthly-M10-2026","01TCKT-hop-tac-kd-two-individuals-Q4-2026","01TCKT-bds-three-lessors-M10-2026","01TCKT-bds-occurrence-D15-10-2026","01TCKT-310-hop-tac-kd-two-individuals-Q4-2026","01TCKT-310-bds-three-lessors-M10-2026","01TCKT-310-bds-occurrence-D15-10-2026","01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026","04GTGT-TT80-one-group-M09-2026","04GTGT-TT80-quarter-Q3-2026","04GTGT-TT80-four-groups-rounding-M08-2026","04GTGT-TT80-reduction-annex-Q2-2026","04GTGT-TT89-one-group-M10-2026","04GTGT-TT89-quarter-Q4-2026","04GTGT-TT89-four-groups-rounding-M10-2026","04GTGT-TT89-reduction-annex-M10-2026","01GTGT-TT89-zero-M10-2026","01GTGT-TT89-sale10-M10-2026","01GTGT-TT89-quarter-Q4-2026","01GTGT-TT89-no-activity-M11-2026","01GTGT-TT89-full-M12-2026","01GTGT-TT89-full-M10-2026","01GTGT-TT89-nq204-M12-2026","01GTGT-TT89-nq204-M10-2026","02NTNN-TT89-two-annexes-to-07-10-2026","04NTNN-TT89-one-subcontractor-to-07-10-2026","01NTNN-NCCNN-entry-part-II1-M10-2026","01NTNN-NCCNN-entry-part-II2-M10-2026","02NTNN-TT80-two-annexes-to-06-10-2026","04NTNN-TT80-one-subcontractor-to-06-10-2026","02NTNN-TT89-two-annexes-from-01-06-2026","04NTNN-TT89-one-subcontractor-from-01-06-2026","01NTNN-NCCNN-entry-future-contract-M10-2026"};
  // Original frmHTKKPeriod.SetLayoutToKhaiNamTuThangDenThang (KieuKy 12) calls
  // ShowDetailpnVT2_PhuLucKeKhai(false) for every menu except 97/H4/C8: the annex list is
  // bound (LoadPhuLucSpread) but hidden, so a user cannot tick it. The driver only observes
@@ -142,6 +142,7 @@ internal static class HtkkDeclarationCasePlans {
  // Thuế tỉnh/CCT and CQT quản lý again (KhbsImportTick: path_15 has no XML leaf).
  internal static readonly string[] KhbsCaseIds=new string[]{"01NTNN-khbs-grossup-lan1-M09-2026","01NTNN-khbs-lan2-M09-2026","01NTNN-khbs-decrease-M09-2026","01NTNN-NCCNN-khbs-part1-M10-2026","01NTNN-NCCNN-khbs-part2-M10-2026","01NTNN-NCCNN-khbs-lan2-M10-2026",
   "01NTNN-NCCNN-khbs-part1-nodate-M10-2026","01NTNN-NCCNN-khbs-part2-nodate-M10-2026",
+  "01NTNN-NCCNN-khbs-part2-585-M10-2026","01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026","01NTNN-NCCNN-khbs-part1-future-contract-M10-2026",
   "05KK-khbs-increase-Q3-2026","05KK-khbs-lan2-Q3-2026","05KK-khbs-decrease-Q3-2026","05KK-TT89-khbs-increase-Q4-2026","05KK-PBT-khbs-Q3-2026","05KK-khbs-increase-M03-2026","05KK-PBT-nomst-khbs-Q3-2026",
   "01CNKD-khbs-increase-Q3-2026","01CNKD-khbs-decrease-Q3-2026","01CNKD-khbs-lan2-Q3-2026","01CNKD-PL01-khbs-Q3-2026",
   "02QTT-khbs-increase-Y2025","02QTT-khbs-lan2-Y2025","02QTT-khbs-decrease-Y2025","02QTT-khbs-refund-Y2025",
@@ -164,7 +165,9 @@ internal static class HtkkDeclarationCasePlans {
   if(caseId.StartsWith("01TCKT-310-khbs-",StringComparison.Ordinal))return Tckt01KhbsPlan(caseId);
   if(caseId.StartsWith("01GTGT-TT89-khbs-",StringComparison.Ordinal))return Gtgt01Tt89KhbsPlan(caseId);
   bool i9=caseId.StartsWith("01NTNN-khbs-",StringComparison.Ordinal);
-  int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part2-nodate-M10-2026"?253:caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?227:178;
+  int leaves=caseId=="01NTNN-khbs-grossup-lan1-M09-2026"?220:caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026"?269:caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part2-nodate-M10-2026"?253:caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026"?227:
+   // HTKK 5.8.5 cases (htkkVersion 5.8.5): two Muc_I.1 rows (1749, 1099); four rows and ten 01-1/KHBS rows; phần I as part1.
+   caseId=="01NTNN-NCCNN-khbs-part2-585-M10-2026"?256:caseId=="01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026"?327:caseId=="01NTNN-NCCNN-khbs-part1-future-contract-M10-2026"?269:178;
   if(i9)return new HtkkDeclarationCasePlan(caseId,"I9","2.5.1","838","Ntnn01TT80Nckt251",new string[]{"101","101_8","I9"},"month","18","2026","09","01/09/2026","30/09/2026",false,
    new string[0],new string[]{"01|Tờ khai"},
    "InterfaceTemplates/excel/01_NTNN_TT80_251.xls","feebf2a918138aad860b52fb409232716027dc7ba59ec8aed861714d7e7de652","InterfaceTemplates/xml/01_NTNN_TT80_251.xml","cb8f1c83df2ebb590e314b2ca71fde4751760906e57df666e92086d6a1f9983c",
@@ -297,21 +300,25 @@ internal static class HtkkDeclarationCasePlans {
  // The two "nodate" cases leave one date of the row key empty in every round, so the 01-1/KHBS key ends with an empty part (HTKK
  // exports the cell trimmed): phần I (01NTNN-NCCNN-khbs-part1-nodate-M10-2026) never types W60 (4) ngày hợp đồng, contract
  // HD-GL-202; phần II (01NTNN-NCCNN-khbs-part2-nodate-M10-2026) never types AE78 (6) ngày thanh toán of the supplier, HD-GL-005.
+ // HTKK 5.8.5 cases (htkkVersion 5.8.5): 01NTNN-NCCNN-khbs-part2-585-M10-2026 types the rounds of the phần II case;
+ // 01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026 also types the individual's AJ86 / AZ86 150.000.000 in round 1 (thuế TNCN read by 5.8.5);
+ // 01NTNN-NCCNN-khbs-part1-future-contract-M10-2026 types the phần I rounds with W60 31/12/2027 (after any run day), contract HD-GL-203.
  internal static HtkkDeclarationEntryPlan KhbsEntry(string caseId,int round){
   bool lan2=caseId=="01NTNN-NCCNN-khbs-lan2-M10-2026",noContractDate=caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026",noPaymentDate=caseId=="01NTNN-NCCNN-khbs-part2-nodate-M10-2026";
-  bool part1=caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||lan2||noContractDate,part2=caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"||noPaymentDate;
+  bool futureContract=caseId=="01NTNN-NCCNN-khbs-part1-future-contract-M10-2026",tncn=caseId=="01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026";
+  bool part1=caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||lan2||noContractDate||futureContract,part2=caseId=="01NTNN-NCCNN-khbs-part2-M10-2026"||noPaymentDate||caseId=="01NTNN-NCCNN-khbs-part2-585-M10-2026"||tncn;
   if(!part1&&!part2||round<0||round>KhbsSoLan(caseId))return null;
   string[] entries;
   if(part1){
    string amount=round==0?"200000000":"220000000",tndn=round==2?"240000000":amount;
    entries=noContractDate?new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|HD-GL-202","number|Y60|"+amount,
     "date|AE60|15/10/2026","number|AJ60|"+amount,"number|AN60|5","number|AZ60|"+tndn,"number|BD60|5","date-optional|AY98|13/11/2026"}:
-    new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|HD-GL-201","date|W60|01/09/2026","number|Y60|"+amount,
+    new string[]{"text|C60|NHA THAU NUOC NGOAI E - GIẢ LẬP","combo|L60|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX60|01","text|S60|"+(futureContract?"HD-GL-203":"HD-GL-201"),"date|W60|"+(futureContract?"31/12/2027":"01/09/2026"),"number|Y60|"+amount,
     "date|AE60|15/10/2026","number|AJ60|"+amount,"number|AN60|5","number|AZ60|"+tndn,"number|BD60|5","date-optional|AY98|13/11/2026"};
    return new HtkkDeclarationEntryPlan("M6","M8","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
     new string[]{"ThueNTNN|60|1|0","ThueNCCNN|78|1|1","ThueCNKCT|86|1|1"},new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},entries,HtkkOracleBaseline.EntryMethodPins());
   }
-  string revenue=round==0?"200000000":"240000000";
+  string revenue=round==0?"200000000":"240000000",individualRevenue=tncn&&round==1?"150000000":"100000000";
   string[] supplier=noPaymentDate?new string[]{
    "text|C78|NHA CUNG CAP NUOC NGOAI C - GIẢ LẬP","combo|L78|0|D|Dịch vụ, cho thuê máy móc thiết bị, bảo hiểm|BX78|01","text|S78|HD-GL-005","date|W78|01/09/2026","number|Y78|200000000",
    "number|AJ78|"+revenue,"number|AN78|5","number|AZ78|"+revenue,"number|BD78|5"}:new string[]{
@@ -319,7 +326,7 @@ internal static class HtkkDeclarationCasePlans {
    "date|AE78|15/10/2026","number|AJ78|"+revenue,"number|AN78|5","number|AZ78|"+revenue,"number|BD78|5"};
   string[] individual=new string[]{
    "text|C86|CA NHAN KHONG CU TRU D - GIẢ LẬP","combo|L86|4|H|Hoạt động kinh doanh khác|BX86|05","text|S86|HD-GL-004","date|W86|02/09/2026","number|Y86|100000000",
-   "date|AE86|16/10/2026","number|AJ86|100000000","number|AN86|5","number|AZ86|100000000","number|BD86|2",
+   "date|AE86|16/10/2026","number|AJ86|"+individualRevenue,"number|AN86|5","number|AZ86|"+individualRevenue,"number|BD86|2",
    "date-optional|AY98|13/11/2026"};
   entries=new string[supplier.Length+individual.Length];supplier.CopyTo(entries,0);individual.CopyTo(entries,supplier.Length);
   return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
@@ -329,6 +336,7 @@ internal static class HtkkDeclarationCasePlans {
   switch(caseId){
    case "01NTNN-khbs-grossup-lan1-M09-2026":case "01NTNN-khbs-lan2-M09-2026":case "01NTNN-khbs-decrease-M09-2026":case "01NTNN-NCCNN-khbs-part1-M10-2026":case "01NTNN-NCCNN-khbs-part2-M10-2026":case "01NTNN-NCCNN-khbs-lan2-M10-2026":
    case "01NTNN-NCCNN-khbs-part1-nodate-M10-2026":case "01NTNN-NCCNN-khbs-part2-nodate-M10-2026":case "05KK-PBT-nomst-khbs-Q3-2026":
+   case "01NTNN-NCCNN-khbs-part2-585-M10-2026":case "01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026":case "01NTNN-NCCNN-khbs-part1-future-contract-M10-2026":
    case "05KK-khbs-increase-Q3-2026":case "05KK-khbs-lan2-Q3-2026":case "05KK-khbs-decrease-Q3-2026":case "05KK-TT89-khbs-increase-Q4-2026":case "05KK-PBT-khbs-Q3-2026":case "05KK-khbs-increase-M03-2026":
    case "01CNKD-khbs-increase-Q3-2026":case "01CNKD-khbs-decrease-Q3-2026":case "01CNKD-khbs-lan2-Q3-2026":case "01CNKD-PL01-khbs-Q3-2026":
    case "02QTT-khbs-increase-Y2025":case "02QTT-khbs-lan2-Y2025":case "02QTT-khbs-decrease-Y2025":case "02QTT-khbs-refund-Y2025":
@@ -553,6 +561,15 @@ internal static class HtkkDeclarationCasePlans {
    // Sheet checks after entry: the XLS row formulas (AV/BN/BR 78 and 86) and the table totals of rows
    // 80/88 (Y/AV/BN/BR = SUM over the table), recomputed independently by NTNN_ROWS; BR62 = 0 (part I locked).
    case "01NTNN-NCCNN-entry-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false,
+    new string[0],new string[]{"01|Tờ khai"},
+    "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",
+    "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
+    new string[]{"01|AV78|10000000","01|BN78|10000000","01|BR78|20000000","01|Y80|200000000","01|AV80|10000000","01|BN80|10000000","01|BR80|20000000","01|AV86|5000000","01|BN86|2000000","01|BR86|7000000","01|Y88|100000000","01|AV88|5000000","01|BN88|2000000","01|BR88|7000000","01|BR62|0"},
+    new string[]{Main+"nopThayNTNN|0",Main+"nopThayNCCNN|1",Main+"ThueNCCNN_CNKCT/mucII_tong_ct5|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct7|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct9|5000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct10|100000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct12|0",Main+"ThueNCCNN_CNKCT/mucII_tong_ct13|2000000",Main+"ThueNCCNN_CNKCT/mucII_tong_ct14|7000000"});
+   // HTKK 5.8.5 (htkkVersion 5.8.5, original entry): the plan of the entry case; Entry() types both (4) ngày hợp đồng as 31/12/2027, after any run
+   // day. Ntnn01TT89Nckt309.checkTKChinh 5.8.5 no longer tests a given W (5.8.4: E_33 format, E_36 "Ngày Hợp đồng phải nhỏ hơn ngày
+   // hiện tại"); the sheet and XML checks are those of the entry case (W enters no formula).
+   case "01NTNN-NCCNN-entry-future-contract-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Y8","3.0.9","2012","Ntnn01TT89Nckt309",new string[]{"101","101_8","Y8"},"month","18","2026","10","01/10/2026","31/10/2026",false,
     new string[0],new string[]{"01|Tờ khai"},
     "InterfaceTemplates/excel/01_NTNN_NCCNN_TT89_309.xls","53630634bd02cc412ddde0682c2557226547737fceed792f595709a2fd0eafe1","InterfaceTemplates/xml/01_NTNN_NCCNN_TT89_309.xml","5c43131df4ecf265ddf9c780174416f95a249d82bd666339a97f0ea852f105d9",
     "Validate/01_NTNN_NCCNN_TT89_309.xsd","7e417697b602867a819c80f59eaaae486ceb9148ab58867187206be5f75df1b8",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,107,
@@ -977,7 +994,10 @@ internal static class HtkkDeclarationCasePlans {
   // HTKK 5.8.3 one-part cases: only the rows of one part II table are typed (II-I row 78, II-II row 86); the other table keeps
   // its template row untouched. Ntnn01TT89Nckt309.checkTKChinh (5.8.3) skips an empty part II table when the other has data.
   string skippedRow=caseId=="01NTNN-NCCNN-entry-part-II1-M10-2026"?"86":caseId=="01NTNN-NCCNN-entry-part-II2-M10-2026"?"78":null;
-  if(caseId!="01NTNN-NCCNN-entry-M10-2026"&&!occurrence&&skippedRow==null)return null;
+  // HTKK 5.8.5 case: both (4) ngày hợp đồng (W78, W86) typed as 31/12/2027 (checkTKChinh 5.8.5 no longer tests the date), with
+  // the contract numbers HD-GL-007 / HD-GL-008.
+  bool futureContract=caseId=="01NTNN-NCCNN-entry-future-contract-M10-2026";
+  if(caseId!="01NTNN-NCCNN-entry-M10-2026"&&!occurrence&&skippedRow==null&&!futureContract)return null;
   HtkkDeclarationEntryPlan entry=new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
    // Table name | 1-based first data row | rows required | locked after the choice (1) or open (0).
    new string[]{"ThueNTNN|60|1|1","ThueNCCNN|78|1|0","ThueCNKCT|86|1|0"},
@@ -1000,6 +1020,12 @@ internal static class HtkkDeclarationCasePlans {
    HtkkOracleBaseline.EntryMethodPins());
   // Lần phát sinh: every (6) AE is typed as the period day (checkTKChinh E_27: TuNgay <= AE <= DenNgay, both the day).
   if(occurrence)for(int i=0;i<entry.Entries.Length;i++)if(entry.Entries[i].StartsWith("date|AE",StringComparison.Ordinal))entry.Entries[i]=entry.Entries[i].Substring(0,entry.Entries[i].LastIndexOf('|')+1)+Find(caseId).FromDate;
+  if(futureContract)for(int i=0;i<entry.Entries.Length;i++){
+   if(entry.Entries[i].StartsWith("date|W",StringComparison.Ordinal))entry.Entries[i]=entry.Entries[i].Substring(0,entry.Entries[i].LastIndexOf('|')+1)+"31/12/2027";
+   // Its own contract numbers (HD-GL-007, HD-GL-008), so its web file can never pass as the entry case's.
+   else if(entry.Entries[i]=="text|S78|HD-GL-003")entry.Entries[i]="text|S78|HD-GL-007";
+   else if(entry.Entries[i]=="text|S86|HD-GL-004")entry.Entries[i]="text|S86|HD-GL-008";
+  }
   if(skippedRow!=null){
    System.Collections.Generic.List<string> kept=new System.Collections.Generic.List<string>();
    foreach(string value in entry.Entries){string cell=value.Split('|')[1];if(cell.Substring(cell.Length-skippedRow.Length)!=skippedRow||Char.IsDigit(cell[cell.Length-skippedRow.Length-1]))kept.Add(value);}

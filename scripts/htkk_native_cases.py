@@ -136,6 +136,9 @@ TRUSTED_ADAPTERS={
  '01-ntnn-tt80-2.5.1-khbs-lan2':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'I9','xmlVersion':'2.5.1','periods':{'month':('09/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
  '01-ntnn-nccnn-tt89-3.0.9-khbs':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Y8','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
  '01-ntnn-nccnn-tt89-3.0.9-khbs-lan2':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Y8','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.2'},
+ # HTKK 5.8.5 observation cases of Y8 KHBS (lần 1, typed like the 5.8.2 ones): mục II under the 5.8.5 MapMCT_TieuMuc / MapMCT
+ # (HTKK-5.8.5-IMPACT.md section 2) and phần I with a contract dated after the run day (checkTKChinh 5.8.5 drops E_33 / E_36).
+ '01-ntnn-nccnn-tt89-3.0.9-khbs-585':{'producer':NTNN_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Y8','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.5'},
  # KHBS 05/KK-TNCN: L7 quý 3/2026 (monthly first declarations are refused from 4/2026, HTKK 0682) and Z8 quý 4/2026, both
  # imported; lần 2 has its own adapter; the 05-1/PBT case is imported then its Thuế tỉnh/CCT chosen in the grid (ImportTick).
  '05-kk-tncn-2.9.3-khbs':{'producer':KK05_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'L7','xmlVersion':'2.9.3','periods':{'quarter':('3/2026',),'month':('03/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.2'},
@@ -284,9 +287,10 @@ check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for 
 KHBS_CASES=tuple(id for id,c in CASES.items() if c['adapterId'] in ('01-gtgt-2.8.3-khbs','01-gtgt-2.8.3-khbs-lan2','01-gtgt-2.8.3-khbs-annex12','01-gtgt-2.8.3-khbs-annex12-lan2'))
 check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])=='5.8.2' for id in KHBS_CASES))
 # Kê khai bổ sung 01/NTNN cases (driver NTNN_KHBS_DRIVER): observation cases, never a release gate, HTKK 5.8.2, except a form that
-# exists only from a later release (Z5 01/GTGT TT89: HTKK 5.8.4), which runs on its adapter's oracle.
+# exists only from a later release (Z5 01/GTGT TT89: HTKK 5.8.4) or a rule a later release changed (Y8 under HTKK 5.8.5), which runs
+# on its adapter's oracle.
 NTNN_KHBS_CASES=tuple(id for id,c in CASES.items() if ADAPTERS[c['adapterId']]['driver']==NTNN_KHBS_DRIVER)
-check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])==TRUSTED_ADAPTERS[CASES[id]['adapterId']]['htkkVersion'] in ('5.8.2','5.8.4') for id in NTNN_KHBS_CASES))
+check(all(not CASES[id]['releaseGate'] and case_version(CASES[id])==TRUSTED_ADAPTERS[CASES[id]['adapterId']]['htkkVersion'] in ('5.8.2','5.8.4','5.8.5') for id in NTNN_KHBS_CASES))
 # Those of them whose import is completed by fixed original grid edits (05-1/PBT Thuế tỉnh/CCT, HtkkDeclarationCasePlans.KhbsImportTick).
 NTNN_KHBS_TICK_CASES=tuple(id for id in NTNN_KHBS_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']].get('tick') is True)
 # Those whose bổ sung rounds have no original "Tổng hợp KHBS" (U5: KieuKHBS "", frmWinToKhai.LoadButton hides the button).

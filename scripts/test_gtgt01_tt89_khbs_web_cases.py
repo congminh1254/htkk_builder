@@ -81,8 +81,11 @@ class Gtgt01Tt89KhbsWebCases(unittest.TestCase):
         self.assertTrue(set(CASES) <= set(registry.NTNN_KHBS_CASES))
         self.assertFalse(set(CASES) & set(registry.NTNN_KHBS_NO_SUMMARY_CASES))
         self.assertFalse(set(CASES) & set(registry.NTNN_KHBS_TICK_CASES))
-        # Every other KHBS case of this driver stays on 5.8.2.
-        self.assertEqual({registry.htkk_version(c) for c in registry.NTNN_KHBS_CASES if c not in CASES}, {'5.8.2'})
+        # Every other KHBS case of this driver stays on 5.8.2, but the HTKK 5.8.5 Y8 observation cases.
+        y8_585 = {c for c in registry.NTNN_KHBS_CASES if registry.CASES[c]['adapterId'] == '01-ntnn-nccnn-tt89-3.0.9-khbs-585'}
+        self.assertEqual(y8_585, {'01NTNN-NCCNN-khbs-part2-585-M10-2026', '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026', '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026'})
+        self.assertEqual({registry.htkk_version(c) for c in y8_585}, {'5.8.5'})
+        self.assertEqual({registry.htkk_version(c) for c in registry.NTNN_KHBS_CASES if c not in CASES and c not in y8_585}, {'5.8.2'})
 
     def test_pinned_synthetic_files_validate_and_a_phu_luc_is_refused(self):
         for case_id in CASES:

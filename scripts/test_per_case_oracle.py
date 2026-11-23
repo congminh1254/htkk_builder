@@ -70,9 +70,14 @@ class Registry(unittest.TestCase):
         NEWER_583 = {'02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026'}
         # HTKK 5.8.4 observation cases: 01/GTGT TT89 (Z5), a menu that exists only in HTKK 5.8.4.
         NEWER_584 = {'01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '01GTGT-TT89-nq204-M12-2026', '01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '01GTGT-TT89-khbs-increase-M10-2026', '01GTGT-TT89-khbs-decrease-M10-2026'}
+        # HTKK 5.8.5 observation cases of Y8 (HTKK-5.8.5-IMPACT.md): mục II KHBS under the 5.8.5 tiểu mục tables and contracts dated
+        # after the run day (checkTKChinh 5.8.5 drops E_33 / E_36), the main declaration typed and a phần I bổ sung.
+        NEWER_585 = {'01NTNN-NCCNN-khbs-part2-585-M10-2026', '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026', '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026'}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
-        self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583 | NEWER_584)
-        self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583 | NEWER_584)
+        self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583 | NEWER_584 | NEWER_585)
+        self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583 | NEWER_584 | NEWER_585)
+        self.assertTrue(all(registry.htkk_version(c) == '5.8.5' and not registry.CASES[c]['releaseGate'] for c in NEWER_585))
+        self.assertEqual(registry.status_context('01NTNN-NCCNN-khbs-part2-585-M10-2026'), 'htkk-native/ntnn01-nccnn-khbs-part2-585-m10-2026@htkk585')
         self.assertTrue(all(registry.htkk_version(c) == '5.8.4' and not registry.CASES[c]['releaseGate'] for c in NEWER_584))
         self.assertEqual(registry.status_context('01GTGT-TT89-sale10-M10-2026'), 'htkk-native/gtgt01-tt89-sale10-m10-2026@htkk584')
         self.assertTrue(all(registry.htkk_version(c) == '5.8.2' and not registry.CASES[c]['releaseGate'] for c in NEWER))
@@ -81,7 +86,7 @@ class Registry(unittest.TestCase):
         self.assertEqual(registry.status_context(U5_310), 'htkk-native/cnkd01-310-pl01-three-groups-q3-2026@htkk582')
         self.assertEqual(registry.status_context(ANNEX10), 'htkk-native/annex10-nq204@htkk582')
         self.assertEqual(registry.status_context(Z8_TT89), 'htkk-native/tncn05kk-tt89-withheld-q4-2026@htkk582')
-        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c not in NEWER | NEWER_583 | NEWER_584}, {c: v['statusContext'] for c, v in registry.CASES.items() if c not in NEWER | NEWER_583 | NEWER_584})
+        self.assertEqual({c: registry.status_context(c) for c in registry.CASES if c not in NEWER | NEWER_583 | NEWER_584 | NEWER_585}, {c: v["statusContext"] for c, v in registry.CASES.items() if c not in NEWER | NEWER_583 | NEWER_584 | NEWER_585})
 
     def test_an_adapter_of_a_later_release_runs_only_on_that_oracle(self):
         index = {c['caseId']: i for i, c in enumerate(RAW['cases'])}

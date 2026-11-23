@@ -37,7 +37,8 @@ class NtnnKhbsWebCases(unittest.TestCase):
         self.assertEqual(sorted(m.CASES), sorted(m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES + m.QTT02_CASES + m.QTT05_CASES + m.TNDN03_CASES + m.NTNN03_CASES + m.TCKT01_CASES + m.GTGT01_TT89_CASES))
         self.assertEqual(sorted(m.NTNN_CASES), sorted(['01NTNN-khbs-grossup-lan1-M09-2026', '01NTNN-khbs-lan2-M09-2026', '01NTNN-khbs-decrease-M09-2026',
                                                   '01NTNN-NCCNN-khbs-part1-M10-2026', '01NTNN-NCCNN-khbs-part2-M10-2026', '01NTNN-NCCNN-khbs-lan2-M10-2026',
-                                                  '01NTNN-NCCNN-khbs-part1-nodate-M10-2026', '01NTNN-NCCNN-khbs-part2-nodate-M10-2026']))
+                                                  '01NTNN-NCCNN-khbs-part1-nodate-M10-2026', '01NTNN-NCCNN-khbs-part2-nodate-M10-2026',
+                                                  '01NTNN-NCCNN-khbs-part2-585-M10-2026', '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026', '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026']))
         for case_id, c in m.CASES.items():
             self.assertEqual(m.names(case_id)[-2:], (m.WEB_NAME, m.MANIFEST_NAME))
             self.assertEqual(m.names(case_id)[0], m.ORIGINAL_NAME)
@@ -65,8 +66,9 @@ class NtnnKhbsWebCases(unittest.TestCase):
         self.assertEqual(set(rows), set(m.CASES))
         for case_id, row in rows.items():
             self.assertIs(row['releaseGate'], False)
-            # 01/GTGT TT89 (Z5) exists only from HTKK 5.8.4; every other KHBS case runs on 5.8.2.
-            self.assertEqual(row['htkkVersion'], '5.8.4' if case_id in m.GTGT01_TT89_CASES else '5.8.2')
+            # 01/GTGT TT89 (Z5) exists only from HTKK 5.8.4 and the Y8 observation cases of HTKK 5.8.5 run on 5.8.5; every other KHBS
+            # case runs on 5.8.2.
+            self.assertEqual(row['htkkVersion'], '5.8.4' if case_id in m.GTGT01_TT89_CASES else '5.8.5' if case_id in m.Y8_585_CASES else '5.8.2')
             self.assertEqual(m.manifest_fields(case_id)['htkkVersion'], row['htkkVersion'])
             self.assertEqual(row['format'], m.manifest_fields(case_id)['format'])
             self.assertEqual(row['unit']['amendmentOrder'], m.CASES[case_id]['soLan'])
@@ -351,7 +353,7 @@ class NtnnKhbsY8Lan2Plan(unittest.TestCase):
         self.assertIn('caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||caseId=="01NTNN-NCCNN-khbs-part1-nodate-M10-2026"?%d:' % (m.tax_leaf_count(self.LAN1) + 4), plans)
         self.assertEqual(m.input_mode(self.LAN2), 'khbs-original-entry-export')
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
-        self.assertEqual(probe.count("@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026')"), 2)
+        self.assertEqual(probe.count("@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-585-M10-2026','01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026','01NTNN-NCCNN-khbs-part1-future-contract-M10-2026')"), 2)
 
     @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
     def test_compiled_entry_rounds(self):
@@ -411,6 +413,69 @@ class NtnnKhbsY8NoDatePlan(unittest.TestCase):
                 expected = [own if entry == contract else entry for entry in rounds[(base, number)] if entry != date]
                 self.assertIn(date, rounds[(base, number)])
                 self.assertEqual(rounds[(case_id, number)], expected)
+
+
+
+class NtnnKhbsY8Htkk585(unittest.TestCase):
+    """HTKK 5.8.5 Y8 observation cases: the mục II cases of the 5.8.5 tiểu mục tables and a phần I contract dated after the run day.
+    Each types the rounds of its 5.8.2 base case with the changes below, on its own adapter and oracle (5.8.5)."""
+    BASES = {'01NTNN-NCCNN-khbs-part2-585-M10-2026': '01NTNN-NCCNN-khbs-part2-M10-2026',
+             '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026': '01NTNN-NCCNN-khbs-part2-M10-2026',
+             '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026': '01NTNN-NCCNN-khbs-part1-M10-2026'}
+
+    def test_pins_versions_expectations_and_plans(self):
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        self.assertEqual(set(m.Y8_585_CASES), set(self.BASES))
+        for case_id, base in self.BASES.items():
+            c, b = m.CASES[case_id], m.CASES[base]
+            self.assertEqual((c['menuId'], c['soLan'], c['prior'], c['htkkVersion']), ('Y8', 1, None, '5.8.5'))
+            self.assertEqual(c['original'], b['original'] if case_id != '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026' else (3742, '98a8c41b03c53e316d3f17fa956f0494b79a82559759fddfd0f1da47caa653f7'))
+            self.assertNotEqual(c['web'], b['web'])
+            self.assertEqual(m.manifest_fields(case_id)['htkkVersion'], '5.8.5')
+            self.assertEqual(m.input_mode(case_id), 'khbs-original-entry-export')
+            self.assertEqual(c['catalogueTexts'], m.Y8_585_SUBITEM_NAMES)
+            self.assertIn('caseId=="%s"?%d:' % (case_id, m.tax_leaf_count(case_id) + 4), plans)
+            self.assertIn('"%s"' % case_id, plans.split('internal static readonly string[] KhbsCaseIds=')[1].split('};')[0])
+            self.assertIn('case "%s":' % case_id, plans)
+        # Mục II: the 5.8.5 tiểu mục (no 1052), in 01-1/KHBS row order.
+        self.assertEqual(m.CASES['01NTNN-NCCNN-khbs-part2-585-M10-2026']['expected']['subitems'], [['1749', '2000000'], ['1099', '2000000']])
+        self.assertEqual(m.CASES['01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026']['expected']['subitems'], [['1749', '2000000'], ['1099', '2000000'], ['1701', '2500000'], ['1003', '1000000']])
+        self.assertEqual(m.CASES['01NTNN-NCCNN-khbs-part1-future-contract-M10-2026']['expected'], m.CASES['01NTNN-NCCNN-khbs-part1-M10-2026']['expected'])
+        # Every other NTNN KHBS case keeps 5.8.2 and no catalogue texts.
+        for case_id in set(m.NTNN_CASES) - set(m.Y8_585_CASES):
+            self.assertNotIn('htkkVersion', m.CASES[case_id]); self.assertNotIn('catalogueTexts', m.CASES[case_id])
+
+    def test_entry_rounds_in_the_plan_source(self):
+        plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
+        body = plans[plans.index(' internal static HtkkDeclarationEntryPlan KhbsEntry(string caseId,int round){'):]
+        body = body[:body.index('\n }\n')]
+        self.assertIn('futureContract=caseId=="01NTNN-NCCNN-khbs-part1-future-contract-M10-2026",tncn=caseId=="01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026";', body)
+        self.assertIn('part1=caseId=="01NTNN-NCCNN-khbs-part1-M10-2026"||lan2||noContractDate||futureContract', body)
+        self.assertIn('||caseId=="01NTNN-NCCNN-khbs-part2-585-M10-2026"||tncn;', body)
+        self.assertIn('"text|S60|"+(futureContract?"HD-GL-203":"HD-GL-201"),"date|W60|"+(futureContract?"31/12/2027":"01/09/2026")', body)
+        self.assertIn('individualRevenue=tncn&&round==1?"150000000":"100000000"', body)
+        self.assertIn('"number|AJ86|"+individualRevenue,"number|AN86|5","number|AZ86|"+individualRevenue', body)
+
+    @unittest.skipUnless(shutil.which('mcs') and shutil.which('mono'), 'local CLR plan smoke test needs mono')
+    def test_compiled_entry_rounds(self):
+        ids = list(self.BASES) + sorted(set(self.BASES.values()))
+        with tempfile.TemporaryDirectory() as directory:
+            folder = pathlib.Path(directory)
+            (folder / 'P.cs').write_text('using System;class P{static void Main(){HtkkOracleBaseline.Select("5.8.5");foreach(string id in new string[]{%s})for(int r=-1;r<3;r++){HtkkDeclarationEntryPlan e=HtkkDeclarationCasePlans.KhbsEntry(id,r);Console.WriteLine(id+"\\t"+r+"\\t"+(e==null?"-":e.ChoiceCell+"\\t"+String.Join("\\t",e.Entries)));}}}' % ','.join('"%s"' % i for i in ids), encoding='utf-8')
+            subprocess.run(['mcs', '-langversion:ISO-2', '-warn:0', '-out:' + str(folder / 'p.exe'), str(folder / 'P.cs'), str(ROOT / 'HtkkDeclarationCasePlans.cs'), str(ROOT / 'HtkkOracleBaseline.cs')], check=True, capture_output=True)
+            run = subprocess.run(['mono', str(folder / 'p.exe')], check=True, capture_output=True)
+        rounds = {}
+        for line in run.stdout.decode('utf-8', 'replace').splitlines():
+            case_id, number, *entries = line.split('\t')
+            rounds[(case_id, int(number))] = None if entries == ['-'] else entries
+        changes = {'01NTNN-NCCNN-khbs-part2-585-M10-2026': ({}, {}),
+                   '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026': ({}, {'number|AJ86|100000000': 'number|AJ86|150000000', 'number|AZ86|100000000': 'number|AZ86|150000000'}),
+                   '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026': ({'text|S60|HD-GL-201': 'text|S60|HD-GL-203', 'date|W60|01/09/2026': 'date|W60|31/12/2027'},) * 2}
+        for case_id, base in self.BASES.items():
+            for number in (-1, 2):
+                self.assertIsNone(rounds[(case_id, number)])
+            for number in (0, 1):
+                self.assertEqual(rounds[(case_id, number)], [changes[case_id][number].get(e, e) for e in rounds[(base, number)]])
 
 
 if __name__ == '__main__':

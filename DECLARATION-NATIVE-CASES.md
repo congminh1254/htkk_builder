@@ -948,3 +948,16 @@ xuất gốc giữ ở nhánh private `-output-htkk584` / `-output-htkk585`; htk
 Không ca nào chạy lại. Hai ca 5.8.5 không khớp đúng như dự đoán ở `HTKK-5.8.5-IMPACT.md` §6. Đợt trước trên web 77de126 (run
 44904513876 đến 44904593610) khớp cùng 17 cây nhưng không giữ được tệp vì web main đổi giữa chừng (`STALE_SOURCE`); ca Y7 khi đó dừng
 ở bước kiểm nguồn vì workbook 5.8.4 khác pin, đã sửa ở 6ea218d.
+
+## HTKK 5.8.5 — ca quan sát ngày hợp đồng của 01/NTNN, NCCNN, không chặn phát hành (`htkkVersion` 5.8.5, chưa chạy)
+
+Theo `HTKK-5.8.5-IMPACT.md` §3.1 và §8. Nhà sản xuất `htkk_web` (thiết kế `01NTNN-NCCNN-future-contract-M10-2026` trong
+`scripts/generate-htkk-descriptor-reference.mjs`, ca sản xuất có `htkkVersion: '5.8.5'`, quy tắc `htkkRules: '5.8.5'`).
+
+| Ca | Adapter | Kỳ | Kiểm tra chính |
+|---|---|---|---|
+| `01NTNN-NCCNN-entry-future-contract-M10-2026` | `01-ntnn-nccnn-tt89-3.0.9-entry` | tháng 10/2026 | các dòng của ca nhập tay, (4) ngày hợp đồng W78, W86 = 31/12/2027, số hợp đồng HD-GL-007, HD-GL-008; cùng kiểm sheet và XML với `01NTNN-NCCNN-entry-M10-2026` |
+
+HTKK 5.8.4 chặn ngày hợp đồng không trước ngày hiện tại (E_36) khi ghi; `checkTKChinh` của 5.8.5 không còn kiểm ngày này. Ngày
+31/12/2027 sau mọi ngày chạy dự kiến. Ứng dụng vẫn chặn (E36) cho tới khi ca này khớp và `HTKK585_Y8_CONTRACT_DATE_RELEASED` bật.
+`NTNN_ROWS` của các ca Y8 nhập tay nay kiểm cả `ct4`.

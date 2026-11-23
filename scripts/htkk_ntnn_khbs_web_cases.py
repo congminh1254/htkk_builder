@@ -65,7 +65,32 @@ CASES = {
         'leafTarget': 265, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '1000000'], ['1052', '1000000']], 'ct10': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
     '01NTNN-NCCNN-khbs-part2-nodate-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part2-nodate-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (8693, '73ca63d4b97869ac7acfed4c6d5d9befe068113fc8da7061ed1563c0029193d3'), 'original': (3940, '8b1416a35f005db14bfb54cc3e9f61fa14a21cab0fe1c9ce30e00025eabdd497'), 'prior': None,
         'leafTarget': 249, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1052', '4000000']], 'ct10': '4000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
+    # HTKK 5.8.5 observation cases (adapter 01-ntnn-nccnn-tt89-3.0.9-khbs-585, ``htkkVersion`` 5.8.5 in the manifest; HTKK-5.8.5-IMPACT.md).
+    # The htkk_web producer makes them under its 5.8.5 rules (htkkRules '5.8.5', data/htkk-585-y8-khbs-rules.json there), the same
+    # lần đầu files as the 5.8.2 cases they mirror. Mục II: MapMCT_TieuMuc 5.8.5 gives ThueNCCNN [9] 1749 and [13] 1099, ThueCNKCT [9]
+    # 1701 and [13] 1003 (no longer 1052), and MapMCT 5.8.5 reads the individual's ThueTNCN/ct10…ct13. The phần II case of
+    # 01NTNN-NCCNN-khbs-part2-M10-2026 under these rules: Muc_I.1 rows 1749 and 1099 (2.000.000 each) instead of one 1052 row.
+    '01NTNN-NCCNN-khbs-part2-585-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part2-585-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (8772, 'de5c03da0ac45f2d01f928b8119ca2f7c5a0c6fd86ea911ef0e0e848ab8b9031'), 'original': (3940, 'c12296c09bd11817f5dfa2e07ba76d1c530034a4d909ae3bccbaea0d0ec97ff0'), 'prior': None,
+        'leafTarget': 252, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1749', '2000000'], ['1099', '2000000']], 'ct10': '4000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
+    # Both phần II tables changed: the supplier as above and the individual's GTGT / TNCN revenues 100.000.000 → 150.000.000 ((5) stays,
+    # it is part of the key): ten 01-1/KHBS rows, Muc_I.1 1749 2.000.000, 1099 2.000.000, 1701 2.500.000, 1003 1.000.000.
+    '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part2-tncn-585-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (10983, 'a90dce5994678a11d3f3a0694b4fbc01f1dd7a67186ce89e4106587d5852f1b8'), 'original': (3940, 'c12296c09bd11817f5dfa2e07ba76d1c530034a4d909ae3bccbaea0d0ec97ff0'), 'prior': None,
+        'leafTarget': 323, 'expected': {'rows': ['(7)', '(9)', '(10)', '(13)', '(14)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1749', '2000000'], ['1099', '2000000'], ['1701', '2500000'], ['1003', '1000000']], 'ct10': '7500000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
+    # Phần I with (4) ngày hợp đồng 31/12/2027, after any run day (contract HD-GL-203): 5.8.4 refused it on Ghi (checkTKChinh E_36
+    # "Ngày Hợp đồng phải nhỏ hơn ngày hiện tại"), 5.8.5 no longer tests the date. Same change as the phần I case: 1701 and 1052 +1.000.000.
+    '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026': {'producerCase': 'ntnn01-nccnn-khbs-part1-future-contract-m10-2026', 'menuId': 'Y8', 'soLan': 1, 'web': (9307, '765fe590bd0fb606f94c7ffc88083db61265da97410701d5220635ada792e871'), 'original': (3742, '98a8c41b03c53e316d3f17fa956f0494b79a82559759fddfd0f1da47caa653f7'), 'prior': None,
+        'leafTarget': 265, 'expected': {'rows': ['(5)', '(7)', '(9)', '(10)', '(13)', '(14)'], 'subitems': [['1701', '1000000'], ['1052', '1000000']], 'ct10': '2000000', 'ct3a_1': '2026-11-13', 'ct3a_2': '0', 'ct3b': '0'}},
 }
+# The HTKK 5.8.5 Y8 cases: oracle 5.8.5 named in the manifest, and the public DM_MaTM names (InterfaceIni/DM_MaTM.xml, same bytes in
+# 5.8.2 and 5.8.5) of every Y8 tiểu mục of 5.8.5 accepted in the native export from the first run (catalogueTexts), so a differing
+# 01/KHBS (the 5.8.5 run of 01NTNN-NCCNN-khbs-part2-M10-2026 stopped at XML_PRIVACY) is still retained and can be read leaf by leaf.
+Y8_585_CASES = ('01NTNN-NCCNN-khbs-part2-585-M10-2026', '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026', '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026')
+Y8_585_SUBITEM_NAMES = frozenset(('Thuế giá trị gia tăng hàng sản xuất, kinh doanh trong nước (gồm cả dịch vụ trong lĩnh vực dầu khí)',
+                                  'Thuế thu nhập doanh nghiệp từ hoạt động sản xuất kinh doanh (gồm cả dịch vụ trong lĩnh vực dầu khí)',
+                                  'Hàng hóa, dịch vụ khác', 'Thuế thu nhập doanh nghiệp khác', 'Thuế thu nhập từ hoạt động sản xuất, kinh doanh của cá nhân'))
+for _id in Y8_585_CASES:
+    CASES[_id]['htkkVersion'] = '5.8.5'
+    CASES[_id]['catalogueTexts'] = Y8_585_SUBITEM_NAMES
 for _spec in CASES.values():
     _spec.setdefault('annexParts', ())
     _spec.setdefault('inputMode', 'khbs-original-entry-export' if _spec['menuId'] == 'Y8' else 'khbs-web-xml-import-reexport')
@@ -385,7 +410,7 @@ KEY_PATH_SUFFIX = 'PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten'
 
 
 def catalogue_texts(case_id, items, allowed):
-    """Extra texts a case's native export may carry (02/QTT-TNCN, 05/QTT-TNCN, 03/TNDN, 03/NTNN and 01/TCKT only, ``catalogueTexts``): the public HTKK catalogue texts of the
+    """Extra texts a case's native export may carry (02/QTT-TNCN, 05/QTT-TNCN, 03/TNDN, 03/NTNN, 01/TCKT, 01/GTGT TT89 and the HTKK 5.8.5 Y8 cases only, ``catalogueTexts``): the public HTKK catalogue texts of the
     menu, and on the 01-1/KHBS row key leaf a ' - '-joined key whose every piece is empty, a text of the case's files or a bounded
     number/code/date shape. Every other case gets none."""
     spec = case(case_id)

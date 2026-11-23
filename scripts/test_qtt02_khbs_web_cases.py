@@ -116,7 +116,12 @@ class Qtt02KhbsNativeRetention(unittest.TestCase):
             self.assertIn(text, extra)
         # Every other KHBS case keeps the exact input-text rule.
         for case_id in m.NTNN_CASES + m.KK05_CASES + m.CNKD_CASES:
+            if case_id in m.Y8_585_CASES:
+                continue
             self.assertEqual(m.catalogue_texts(case_id, items, allowed), frozenset())
+        # The HTKK 5.8.5 Y8 cases accept the DM_MaTM names of the 5.8.5 Y8 tiểu mục (and the shaped row keys) only.
+        for case_id in m.Y8_585_CASES:
+            self.assertEqual(m.catalogue_texts(case_id, items, allowed) - m.Y8_585_SUBITEM_NAMES, {'NGUOI PHU THUOC A -  - 001215000001', 'NGUOI PHU THUOC A - 2015-02-01'})
         source = (ROOT / 'htkk_ntnn_khbs_web_cases.py').read_text(encoding='utf-8')
         self.assertIn('d._texts(items, allowed | catalogue_texts(case_id, items, allowed))', source)
 

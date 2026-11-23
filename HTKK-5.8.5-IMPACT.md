@@ -173,3 +173,19 @@ imports 5.8.5 files of the same 16 menus as 5.8.4. No rerun.
 - Whether the Catalogue_CQT_Dia_Ban row 20118124 is a data error (the commune catalogue keeps 20115124).
 - What HTKK does with an empty Y (Convert.ToDouble("") throws); the web treats empty as 0.
 - The notice attachments (relay 504).
+
+## 8. Cases prepared for the two open Y8 gates (23/11/2026, not run)
+
+Non-gating, `htkk_version` 5.8.5, for the htkk_web gates `HTKK585_Y8_CONTRACT_DATE_RELEASED` and `HTKK585_Y8_KHBS_RELEASED` (both
+false). Inputs made by the htkk_web producers under its `htkkRules: '5.8.5'`.
+
+| Case | Mode | What it shows |
+|---|---|---|
+| `01NTNN-NCCNN-entry-future-contract-M10-2026` | original entry (adapter `…-entry`) | the Y8 entry rows with both (4) ngày hợp đồng 31/12/2027 and contracts HD-GL-007 / HD-GL-008: 5.8.5 has no E_33 / E_36, so HTKK saves and exports; whole tree equal to the web file |
+| `01NTNN-NCCNN-khbs-part1-future-contract-M10-2026` | KHBS typed (adapter `…-khbs-585`) | phần I lần đầu and bổ sung with ngày hợp đồng 31/12/2027 |
+| `01NTNN-NCCNN-khbs-part2-585-M10-2026` | KHBS typed | mục II supplier change: Muc_I.1 1749 / 1099 |
+| `01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026` | KHBS typed | supplier and individual: 1749 / 1099 / 1701 / 1003, the individual's thuế TNCN items read |
+
+Static checks behind them (5.8.5 payload): `Ntnn01TT89Nckt309.checkTKChinh` has no E_33 / E_36 string and no DateTime.Today; Header
+rows reference no W cell; W is control 14 (mask) and `ct4` is `xs:date` in the unchanged XSD. KHBS-NATIVE-CASE.md has the KHBS details.
+The D1 tháng 01/2027 refusal has no case: there is no expected-refusal mode.

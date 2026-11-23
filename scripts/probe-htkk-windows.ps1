@@ -1014,7 +1014,7 @@ try {
         # Bổ sung, its lần and ngày lập 13/11/2026, imported (I9) or typed (Y8), Tổng hợp KHBS, the last one exported; XSD, whole tree.
         # Step mask: 1|2|4 C0 input/saved/closed, 16 input, 32 Tổng hợp KHBS, 512 last round, 1024 export; lần 2 adds 8|64|128.
         # U5 (KieuKHBS "", $HtkkNtnnKhbsNoSummaryCases): no Tổng hợp KHBS; 2048 instead of 32 (btnTongHopKHBS not shown).
-        $khbsEntryCase=$env:EXPECTED_WEB_CASE_ID -cin @('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026')
+        $khbsEntryCase=$env:EXPECTED_WEB_CASE_ID -cin @('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-585-M10-2026','01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026','01NTNN-NCCNN-khbs-part1-future-contract-M10-2026')
         $khbsLan2=$env:EXPECTED_WEB_CASE_ID -cin $HtkkNtnnKhbsLan2Cases
         # 05/KK-TNCN with 05-1/PBT (Thuế tỉnh/CCT, CQT quản lý) and 01/CNKD with PL 01 (giảm thuế ticks): each import is completed by fixed original choices (KhbsImportTick).
         $khbsTickCase=$env:EXPECTED_WEB_CASE_ID -cin $HtkkNtnnKhbsTickCases
@@ -1234,7 +1234,7 @@ try {
       $declarationKhbs=$GuiAutomation -eq 'declaration-amendment-khbs-inspect'
       if($gui.webCaseId -cnotin $(if($declarationKhbs){$HtkkNtnnKhbsCases}else{$HtkkDeclarationCases})){throw 'STAGING_NOT_VERIFIED'}
       # The input of an original-entry case is typed (fixed compiled plan), never imported. The Y8 bổ sung cases are typed too.
-      $declarationEntryCase=$gui.webCaseId -cin $(if($declarationKhbs){@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026')}else{$HtkkDeclarationEntryCases})
+      $declarationEntryCase=$gui.webCaseId -cin $(if($declarationKhbs){@('01NTNN-NCCNN-khbs-part1-M10-2026','01NTNN-NCCNN-khbs-part2-M10-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','01NTNN-NCCNN-khbs-part1-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-nodate-M10-2026','01NTNN-NCCNN-khbs-part2-585-M10-2026','01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026','01NTNN-NCCNN-khbs-part1-future-contract-M10-2026')}else{$HtkkDeclarationEntryCases})
       $declarationTickCase=$gui.webCaseId -cin $(if($declarationKhbs){$HtkkNtnnKhbsTickCases}else{$HtkkDeclarationTickCases})
       if($declarationKhbs -and (($gui['declarationKhbsStepMask'] -isnot [int] -and $gui['declarationKhbsStepMask'] -isnot [long]) -or ([long]$gui.declarationKhbsStepMask -band 1024) -ne 1024)){throw 'STAGING_NOT_VERIFIED'}
       $declarationInputFlags=if($declarationEntryCase){@('declarationEntryMethodPinsMatched','declarationEntryCatalogueMatched','declarationEntryChoiceMatched','declarationEntryLocksMatched','declarationEntryRowsMatched','declarationEntryValuesMatched','declarationEntrySheetMatched')}elseif($declarationTickCase){@('roundtripImportSucceeded','roundtripImportPathMatched','declarationTickMethodPinsMatched','declarationTickEditsMatched','declarationTickTicksMatched')}else{@('roundtripImportSucceeded','roundtripImportPathMatched')}

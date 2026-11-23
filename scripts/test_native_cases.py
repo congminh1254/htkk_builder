@@ -5,13 +5,13 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8','9','a','b','c','9','1','2','3','4','5','6','7','a','b','c','d','e','f','1','2','3','8','9','a','b','c','d','e','f','4','5','6','7','8','9','0','8','9','a','b','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','5','6','7','8','9','a','b','6','7','8','9','a','b','c','d','a','b','c','d'))]}
+def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8','9','a','b','c','9','1','2','3','4','5','6','7','a','b','c','d','e','f','1','2','3','8','9','a','b','c','d','e','f','4','5','6','7','8','9','0','8','9','a','b','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','5','6','7','8','9','a','b','6','7','8','9','a','b','c','d','a','b','c','d','2','4','6','8'))]}
 import datetime
 DECEMBER=datetime.datetime(2026,12,1,0,0,5,tzinfo=datetime.timezone.utc)
 NOVEMBER=datetime.datetime(2026,11,30,23,59,59,tzinfo=datetime.timezone.utc)
 class NativeCases(unittest.TestCase):
  def test_every_registered_case_and_separate_tokens_pending_before_dispatch(self):
-  value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[]
+  value=d.publication(json.dumps(document(),separators=(',',':')).encode(),'a'*40);calls=[]
   # On/after every notBefore (2026-12-01) all registered cases are dispatched.
   self.assertEqual(d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args),now=lambda:DECEMBER),len(d.CASES))
   self.assertEqual(len(calls),2*len(d.CASES))
@@ -30,7 +30,7 @@ class NativeCases(unittest.TestCase):
    # The UTC day decides: 01/12 00:30 in Hà Nội is still 30/11 UTC.
    self.assertEqual(d.deferred(case,datetime.datetime(2026,12,1,0,30,tzinfo=datetime.timezone(datetime.timedelta(hours=7)))),'2026-12-01')
   for case in set(d.CASES)-deferred:self.assertIsNone(d.deferred(case,NOVEMBER))
-  value=d.publication(json.dumps(document()).encode(),'a'*40);calls=[];printed=[]
+  value=d.publication(json.dumps(document(),separators=(',',':')).encode(),'a'*40);calls=[];printed=[]
   with patch('builtins.print',lambda *a,**k:printed.append(a[0])):
    count=d.dispatch(value,'builder-token','source-token',lambda *args:calls.append(args),now=lambda:NOVEMBER)
   self.assertEqual(count,len(d.CASES)-len(deferred));self.assertEqual(len(calls),2*count)
@@ -39,6 +39,10 @@ class NativeCases(unittest.TestCase):
    self.assertNotIn(d.context(case),touched);self.assertNotIn(case,touched)
    self.assertIn('Native case '+case+' deferred until 2026-12-01 (HTKK refuses its period before that day); not dispatched, no status.',printed)
   self.assertFalse(any(args[2].get('state')=='success' for args in calls))
+ def test_compact_publication_of_every_registered_case_fits_the_dispatch_limit(self):
+  # publish-htkk-web-inputs.py save_result writes the publication compactly; dispatch refuses a body over 16384 bytes.
+  body=(json.dumps(document(),separators=(',',':'))+'\n').encode('ascii')
+  self.assertLessEqual(len(body),16384);self.assertEqual(len(d.publication(body,'a'*40)['cases']),len(d.CASES))
  def test_not_before_is_a_reviewed_date_on_candidates_only(self):
   import copy
   base=copy.deepcopy(d.case_registry.CASES['02QTT-dependants-Y2026'])
@@ -58,7 +62,7 @@ class NativeCases(unittest.TestCase):
  def test_publication_rejects_extra_duplicate_stale_mixed_cases_or_bad_sha(self):
   for mutate in (lambda x:x.update(extra='secret'),lambda x:x.update(sourceCommit='b'*40),lambda x:x['cases'].reverse(),lambda x:x['cases'][0].update(extra='private'),lambda x:x['cases'][0].update(artifactCommit='invalid')):
    value=document();mutate(value)
-   with self.assertRaises(ValueError):d.publication(json.dumps(value).encode(),'a'*40)
+   with self.assertRaises(ValueError):d.publication(json.dumps(value,separators=(',',':')).encode(),'a'*40)
   with self.assertRaises(ValueError):d.publication(b'{"format":"a","format":"b"}','a'*40)
   with self.assertRaises(ValueError):d.publication(b'x'*16385,'a'*40)
  def test_callback_success_is_only_actual_probe_success_other_outcomes_fail(self):
@@ -156,7 +160,7 @@ class NativeDispatchRetry(unittest.TestCase):
   def fail_dispatch(url,token,payload):
    if '/dispatches' in url:raise http_error(503)
   with tempfile.TemporaryDirectory() as temp:
-   (pathlib.Path(temp)/'htkk-web-input-publication.json').write_text(json.dumps(document()));env['RUNNER_TEMP']=temp;out=io.StringIO()
+   (pathlib.Path(temp)/'htkk-web-input-publication.json').write_text(json.dumps(document(),separators=(',',':')));env['RUNNER_TEMP']=temp;out=io.StringIO()
    with patch.dict(os.environ,env),patch.object(d,'post',side_effect=fail_dispatch) as posted,patch.object(d,'get_json',return_value={'total_count':0,'workflow_runs':[]}) as listed,patch.object(d.time,'sleep'),contextlib.redirect_stdout(out):
     with self.assertRaises(SystemExit) as raised:d.main()
    self.assertEqual(str(raised.exception),'Native-case dispatch failed; no raw response, input, path or credential published.')

@@ -980,3 +980,34 @@ writes their negative text; the web keeps "-20.000.000" and this run shows HTKK'
 
 01/TCKT 3.1.0 (Y7) gets no such case: its [07]…[13] are totals of bảng kê columns with MinValue 0, and a bổ sung with PL 01-3 (whose
 cells may be negative) is outside the app's KHBS scope, so no input makes a negative ct04/ct05 there.
+
+## 01/NTNN, NCCNN on HTKK 5.8.5: three observation cases (adapter `01-ntnn-nccnn-tt89-3.0.9-khbs-585`, `htkkVersion` 5.8.5)
+
+HTKK 5.8.5 changed two Y8 inputs of "Tổng hợp KHBS" (HTKK-5.8.5-IMPACT.md section 2): `MapMCT_TieuMuc.xml` gives ThueNCCNN [9] / [13]
+tiểu mục 1749 / 1099 and ThueCNKCT [9] / [13] 1701 / 1003 (all four were 1052), and `MapMCT.xml` points the ThueCNKCT items (10)-(13)
+at `ThueTNCN/…`. `KHBS_TT80_309.xls`, both KHBS output templates, `KHBS_01_NTNN_NCCNN_TT89_309.xsd` and `DM_MaTM.xml` keep their 5.8.2
+bytes, and the KHBS methods of HTKK.exe (TongHopKhbsMoi, CollectionDynamic01_1_KHBS, FindIndexTieuMuc, …) have the same
+token-normalised IL as in 5.8.2; `WinLoadFromFile` changed only for Z5/Z6. The htkk_web producer makes these files under its HTKK 5.8.5
+rules (`htkkRules: '5.8.5'`, tables read from the 5.8.5 payload into its `data/htkk-585-y8-khbs-rules.json`); the app itself still
+refuses a Y8 bổ sung with mục II and a contract dated today or later until these cases match. The three cases type their rounds like
+their 5.8.2 bases (`KhbsEntry`) and accept the public DM_MaTM names of the five Y8 tiểu mục in the native export (`catalogueTexts`),
+so a differing 01/KHBS is retained: the 5.8.5 run of `01NTNN-NCCNN-khbs-part2-M10-2026` (44911601565) stopped at `XML_PRIVACY` and
+could not be read leaf by leaf.
+
+- `01NTNN-NCCNN-khbs-part2-585-M10-2026`: the rounds of `01NTNN-NCCNN-khbs-part2-M10-2026` (the supplier's GTGT and TNDN revenues
+  200.000.000 → 240.000.000, same lần đầu file). Web 01/KHBS Muc_I.1: 1749 "Hàng hóa, dịch vụ khác" 2.000.000 and 1099 "Thuế thu nhập
+  doanh nghiệp khác" 2.000.000 (5.8.2 rules: one 1052 row of 4.000.000). Web file 8772 bytes, 252 compared leaves (plan 256).
+- `01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026`: as above, and the individual's GTGT / TNCN revenues 100.000.000 → 150.000.000 in round 1
+  ((5) stays: it is part of the row key). Ten 01-1/KHBS rows; Muc_I.1 1749 2.000.000, 1099 2.000.000, 1701 2.500.000, 1003 1.000.000,
+  ct10 7.500.000. Under the 5.8.2–5.8.4 tables the individual's TNCN change is no item (ThueTNDN/… is not in ThueCNKCT). Web file 10983
+  bytes, 323 compared leaves (plan 327).
+- `01NTNN-NCCNN-khbs-part1-future-contract-M10-2026`: the rounds of `01NTNN-NCCNN-khbs-part1-M10-2026` with (4) ngày hợp đồng W60
+  31/12/2027 and contract HD-GL-203. 5.8.4 refused that date on Ghi (`checkTKChinh` E_36 "Ngày Hợp đồng phải nhỏ hơn ngày hiện tại");
+  5.8.5 has no E_33 / E_36. Same 01-1/KHBS rows and Muc_I.1 as the phần I case. Web file 9307 bytes (lần đầu 3742), 265 compared
+  leaves (plan 269).
+
+Negative ct04 / ct05 do not arise for Y8: every amount cell of the three tables has MinValue 0 in the 5.8.5 control template (byte-identical
+to 5.8.1), (13) is `IF(… − BH < 0, 0, …)`, and Header rows 28 / 38 / 39 refuse (12) > (10) × (11); only ct06 / ct7 can be negative.
+
+01/GTGT TT80 (D1) from tháng 01/2027 gets no case: HTKK 5.8.4 refuses it in the period dialog, and the native framework has no
+expected-refusal mode (every driver ends with an export to compare). `notBefore` only defers a case that is expected to export.
