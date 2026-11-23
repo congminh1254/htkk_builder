@@ -3689,6 +3689,27 @@
         "annexes": [],
         "amendmentOrder": 1
       }
+    },
+    {
+      "caseId": "01GTGT-khbs-negative-zero-to-purchase-M10-2026",
+      "producerCase": "khbs-negative-zero-to-purchase",
+      "adapterId": "01-gtgt-2.8.3-khbs",
+      "format": "htkk-web-khbs-negative-zero-to-purchase-input-v1",
+      "stagingDirectory": "htkk-web-reference-khbs-negative-zero-to-purchase-input",
+      "inputBranch": "gtgt-web-reference-khbs-negative-zero-to-purchase-input",
+      "outputBranch": "gtgt-web-native-khbs-negative-zero-to-purchase-output",
+      "statusContext": "htkk-native/khbs-negative-zero-to-purchase",
+      "releaseGate": false,
+      "htkkVersion": "5.8.2",
+      "unit": {
+        "menuId": "D1",
+        "adapterVersion": "2.8.3",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
     }
   ]
 }

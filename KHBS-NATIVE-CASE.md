@@ -947,3 +947,15 @@ text shape 36 = native length 9, no prefix relation. `WinSpreadProcess.InsertNum
 "(100.000)" is no text of the staged files; `leafOrdinal` 196 is the first leaf of the same path (`_where` reports the first leaf at
 the path, the [23] row's ct05), not a second problem. htkk_web now writes a negative ct04/ct05 of Z5 in parentheses; the decrease web
 pin changed (8204 bytes), the lần đầu and the increase file are unchanged, leaf targets unchanged.
+
+## Case 25: negative amounts on 01-1/KHBS (non-gating; adapter `01-gtgt-2.8.3-khbs`, HTKK 5.8.2)
+
+`01GTGT-khbs-negative-zero-to-purchase-M10-2026` (htkk_web producer `khbs-negative-zero-to-purchase`): case 1's flow (the all-zero
+C0 typed and saved in HTKK, tháng 10/2026, ngày lập 13/11/2026) with a B1 of purchases only: [23] 1.000.000, [24] 100.000, [25]
+100.000, so [36] = −100.000 and [41] = [43] = 100.000. 01-1/KHBS rows [23] [24] [25] [36] [41] [43]; the [36] row has ct04 "0",
+ct05 "-100.000", ct06 −100000. 01/KHBS: Muc_II 1701 +100.000 ([43] has tiểu mục 1701 through L_27), tongCong_ct10 0, ct3a_1 nil.
+Web file 7175 bytes, 161 fragment leaves, 231 tax leaves (`PURCHASE_NEGATIVE` is the case's main-sheet money vector, [36]
+negative). What it decides: HTKK 5.8.4 wrote the same shape of 01/GTGT TT89 (Z5) as "(100.000)" (`InsertNumberCell` sets
+`NegativeFormat` 0; htkk_web run 45088690753). If HTKK 5.8.2 does the same for D1, this case differs at that one leaf and the
+raw export is retained to port it; htkk_web's D1 export is not changed before the run.
+It is also the first D1 case with ct10 and ct11 both 0 (ct3a_1 nil); no earlier D1 run covered that Muc_3 shape.
