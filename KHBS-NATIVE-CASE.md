@@ -959,3 +959,13 @@ negative). What it decides: HTKK 5.8.4 wrote the same shape of 01/GTGT TT89 (Z5)
 `NegativeFormat` 0; htkk_web run 45088690753). If HTKK 5.8.2 does the same for D1, this case differs at that one leaf and the
 raw export is retained to port it; htkk_web's D1 export is not changed before the run.
 It is also the first D1 case with ct10 and ct11 both 0 (ct3a_1 nil); no earlier D1 run covered that Muc_3 shape.
+
+Run 45111455530 (HTKK 5.8.2, web 1f4573fb, builder 1c6cc51): import, summary and export succeeded; `khbsLeafCount` 231 as planned,
+`khbsMismatchMask` 32 (leaf text of PL01_1_KHBS only: the main sheet and the whole PL01_KHBS, `ct3a_1` nil included, matched),
+`khbsFirstDifferenceOrdinal` 197 = ct05 of the [36] row (web "-100.000"). `khbsOriginalMoneyMatched` / `khbsSavedMoneyMatched`
+false is the expected state of a zero-C0 case (the probe requires them false there, as for case 1). Retention refused the export
+(`XML_PRIVACY`, `leafOrdinal` 201 = the same leaf, the publisher counts the four TTinDVu leaves): its text is no text of the staged
+file. Cause (HTKK.exe, the same IL in 5.8.2 and 5.8.4): `CollectionStatic01_1_KHBS` saves the main cell's CellType
+(`GeneralFunctions.UpsertCellType`), `FormatCol4567` puts it on ct04/ct05, and `WinSpreadProcess.InsertNumberCell` made that
+cell with `NegativeFormat` 0 ("(n)"). htkk_web now writes "(100.000)"; `ROWS_NEGATIVE_ZERO_TO_PURCHASE` carries it, web file 7176
+bytes. No other D1 case has a negative ct04/ct05, so their files are unchanged.

@@ -85,8 +85,9 @@ ANNEX12_LAN2_ZERO_CT10_CASE='01GTGT-khbs-annex12-lan2-zero-ct10-M10-2026'
 ANNEX12_OTHER_PROVINCE_CASE='01GTGT-khbs-annex12-other-province-M10-2026'
 # Case 25 (non-gating): NEGATIVE amounts on 01-1/KHBS. Case 1's flow (the all-zero C0 typed and saved in HTKK) with a B1 of
 # purchases only (PURCHASE_NEGATIVE): [36] = -100.000 and [41] = [43] = 100.000, so the [36] row has a negative ct05 and ct06.
-# The web writes ct05 "-100.000"; HTKK 5.8.4 wrote the same shape of 01/GTGT TT89 (Z5) as "(100.000)" (InsertNumberCell
-# NegativeFormat 0; htkk_web run 45088690753), so this run shows what HTKK 5.8.2 writes for D1. [43] has tiểu mục 1701: Muc_II
+# Run 45111455530 (web 1f4573fb, builder 1c6cc51) differed at one leaf only, ct05 of [36] (KHBS ordinal 197, region PL01_1_KHBS):
+# the web wrote "-100.000" while HTKK formats that cell with the main [36] cell's NumberCellType (InsertNumberCell NegativeFormat 0,
+# copied by UpsertCellType / FormatCol4567), "(100.000)" as for Z5. htkk_web now writes "(100.000)" (web pin 7176 bytes). [43] has tiểu mục 1701: Muc_II
 # 1701 +100.000, ct10 0, no late days.
 NEGATIVE_ZERO_TO_PURCHASE_CASE='01GTGT-khbs-negative-zero-to-purchase-M10-2026'
 ANNEX12_WIDE_CASES=(ANNEX12_ADD_PLANT_CASE,ANNEX12_REMOVE_PLANT_CASE,ANNEX12_TWO_PLACES_CASE,ANNEX12_CT10_CASE,ANNEX12_EQUAL_ROWS_CASE,ANNEX12_DISPLAY_SAME_CASE,ANNEX12_LAN2_CT10_M09_CASE,ANNEX12_LAN2_ZERO_CT10_CASE)
@@ -8500,7 +8501,7 @@ ROWS_NEGATIVE_ZERO_TO_PURCHASE=(
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ma', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct3_2_ten', '', ''),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct04', '', '0'),
-  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '-100.000'),
+  ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct05', '', '(100.000)'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct06', '', '-100000'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct7', '', '0'),
   ('PL01_1_KHBS/Muc_A/DSachHSo/BKeHSo/CTietHSo/ChiTiet/ct8', '', ''),
