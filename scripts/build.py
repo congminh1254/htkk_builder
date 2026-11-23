@@ -1,18 +1,20 @@
 """Keep private source diagnostics off the public Actions console."""
-import os,pathlib,subprocess,shutil,json,re,datetime,importlib.util
+import os,pathlib,subprocess,shutil,json,re,datetime,importlib.util,time
 source=pathlib.Path('source').resolve()
 log=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-builder-log.txt'
 allowed=('PATH','HOME','TMPDIR','RUNNER_TEMP','RUNNER_TOOL_CACHE','LANG')
 env={key:os.environ[key] for key in allowed if key in os.environ}
 env.update(CI='1',NEXT_TELEMETRY_DISABLED='1',NEXT_PUBLIC_ADSENSE_ENABLED='true' if os.environ.get('ADSENSE_ENABLED') == 'true' else 'false')
 STAGES={'npm ci':'install','npm run typecheck':'typecheck','npm test':'unit','npm run test:schemas':'schemas','npm audit --omit=dev --audit-level=high':'audit','npm run build':'build','npx playwright install --with-deps chromium':'browser-install','npm run test:e2e':'e2e','npm run test:e2e -- --reporter=line,json':'e2e','node scripts/check-htkk-source-cases.mjs':'source-cases'}
-stage='setup';code='none'
+stage='setup';code='none';timings=[]
 def run(command):
  global stage,code
  stage=STAGES.get(' '.join(command),'cmd%d'%(len(command)))
- code='running'
- with log.open('ab') as output:
-  result=subprocess.run(command,cwd=source,env=env,stdout=output,stderr=subprocess.STDOUT)
+ code='running';started=time.monotonic()
+ try:
+  with log.open('ab') as output:
+   result=subprocess.run(command,cwd=source,env=env,stdout=output,stderr=subprocess.STDOUT)
+ finally:timings.append((stage,round(time.monotonic()-started)))
  code=str(result.returncode) if result.returncode>=0 else 'signal%d'%(-result.returncode)
  if result.returncode:raise RuntimeError()
 def e2e_failure_locations():
@@ -33,6 +35,36 @@ def e2e_failure_locations():
   text=','.join(sorted(set(found))[:20])
   return text if re.fullmatch('[0-9:,@]{0,400}',text) else ''
  except Exception:return ''
+def e2e_summary():
+ """Numbers only, pass or fail: suite seconds, tests run, the five slowest specs (index:line=seconds, same index as the
+ failure line) and the specs that hit their timeout. Lets a release compare its e2e time with earlier ones."""
+ try:
+  report=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-e2e-report.json').read_text())
+  files=sorted(p.name for p in (source/'tests/e2e').glob('*.spec.ts'))
+  slow={};timed=set();count=0
+  def walk(suite):
+   nonlocal count
+   for spec in suite.get('specs',[]):
+    name=pathlib.PurePosixPath(str(spec.get('file',''))).name
+    if name not in files or not isinstance(spec.get('line'),int):continue
+    key='%d:%d'%(files.index(name),spec['line'])
+    for t in spec.get('tests',[]):
+     for r in t.get('results',[]):
+      if r.get('status')=='skipped' or not isinstance(r.get('duration'),(int,float)):continue
+      count+=1;slow[key]=max(slow.get(key,0),r['duration'])
+      if r.get('status')=='timedOut':timed.add(key)
+   for child in suite.get('suites',[]):walk(child)
+  for suite in report.get('suites',[]):walk(suite)
+  duration=report.get('stats',{}).get('duration')
+  top=sorted(slow.items(),key=lambda item:-item[1])[:5]
+  text='seconds=%d tests=%d slowest=%s timedout=%s'%(round(duration/1000) if isinstance(duration,(int,float)) else -1,count,','.join('%s=%d'%(k,round(v/1000)) for k,v in top),','.join(sorted(timed)[:20]))
+  return text if re.fullmatch('[a-z0-9:,= -]{0,600}',text) else ''
+ except Exception:return ''
+def print_timings():
+ text=','.join('%s=%d'%item for item in timings)
+ if re.fullmatch('[a-z0-9=,-]{0,400}',text):print('stage seconds: '+text)
+ summary=e2e_summary() if any(name=='e2e' for name,_ in timings) else ''
+ if summary:print('e2e '+summary)
 try:
  for command in (['npm','ci'],['npm','run','typecheck'],['npm','test'],['npm','run','test:schemas'],['npm','audit','--omit=dev','--audit-level=high'],['npm','run','build']):run(command)
  browser=next((shutil.which(name) for name in ('google-chrome','chromium','chromium-browser') if shutil.which(name)),None)
@@ -59,8 +91,10 @@ try:
   # Portable distribution is retired. Never carry stale download output forward.
   shutil.rmtree(source/'out/downloads',ignore_errors=True)
 except Exception as error:
+ print_timings()
  if stage=='e2e':
   locations=e2e_failure_locations()
   if locations:print('e2e failures (spec index:line): '+locations)
  raise SystemExit('Build or verification failed at stage=%s code=%s error=%s. Private diagnostics were not published.'%(stage if re.fullmatch('[a-z0-9-]{1,20}',stage) else 'other',code if re.fullmatch('[a-z0-9-]{1,12}',code) else 'other',type(error).__name__ if re.fullmatch('[A-Za-z]{1,40}',type(error).__name__) else 'other'))
+print_timings()
 print('Build and verification passed.')
