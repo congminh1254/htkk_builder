@@ -906,10 +906,19 @@ H28 nhập tay, trống thì `CheckTinhTheoCQTDbhc` báo 0596. `btnDongY_Click` 
 khác CQT của hồ sơ, nên tỉnh khác chỉ chọn được khi CQT của hồ sơ có trong danh sách HTKK đưa ra cho xã đó (82500, 82700). Oracle:
 `GTGT01_TT89_OTHER_PROVINCE` / `gtgt01_tt89_header_expected` kiểm sáu lá Header của XML web đúng từng chữ; kiểm ô P32 = 103, P36 =
 10309019 và các ô tổng như các ca Z5 khác; tên tỉnh, xã, [09], [10] trên bản HTKK kết xuất lại nằm trong phép so cả cây.
-**Chặn:** harness hiện cố định hồ sơ (`HtkkGuiReferenceAutomation.cs`, CQT 10129) và địa bàn hộp kỳ
-(`HtkkDeclarationWebImport.cs`: 101 / 10129087 / 10100 / 10129). Với địa bàn đó HTKK khóa và để trống [09]–[11], nên ca này chưa
-cho kết quả có nghĩa. Cần thêm: hồ sơ với CQT 82500 cho ca này và địa bàn hộp kỳ theo ca (103 / 10309019 / CQT cấp cục trong danh
-sách HTKK đưa ra cho xã đó / CQT quản lý 82500). Chưa dispatch; `releaseGate: false`.
+Hồ sơ và hộp kỳ theo ca: hai trường tùy chọn của registry (`htkk-native-cases.json`), kiểm bởi `htkk_case_geography.py`:
+`taxpayerProfile` {`taxOfficeHead`, `taxOffice`} (Thuế tỉnh/CCT, CQT quản lý của hồ sơ; tỉnh, xã của hồ sơ vẫn 101 / 10129087) và
+`periodLocation` {`province`, `ward`, `taxOfficeHead`, `taxOffice`} (cboTinh, cboXa, cboCQTCuc, cboCQTChiCuc). Thiếu trường thì
+giữ giá trị cố định cũ (CQT 10100 / 10129; hộp kỳ 101 / 10129087 / 10100 / 10129), nên mọi ca khác chạy như trước. Chỉ ca khai
+nhập XML (`declaration-web-import-inspect`, không phải ca gate) được mang; chỉ các địa bàn đã soát (tên theo danh mục HTKK, như
+htkk_web `data/htkk-taxpayer-profile.json`) và CQT mà hai hàm nạp danh sách ghim trong `htkk-oracle-baselines.json` đưa ra:
+`loadCqtCapCucTheoDiaBanXa(10309019)` cho 10300, 82500, 82700; `loadCqtCapChiCucTheoDiaBanXa` dưới 82500 chỉ có 82500 (dưới
+10300 là 10300, 10309). Nên CQT quản lý 82500 ở Phường Đồ Sơn chỉ tới được qua CQT cấp cục 82500: ca này dùng hồ sơ 82500 / 82500
+và hộp kỳ 103 / 10309019 / 82500 / 82500 (CQT quản lý của hộp kỳ phải bằng của hồ sơ, 0611). C# biên dịch cùng giá trị
+(`HtkkDeclarationCasePlans.Geography`, `test_case_geography.py` giữ hai bên bằng nhau); `HtkkGuiReferenceAutomation.cs` chọn hai
+combo CQT của hồ sơ và kiểm HEADER theo đó, `HtkkDeclarationWebImport.cs` chọn bốn combo hộp kỳ. Chưa chạy trên Windows: tên mục
+combo (hồ sơ và hộp kỳ) của 82500 là "Chi cục Thuế doanh nghiệp lớn" theo danh mục, chưa thấy trên giao diện. Chưa dispatch;
+`releaseGate: false`.
 
 Câu hỏi cho lần chạy: HTKK 5.8.4 kết xuất `ct*_Cqt` là `0` (giá trị mẫu của ô khóa) và `ct*_Ghichu` rỗng như web không; nhập XML có
 `ct21` = 1 thì `XuLyCheckboxCt21` (gọi từ `AutoBindData_0` với isBindData) có hỏi lại không; `ct22` khác P47 (0, không có tệp kỳ

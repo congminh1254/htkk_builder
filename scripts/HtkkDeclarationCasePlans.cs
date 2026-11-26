@@ -57,6 +57,19 @@ internal sealed class HtkkDeclarationTickPlan {
  }
 }
 
+// Taxpayer profile CQT and period-dialog place of a declaration case (registry fields taxpayerProfile / periodLocation,
+// htkk_case_geography.py; test_case_geography.py keeps this table equal to it). Profile: Thuế tỉnh/CCT and CQT quản lý (code and
+// the name its combo shows); the profile's tỉnh and xã stay 101 / 10129087. Period: tỉnh, xã, Thuế tỉnh/CCT, CQT quản lý.
+internal sealed class HtkkCaseGeography {
+ internal readonly string ProfileHeadCode,ProfileHeadName,ProfileOfficeCode,ProfileOfficeName,ProvinceCode,ProvinceName,WardCode,WardName,HeadCode,HeadName,OfficeCode,OfficeName;
+ internal HtkkCaseGeography(string[] v){
+  if(v==null||v.Length!=12)throw new InvalidOperationException();foreach(string item in v)if(String.IsNullOrEmpty(item))throw new InvalidOperationException();
+  ProfileHeadCode=v[0];ProfileHeadName=v[1];ProfileOfficeCode=v[2];ProfileOfficeName=v[3];ProvinceCode=v[4];ProvinceName=v[5];WardCode=v[6];WardName=v[7];HeadCode=v[8];HeadName=v[9];OfficeCode=v[10];OfficeName=v[11];
+  // 0611: the period's CQT quản lý is the profile's.
+  if(OfficeCode!=ProfileOfficeCode||OfficeName!=ProfileOfficeName)throw new InvalidOperationException();
+ }
+}
+
 internal static class HtkkDeclarationCasePlans {
  internal const string XmldsigSha256="c3b5160be1852606d10f6928e0b214d418f8dd418667cb2fb88fec31e4e6f56d";
  private const string TKhaiThue="TKhaiThue.xsd",TKhaiThueSha256="8f451719355b5a6247f65a34a37584b4a0c7f7cc81a568e1033d08b8fe9b8c1d";
@@ -331,6 +344,15 @@ internal static class HtkkDeclarationCasePlans {
   entries=new string[supplier.Length+individual.Length];supplier.CopyTo(entries,0);individual.CopyTo(entries,supplier.Length);
   return new HtkkDeclarationEntryPlan("M8","M6","AY96","InterfaceIni/DM_NNKD_NTNN.xml","3aed1aea293f423271461892319217e33fc5dab32288dd708e6192a515802d17",
    new string[]{"ThueNTNN|60|1|1","ThueNCCNN|78|1|0","ThueCNKCT|86|1|0"},new string[]{"C","L","M","S","W","Y","AE","AJ","AN","AZ","BD","BH"},entries,HtkkOracleBaseline.EntryMethodPins());
+ }
+ // Every case not listed: the fixed synthetic profile and period place of all earlier cases.
+ internal static HtkkCaseGeography Geography(string caseId){
+  switch(caseId){
+   // Hoạt động khác tỉnh: profile CQT 82500 (Thuế tỉnh/CCT 82500 too: loadCqtCapChiCucTheoDiaBanXa lists 82500 alone under it), period
+   // Hải Phòng / Phường Đồ Sơn / 82500 / 82500 (loadCqtCapCucTheoDiaBanXa of 10309019 offers 10300, 82500, 82700).
+   case "01GTGT-TT89-other-province-M10-2026":return new HtkkCaseGeography(new string[]{"82500","Chi cục Thuế doanh nghiệp lớn","82500","Chi cục Thuế doanh nghiệp lớn","103","Thành phố Hải Phòng","10309019","Phường Đồ Sơn","82500","Chi cục Thuế doanh nghiệp lớn","82500","Chi cục Thuế doanh nghiệp lớn"});
+   default:return new HtkkCaseGeography(new string[]{"10100","Thuế Thành phố Hà Nội","10129","Thuế cơ sở 16 Thành phố Hà Nội","101","Thành phố Hà Nội","10129087","Phường Sơn Tây","10100","Thuế Thành phố Hà Nội","10129","Thuế cơ sở 16 Thành phố Hà Nội"});
+  }
  }
  internal static HtkkDeclarationCasePlan Find(string caseId){
   switch(caseId){
@@ -940,7 +962,8 @@ internal static class HtkkDeclarationCasePlans {
    // Hoạt động khác tỉnh ([09]-[11]): ThayDoiTinhTheoCQT2Cap unlocks rows 26-36 only when the period dialog's tỉnh differs from the
    // profile's maTinhNNT, and fills [11c] D32 / P32 (TenTinh / MaTinh) and [11a] D36 / P36 (TenXa / MaXa). The cell checks read the
    // two code cells P32 103 and P36 10309019; the Header names, [09] and [10] are compared by the whole-tree check. Needs a profile
-   // whose CQT is 82500 (0611) and the period geography 103 / 10309019 / 82500, which this harness does not set yet.
+   // whose CQT is 82500 (0611) and the period geography 103 / 10309019 / 82500 / 82500: Geography() below (registry taxpayerProfile /
+   // periodLocation).
    case "01GTGT-TT89-other-province-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Z5","3.0.9","2032","Gtgt01TT89Nckt309",new string[]{"101","101_1","Z5"},"month","19","2026","10","01/10/2026","31/10/2026",false,
     new string[0],new string[]{"01|Tờ khai"},
     "InterfaceTemplates/excel/01_GTGT_TT89_309.xls","5370eb12c05cc2770e85ccc1bee7e6a7dc6138065f4c0fc4e0a418d3d9ee4585","InterfaceTemplates/xml/01_GTGT_TT89_309.xml","ba96834481a4b5b8a1c803572d10fafb669538402ed06f80a504c3212488638a",

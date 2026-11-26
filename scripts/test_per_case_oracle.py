@@ -114,7 +114,7 @@ class Registry(unittest.TestCase):
         value = copy.deepcopy(RAW); mutate(value)
         with tempfile.TemporaryDirectory() as directory:
             folder = pathlib.Path(directory); (folder / 'htkk-native-cases.json').write_text(json.dumps(value))
-            for name in ('htkk_native_cases.py', 'htkk_oracle.py', 'generate-htkk-oracle-baselines.py', 'htkk-oracle-baselines.json'):
+            for name in ('htkk_native_cases.py', 'htkk_oracle.py', 'htkk_case_geography.py', 'generate-htkk-oracle-baselines.py', 'htkk-oracle-baselines.json'):
                 (folder / name).write_bytes((ROOT / name).read_bytes())
             return load('per_case_oracle_registry', 'htkk_native_cases.py', folder)
 

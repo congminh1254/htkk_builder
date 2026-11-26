@@ -119,9 +119,11 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
    Edit(spread,sheet,9,2,"Phường Sơn Tây",true,HtkkAutomationStage.EditWard);
    Edit(spread,sheet,15,2,FakeAddress,false,HtkkAutomationStage.EditAddress);
    Edit(spread,sheet,31,2,FakeSigner,false,HtkkAutomationStage.EditSigner);
-   Edit(spread,sheet,33,2,"Thuế Thành phố Hà Nội",true,HtkkAutomationStage.EditTaxAuthorityHead);
-   Edit(spread,sheet,35,2,"Thuế cơ sở 16 Thành phố Hà Nội",true,HtkkAutomationStage.EditTaxAuthorityLocal);
-   string[] codeValues=new string[]{"101","10129087","10100","10129"};int[] codeRows=new int[]{5,9,33,35},codeColumns=new int[]{18,18,19,19};
+   // The CQT of the staged declaration case (HtkkDeclarationCasePlans.Geography; default 10100 / 10129).
+   HtkkCaseGeography place=CaseGeography();
+   Edit(spread,sheet,33,2,place.ProfileHeadName,true,HtkkAutomationStage.EditTaxAuthorityHead);
+   Edit(spread,sheet,35,2,place.ProfileOfficeName,true,HtkkAutomationStage.EditTaxAuthorityLocal);
+   string[] codeValues=new string[]{"101","10129087",place.ProfileHeadCode,place.ProfileOfficeCode};int[] codeRows=new int[]{5,9,33,35},codeColumns=new int[]{18,18,19,19};
    HtkkAutomationStage[] codeStages=new HtkkAutomationStage[]{HtkkAutomationStage.ProfileProvinceCodeUnmatched,HtkkAutomationStage.ProfileWardCodeUnmatched,HtkkAutomationStage.ProfileTaxheadCodeUnmatched,HtkkAutomationStage.ProfileTaxlocalCodeUnmatched};
    for(int index=0;index<codeValues.Length;index++){if(CellText(sheet,codeRows[index],codeColumns[index])!=codeValues[index]){SetStage(codeStages[index]);finished=true;Record();return;}}
    if(CellText(sheet,29,2)!="01/01")throw new InvalidOperationException();
@@ -177,7 +179,7 @@ public sealed partial class HtkkGuiReferenceAutomation : MarshalByRefObject {
   string file=Path.Combine(Path.Combine(Path.Combine(Path.GetDirectoryName(project),"DataFiles"),Mst),"HEADER.xml");headerExists=File.Exists(file);if(!headerExists)return;
   if(new FileInfo(file).Length>2000000)throw new InvalidOperationException();XmlReaderSettings settings=new XmlReaderSettings();settings.ProhibitDtd=true;settings.XmlResolver=null;XmlDocument document=new XmlDocument();document.XmlResolver=null;
   using(XmlReader reader=XmlReader.Create(file,settings)){document.Load(reader);}Dictionary<string,string> values=new Dictionary<string,string>();foreach(XmlNode node in document.SelectNodes("//*[@PropertyInfo]")){string key=node.Attributes["PropertyInfo"].Value;if(key.Length>0){if(values.ContainsKey(key))throw new InvalidOperationException();values[key]=node.Attributes["Value"]==null?String.Empty:node.Attributes["Value"].Value;}}
-  Dictionary<string,string> expected=new Dictionary<string,string>();expected["mst"]=Mst;expected["tenNNT"]=FakeName;expected["dchiNNT"]=FakeAddress;expected["nguoiKy"]=FakeSigner;expected["maTinhNNT"]="101";expected["maXaPhuongNNT"]="10129087";expected["maCQTCapCuc"]="10100";expected["maCQTNoiNop"]="10129";
+  Dictionary<string,string> expected=new Dictionary<string,string>();expected["mst"]=Mst;expected["tenNNT"]=FakeName;expected["dchiNNT"]=FakeAddress;expected["nguoiKy"]=FakeSigner;expected["maTinhNNT"]="101";expected["maXaPhuongNNT"]="10129087";HtkkCaseGeography place=CaseGeography();expected["maCQTCapCuc"]=place.ProfileHeadCode;expected["maCQTNoiNop"]=place.ProfileOfficeCode;
   headerMatched=true;string[] checkedKeys=new string[]{"mst","tenNNT","dchiNNT","nguoiKy","maTinhNNT","maXaPhuongNNT","maCQTCapCuc","maCQTNoiNop"};for(int index=0;index<checkedKeys.Length;index++){string key=checkedKeys[index];headerChecks++;if(!values.ContainsKey(key)||values[key]!=expected[key]){headerMatched=false;headerMismatchMask|=1<<index;}}
  }
  private void Failure(Exception error){

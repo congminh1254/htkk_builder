@@ -246,9 +246,11 @@ for a in ADAPTERS.values():
 # '@htkk582' status context, '-htkk582' output branch and immutable anchor).
 _oracle_spec=importlib.util.spec_from_file_location('trusted_case_oracle',ROOT/'htkk_oracle.py');oracle=importlib.util.module_from_spec(_oracle_spec);_oracle_spec.loader.exec_module(oracle)
 CASE_KEYS=frozenset({'caseId','producerCase','adapterId','format','stagingDirectory','inputBranch','outputBranch','statusContext','releaseGate','unit'})
+# Optional per-case taxpayer profile CQT and period-dialog place (htkk_case_geography.py): absent = the fixed synthetic values.
+_geography_spec=importlib.util.spec_from_file_location('trusted_case_geography',ROOT/'htkk_case_geography.py');geography=importlib.util.module_from_spec(_geography_spec);_geography_spec.loader.exec_module(geography)
 def case_version(c):
  """The reviewed oracle version of one registry case; refuses anything else."""
- check(type(c)is dict and CASE_KEYS<=set(c)<=CASE_KEYS|{'htkkVersion','notBefore'})
+ check(type(c)is dict and CASE_KEYS<=set(c)<=CASE_KEYS|{'htkkVersion','notBefore',*geography.FIELDS})
  if 'htkkVersion' not in c:return oracle.DEFAULT
  value=c['htkkVersion'];check(type(value)is str and value in oracle.VERSIONS and value!=oracle.DEFAULT and c['releaseGate']is False)
  return value
@@ -315,6 +317,10 @@ check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))
 DECLARATION_ENTRY_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==ENTRY_MODE)
 # Declaration cases imported and then completed by fixed original edits/ticks; never a release gate.
 DECLARATION_TICK_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==IMPORT_TICK_MODE)
+# A non-default profile CQT or period place: declaration import cases only (HtkkDeclarationWebImport.cs reads it), never a gate.
+GEOGRAPHY_CASES=tuple(id for id,c in CASES.items() if not geography.is_default(c))
+check(all(id in DECLARATION_CASES and TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==IMPORT_MODE and not CASES[id]['releaseGate'] for id in GEOGRAPHY_CASES))
+check(all(geography.FIELDS[0] not in c and geography.FIELDS[1] not in c for id,c in CASES.items() if id not in GEOGRAPHY_CASES))
 check(set(t['mode'] for t in TRUSTED_ADAPTERS.values() if 'mode' in t)<={IMPORT_MODE,ENTRY_MODE,IMPORT_TICK_MODE})
 def input_mode(case):check(case in DECLARATION_CASES);return TRUSTED_ADAPTERS[CASES[case]['adapterId']]['mode']
 DRIVERS=tuple(sorted({a['driver'] for a in ADAPTERS.values()}))

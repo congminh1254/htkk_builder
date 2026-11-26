@@ -3920,6 +3920,8 @@
       "outputBranch": "declaration-web-native-gtgt01-tt89-other-province-m10-2026-output",
       "statusContext": "htkk-native/gtgt01-tt89-other-province-m10-2026",
       "releaseGate": false,
+      "taxpayerProfile": {"taxOfficeHead": "82500", "taxOffice": "82500"},
+      "periodLocation": {"province": "103", "ward": "10309019", "taxOfficeHead": "82500", "taxOffice": "82500"},
       "unit": {
         "menuId": "Z5",
         "adapterVersion": "3.0.9",

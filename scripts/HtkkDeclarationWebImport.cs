@@ -120,11 +120,23 @@ public sealed partial class HtkkGuiReferenceAutomation {
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
  // ---- Web input: own private staged sidecars only (never edits the XML) ----
- private void VerifyDeclarationWebInput(){
+ private string ReadDeclarationCaseId(){
   string host=Assembly.GetExecutingAssembly().Location;if(!String.Equals(Path.GetDirectoryName(host),project,StringComparison.OrdinalIgnoreCase))throw new InvalidOperationException();
   FileInfo caseFile=new FileInfo(host+".web-case.id");if(!caseFile.Exists||(caseFile.Attributes&FileAttributes.ReparsePoint)!=0||caseFile.Length<1||caseFile.Length>64)throw new InvalidOperationException();
-  string id=File.ReadAllText(caseFile.FullName,Encoding.ASCII);HtkkDeclarationCasePlan plan=HtkkDeclarationCasePlans.Find(id);
-  if(plan==null||(declarationPlan!=null&&declarationPlan.CaseId!=id))throw new InvalidOperationException();
+  return File.ReadAllText(caseFile.FullName,Encoding.ASCII);
+ }
+ // Profile CQT and period place of the staged case (HtkkDeclarationCasePlans.Geography), read once before the profile is
+ // edited; outside the declaration modes (no staged case) the fixed defaults.
+ private HtkkCaseGeography caseGeography=null;private string caseGeographyId=null;
+ private HtkkCaseGeography CaseGeography(){
+  if(caseGeography!=null)return caseGeography;
+  if(DeclarationMode()){string id=ReadDeclarationCaseId();if(HtkkDeclarationCasePlans.Find(id)==null)throw new InvalidOperationException();caseGeographyId=id;}
+  caseGeography=HtkkDeclarationCasePlans.Geography(caseGeographyId);return caseGeography;
+ }
+ private void VerifyDeclarationWebInput(){
+  string host=Assembly.GetExecutingAssembly().Location;
+  string id=ReadDeclarationCaseId();HtkkDeclarationCasePlan plan=HtkkDeclarationCasePlans.Find(id);
+  if(plan==null||(declarationPlan!=null&&declarationPlan.CaseId!=id)||(caseGeographyId!=null&&caseGeographyId!=id))throw new InvalidOperationException();
   declarationPlan=plan;webCaseId=id;
   webInputPath=host+".web-input.xml";webImportInputSha256=ReadOwnHexSidecar(host+".web-input.sha256",64);webSourceSha=ReadOwnHexSidecar(host+".web-source.sha",40);
   XmlDocument document=ReadBoundedOriginalXml(webInputPath);if(Hash(webInputPath)!=webImportInputSha256)throw new InvalidOperationException();
@@ -328,10 +340,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
    &&((plan.KieuKy!="11"&&plan.KieuKy!="26")||(MaskedTextMatches(period,"mskTuNgay",plan.FromDate)&&MaskedTextMatches(period,"mskDenNgay",plan.ToDate)))&&continuous;
   // Geography/tax-office panel only where the original layout shows it (e.g. NopTheoTinhCQT).
   bool geography=true;
-  if(VisibleNamed(period,"cboTinh")){SetStage(HtkkAutomationStage.GtgtPeriodProvinceSelecting);Record();geography=SelectGeography(period,"cboTinh","101","Thành phố Hà Nội","MaTinh","TenTinh")&&geography;}
-  if(VisibleNamed(period,"cboXa")){SetStage(HtkkAutomationStage.GtgtPeriodWardSelecting);Record();geography=SelectGeography(period,"cboXa","10129087","Phường Sơn Tây","MaXa","TenXa")&&geography;}
-  if(VisibleNamed(period,"cboCQTCuc")){SetStage(HtkkAutomationStage.GtgtPeriodTaxheadSelecting);Record();geography=SelectGeography(period,"cboCQTCuc","10100","Thuế Thành phố Hà Nội","maCQTCapCuc","tenCQTCapCuc")&&geography;}
-  if(VisibleNamed(period,"cboCQTChiCuc")){SetStage(HtkkAutomationStage.GtgtPeriodTaxlocalSelecting);Record();geography=SelectGeography(period,"cboCQTChiCuc","10129","Thuế cơ sở 16 Thành phố Hà Nội","maCQTQuanLy","tenCQTQuanLy")&&geography;}
+  // The case's place (defaults 101 / 10129087 / 10100 / 10129); each combo is refilled by the original handler of the one before.
+  HtkkCaseGeography place=CaseGeography();
+  if(VisibleNamed(period,"cboTinh")){SetStage(HtkkAutomationStage.GtgtPeriodProvinceSelecting);Record();geography=SelectGeography(period,"cboTinh",place.ProvinceCode,place.ProvinceName,"MaTinh","TenTinh")&&geography;}
+  if(VisibleNamed(period,"cboXa")){SetStage(HtkkAutomationStage.GtgtPeriodWardSelecting);Record();geography=SelectGeography(period,"cboXa",place.WardCode,place.WardName,"MaXa","TenXa")&&geography;}
+  if(VisibleNamed(period,"cboCQTCuc")){SetStage(HtkkAutomationStage.GtgtPeriodTaxheadSelecting);Record();geography=SelectGeography(period,"cboCQTCuc",place.HeadCode,place.HeadName,"maCQTCapCuc","tenCQTCapCuc")&&geography;}
+  if(VisibleNamed(period,"cboCQTChiCuc")){SetStage(HtkkAutomationStage.GtgtPeriodTaxlocalSelecting);Record();geography=SelectGeography(period,"cboCQTChiCuc",place.OfficeCode,place.OfficeName,"maCQTQuanLy","tenCQTQuanLy")&&geography;}
   periodGeographyMatched=geography;
   SelectDeclarationAnnexes(period);
   periodDescriptions.Clear();periodControlCount=0;int visited=0;DescribePeriod(period,ref visited);
