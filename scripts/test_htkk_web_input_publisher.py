@@ -135,7 +135,7 @@ class StagingTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
  def test_orphan_private_publication_preserves_bytes_and_metadata_only_result(self):
   inputs=fixtures();fetch,calls,commits=fake_api();result=p.publish(inputs,SHA,'synthetic-token',fetch)
-  self.assertEqual(result,{'format':'htkk-web-input-publication-v1','sourceCommit':SHA,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,COMMIT_LETTERS)]})
+  self.assertEqual(result,{'format':'htkk-web-input-publication-v2','sourceCommit':SHA,'requestId':None,'planSha256':None,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,COMMIT_LETTERS)]})
   self.assertTrue(all(item['parents']==[] for item in commits));self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
   blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
   self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.names(item[0])])
@@ -259,6 +259,14 @@ class PublicationTests(unittest.TestCase):
    self.assertEqual(error.exception.code,'STAGING');self.assertFalse((pathlib.Path(temporary)/p.OUTPUT).exists())
   with tempfile.TemporaryDirectory() as temporary,patch.object(p.reader.case_registry,'PUBLICATION_MAX_BYTES',size):
    p.save_result(result,temporary);self.assertEqual(len((pathlib.Path(temporary)/p.OUTPUT).read_bytes()),size)
+
+class ContextInPublicationTests(unittest.TestCase):
+ def test_publication_carries_exactly_the_request_id_and_plan_of_every_case_context(self):
+  fetch,calls,_=fake_api();result=p.publish(fixtures(),SHA,'synthetic-token',fetch,request_id='4242')
+  self.assertEqual((result['format'],result['requestId'],result['planSha256']),('htkk-web-input-publication-v2','4242',None))
+  contexts=[json.loads(base64.b64decode(payload['content'])) for path,_,payload,_ in calls if path=='/git/blobs' and b'htkk-case-context-v1' in base64.b64decode(payload['content'])]
+  self.assertEqual(len(contexts),len(p.CASES))
+  self.assertTrue(all((c['requestId'],c['planSha256'])==(result['requestId'],result['planSha256']) for c in contexts))
 
 class FailureStepTests(unittest.TestCase):
  """A rejected publication names the fixed step that failed, never the remote text, a path or a token."""

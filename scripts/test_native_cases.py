@@ -5,7 +5,7 @@ ROOT=pathlib.Path(__file__).parent
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 d=load('native_dispatch_test','dispatch-native-cases.py');r=load('native_report_test','report-native-case.py')
-def document():return {'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8','9','a','b','c','9','1','2','3','4','5','6','7','a','b','c','d','e','f','1','2','3','8','9','a','b','c','d','e','f','4','5','6','7','8','9','0','8','9','a','b','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','5','6','7','8','9','a','b','6','7','8','9','a','b','c','d','a','b','c','d','2','4','6','8','3','5','7','9'))]}
+def document():return {'format':'htkk-web-input-publication-v2','sourceCommit':'a'*40,'requestId':'4242','planSha256':'f'*64,'cases':[{'caseId':case,'artifactCommit':letter*40} for case,letter in zip(d.CASES,('b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','1','2','3','4','5','6','7','f','1','2','3','4','5','6','7','8','9','a','b','c','d','e','f','1','2','3','1','2','3','4','5','6','7','8','9','a','b','c','9','1','2','3','4','5','6','7','a','b','c','d','e','f','1','2','3','8','9','a','b','c','d','e','f','4','5','6','7','8','9','0','8','9','a','b','1','2','3','4','5','6','7','8','9','0','a','b','c','d','e','f','5','6','7','8','9','a','b','6','7','8','9','a','b','c','d','a','b','c','d','2','4','6','8','3','5','7','9'))]}
 import datetime
 DECEMBER=datetime.datetime(2026,12,1,0,0,5,tzinfo=datetime.timezone.utc)
 NOVEMBER=datetime.datetime(2026,11,30,23,59,59,tzinfo=datetime.timezone.utc)
@@ -48,7 +48,7 @@ class NativeCases(unittest.TestCase):
  def test_publication_cap_holds_400_worst_case_entries_and_stays_a_cap(self):
   limit=d.case_registry.PUBLICATION_MAX_BYTES
   # 400 cases, each with a caseId of the registry maximum (100 characters).
-  worst={'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':('C%03d'%i).ljust(100,'x'),'artifactCommit':'b'*40} for i in range(400)]}
+  worst={'format':'htkk-web-input-publication-v2','sourceCommit':'a'*40,'requestId':'4242','planSha256':'f'*64,'cases':[{'caseId':('C%03d'%i).ljust(100,'x'),'artifactCommit':'b'*40} for i in range(400)]}
   self.assertLessEqual(len((json.dumps(worst,separators=(',',':'))+'\n').encode('ascii')),limit)
   # One byte over the cap is refused before parsing, by the reader and by main()'s file check.
   body=(json.dumps(document(),separators=(',',':'))+'\n').encode('ascii')
@@ -166,7 +166,7 @@ class NativeDispatchRetry(unittest.TestCase):
   with self.assertRaises(urllib.error.HTTPError):self.run_dispatch(value,send,get,sleeps)
   self.assertEqual(self.dispatches(calls),3);self.assertEqual(sleeps,[2,5]);self.assertEqual(len(queries),2);self.assertEqual(calls[-1][1]['state'],'failure')
   path=ROOT/'_absent_runner_temp'
-  env={'GITHUB_REPOSITORY':d.BUILDER,'RUNNER_TEMP':str(path),'COMMIT_SHA':'a'*40,'GITHUB_SHA':BUILDER_SHA,'BUILDER_ACTIONS_TOKEN':'secret-actions','SOURCE_STATUS_TOKEN':'secret-status'}
+  env={'GITHUB_REPOSITORY':d.BUILDER,'RUNNER_TEMP':str(path),'COMMIT_SHA':'a'*40,'GITHUB_SHA':BUILDER_SHA,'GITHUB_RUN_ID':'4242','BUILDER_ACTIONS_TOKEN':'secret-actions','SOURCE_STATUS_TOKEN':'secret-status'}
   import io,contextlib,os,tempfile
   def fail_dispatch(url,token,payload):
    if '/dispatches' in url:raise http_error(503)
@@ -252,3 +252,33 @@ class NativeImportDispatchIdentity(unittest.TestCase):
   self.assertNotEqual(cases[case],cases[sale]);self.assertNotEqual(output.BRANCHES[case],output.BRANCHES[sale])
   self.assertEqual(len(d.CASES),len(set(d.CASES)));self.assertEqual(set(cases),set(d.CASES));# The KHBS amendment driver retains no raw native output yet (case status from the in-harness comparison only).
   self.assertEqual(set(output.BRANCHES),set(d.CASES)-set(reader.case_registry.DECLARATION_CASES)-set(reader.case_registry.KHBS_CASES)-set(reader.case_registry.NTNN_KHBS_CASES))
+
+class CaseContextDispatch(unittest.TestCase):
+ """The publication carries the release's request id and plan sha256; every dispatch passes both to the probe."""
+ def body(self,**changes):value=dict(document(),**changes);return json.dumps(value,separators=(',',':')).encode()
+ def test_publication_requires_request_id_and_plan(self):
+  self.assertEqual(d.publication(self.body(planSha256=None),'a'*40)['planSha256'],None)
+  for changes in ({'format':'htkk-web-input-publication-v1'},{'requestId':None},{'requestId':4242},{'requestId':'0'},{'requestId':'42x'},{'planSha256':'none'},{'planSha256':'F'*64},{'planSha256':'f'*63}):
+   with self.subTest(changes=changes),self.assertRaises(ValueError):d.publication(self.body(**changes),'a'*40)
+  v1=document();del v1['requestId'];del v1['planSha256'];v1['format']='htkk-web-input-publication-v1'
+  with self.assertRaises(ValueError):d.publication(json.dumps(v1).encode(),'a'*40)
+ def test_every_dispatch_carries_the_context_and_only_declared_inputs(self):
+  workflow=(ROOT.parent/'.github/workflows/probe-htkk-windows.yml').read_text()
+  block=workflow.split('  workflow_dispatch:\n    inputs:\n',1)[1].split('\npermissions:',1)[0]
+  declared=set(re.findall(r'^      ([a-z0-9_]+):$',block,re.M))
+  # GitHub: at most 25 top-level workflow_dispatch inputs (and 65,535 characters of payload).
+  self.assertLessEqual(len(declared),25);self.assertTrue({'web_request_id','web_plan_sha256'}<=declared)
+  for plan,sent in (('f'*64,'f'*64),(None,'none')):
+   calls=[];value=d.publication(self.body(planSha256=plan),'a'*40)
+   d.dispatch(value,'builder','source',lambda *args:calls.append(args),now=lambda:DECEMBER)
+   bodies=[args[2] for args in calls if args[0].endswith('/dispatches')];self.assertEqual(len(bodies),len(d.CASES))
+   for body in bodies:
+    with self.subTest(case=body['inputs']['web_case_id'],plan=plan):
+     self.assertLessEqual(set(body['inputs']),declared);self.assertLessEqual(len(json.dumps(body['inputs'])),65535)
+     self.assertEqual((body['inputs']['web_request_id'],body['inputs']['web_plan_sha256']),('4242',sent))
+ def test_main_refuses_a_publication_of_another_run(self):
+  import contextlib,io,os,tempfile
+  with tempfile.TemporaryDirectory() as temp:
+   (pathlib.Path(temp)/'htkk-web-input-publication.json').write_bytes(self.body())
+   env={'GITHUB_REPOSITORY':d.BUILDER,'RUNNER_TEMP':temp,'COMMIT_SHA':'a'*40,'GITHUB_SHA':BUILDER_SHA,'GITHUB_RUN_ID':'4243','BUILDER_ACTIONS_TOKEN':'x','SOURCE_STATUS_TOKEN':'y'}
+   with patch.dict(os.environ,env),patch.object(d,'post',side_effect=AssertionError('no post')),contextlib.redirect_stdout(io.StringIO()),self.assertRaises(SystemExit):d.main()

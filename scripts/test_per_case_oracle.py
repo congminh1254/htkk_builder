@@ -40,7 +40,7 @@ def on_582(*cases, module=registry):
 
 
 def publication(*cases):
-    return {'format': 'htkk-web-input-publication-v1', 'sourceCommit': 'a' * 40, 'cases': [{'caseId': c, 'artifactCommit': str(i + 1) * 40} for i, c in enumerate(cases)]}
+    return {'format': 'htkk-web-input-publication-v2', 'sourceCommit': 'a' * 40, 'requestId': '4242', 'planSha256': 'f' * 64, 'cases': [{'caseId': c, 'artifactCommit': str(i + 1) * 40} for i, c in enumerate(cases)]}
 
 
 def record(calls):
@@ -135,16 +135,17 @@ class Dispatch(unittest.TestCase):
     def test_default_case_dispatch_is_byte_for_byte_unchanged(self):
         calls = []
         d.dispatch(publication(GATE, OTHER), 'builder', 'source', record(calls))
-        # The exact pre-field body: same keys, order and values, no htkk_version.
+        # The exact body: the pre-field keys, order and values, then the case context; no htkk_version.
         for (status, probe), case, artifact in zip(zip(calls[::2], calls[1::2]), (GATE, OTHER), ('1' * 40, '2' * 40)):
             self.assertEqual(json.dumps(status[1], separators=(',', ':')), json.dumps({'state': 'pending', 'context': registry.CASES[case]['statusContext'], 'description': 'Fixed synthetic native case queued input:' + artifact}, separators=(',', ':')))
             expected = {'ref': 'main', 'inputs': {'install_and_probe': True, 'synthetic_login': True, 'acknowledge_registration': True, 'runtime_host': 'clr2-x86-reference', 'gui_automation': registry.driver(case),
-                                                  'web_source_sha': 'a' * 40, 'web_case_id': case, 'web_artifact_commit': artifact}}
+                                                  'web_source_sha': 'a' * 40, 'web_case_id': case, 'web_artifact_commit': artifact,
+                                                  'web_request_id': '4242', 'web_plan_sha256': 'f' * 64}}
             self.assertEqual(json.dumps(probe[1], separators=(',', ':')), json.dumps(expected, separators=(',', ':')))
             self.assertEqual(d.run_title(case), 'HTKK native case ' + case + ' (' + registry.driver(case) + ')')
         # The whole default-oracle cohort never names a version; only the 5.8.2 cases are dispatched on 5.8.2.
         calls = []
-        d.dispatch({'format': 'htkk-web-input-publication-v1', 'sourceCommit': 'a' * 40, 'cases': [{'caseId': c, 'artifactCommit': 'b' * 40} for c in d.CASES if registry.htkk_version(c) == '5.8.1']}, 'builder', 'source', record(calls))
+        d.dispatch({'format': 'htkk-web-input-publication-v2', 'sourceCommit': 'a' * 40, 'requestId': '4242', 'planSha256': 'f' * 64, 'cases': [{'caseId': c, 'artifactCommit': 'b' * 40} for c in d.CASES if registry.htkk_version(c) == '5.8.1']}, 'builder', 'source', record(calls))
         self.assertFalse(any('htkk_version' in p.get('inputs', {}) or '@' in p.get('context', '') for _, p in calls))
         calls = []
         d.dispatch(publication(U5_310), 'builder', 'source', record(calls))
@@ -161,7 +162,7 @@ class Dispatch(unittest.TestCase):
         self.assertEqual(s1['context'], 'htkk-native/tndn03-profit20-y2025'); self.assertNotIn('htkk_version', p1['inputs'])
         self.assertEqual(s2['context'], 'htkk-native/ntnn01-nccnn-entry-m10-2026@htkk582')
         self.assertEqual(list(p2['inputs'])[-1], 'htkk_version'); self.assertEqual(p2['inputs']['htkk_version'], '5.8.2')
-        self.assertEqual({k: v for k, v in p2['inputs'].items() if k != 'htkk_version'}, d.inputs('a' * 40, {'caseId': CANDIDATE, 'artifactCommit': '2' * 40}))
+        self.assertEqual({k: v for k, v in p2['inputs'].items() if k != 'htkk_version'}, d.inputs('a' * 40, {'caseId': CANDIDATE, 'artifactCommit': '2' * 40}, '4242', 'f' * 64))
         # The probe workflow accepts exactly this input value and renders exactly this title suffix.
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text()
         self.assertIn("options: ['5.8.1', '5.8.2', '5.8.3', '5.8.4', '5.8.5']", workflow); self.assertIn("inputs.htkk_version == '5.8.2' && ' [HTKK 5.8.2]' || inputs.htkk_version == '5.8.3' && ' [HTKK 5.8.3]' || inputs.htkk_version == '5.8.4' && ' [HTKK 5.8.4]' || inputs.htkk_version == '5.8.5' && ' [HTKK 5.8.5]' || ''", workflow)

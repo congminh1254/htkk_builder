@@ -28,7 +28,7 @@ def publication(body,expected):
    value[key]=item
   return value
  value=json.loads(body.decode('utf-8'),object_pairs_hook=unique)
- if type(value) is not dict or set(value)!= {'format','sourceCommit','cases'} or value['format']!='htkk-web-input-publication-v1' or value['sourceCommit']!=expected or type(value['cases']) is not list or len(value['cases'])!=len(CASES):raise ValueError('PUBLICATION')
+ if type(value) is not dict or set(value)!= {'format','sourceCommit','requestId','planSha256','cases'} or value['format']!='htkk-web-input-publication-v2' or type(value['requestId']) is not str or not re.fullmatch('[1-9][0-9]{0,19}',value['requestId']) or not (value['planSha256'] is None or (type(value['planSha256']) is str and re.fullmatch('[0-9a-f]{64}',value['planSha256']))) or value['sourceCommit']!=expected or type(value['cases']) is not list or len(value['cases'])!=len(CASES):raise ValueError('PUBLICATION')
  for item,case in zip(value['cases'],CASES):
   if type(item) is not dict or set(item)!={'caseId','artifactCommit'} or item['caseId']!=case:raise ValueError('PUBLICATION')
   sha(item['artifactCommit'])
@@ -102,9 +102,11 @@ def deliver(send,url,token,payload,sleep,confirm=None):
     if state is None:raise error # Unknown whether the run exists; fail closed rather than duplicate.
    print('Transient native-case API error; bounded retry '+str(attempt+1)+' of '+str(len(RETRY_DELAYS))+'.',flush=True)
 
-def inputs(source,item):
+def inputs(source,item,request_id,plan_sha256):
  case=item['caseId'];value={'install_and_probe':True,'synthetic_login':True,'acknowledge_registration':True,'runtime_host':'clr2-x86-reference','gui_automation':gui(case),'web_source_sha':source,'web_case_id':case,'web_artifact_commit':item['artifactCommit']}
- # htkk_version is sent only for a non-default case, so a default dispatch body is byte-identical.
+ # The release's case context (request id, plan sha256 or 'none'): the probe checks case-context.json against it.
+ value.update(web_request_id=request_id,web_plan_sha256=plan_sha256 or 'none')
+ # htkk_version is sent only for a non-default case.
  if version(case)!=case_registry.oracle.DEFAULT:value['htkk_version']=version(case)
  return value
 
@@ -128,7 +130,7 @@ def dispatch(value,actions_token,status_token,send=None,builder=None,get=None,sl
   # workflow_dispatch is not idempotent: only re-send once the exact case run is proven absent.
   confirm=None if builder is None else (lambda case=item['caseId'],started=started:created(case,builder,started,actions_token,get))
   try:
-   deliver(send,'https://api.github.com/repos/'+BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches',actions_token,{'ref':'main','inputs':inputs(value['sourceCommit'],item)},sleep,confirm)
+   deliver(send,'https://api.github.com/repos/'+BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches',actions_token,{'ref':'main','inputs':inputs(value['sourceCommit'],item,value['requestId'],value['planSha256'])},sleep,confirm)
   except Exception:
    deliver(send,status,status_token,{'state':'failure','context':context(item['caseId']),'description':'Fixed synthetic native case dispatch failed'},sleep)
    raise
@@ -140,6 +142,8 @@ def main():
   path=pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-web-input-publication.json'
   if path.is_symlink() or not path.is_file() or path.stat().st_size>case_registry.PUBLICATION_MAX_BYTES:raise ValueError('PUBLICATION')
   value=publication(path.read_bytes(),os.environ['COMMIT_SHA'])
+  # Written by publish-htkk-web-inputs.py earlier in this same run: its request id is this run's id.
+  if value['requestId']!=os.environ.get('GITHUB_RUN_ID'):raise ValueError('PUBLICATION')
   count=dispatch(value,os.environ.get('BUILDER_ACTIONS_TOKEN'),os.environ.get('SOURCE_STATUS_TOKEN'),builder=sha(os.environ.get('GITHUB_SHA')))
   print(str(count)+' immutable synthetic native cases dispatched'+('' if count==len(CASES) else ', '+str(len(CASES)-count)+' deferred (no status)')+'; results use separate commit statuses.')
  except Exception:raise SystemExit('Native-case dispatch failed; no raw response, input, path or credential published.')
