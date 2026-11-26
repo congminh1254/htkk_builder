@@ -878,6 +878,7 @@ tiểu mục 1701) và CQT quản lý (0611 từ chối CQT khác với hoạt �
 | `01GTGT-TT89-pl016-cssx-M10-2026` | tháng 10/2026 | kèm PL 01-6/GTGT (CSSX) (adapter `01-gtgt-tt89-3.0.9-pl016-cssx`, sheet Menu 01_6 = sheet XLS 01_6_GTGT_CSSX, `PLuc/Pluc_01_6_GTGT_CSSX`): [30] 400.000.000, [32] 600.000.000, [06] 50.000.000, [07] 900.000.000; ba dòng Hải Phòng, Thái Nguyên, Hải Phòng (dòng 3 chọn CQT cấp cục 10300); nhánh công thức: [17] 5.000.002 / 3.000.002 / 1 (làm tròn nửa xa số 0), [18] 5.000.003 / 3.000.002, [19] 8.000.005, [20] 41.999.995; 165 lá |
 | `01GTGT-TT89-pl016-cssx-ratio-M10-2026` | tháng 10/2026 | như trên, nhánh tỷ lệ của `TinhCot_17_21_Pl_01_6CSSX` (Σ công thức [17] 83.333.333 > [06] 70.000.001): [17] = 0, [21] 30.000.000 / 15.000.000 / 3.333.333, [22] 33.333.333 / 15.000.000, [23] 48.333.333, [24] 21.666.668; [30] 2 tỷ, [32] 6 tỷ, [07] 7 tỷ; 165 lá |
 | `01GTGT-TT89-pl016-dtvt-M10-2026` | tháng 10/2026 | kèm PL 01-6/GTGT (ĐTVT) (adapter `01-gtgt-tt89-3.0.9-pl016-dtvt`, sheet Menu 01_6_2 = sheet XLS 01_6_GTGT_DVVT, `PLuc/Pluc_01_6_GTGT_DVVT`): [32] 600.000.000, [06] 30.000.000, [07] và [14] khóa ở 0; [17] 4.000.001 / 3.000.002 / 1, [18] 4.000.002 / 3.000.002, [19] 7.000.004, [20] 22.999.996; 165 lá. Mỗi dòng mang mã quận/huyện (`ct11_huyen_ma` 10309 Quận Đồ Sơn / 21501 Thành phố Thái Nguyên): `checkPL1_6` đọc cột R, trên sheet ĐTVT là mã huyện (cột F ẩn, khóa); bản đầu không có nên HTKK 5.8.4 / 5.8.5 báo 0016 ở E22:E24 (run 45264873351, 45264897479) |
+| `01GTGT-TT89-other-province-M10-2026` | tháng 10/2026 | hoạt động khác tỉnh [09]–[11] (adapter `01-gtgt-tt89-3.0.9`, không phụ lục): hồ sơ thuộc CQT 82500, hộp kỳ Hải Phòng 103 / Phường Đồ Sơn 10309019 / CQT 82500; Header [09] `ct09`, [10] `ct10`, [11a] `DiaChiHDSXKDKhacTinhNDTSC/ct11a_phuongXa_*`, [11c] `ct11c_tinhTP_*`; [32] 200.000.000, [33] 20.000.000; 104 lá. Chưa chạy được: xem đoạn dưới |
 
 Hai ca tháng 12/2026 có `notBefore` 2026-12-01: `frmHTKKPeriod.CheckPeriod` (HTKK.exe 5.8.4) từ chối năm lớn hơn
 `DateTime.Today.Year` hoặc tháng lớn hơn `DateTime.Today.Month` (0044 "Kỳ tính thuế không được lớn hơn kỳ hiện tại"), nên tháng
@@ -898,6 +899,17 @@ khác `maTinhNNT`), nên các dòng không ở Hà Nội. Kiểm ô: R19/S19 = 1
 dòng 29:30, [19]/[23] dòng 35, [20]/[24] dòng 36 (ba dòng bảng 1 và hai dòng bảng theo tỉnh đẩy các dòng xuống). Hộp kỳ tích phụ lục
 "01-6/GTGT (CSSX)" hoặc "01-6/GTGT (ĐTVT)". Câu hỏi cho lần chạy: nhập XML có giữ CQT cấp cục 10300 của dòng 3 không; tên tỉnh của
 bảng theo tỉnh (`ct18_tinh_ten`) có là tên tỉnh như D1 không.
+Ca hoạt động khác tỉnh (htkk_web `lib/htkk-gtgt01-tt89-other-province.ts`, nguồn ghim ở `data/htkk-01-gtgt-tt89-other-province-contract.json`):
+`Gtgt01TT89Nckt309.AutoBindData_0` gọi `GeneralFunctions.ThayDoiTinhTheoCQT2Cap`; khi `maTinhNNT` của hồ sơ (`GetHeaderInfo`, HEADER.xml)
+khác tỉnh ở hộp kỳ, dòng 26–36 mở, [11c] D32/P32 nhận tên/mã tỉnh, [11a] D36/P36 tên/mã xã (rồi D32, D36 khóa lại); [09] B26 và [10]
+H28 nhập tay, trống thì `CheckTinhTheoCQTDbhc` báo 0596. `btnDongY_Click` (D1, Z5, tiểu mục hạch toán 00) báo 0611 khi CQT quản lý
+khác CQT của hồ sơ, nên tỉnh khác chỉ chọn được khi CQT của hồ sơ có trong danh sách HTKK đưa ra cho xã đó (82500, 82700). Oracle:
+`GTGT01_TT89_OTHER_PROVINCE` / `gtgt01_tt89_header_expected` kiểm sáu lá Header của XML web đúng từng chữ; kiểm ô P32 = 103, P36 =
+10309019 và các ô tổng như các ca Z5 khác; tên tỉnh, xã, [09], [10] trên bản HTKK kết xuất lại nằm trong phép so cả cây.
+**Chặn:** harness hiện cố định hồ sơ (`HtkkGuiReferenceAutomation.cs`, CQT 10129) và địa bàn hộp kỳ
+(`HtkkDeclarationWebImport.cs`: 101 / 10129087 / 10100 / 10129). Với địa bàn đó HTKK khóa và để trống [09]–[11], nên ca này chưa
+cho kết quả có nghĩa. Cần thêm: hồ sơ với CQT 82500 cho ca này và địa bàn hộp kỳ theo ca (103 / 10309019 / CQT cấp cục trong danh
+sách HTKK đưa ra cho xã đó / CQT quản lý 82500). Chưa dispatch; `releaseGate: false`.
 
 Câu hỏi cho lần chạy: HTKK 5.8.4 kết xuất `ct*_Cqt` là `0` (giá trị mẫu của ô khóa) và `ct*_Ghichu` rỗng như web không; nhập XML có
 `ct21` = 1 thì `XuLyCheckboxCt21` (gọi từ `AutoBindData_0` với isBindData) có hỏi lại không; `ct22` khác P47 (0, không có tệp kỳ

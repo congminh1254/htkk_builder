@@ -81,6 +81,9 @@ def _tree(case_id, native=False, created=None):
             owned = set(values)
             for name, value in d.gtgt01_tt89_expected(case_id).items():
                 _add(main, name, value)
+        if case_id in d.GTGT01_TT89_OTHER_PROVINCE:  # 01/GTGT TT89 hoạt động khác tỉnh: the Header leaves of the oracle
+            for path, value in d.gtgt01_tt89_header_expected(case_id).items():
+                _path(main, 'CTieuTKhaiChinh/Header/' + path).text = value
         for name, value in values.items():
             if name not in owned:
                 if '/' in name:  # 'Group/leaf' (01/TTS CaNhanKeKhai/ctNN)
