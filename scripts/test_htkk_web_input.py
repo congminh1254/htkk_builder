@@ -339,3 +339,87 @@ class NativeImportProducerCaseTests(unittest.TestCase):
   for name,value in w.SALE10.items():
    changed=body.replace(('<'+name+'>'+value+'</'+name+'>').encode(),('<'+name+'>7</'+name+'>').encode())
    with self.subTest(field=name),self.assertRaises(w.InputError):w.validate_web_xml(changed,TODAY,case)
+
+CASE='01GTGT-zero-M10-2026'
+def case_context(body,**changes):
+ c=w.case_registry.policy(CASE);a=w.case_registry.ADAPTERS[c['adapterId']];m=manifest(body)
+ value={'format':'htkk-case-context-v1','sourceCommit':'a'*40,'requestId':'4242','caseId':CASE,'adapterId':c['adapterId'],'unit':c['unit'],'profilePolicy':a['profilePolicy'],'producerSha256':m['producerSha256'],'xmlSha256':m['xmlSha256'],'planSha256':'d'*64}
+ value.update(changes);return value
+def context_bytes(value):return (json.dumps(value,sort_keys=True,separators=(',',':'))+'\n').encode()
+class CaseContextTests(unittest.TestCase):
+ """The probe binds a pinned artifact commit to the release that dispatched it (case-context.json)."""
+ def setUp(self):self.body=web_fixture();self.manifest=manifest(self.body);self.expected=w.expected_context('4242','d'*64)
+ def code(self,call):
+  with self.assertRaises(w.InputError) as raised:call()
+  return raised.exception.code
+ def verify(self,value,expected=None):return w.verify_case_context(context_bytes(value),self.manifest,CASE,'a'*40,expected or self.expected)
+ def test_expected_context_from_inputs(self):
+  self.assertEqual(w.expected_context('4242','d'*64),{'requestId':'4242','planSha256':'d'*64})
+  self.assertEqual(w.expected_context('4242','none'),{'requestId':'4242','planSha256':None})
+  for request,plan in ((None,'d'*64),('','d'*64),('0','d'*64),('42a','d'*64),('4242',None),('4242',''),('4242','D'*64),('4242','d'*63)):
+   with self.subTest(request=request,plan=plan):self.assertEqual(self.code(lambda:w.expected_context(request,plan)),'CONTEXT_MISSING')
+ def test_matching_context_passes(self):
+  self.assertEqual(self.verify(case_context(self.body))['requestId'],'4242')
+  self.assertIsNone(self.verify(case_context(self.body,planSha256=None),w.expected_context('4242','none'))['planSha256'])
+ def test_each_field_mismatch_has_its_own_code(self):
+  other=w.case_registry.CASES['01GTGT-sale10-M10-2026']
+  cases=[('CONTEXT_SHAPE',case_context(self.body,format='htkk-case-context-v2')),
+   ('CONTEXT_REQUEST',case_context(self.body,requestId='4243')),('CONTEXT_REQUEST',case_context(self.body,requestId=4242)),
+   ('CONTEXT_CASE',case_context(self.body,caseId='01GTGT-sale10-M10-2026')),
+   ('CONTEXT_ADAPTER',case_context(self.body,adapterId='other-adapter')),('CONTEXT_ADAPTER',case_context(self.body,unit={'annexes':['x']})),('CONTEXT_ADAPTER',case_context(self.body,profilePolicy='other')),
+   ('CONTEXT_SOURCE',case_context(self.body,sourceCommit='b'*40)),
+   ('CONTEXT_PRODUCER',case_context(self.body,producerSha256='e'*64)),
+   ('CONTEXT_XML',case_context(self.body,xmlSha256='e'*64)),
+   ('CONTEXT_PLAN',case_context(self.body,planSha256='e'*64)),('CONTEXT_PLAN',case_context(self.body,planSha256=None))]
+  extra=case_context(self.body);extra['note']='x';cases.append(('CONTEXT_SHAPE',extra))
+  missing=case_context(self.body);del missing['planSha256'];cases.append(('CONTEXT_SHAPE',missing))
+  for code,value in cases:
+   with self.subTest(code=code,value=value):self.assertEqual(self.code(lambda:self.verify(value)),code)
+  # A plan the dispatcher says is absent ('none') must be absent in the context too.
+  self.assertEqual(self.code(lambda:self.verify(case_context(self.body),w.expected_context('4242','none'))),'CONTEXT_PLAN')
+  for body in (b'',b'not json',b'[]',b'{'+b' '*w.MAX_CONTEXT+b'}'):
+   with self.subTest(body=body[:10]):self.assertEqual(self.code(lambda:w.verify_case_context(body,self.manifest,CASE,'a'*40,self.expected)),'CONTEXT_SHAPE')
+ def test_failure_report_is_the_code_only(self):
+  error=self.code(lambda:self.verify(case_context(self.body,requestId='999999')))
+  try:self.verify(case_context(self.body,requestId='999999'))
+  except w.InputError as raised:report=json.dumps(w.safe_failure(raised))
+  self.assertEqual(error,'CONTEXT_REQUEST');self.assertIn('CONTEXT_REQUEST',report);self.assertNotIn('999999',report);self.assertNotIn('4242',report)
+ def pinned(self,context=None,missing=False):
+  fetch,calls=fake_fetch(self.body)
+  def pinned(path,token):
+   if path=='/git/commits/'+'b'*40:return {'sha':'b'*40}
+   if path=='/contents/case-context.json?ref='+'b'*40:
+    calls.append((path,token))
+    if missing:raise urllib.error.HTTPError('https://api.github.com/',404,'PRIVATE',{},None)
+    return envelope(context_bytes(context or case_context(self.body)),'case-context.json')
+   return fetch(path,token)
+  return pinned,calls
+ def test_download_checks_the_context_of_the_pinned_commit_and_does_not_stage_it(self):
+  fetch,calls=self.pinned()
+  files=w.download('synthetic-token',fetch,TODAY,expected_source='a'*40,expected_case=CASE,artifact_commit='b'*40,context=self.expected)
+  self.assertEqual(set(files),set(w.names(CASE)));self.assertIn(('/contents/case-context.json?ref='+'b'*40,'synthetic-token'),calls)
+  fetch,_=self.pinned(case_context(self.body,requestId='1'))
+  self.assertEqual(self.code(lambda:w.download('synthetic-token',fetch,TODAY,expected_source='a'*40,expected_case=CASE,artifact_commit='b'*40,context=self.expected)),'CONTEXT_REQUEST')
+  fetch,_=self.pinned(missing=True)
+  self.assertEqual(self.code(lambda:w.download('synthetic-token',fetch,TODAY,expected_source='a'*40,expected_case=CASE,artifact_commit='b'*40,context=self.expected)),'CONTEXT_MISSING')
+  # Without the pin, source and case the context cannot be bound: refused before any request.
+  for kwargs in ({'expected_source':'a'*40,'expected_case':CASE},{'expected_case':CASE,'artifact_commit':'b'*40},{'expected_source':'a'*40,'artifact_commit':'b'*40}):
+   fetch,calls=self.pinned()
+   with self.subTest(kwargs=kwargs):self.assertEqual(self.code(lambda:w.download('synthetic-token',fetch,TODAY,context=self.expected,**kwargs)),'CONTEXT_MISSING');self.assertEqual(calls,[])
+ def test_main_requires_the_release_context_for_a_pinned_case(self):
+  import contextlib,io,os
+  env={'GITHUB_REPOSITORY':w.BUILDER,'SOURCE_READ_TOKEN':'synthetic-token','EXPECTED_WEB_SOURCE_SHA':'a'*40,'EXPECTED_WEB_CASE_ID':CASE,'WEB_ARTIFACT_COMMIT':'b'*40,'RUNNER_TEMP':'/nonexistent'}
+  for extra in ({},{'EXPECTED_WEB_REQUEST_ID':'4242'},{'EXPECTED_WEB_PLAN_SHA256':'d'*64},{'EXPECTED_WEB_REQUEST_ID':'','EXPECTED_WEB_PLAN_SHA256':''}):
+   out=io.StringIO()
+   with self.subTest(extra=extra),patch.dict(os.environ,{**env,**extra},clear=True),patch.object(w,'api',side_effect=AssertionError('no network')),contextlib.redirect_stdout(out),self.assertRaises(SystemExit):w.main()
+   self.assertEqual(json.loads(out.getvalue())['code'],'CONTEXT_MISSING');self.assertNotIn('synthetic-token',out.getvalue())
+  # Both present: the context is passed on to the download of the pinned commit.
+  seen={}
+  def download(token,**kwargs):seen.update(kwargs);raise w.InputError('CONTEXT_REQUEST')
+  out=io.StringIO()
+  with patch.dict(os.environ,{**env,'EXPECTED_WEB_REQUEST_ID':'4242','EXPECTED_WEB_PLAN_SHA256':'none'},clear=True),patch.object(w,'download',download),contextlib.redirect_stdout(out),self.assertRaises(SystemExit):w.main()
+  self.assertEqual(seen['context'],{'requestId':'4242','planSha256':None});self.assertEqual(json.loads(out.getvalue())['code'],'CONTEXT_REQUEST')
+  # The manual branch mode (no artifact commit, no dispatcher) is unchanged: no context is required.
+  seen.clear();manual={k:v for k,v in env.items() if k!='WEB_ARTIFACT_COMMIT'}
+  with patch.dict(os.environ,manual,clear=True),patch.object(w,'download',download),contextlib.redirect_stdout(io.StringIO()),self.assertRaises(SystemExit):w.main()
+  self.assertIsNone(seen['context'])

@@ -232,7 +232,9 @@ def _publish(inputs,source_commit,token,fetch,request_id,plan,retain_immutable,a
   if not isinstance(updated,dict) or updated.get('ref')!='refs/heads/'+branch or not isinstance(updated.get('object'),dict) or updated['object'].get('type')!='commit' or updated['object'].get('sha')!=artifact:fail('API_SHAPE')
   cases.append({'caseId':case,'artifactCommit':artifact})
  at('main-check');assert_current(fetch,token,source_commit)
- return {'format':'htkk-web-input-publication-v1','sourceCommit':source_commit,'cases':cases}
+ # requestId and planSha256 are what every case-context.json carries; the dispatcher passes them to each native run,
+ # which checks its case context against them (fetch-htkk-web-input.py verify_case_context).
+ return {'format':'htkk-web-input-publication-v2','sourceCommit':source_commit,'requestId':request_id,'planSha256':plan_sha,'cases':cases}
 
 def save_result(result,runner_temp):
  parent=pathlib.Path(runner_temp);path=parent/OUTPUT

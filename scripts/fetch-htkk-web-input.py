@@ -28,7 +28,7 @@ MAX_API=600000
 COMMENT='<!-- BẢN NHÁP; KHÔNG NỘP THUẾ; CHƯA KIỂM CHỨNG ĐẦY ĐỦ VỚI HTKK WINDOWS. -->'
 PREAMBLE='<?xml version="1.0" encoding="UTF-8"?>\n'
 SERVICE={'maDVu':'CCKK','tenDVu':'Công cụ Kê khai','pbanDVu':'0.9.2','ttinNhaCCapDVu':'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'}
-CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
+CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL','CONTEXT_MISSING','CONTEXT_SHAPE','CONTEXT_REQUEST','CONTEXT_CASE','CONTEXT_ADAPTER','CONTEXT_SOURCE','CONTEXT_PRODUCER','CONTEXT_XML','CONTEXT_PLAN'))
 _spec=importlib.util.spec_from_file_location('htkk_export_privacy',pathlib.Path(__file__).with_name('publish-gtgt-export-evidence.py'))
 privacy=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(privacy)
 _annex_spec=importlib.util.spec_from_file_location('htkk_annex12_web_input_contract',pathlib.Path(__file__).with_name('htkk_annex12_web_cases.py'))
@@ -287,7 +287,34 @@ def validate_web_xml(body,today=None,case_id='01GTGT-zero-M10-2026',manifest=Non
  if annex:result['annexTaxLeafCount']=annex.tax_leaves(case_id)
  if amendment:result['amendmentTaxLeafCount']=khbs.tax_leaves(case_id)
  return result
-def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None):
+CONTEXT_NAME='case-context.json';MAX_CONTEXT=4096
+CONTEXT_KEYS=frozenset(('format','sourceCommit','requestId','caseId','adapterId','unit','profilePolicy','producerSha256','xmlSha256','planSha256'))
+def expected_context(request_id,plan_sha256):
+ """What the dispatcher intended, from the run's inputs: the release's request id (builder run id) and the sha256 of
+ the source case plan ('none' when the source had no plan). Both are required for a dispatched (pinned) case."""
+ if not isinstance(request_id,str) or not re.fullmatch('[1-9][0-9]{0,19}',request_id):raise InputError('CONTEXT_MISSING')
+ if plan_sha256=='none':return {'requestId':request_id,'planSha256':None}
+ if not isinstance(plan_sha256,str) or not re.fullmatch('[0-9a-f]{64}',plan_sha256):raise InputError('CONTEXT_MISSING')
+ return {'requestId':request_id,'planSha256':plan_sha256}
+def verify_case_context(body,manifest,case,source,expected):
+ """case-context.json of the pinned artifact commit, field by field against the dispatcher's intent (request id, plan),
+ the trusted registry (case, adapter, unit, profile policy) and the already verified manifest (source, producer, XML).
+ Raises one fixed code per field; never echoes a value."""
+ if not isinstance(body,bytes) or not 0<len(body)<=MAX_CONTEXT:raise InputError('CONTEXT_SHAPE')
+ value=json_object(body,'CONTEXT_SHAPE')
+ if set(value)!=CONTEXT_KEYS or value.get('format')!='htkk-case-context-v1':raise InputError('CONTEXT_SHAPE')
+ if type(value['requestId']) is not str or value['requestId']!=expected['requestId']:raise InputError('CONTEXT_REQUEST')
+ if value['caseId']!=case or manifest.get('caseId')!=case:raise InputError('CONTEXT_CASE')
+ policy=case_registry.policy(case);adapter=case_registry.ADAPTERS[policy['adapterId']]
+ if value['adapterId']!=policy['adapterId'] or value['unit']!=policy['unit'] or value['profilePolicy']!=adapter['profilePolicy']:raise InputError('CONTEXT_ADAPTER')
+ if value['sourceCommit']!=source or manifest.get('sourceCommit')!=source:raise InputError('CONTEXT_SOURCE')
+ if type(value['producerSha256']) is not str or value['producerSha256']!=manifest.get('producerSha256'):raise InputError('CONTEXT_PRODUCER')
+ if type(value['xmlSha256']) is not str or value['xmlSha256']!=manifest.get('xmlSha256'):raise InputError('CONTEXT_XML')
+ if value['planSha256']!=expected['planSha256'] or (value['planSha256'] is not None and type(value['planSha256']) is not str):raise InputError('CONTEXT_PLAN')
+ return value
+def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None,context=None):
+ # context (expected_context()) binds the pinned artifact to the dispatching release; it needs the pin, source and case.
+ if context is not None and (artifact_commit is None or expected_source is None or expected_case is None or set(context)!={'requestId','planSha256'}):raise InputError('CONTEXT_MISSING')
  if artifact_commit is not None:git_sha(artifact_commit,'SOURCE_COMMIT')
  if expected_case is not None and expected_case not in CASES:raise InputError('MANIFEST')
  if expected_source is not None:git_sha(expected_source,'SOURCE_COMMIT')
@@ -321,6 +348,13 @@ def download(token,fetch=None,today=None,expected_source=None,expected_case=None
  if khbs.is_case(manifest['caseId']) and khbs.prior_case(manifest['caseId']):
   files[khbs.PRIOR_NAME]=content_file(fetch('/contents/'+khbs.PRIOR_NAME+query,token),khbs.PRIOR_NAME,MAX_XML)
   validate_prior(files,manifest,today)
+ if context is not None:
+  # Checked, never staged: the staged file set stays names(case).
+  try:envelope=fetch('/contents/'+CONTEXT_NAME+query,token)
+  except urllib.error.HTTPError as error:
+   if error.code==404:raise InputError('CONTEXT_MISSING') from None
+   raise
+  verify_case_context(content_file(envelope,CONTEXT_NAME,MAX_CONTEXT),manifest,expected_case,expected_source,context)
  return files
 def stage(files,runner_temp,today=None):
  if not isinstance(files,dict) or 'manifest.json' not in files or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
@@ -350,7 +384,10 @@ def main():
   case=os.environ.get('EXPECTED_WEB_CASE_ID')
   if case not in CASES:raise InputError('MANIFEST')
   artifact=os.environ.get('WEB_ARTIFACT_COMMIT') or None
-  files=download(token,expected_source=expected,expected_case=case,artifact_commit=artifact);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
+  # A dispatched case is pinned to an artifact commit and must match the dispatching release's case context.
+  # The manual branch mode (no artifact commit) has no dispatcher, so nothing to bind it to.
+  context=expected_context(os.environ.get('EXPECTED_WEB_REQUEST_ID'),os.environ.get('EXPECTED_WEB_PLAN_SHA256')) if artifact else None
+  files=download(token,expected_source=expected,expected_case=case,artifact_commit=artifact,context=context);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
   print(json.dumps({'format':'htkk-web-reference-input-fetch-status-v1','status':'staged','bytes':manifest['bytes'],'xmlSha256':manifest['xmlSha256'],'sourceCommit':manifest['sourceCommit']},separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')));raise SystemExit('Private synthetic web input unavailable; no XML, path, token or raw remote error published.')

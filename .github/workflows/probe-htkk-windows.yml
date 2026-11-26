@@ -29,6 +29,14 @@ on:
         description: Private source commit required for the synthetic web XML import case
         type: string
         required: false
+      web_request_id:
+        description: Builder release run id written into the case context (required with web_artifact_commit)
+        type: string
+        required: false
+      web_plan_sha256:
+        description: sha256 of the source case plan in the case context, or none (required with web_artifact_commit)
+        type: string
+        required: false
       synthetic_login:
         description: 'Đăng nhập bằng MST giả lập; xuất/nhập chỉ theo chế độ tham chiếu đã chọn'
         type: boolean
@@ -131,6 +139,8 @@ jobs:
           SOURCE_READ_TOKEN: ${{ secrets.SOURCE_READ_TOKEN }}
           EXPECTED_WEB_CASE_ID: ${{ inputs.web_case_id }}
           EXPECTED_WEB_SOURCE_SHA: ${{ inputs.web_source_sha }}
+          EXPECTED_WEB_REQUEST_ID: ${{ inputs.web_request_id }}
+          EXPECTED_WEB_PLAN_SHA256: ${{ inputs.web_plan_sha256 }}
         run: python ./scripts/fetch-htkk-web-input.py
       - name: Queue separate native harness sample status before supplier launch
         if: inputs.install_and_probe && inputs.gui_automation == 'gtgt-roundtrip-inspect'

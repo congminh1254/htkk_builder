@@ -64,7 +64,7 @@ class RegistryContract(unittest.TestCase):
 
 class CohortContract(unittest.TestCase):
  def test_dispatch_includes_candidates_with_immutable_inputs_but_cohort_and_pages_do_not_wait_for_them(self):
-  publication={'format':'htkk-web-input-publication-v1','sourceCommit':'a'*40,'cases':[{'caseId':case,'artifactCommit':hashlib.sha1(case.encode()).hexdigest()} for case in dispatch.CASES]}
+  publication={'format':'htkk-web-input-publication-v2','sourceCommit':'a'*40,'requestId':'4242','planSha256':'f'*64,'cases':[{'caseId':case,'artifactCommit':hashlib.sha1(case.encode()).hexdigest()} for case in dispatch.CASES]}
   calls=[];dispatch.dispatch(dispatch.publication(json.dumps(publication,separators=(',',':')).encode(),'a'*40),'actions','status',lambda *args:calls.append(args))
   sent=[args[2]['inputs'] for args in calls if args[0].endswith('/dispatches')]
   for case in ANNEX:
