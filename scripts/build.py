@@ -60,11 +60,33 @@ def e2e_summary():
   text='seconds=%d tests=%d slowest=%s timedout=%s'%(round(duration/1000) if isinstance(duration,(int,float)) else -1,count,','.join('%s=%d'%(k,round(v/1000)) for k,v in top),','.join(sorted(timed)[:20]))
   return text if re.fullmatch('[a-z0-9:,= -]{0,600}',text) else ''
  except Exception:return ''
+EVIDENCE=re.compile('[a-z0-9]{1,16}=[a-z0-9-]{1,16}( [a-z0-9]{1,16}=[a-z0-9 -]{1,120}){0,12}')
+def e2e_evidence():
+ """Annotations of type "evidence" that tests attach on failure (tests/helpers/evidence.ts: indicator code, step and
+ value shapes, never values). Printed only if the text is fixed words and numbers; anything else is dropped."""
+ try:
+  report=json.loads((pathlib.Path(os.environ['RUNNER_TEMP'])/'htkk-e2e-report.json').read_text())
+  files=sorted(p.name for p in (source/'tests/e2e').glob('*.spec.ts'))
+  found=[]
+  def walk(suite):
+   for spec in suite.get('specs',[]):
+    name=pathlib.PurePosixPath(str(spec.get('file',''))).name
+    if name not in files or not isinstance(spec.get('line'),int):continue
+    for t in spec.get('tests',[]):
+     for r in t.get('results',[]):
+      for a in r.get('annotations',[])+t.get('annotations',[]):
+       text=a.get('description') if isinstance(a,dict) and a.get('type')=='evidence' else None
+       if isinstance(text,str) and len(text)<=400 and EVIDENCE.fullmatch(text):found.append('%d:%d %s'%(files.index(name),spec['line'],text))
+   for child in suite.get('suites',[]):walk(child)
+  for suite in report.get('suites',[]):walk(suite)
+  return list(dict.fromkeys(found))[:10]
+ except Exception:return []
 def print_timings():
  text=','.join('%s=%d'%item for item in timings)
  if re.fullmatch('[a-z0-9=,-]{0,400}',text):print('stage seconds: '+text)
  summary=e2e_summary() if any(name=='e2e' for name,_ in timings) else ''
  if summary:print('e2e '+summary)
+ for line in (e2e_evidence() if summary else []):print('e2e evidence (spec index:line): '+line)
 try:
  for command in (['npm','ci'],['npm','run','typecheck'],['npm','test'],['npm','run','test:schemas'],['npm','audit','--omit=dev','--audit-level=high'],['npm','run','build']):run(command)
  browser=next((shutil.which(name) for name in ('google-chrome','chromium','chromium-browser') if shutil.which(name)),None)

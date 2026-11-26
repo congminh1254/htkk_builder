@@ -43,7 +43,9 @@ class PrivateLogTests(unittest.TestCase):
   import json
   report={'stats':{'duration':123456},'suites':[{'title':'PRIVATE SUITE','specs':[
    {'title':'PRIVATE TITLE a','file':'b.spec.ts','line':7,'ok':True,'tests':[{'results':[{'status':'passed','duration':4200}]}]},
-   {'title':'PRIVATE TITLE b','file':'a.spec.ts','line':44,'ok':False,'tests':[{'results':[{'status':'timedOut','duration':61000,'errors':[{'message':'PRIVATE ERROR','location':{'file':'/src/tests/e2e/a.spec.ts','line':71}}]}]}]},
+   {'title':'PRIVATE TITLE b','file':'a.spec.ts','line':44,'ok':False,'tests':[{'results':[{'status':'timedOut','duration':61000,'annotations':[
+    {'type':'evidence','description':'cell=33 step=poll kind=assert expected=len8 digits8 dot0 comma0 space0 paren0 minus0 other0 observed=len10 digits8 dot2 comma0 space0 paren0 minus0 other0 focus=0 matches=1 active=select'},
+    {'type':'evidence','description':'cell=33 observed=PRIVATE 11.000.000 /src/tests'},{'type':'note','description':'cell=1 private=x'}],'errors':[{'message':'PRIVATE ERROR','location':{'file':'/src/tests/e2e/a.spec.ts','line':71}}]}]}]},
    {'title':'PRIVATE TITLE c','file':'b.spec.ts','line':9,'ok':True,'tests':[{'results':[{'status':'skipped','duration':0}]}]}]}]}
   for failing in (False,True):
    with self.subTest(failing=failing),tempfile.TemporaryDirectory() as temporary:
@@ -60,5 +62,8 @@ class PrivateLogTests(unittest.TestCase):
     self.assertRegex(out,r'stage seconds: install=\d+,typecheck=\d+,unit=\d+,schemas=\d+,audit=\d+,build=\d+,e2e=\d+')
     self.assertIn('e2e seconds=123 tests=2 slowest=0:44=61,1:7=4 timedout=0:44',out)
     if failing:self.assertIn('e2e failures (spec index:line): 0:44@71',out)
+    # Only the evidence annotation made of fixed words and numbers is printed, with its spec index:line.
+    self.assertIn('e2e evidence (spec index:line): 0:44 cell=33 step=poll kind=assert expected=len8 digits8 dot0 comma0 space0 paren0 minus0 other0 observed=len10 digits8 dot2 comma0 space0 paren0 minus0 other0 focus=0 matches=1 active=select\n',out)
+    self.assertEqual(out.count('e2e evidence'),1);self.assertNotIn('11.000.000',out);self.assertNotIn('/src',out)
     self.assertNotIn('PRIVATE',out)
 if __name__=='__main__':unittest.main()
