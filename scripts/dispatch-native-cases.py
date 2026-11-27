@@ -5,6 +5,7 @@ BUILDER='congminh1254/htkk_builder'
 import importlib.util
 _spec=importlib.util.spec_from_file_location('trusted_case_metadata',pathlib.Path(__file__).with_name('htkk_native_cases.py'));case_registry=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(case_registry)
 CASES=tuple(case_registry.CASES)
+_rate_spec=importlib.util.spec_from_file_location('dispatch_github_rate_limit',pathlib.Path(__file__).with_name('github_rate_limit.py'));rate=importlib.util.module_from_spec(_rate_spec);_rate_spec.loader.exec_module(rate)
 # Release/Pages/evidence cohort. Candidate cases still get their own dispatch and status.
 GATE_CASES=tuple(case_registry.GATE_CASES)
 CONTEXTS={id:c['statusContext']for id,c in case_registry.CASES.items()}
@@ -86,13 +87,20 @@ def created(case,builder,started,token,get):
  # A fresh probe run whose case cannot be identified may be ours: never risk a duplicate.
  return None if unknown else False
 
-def deliver(send,url,token,payload,sleep,confirm=None):
- """POST with bounded retries; confirm() is checked before re-sending a non-idempotent POST."""
- for attempt in range(len(RETRY_DELAYS)+1):
+def deliver(send,url,token,payload,sleep,confirm=None,budget=None):
+ """POST with bounded retries; confirm() is checked before re-sending a non-idempotent POST.
+
+ A rate-limit refusal (429, or 403 with Retry-After / X-RateLimit-Remaining: 0) waits within the
+ rate-limit budget instead of the short 5xx backoff; any other 4xx fails at once."""
+ budget=budget or rate.Budget(sleep=sleep);attempt=0
+ while True:
   try:send(url,token,payload);return
   except Exception as error:
-   if not transient(error) or attempt==len(RETRY_DELAYS):raise
-   sleep(RETRY_DELAYS[attempt])
+   if rate.rate_limited(error):
+    if not budget.wait(error):raise
+   else:
+    if not transient(error) or attempt==len(RETRY_DELAYS):raise
+    sleep(RETRY_DELAYS[attempt]);attempt+=1
    if confirm is not None:
     try:state=confirm()
     except Exception as check:
@@ -100,7 +108,7 @@ def deliver(send,url,token,payload,sleep,confirm=None):
      state=None
     if state is True:print('Native-case dispatch transient error; the run already exists, not re-dispatched.',flush=True);return
     if state is None:raise error # Unknown whether the run exists; fail closed rather than duplicate.
-   print('Transient native-case API error; bounded retry '+str(attempt+1)+' of '+str(len(RETRY_DELAYS))+'.',flush=True)
+   if not rate.rate_limited(error):print('Transient native-case API error; bounded retry '+str(attempt)+' of '+str(len(RETRY_DELAYS))+'.',flush=True)
 
 def inputs(source,item,request_id,plan_sha256):
  case=item['caseId'];value={'install_and_probe':True,'synthetic_login':True,'acknowledge_registration':True,'runtime_host':'clr2-x86-reference','gui_automation':gui(case),'web_source_sha':source,'web_case_id':case,'web_artifact_commit':item['artifactCommit']}
@@ -117,7 +125,8 @@ def deferred(case,at):
 def dispatch(value,actions_token,status_token,send=None,builder=None,get=None,sleep=None,now=None):
  send=send or post;get=get or get_json;sleep=sleep or time.sleep;now=now or (lambda:datetime.datetime.now(datetime.timezone.utc))
  if builder is not None:sha(builder)
- count=0
+ # One rate-limit budget for the whole dispatch process.
+ count=0;budget=rate.Budget(sleep=sleep)
  for item in value['cases']:
   # A deferred case (registry notBefore) is neither dispatched nor given a status: never reported as a success.
   until=deferred(item['caseId'],now())
@@ -125,14 +134,14 @@ def dispatch(value,actions_token,status_token,send=None,builder=None,get=None,sl
   count+=1
   status='https://api.github.com/repos/'+REPO+'/statuses/'+value['sourceCommit']
   # Commit statuses are last-writer hints, so a blind retry of the same pending status is safe.
-  deliver(send,status,status_token,{'state':'pending','context':context(item['caseId']),'description':'Fixed synthetic native case queued input:'+item['artifactCommit']},sleep)
+  deliver(send,status,status_token,{'state':'pending','context':context(item['caseId']),'description':'Fixed synthetic native case queued input:'+item['artifactCommit']},sleep,budget=budget)
   started=now()
   # workflow_dispatch is not idempotent: only re-send once the exact case run is proven absent.
   confirm=None if builder is None else (lambda case=item['caseId'],started=started:created(case,builder,started,actions_token,get))
   try:
-   deliver(send,'https://api.github.com/repos/'+BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches',actions_token,{'ref':'main','inputs':inputs(value['sourceCommit'],item,value['requestId'],value['planSha256'])},sleep,confirm)
+   deliver(send,'https://api.github.com/repos/'+BUILDER+'/actions/workflows/probe-htkk-windows.yml/dispatches',actions_token,{'ref':'main','inputs':inputs(value['sourceCommit'],item,value['requestId'],value['planSha256'])},sleep,confirm,budget)
   except Exception:
-   deliver(send,status,status_token,{'state':'failure','context':context(item['caseId']),'description':'Fixed synthetic native case dispatch failed'},sleep)
+   deliver(send,status,status_token,{'state':'failure','context':context(item['caseId']),'description':'Fixed synthetic native case dispatch failed'},sleep,budget=budget)
    raise
  return count
 

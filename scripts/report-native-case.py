@@ -33,5 +33,6 @@ def failure_class(error):
  # Value-free: an exception type and HTTP status code only, never a message, URL or body.
  if isinstance(error,guard.retry.Exhausted):return 'retry budget exhausted'
  code=getattr(error,'code',None)
- return type(error).__name__+(' '+str(code) if isinstance(code,int) else '')
+ # A rate-limited refusal whose wait did not fit the budget is named apart from a real 401/403.
+ return type(error).__name__+(' '+str(code) if isinstance(code,int) else '')+(' rate limit' if guard.retry.rate_limited(error) else '')
 if __name__=='__main__':main()

@@ -10,11 +10,19 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
 def check(value):
  if not value:raise ValueError('EVIDENCE_REJECTED')
 def sha(value):check(isinstance(value,str) and re.fullmatch('[a-f0-9]{40}',value));return value
+def open_read(req):
+ # Read-only GET: a rate-limited response waits within the process budget (github_rate_limit.py);
+ # every other error (the 302 of a log download included) goes to the caller unchanged.
+ while True:
+  try:return urllib.request.build_opener(NoRedirect()).open(req,timeout=30)
+  except urllib.error.HTTPError as error:
+   if not cases.rate.process_budget().wait(error):raise
+   error.close()
 def api(repo,path):
  check(repo in (SOURCE,BUILDER) and isinstance(path,str) and re.fullmatch(r'[A-Za-z0-9_./?=&%-]+',path) and '..' not in path)
  token=(os.environ.get('SOURCE_READ_TOKEN') or os.environ['GH_TOKEN']) if repo==SOURCE else os.environ['GH_TOKEN']
  req=urllib.request.Request('https://api.github.com/repos/'+repo+'/'+path,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','User-Agent':'HTKK-Scoped-Evidence/1.0'})
- try:response=urllib.request.build_opener(NoRedirect()).open(req,timeout=30)
+ try:response=open_read(req)
  except urllib.error.HTTPError as error:
   if error.code!=302 or not path.endswith('/logs'):raise
   url=error.headers.get('Location','');parsed=urllib.parse.urlsplit(url)

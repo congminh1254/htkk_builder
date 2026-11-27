@@ -11,6 +11,7 @@ BRANCH='gtgt-web-reference-input'
 NAMES=('01GTGT-web.xml','manifest.json')
 _case_spec=importlib.util.spec_from_file_location('trusted_case_input_metadata',pathlib.Path(__file__).with_name('htkk_native_cases.py'));case_registry=importlib.util.module_from_spec(_case_spec);_case_spec.loader.exec_module(case_registry)
 CASES={id:c['format']for id,c in case_registry.CASES.items()}
+_rate_spec=importlib.util.spec_from_file_location('htkk_github_rate_limit',pathlib.Path(__file__).with_name('github_rate_limit.py'));rate=importlib.util.module_from_spec(_rate_spec);_rate_spec.loader.exec_module(rate)
 SALE10={'ct32':'1000000','ct33':'100000','ct27':'1000000','ct28':'100000','ct34':'1000000','ct35':'100000','ct36':'100000','ct40a':'100000','ct40':'100000'}
 SALE10_HALF={key:('5' if key in ('ct32','ct27','ct34') else '1') for key in SALE10}
 SALE10_MANUAL={key:('1000000' if key in ('ct32','ct27','ct34') else '7') for key in SALE10}
@@ -28,7 +29,7 @@ MAX_API=600000
 COMMENT='<!-- BẢN NHÁP; KHÔNG NỘP THUẾ; CHƯA KIỂM CHỨNG ĐẦY ĐỦ VỚI HTKK WINDOWS. -->'
 PREAMBLE='<?xml version="1.0" encoding="UTF-8"?>\n'
 SERVICE={'maDVu':'CCKK','tenDVu':'Công cụ Kê khai','pbanDVu':'0.9.2','ttinNhaCCapDVu':'hotrokekhai.net — Công cụ Kê khai, công cụ độc lập'}
-CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL','CONTEXT_MISSING','CONTEXT_SHAPE','CONTEXT_REQUEST','CONTEXT_CASE','CONTEXT_ADAPTER','CONTEXT_SOURCE','CONTEXT_PRODUCER','CONTEXT_XML','CONTEXT_PLAN'))
+CODES=frozenset(('AUTH','RATE_LIMIT','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL','CONTEXT_MISSING','CONTEXT_SHAPE','CONTEXT_REQUEST','CONTEXT_CASE','CONTEXT_ADAPTER','CONTEXT_SOURCE','CONTEXT_PRODUCER','CONTEXT_XML','CONTEXT_PLAN'))
 _spec=importlib.util.spec_from_file_location('htkk_export_privacy',pathlib.Path(__file__).with_name('publish-gtgt-export-evidence.py'))
 privacy=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(privacy)
 _annex_spec=importlib.util.spec_from_file_location('htkk_annex12_web_input_contract',pathlib.Path(__file__).with_name('htkk_annex12_web_cases.py'))
@@ -105,7 +106,8 @@ def safe_context(context):
 def safe_failure(error):
  code='INTERNAL';context={}
  if isinstance(error,InputError):code=error.code if isinstance(error.code,str) and error.code in CODES else 'INTERNAL';context=safe_context(error.context if isinstance(error.context,dict) else {})
- elif isinstance(error,urllib.error.HTTPError):code='AUTH' if error.code in (401,403) else 'HTTP';context=safe_context({'httpStatus':error.code})
+ # A rate-limited 429/403 (headers only) is not an authorization failure; any other 401/403 is.
+ elif isinstance(error,urllib.error.HTTPError):code='RATE_LIMIT' if rate.rate_limited(error) else 'AUTH' if error.code in (401,403) else 'HTTP';context=safe_context({'httpStatus':error.code})
  elif isinstance(error,urllib.error.URLError):code='NETWORK'
  elif isinstance(error,OSError):code='IO'
  return {'format':'htkk-web-reference-input-fetch-status-v1','status':'rejected','code':code,**context}
@@ -124,6 +126,13 @@ def json_object(body,code):
   return value
  except (UnicodeError,json.JSONDecodeError):raise InputError(code) from None
 def api(path,token):
+ # Read-only GET: a rate-limited response is retried within the process budget (github_rate_limit.py).
+ while True:
+  try:return api_once(path,token)
+  except urllib.error.HTTPError as error:
+   if not rate.process_budget().wait(error):raise
+   error.close()
+def api_once(path,token):
  if not isinstance(token,str) or not token:raise InputError('AUTH')
  request=urllib.request.Request('https://api.github.com/repos/'+REPO+path,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','User-Agent':'HTKK-Private-Web-Input-Read/1.0','Accept-Encoding':'identity'})
  with urllib.request.build_opener(NoRedirect()).open(request,timeout=30) as response:

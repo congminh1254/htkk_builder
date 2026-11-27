@@ -9,6 +9,8 @@ _spec=importlib.util.spec_from_file_location('htkk_web_input_reader',pathlib.Pat
 reader=importlib.util.module_from_spec(_spec);_spec.loader.exec_module(reader)
 REPO=reader.REPO
 BUILDER=reader.BUILDER
+# One rate-limit module (and so one process budget) shared with the reader transport.
+rate=reader.rate
 _ref_spec=importlib.util.spec_from_file_location('input_immutable_refs',pathlib.Path(__file__).with_name('immutable_case_refs.py'));immutable_refs=importlib.util.module_from_spec(_ref_spec);_ref_spec.loader.exec_module(immutable_refs)
 CASES=tuple((id,c['stagingDirectory'],c['inputBranch'])for id,c in reader.case_registry.CASES.items())
 OUTPUT='htkk-web-input-publication.json'
@@ -16,7 +18,7 @@ PRODUCER='scripts/generate-htkk-web-reference.mjs'
 # Each case is bound to the reviewed producer of its trusted adapter.
 CASE_PRODUCERS={id:reader.case_registry.ADAPTERS[c['adapterId']]['producer'] for id,c in reader.case_registry.CASES.items()}
 MAX_PRODUCER=262144
-CODES=frozenset(('AUTH','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','STALE_SOURCE','SOURCE_PRODUCER','SOURCE_VERSION','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
+CODES=frozenset(('AUTH','RATE_LIMIT','HTTP','NETWORK','API_SIZE','API_JSON','API_SHAPE','PRIVATE_REPO','SOURCE_COMMIT','STALE_SOURCE','SOURCE_PRODUCER','SOURCE_VERSION','MANIFEST','HASH','XML_SIZE','XML_ENCODING','XML_DECLARATION','XML_PARSE','XML_SERVICE','XML_PRIVACY','STAGING','BUILDER','IO','INTERNAL'))
 
 class PublicationError(ValueError):
  def __init__(self,code):
@@ -41,7 +43,8 @@ def safe_failure(error):
  if isinstance(error,PublicationError):code=error.code if error.code in CODES else 'INTERNAL'
  elif isinstance(error,reader.InputError):code=error.code if error.code in CODES else 'INTERNAL'
  elif isinstance(error,urllib.error.HTTPError):
-  code='AUTH' if error.code in (401,403) else 'HTTP'
+  # A rate-limited 429/403 (headers only) is not an authorization failure; any other 401/403 is.
+  code='RATE_LIMIT' if rate.rate_limited(error) else 'AUTH' if error.code in (401,403) else 'HTTP'
   if type(error.code) is int and 100<=error.code<=599:extra['httpStatus']=error.code
  elif isinstance(error,urllib.error.URLError):code='NETWORK'
  elif isinstance(error,OSError):code='IO'
@@ -53,7 +56,9 @@ class NoRedirect(urllib.request.HTTPRedirectHandler):
  def redirect_request(self,*args):return None
 
 # Bounded publication-transport retry. This never retries a native run, a
-# validation result (PublicationError: HASH, API_SHAPE, XML_*, ...) or a 4xx.
+# validation result (PublicationError: HASH, API_SHAPE, XML_*, ...) or a 4xx other
+# than a rate-limit refusal (429, or 403 with Retry-After / X-RateLimit-Remaining: 0),
+# which waits within the process budget of github_rate_limit.py.
 RETRY_DELAYS=(2,5)
 TRANSIENT_HTTP=frozenset((500,502,503,504))
 CONTENT_ADDRESSED=frozenset(('/git/blobs','/git/trees','/git/commits'))
@@ -77,8 +82,8 @@ def created_by_ambiguous_attempt(payload,token):
  if isinstance(existing,dict) and existing.get('ref')==payload['ref'] and isinstance(existing.get('object'),dict) and existing['object'].get('type')=='commit' and existing['object'].get('sha')==payload['sha']:return existing
  return None
 def api(path,token,payload=None,method=None):
- kind=retry_kind(path,payload,method);ambiguous=False
- for attempt in range(len(RETRY_DELAYS)+1):
+ kind=retry_kind(path,payload,method);ambiguous=False;attempt=0
+ while True:
   try:return api_once(path,token,payload,method)
   except PublicationError:raise
   except Exception as error:
@@ -86,10 +91,17 @@ def api(path,token,payload=None,method=None):
     existing=created_by_ambiguous_attempt(payload,token)
     if existing is not None:return existing
     raise
+   # A rate-limit refusal waits within the process budget. Only requests whose repetition converges
+   # (retry_kind) are retried; any other write fails as RATE_LIMIT at once. GitHub refuses a
+   # rate-limited request before acting on it, but a ref create is still treated as ambiguous, so a
+   # later 422 adopts only a ref pointing exactly at the intended sha.
+   if kind is not None and rate.rate_limited(error):
+    if not rate.process_budget().wait(error):raise
+    ambiguous=True;error.close();continue
    if kind is None or attempt>=len(RETRY_DELAYS) or not transient(error):raise
    ambiguous=True
    if isinstance(error,urllib.error.HTTPError):error.close()
-  time.sleep(RETRY_DELAYS[attempt])
+  time.sleep(RETRY_DELAYS[attempt]);attempt+=1
 
 def api_once(path,token,payload=None,method=None):
  if not isinstance(token,str) or not token:fail('AUTH')

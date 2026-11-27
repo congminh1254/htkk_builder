@@ -23,6 +23,9 @@ def _rate_limited_403(error):
  except Exception:return False
  # Inspected in memory only; never printed or re-raised with the body.
  return b'rate limit' in body.lower() or b'abuse' in body.lower()
+def rate_limited(error):
+ """Header-only rate-limit marker (429, or 403 with Retry-After / X-RateLimit-Remaining: 0) for the failure class."""
+ return isinstance(error,urllib.error.HTTPError) and (error.code==429 or error.code==403 and (_header(error,'Retry-After')is not None or str(_header(error,'X-RateLimit-Remaining')).strip()=='0'))
 def classify(error):
  """A value-free label for a transient error, or None when it must not be retried."""
  if isinstance(error,urllib.error.HTTPError):
