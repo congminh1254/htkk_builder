@@ -231,6 +231,10 @@ TRUSTED_ADAPTERS={
  # htkk_web gtgt01-tt89-pl016-*-m10-2026.
  '01-gtgt-tt89-3.0.9-pl016-cssx':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_6']),'htkkVersion':'5.8.4'},
  '01-gtgt-tt89-3.0.9-pl016-dtvt':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_6_2']),'htkkVersion':'5.8.4'},
+ # With PL 01-8/GTGT (5%) (Menu sheet 01_9 = workbook 01_8_2, XML PLuc/Pluc_01_8_2_GTGT, ticked in the period dialog): the menu
+ # exists from 5.8.4; the adapter and its case are on 5.8.5 (htkk_web applies the 5.8.5 Header B155/B158/B235/B237). htkk_web
+ # gtgt01-tt89-pl018-5pct-m10-2026.
+ '01-gtgt-tt89-3.0.9-pl018-5pct':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_9']),'htkkVersion':'5.8.5'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))

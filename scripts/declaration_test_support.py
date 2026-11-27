@@ -128,6 +128,16 @@ def _tree(case_id, native=False, created=None):
                         _add(table, leaf, value)
                 _add(_add(node, 'ChenhLech'), 'ct9', ct9)
                 continue
+            if case_id in d.GTGT01_TT89_PL018:  # 01/GTGT TT89 PL 01-8/GTGT (5%): every oracle leaf, rows with their id attribute
+                for path, value in d.gtgt01_tt89_pl018_expected(case_id):
+                    parent = node
+                    for part in path.split('/')[:-1]:
+                        name, _, index = part.partition('[')
+                        attrib = {'id': 'ID_' + index[:-1]} if index else {}
+                        found = [child for child in parent.findall('{%s}%s' % (NS, name)) if child.attrib == attrib]
+                        parent = found[0] if found else _add(parent, name, attrib=attrib)
+                    _add(parent, path.split('/')[-1], value)
+                continue
             if case_id in d.GTGT01_TT89_PL016:  # 01/GTGT TT89 PL 01-6/GTGT (Pluc_01_6_GTGT_CSSX / _DVVT): head, both tables, totals of the oracle
                 _, head, rows_, provinces, totals = d.gtgt01_tt89_pl016_expected(case_id)
                 for leaf, value in head.items():
