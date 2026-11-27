@@ -27,7 +27,7 @@ jobs:
     permissions:
       contents: read
       actions: write
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Checkout trusted builder
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
