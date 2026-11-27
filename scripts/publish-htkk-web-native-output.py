@@ -186,7 +186,7 @@ def compare_tax(input_body,native_body,case_id=None):
  if not equal(left,right,'HSoThueDTu') or count!=expected:fail('COMPARE')
  return {'allTaxValuesMatched':True,'checkedTaxLeafCount':expected,'creationDateRule':'native-export-current-date','independentSchemaVerification':False}
 
-def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immutable=False,version=oracle.DEFAULT):
+def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immutable=False,version=oracle.DEFAULT,inputs=None):
  # Revalidate even when called independently of the fixed-path staging reader.
  aligned=metadata.get('format')=='htkk-web-native-output-staging-v3'
  metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),initial,str(metadata.get('runAttempt','')) if initial is not None else None,aligned,version)
@@ -196,11 +196,10 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immu
   compared=compare_native_roundtrip(initial,native)
   if aligned and baseline_matches_input(metadata['caseId']) and not compared['allLeafValuesMatched']:fail('COMPARE')
  if not isinstance(token,str) or not token:fail('AUTH')
- fetch=fetch or transport.api
- if retain_immutable:transport.assert_current(fetch,token,metadata['sourceCommit'])
- # Only a fixed PRIVATE immutable input artifact may justify retention.
- def read_api(path,read_token):return fetch(path,read_token)
- inputs=reader.download(token,fetch=read_api,expected_source=metadata['sourceCommit'],expected_case=metadata['caseId'],artifact_commit=metadata['artifactCommit'])
+ production=fetch is None;fetch=fetch or transport.api
+ # Only a fixed PRIVATE immutable input artifact may justify retention: its files as this job's fetch step
+ # verified them (inputs, digest-checked), else downloaded again. main == source is checked before any ref write.
+ inputs=transport.case_inputs(token,fetch,production,metadata['sourceCommit'],metadata['caseId'],metadata['artifactCommit'],inputs,retain_immutable)
  input_manifest=reader.validate_manifest(inputs['manifest.json'])
  if hashlib.sha256(inputs['01GTGT-web.xml']).hexdigest()!=metadata['webImportInputSha256']:fail('HASH')
  comparison=compare_tax(inputs['01GTGT-web.xml'],native,metadata['caseId'])
@@ -213,15 +212,7 @@ def publish(native,metadata,token,fetch=None,today=None,initial=None,retain_immu
  files={'01GTGT-native.xml':native,'manifest.json':(json.dumps(manifest,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode('utf-8')}
  if initial is not None:files[INITIAL]=initial
  if len(files['manifest.json'])>reader.MAX_MANIFEST:fail('MANIFEST')
- entries=[]
- for name,body in files.items():
-  blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
-  expected=hashlib.sha1(b'blob '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest()
-  if not isinstance(blob,dict) or blob.get('sha')!=expected:fail('HASH')
-  entries.append({'path':name,'mode':'100644','type':'blob','sha':expected})
- tree=fetch('/git/trees',token,{'tree':entries})
- if not isinstance(tree,dict):fail('API_SHAPE')
- tree_sha=exact_sha(tree.get('sha'))
+ tree_sha=transport.write_flat_tree(fetch,token,files)
  commit=fetch('/git/commits',token,{'message':'Private original native reexport '+metadata['caseId']+' '+metadata['sourceCommit'],'tree':tree_sha,'parents':[]})
  if not isinstance(commit,dict):fail('API_SHAPE')
  artifact=exact_sha(commit.get('sha'))
@@ -250,7 +241,7 @@ def main():
   version=oracle.version(os.environ)
   native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),run_attempt=os.environ.get('GITHUB_RUN_ATTEMPT',''),aligned=True,version=version)
   initial=transport.safe_read(directory/INITIAL,reader.MAX_XML)
-  print(json.dumps(publish(native,metadata,token,initial=initial,retain_immutable=True,version=version),separators=(',',':')))
+  print(json.dumps(publish(native,metadata,token,initial=initial,retain_immutable=True,version=version,inputs=transport.job_inputs(metadata)),separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')))
   raise SystemExit('Native synthetic output retention failed; no XML, paths, credentials or raw remote error published.')

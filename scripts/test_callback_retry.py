@@ -32,7 +32,7 @@ class FakeGitHub:
    if isinstance(outcome,BaseException):raise outcome
   if url.endswith('/git/ref/heads/main'):value={'object':{'sha':SOURCE}}
   elif '/actions/runs/' in url:value={'run_attempt':1}
-  else:value=[]
+  else:value={'statuses':[]}
   return Response(200,json.dumps(value).encode())
 class Clock:
  def __init__(self):self.now=0.0;self.sleeps=[]

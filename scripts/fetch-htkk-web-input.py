@@ -3,7 +3,7 @@
 Original downloaded bytes are staged unchanged. In-memory service replacement is
 only a privacy-allowlist adapter, never native provenance or filing validation.
 """
-import base64,datetime,hashlib,importlib.util,io,json,os,pathlib,re,shutil,tempfile,urllib.error,urllib.parse,urllib.request
+import base64,datetime,hashlib,importlib.util,io,json,os,pathlib,re,shutil,tarfile,tempfile,urllib.error,urllib.parse,urllib.request,zlib
 import xml.etree.ElementTree as ET
 REPO='htkk-net/htkk_web'
 BUILDER='congminh1254/htkk_builder'
@@ -321,49 +321,177 @@ def verify_case_context(body,manifest,case,source,expected):
  if type(value['xmlSha256']) is not str or value['xmlSha256']!=manifest.get('xmlSha256'):raise InputError('CONTEXT_XML')
  if value['planSha256']!=expected['planSha256'] or (value['planSha256'] is not None and type(value['planSha256']) is not str):raise InputError('CONTEXT_PLAN')
  return value
-def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None,context=None):
+# Git object ids computed locally (also used by the publishers to verify every tree they write).
+def git_blob_sha(body):return hashlib.sha1(b'blob '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest()
+def git_tree_sha(entries):
+ """Id of a git tree from (mode, name, sha) entries; mode '100644' for a file, '40000' for a directory."""
+ def order(entry):return entry[1].encode('utf-8')+(b'/' if entry[0]=='40000' else b'')
+ body=b''.join(mode.encode('ascii')+b' '+name.encode('utf-8')+b'\0'+bytes.fromhex(value) for mode,name,value in sorted(entries,key=order))
+ return hashlib.sha1(b'tree '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest()
+def files_tree_sha(files):
+ """Id of the git tree holding exactly these regular (non-executable) files, {relative path: bytes}."""
+ children={}
+ for path,body in files.items():
+  head,_,rest=path.partition('/')
+  children.setdefault(head,{})
+  if rest:
+   if '' in children[head]:raise InputError('API_SHAPE')
+   children[head][rest]=body
+  else:
+   if children[head]:raise InputError('API_SHAPE')
+   children[head]['']=body
+ entries=[]
+ for name,value in children.items():
+  if '' in value:entries.append(('100644',name,git_blob_sha(value[''])))
+  else:entries.append(('40000',name,files_tree_sha(value)))
+ return git_tree_sha(entries)
+
+# One commit archive replaces the per-file content reads: one REST request (its codeload download carries no
+# credential and is not an API request), verified as a whole against the commit's git tree id.
+ARCHIVE_HOST='codeload.github.com'
+MAX_ARCHIVE=33554432;MAX_ARCHIVE_FILES=4096;MAX_ARCHIVE_BYTES=134217728
+def fetch_archive(commit,token):
+ git_sha(commit,'SOURCE_COMMIT')
+ if not isinstance(token,str) or not token:raise InputError('AUTH')
+ request=urllib.request.Request('https://api.github.com/repos/'+REPO+'/tarball/'+commit,headers={'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json','User-Agent':'HTKK-Private-Web-Input-Read/1.0'})
+ while True:
+  try:
+   with urllib.request.build_opener(NoRedirect()).open(request,timeout=30) as response:raise InputError('HTTP',httpStatus=response.status)
+  except urllib.error.HTTPError as error:
+   if error.code==302:
+    location=(error.headers or {}).get('Location') or '';error.close();break
+   if not rate.process_budget().wait(error):raise
+   error.close()
+ parsed=urllib.parse.urlsplit(location)
+ if parsed.scheme!='https' or parsed.hostname!=ARCHIVE_HOST or parsed.username or parsed.password or parsed.port not in (None,443):raise InputError('API_SHAPE')
+ # The signed download location is never logged; an error from it reports only its status code.
+ with urllib.request.build_opener(NoRedirect()).open(urllib.request.Request(location,headers={'User-Agent':'HTKK-Private-Web-Input-Read/1.0','Accept-Encoding':'identity'}),timeout=60) as response:
+  if response.status!=200:raise InputError('HTTP',httpStatus=response.status)
+  body=response.read(MAX_ARCHIVE+1)
+ if len(body)>MAX_ARCHIVE:raise InputError('API_SIZE')
+ return body
+def archive_tree(body,commit,tree_sha):
+ """Every file of a commit archive: only regular non-executable files and directories under one root,
+ no .gitattributes, the pax header naming exactly this commit, and the git tree id of the files equal
+ to the commit's tree (so every byte is bound to the pinned commit)."""
+ git_sha(commit,'SOURCE_COMMIT');git_sha(tree_sha)
+ if not isinstance(body,bytes) or len(body)>MAX_ARCHIVE:raise InputError('API_SIZE')
+ try:
+  with tarfile.open(fileobj=io.BytesIO(body),mode='r:gz') as archive:
+   members=[];total=0
+   for member in archive:
+    members.append(member);total+=max(member.size,0)
+    if len(members)>MAX_ARCHIVE_FILES or total>MAX_ARCHIVE_BYTES:raise InputError('API_SIZE')
+   if archive.pax_headers.get('comment')!=commit:raise InputError('SOURCE_COMMIT')
+   roots=[m for m in members if '/' not in m.name.rstrip('/')]
+   if len(roots)!=1 or not roots[0].isdir():raise InputError('API_SHAPE')
+   prefix=roots[0].name.rstrip('/')+'/';files={}
+   for member in members:
+    if member is roots[0]:continue
+    if not member.name.startswith(prefix):raise InputError('API_SHAPE')
+    relative=member.name[len(prefix):].rstrip('/');parts=relative.split('/')
+    if any(part in ('','.','..','.gitattributes') for part in parts):raise InputError('API_SHAPE')
+    if member.isdir():continue
+    if not member.isreg() or member.mode&0o111:raise InputError('API_SHAPE')
+    stream=archive.extractfile(member);data=stream.read(member.size+1) if stream else None
+    if data is None or len(data)!=member.size or relative in files:raise InputError('API_SHAPE')
+    files[relative]=data
+ except InputError:raise
+ except (tarfile.TarError,EOFError,OSError,zlib.error,ValueError):raise InputError('API_SHAPE') from None
+ if not files or files_tree_sha(files)!=tree_sha:raise InputError('HASH')
+ return files
+def case_files(tree,case):
+ """The files of one case: a per-case artifact keeps them at its root; a cohort artifact under <caseId>/."""
+ root={path:body for path,body in tree.items() if '/' not in path}
+ if root:
+  if len(root)!=len(tree):raise InputError('API_SHAPE')
+  return root
+ if case is None:raise InputError('MANIFEST')
+ prefix=case+'/';chosen={path[len(prefix):]:body for path,body in tree.items() if path.startswith(prefix)}
+ if not chosen or any('/' in name for name in chosen):raise InputError('API_SHAPE')
+ return chosen
+def download(token,fetch=None,today=None,expected_source=None,expected_case=None,artifact_commit=None,context=None,archive=None,check_private=True,check_source=True):
+ """The case's files from the pinned artifact. With an archive reader (the default transport) one commit archive,
+ verified against the pinned commit's tree, replaces the per-file content reads; the checks are the same."""
  # context (expected_context()) binds the pinned artifact to the dispatching release; it needs the pin, source and case.
  if context is not None and (artifact_commit is None or expected_source is None or expected_case is None or set(context)!={'requestId','planSha256'}):raise InputError('CONTEXT_MISSING')
  if artifact_commit is not None:git_sha(artifact_commit,'SOURCE_COMMIT')
  if expected_case is not None and expected_case not in CASES:raise InputError('MANIFEST')
  if expected_source is not None:git_sha(expected_source,'SOURCE_COMMIT')
  if not isinstance(token,str) or not token:raise InputError('AUTH')
- fetch=fetch or api
- info=fetch('',token)
- if not isinstance(info,dict) or info.get('private') is not True or info.get('full_name')!=REPO:raise InputError('PRIVATE_REPO')
+ if fetch is None:fetch=api;archive=archive or fetch_archive
+ if check_private:
+  info=fetch('',token)
+  if not isinstance(info,dict) or info.get('private') is not True or info.get('full_name')!=REPO:raise InputError('PRIVATE_REPO')
+ pinned_mode=artifact_commit is not None
  if artifact_commit is None:
   ref=fetch('/git/ref/heads/'+BRANCH,token)
   if not isinstance(ref,dict) or ref.get('ref')!='refs/heads/'+BRANCH or not isinstance(ref.get('object'),dict) or ref['object'].get('type')!='commit':raise InputError('API_SHAPE')
   artifact_commit=git_sha(ref['object'].get('sha'))
- else:
+ if archive is not None or pinned_mode:
   pinned=fetch('/git/commits/'+artifact_commit,token)
   if not isinstance(pinned,dict) or pinned.get('sha')!=artifact_commit:raise InputError('SOURCE_COMMIT')
- query='?ref='+artifact_commit
- manifest_body=content_file(fetch('/contents/manifest.json'+query,token),'manifest.json',MAX_MANIFEST)
+ if archive is not None:
+  tree=pinned.get('tree')
+  if not isinstance(tree,dict):raise InputError('API_SHAPE')
+  stored=case_files(archive_tree(archive(artifact_commit,token),artifact_commit,git_sha(tree.get('sha'))),expected_case)
+  def read(name,maximum,missing='API_SHAPE'):
+   if name not in stored:raise InputError(missing)
+   if not 0<len(stored[name])<=maximum:raise InputError('API_SIZE')
+   return stored[name]
+ else:
+  query='?ref='+artifact_commit
+  def read(name,maximum,missing=None):
+   try:envelope=fetch('/contents/'+name+query,token)
+   except urllib.error.HTTPError as error:
+    if missing is not None and error.code==404:raise InputError(missing) from None
+    raise
+   return content_file(envelope,name,maximum)
+ manifest_body=read('manifest.json',MAX_MANIFEST)
  manifest=validate_manifest(manifest_body)
  if expected_case is not None and manifest['caseId']!=expected_case:raise InputError('MANIFEST')
  if expected_source is not None and manifest['sourceCommit']!=expected_source:raise InputError('SOURCE_COMMIT')
- source=fetch('/git/commits/'+manifest['sourceCommit'],token)
- if not isinstance(source,dict) or source.get('sha')!=manifest['sourceCommit']:raise InputError('SOURCE_COMMIT')
+ if check_source:
+  source=fetch('/git/commits/'+manifest['sourceCommit'],token)
+  if not isinstance(source,dict) or source.get('sha')!=manifest['sourceCommit']:raise InputError('SOURCE_COMMIT')
  name=xml_name(manifest['caseId'])
- body=content_file(fetch('/contents/'+name+query,token),name,MAX_XML)
+ body=read(name,MAX_XML)
  if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
  validate_web_xml(body,today,manifest['caseId'],manifest)
  files={name:body,'manifest.json':manifest_body}
  if ntnn.is_case(manifest['caseId']):
   for extra in ntnn.names(manifest['caseId']):
-   if extra not in files:files[extra]=content_file(fetch('/contents/'+extra+query,token),extra,MAX_XML)
+   if extra not in files:files[extra]=read(extra,MAX_XML)
   validate_prior(files,manifest,today)
  if khbs.is_case(manifest['caseId']) and khbs.prior_case(manifest['caseId']):
-  files[khbs.PRIOR_NAME]=content_file(fetch('/contents/'+khbs.PRIOR_NAME+query,token),khbs.PRIOR_NAME,MAX_XML)
+  files[khbs.PRIOR_NAME]=read(khbs.PRIOR_NAME,MAX_XML)
   validate_prior(files,manifest,today)
  if context is not None:
   # Checked, never staged: the staged file set stays names(case).
-  try:envelope=fetch('/contents/'+CONTEXT_NAME+query,token)
-  except urllib.error.HTTPError as error:
-   if error.code==404:raise InputError('CONTEXT_MISSING') from None
-   raise
-  verify_case_context(content_file(envelope,CONTEXT_NAME,MAX_CONTEXT),manifest,expected_case,expected_source,context)
+  verify_case_context(read(CONTEXT_NAME,MAX_CONTEXT,'CONTEXT_MISSING'),manifest,expected_case,expected_source,context)
+ # An archived case holds exactly its fixed files (and at most its case context).
+ if archive is not None and not set(stored)<=set(names(manifest['caseId']))|{CONTEXT_NAME}:raise InputError('API_SHAPE')
+ return files
+# Fetch once per job: this step records a digest of exactly the files it verified and staged. The later
+# retention step (after the supplier ran) re-reads the staged files and accepts them only if they still match
+# this digest, so it needs no second download of the pinned artifact.
+DIGEST_OUTPUT='input_digest'
+def input_digest(files,artifact_commit,case):
+ git_sha(artifact_commit,'SOURCE_COMMIT')
+ if case not in CASES or not isinstance(files,dict) or set(files)!=set(names(case)) or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
+ listing={name:hashlib.sha256(body).hexdigest() for name,body in sorted(files.items())}
+ return hashlib.sha256(json.dumps({'format':'htkk-web-input-digest-v1','artifactCommit':artifact_commit,'caseId':case,'files':listing},sort_keys=True,separators=(',',':')).encode('ascii')).hexdigest()
+def verify_files(files,expected_source,expected_case,today=None):
+ """The download checks that need no network, for files that were verified once and staged."""
+ git_sha(expected_source,'SOURCE_COMMIT')
+ if expected_case not in CASES or not isinstance(files,dict) or set(files)!=set(names(expected_case)) or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
+ manifest=validate_manifest(files['manifest.json'])
+ if manifest['caseId']!=expected_case:raise InputError('MANIFEST')
+ if manifest['sourceCommit']!=expected_source:raise InputError('SOURCE_COMMIT')
+ body=files[xml_name(expected_case)]
+ if manifest['bytes']!=len(body) or manifest['xmlSha256']!=hashlib.sha256(body).hexdigest():raise InputError('HASH')
+ validate_web_xml(body,today,expected_case,manifest)
+ if ntnn.is_case(expected_case) or (khbs.is_case(expected_case) and khbs.prior_case(expected_case)):validate_prior(files,manifest,today)
  return files
 def stage(files,runner_temp,today=None):
  if not isinstance(files,dict) or 'manifest.json' not in files or any(not isinstance(body,bytes) for body in files.values()):raise InputError('STAGING')
@@ -396,7 +524,14 @@ def main():
   # A dispatched case is pinned to an artifact commit and must match the dispatching release's case context.
   # The manual branch mode (no artifact commit) has no dispatcher, so nothing to bind it to.
   context=expected_context(os.environ.get('EXPECTED_WEB_REQUEST_ID'),os.environ.get('EXPECTED_WEB_PLAN_SHA256')) if artifact else None
-  files=download(token,expected_source=expected,expected_case=case,artifact_commit=artifact,context=context);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
+  # A dispatched job's fetch writes nothing to the repository. The retention step that writes this job's output
+  # checks, before its first write, that the repository is private and that main is this source commit (which
+  # proves the commit exists), so the pinned read does not read either a second time. The manifest and the
+  # case context are still checked against the expected source commit here (SOURCE_COMMIT, CONTEXT_SOURCE).
+  files=download(token,expected_source=expected,expected_case=case,artifact_commit=artifact,context=context,check_private=not artifact,check_source=not artifact);stage(files,os.environ['RUNNER_TEMP']);manifest=validate_manifest(files['manifest.json'])
+  output=os.environ.get('GITHUB_OUTPUT')
+  if artifact and output:
+   with open(output,'a',encoding='ascii') as stream:stream.write(DIGEST_OUTPUT+'='+input_digest(files,artifact,case)+'\n')
   print(json.dumps({'format':'htkk-web-reference-input-fetch-status-v1','status':'staged','bytes':manifest['bytes'],'xmlSha256':manifest['xmlSha256'],'sourceCommit':manifest['sourceCommit']},separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')));raise SystemExit('Private synthetic web input unavailable; no XML, path, token or raw remote error published.')

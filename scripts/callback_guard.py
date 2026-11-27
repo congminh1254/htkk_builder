@@ -21,7 +21,10 @@ def allowed(source,context,run_id,attempt,source_token,actions_token,get=read,in
  run=get(BUILDER,'actions/runs/'+str(run_id),actions_token)
  if run.get('run_attempt')!=int(attempt):return False
  for page in range(1,11):
-  statuses=get(SOURCE,'commits/'+source+'/statuses?per_page=100&page='+str(page),source_token)
+  # The combined status holds only the latest status of each context: the first match is the one that counts,
+  # as it was in the full newest-first listing, in fewer pages.
+  body=get(SOURCE,'commits/'+source+'/status?per_page=100&page='+str(page),source_token)
+  statuses=body.get('statuses') if type(body) is dict else None
   if type(statuses)is not list:raise ValueError('CALLBACK_STATUSES')
   for status in statuses:
    if status.get('context')!=context:continue

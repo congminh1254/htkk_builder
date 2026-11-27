@@ -5,6 +5,7 @@ from unittest.mock import patch
 ROOT=pathlib.Path(__file__).parent
 spec=importlib.util.spec_from_file_location('web_publisher',ROOT/'publish-htkk-web-inputs.py');p=importlib.util.module_from_spec(spec);spec.loader.exec_module(p)
 spec=importlib.util.spec_from_file_location('web_input_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
+spec=importlib.util.spec_from_file_location('publisher_git_support',ROOT/'git_test_support.py');gits=importlib.util.module_from_spec(spec);spec.loader.exec_module(gits)
 # 01/NTNN KHBS: the publisher's own reader instance is pinned to the same synthetic in-memory files.
 f.ntnn_fx.pin(p.reader.ntnn)
 SHA='a'*40
@@ -45,8 +46,8 @@ def contents(body,name,path=None):
  if path is not None:result['path']=path
  return result
 
-def fake_api(info=None,main=SHA,existing=True):
- calls=[];commits=[]
+def fake_api(info=None,main=SHA,existing=True,inline=lambda body:body):
+ calls=[];commits=[];git=gits.Git()
  letters=COMMIT_LETTERS
  def fetch(path,token,payload=None,method=None):
   calls.append((path,token,payload,method))
@@ -70,9 +71,9 @@ def fake_api(info=None,main=SHA,existing=True):
   if path=='/contents/scripts/generate-htkk-web-tckt01-khbs-reference.mjs?ref='+SHA:return contents(TCKT01_KHBS_PRODUCER,'generate-htkk-web-tckt01-khbs-reference.mjs','scripts/generate-htkk-web-tckt01-khbs-reference.mjs')
   if path=='/contents/scripts/generate-htkk-web-gtgt01-tt89-khbs-reference.mjs?ref='+SHA:return contents(GTGT01_TT89_KHBS_PRODUCER,'generate-htkk-web-gtgt01-tt89-khbs-reference.mjs','scripts/generate-htkk-web-gtgt01-tt89-khbs-reference.mjs')
   if path=='/contents/package.json?ref='+SHA:return contents(b'{"version":"0.9.2"}','package.json')
-  if path=='/git/blobs':
-   body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
-  if path=='/git/trees':return {'sha':'c'*40}
+  if path=='/git/blobs':return git.blob(payload)
+  # Trees get the id git would give them (an independent model); inline() is how the server stores inline text.
+  if path=='/git/trees':return git.tree(payload,inline)
   if path=='/git/commits':
    self_sha=letters[len(commits)]*40;commits.append(payload);return {'sha':self_sha}
   if path.startswith('/git/ref/heads/'):
@@ -83,7 +84,10 @@ def fake_api(info=None,main=SHA,existing=True):
    return {'ref':'refs/heads/'+path.rsplit('/',1)[1],'object':{'type':'commit','sha':payload['sha']}}
   if path=='/git/refs':return {'ref':payload['ref'],'object':{'type':'commit','sha':payload['sha']}}
   raise AssertionError('Unexpected fixed GitHub path')
+ fetch.git=git
  return fetch,calls,commits
+def cohort_files(inputs,request_id=None):
+ return {case+'/'+name:body for case,_,files,_ in inputs for name,body in files.items()}
 
 def write_staged(parent,inputs=None):
  for (_,directory,_),item in zip(p.CASES,inputs or fixtures()):
@@ -135,26 +139,28 @@ class StagingTests(unittest.TestCase):
 class PublicationTests(unittest.TestCase):
  def test_orphan_private_publication_preserves_bytes_and_metadata_only_result(self):
   inputs=fixtures();fetch,calls,commits=fake_api();result=p.publish(inputs,SHA,'synthetic-token',fetch)
-  self.assertEqual(result,{'format':'htkk-web-input-publication-v2','sourceCommit':SHA,'requestId':None,'planSha256':None,'cases':[{'caseId':case[0],'artifactCommit':letter*40} for case,letter in zip(p.CASES,COMMIT_LETTERS)]})
-  self.assertTrue(all(item['parents']==[] for item in commits));self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
-  blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
-  self.assertEqual(blobs,[item[2][name] for item in inputs for name in p.reader.names(item[0])])
+  # One orphan cohort commit: every case reports it, and its tree is exactly every case's unchanged files under <caseId>/.
+  self.assertEqual(result,{'format':'htkk-web-input-publication-v2','sourceCommit':SHA,'requestId':None,'planSha256':None,'cases':[{'caseId':case[0],'artifactCommit':COMMIT_LETTERS[0]*40} for case in p.CASES]})
+  self.assertEqual(len(commits),1);self.assertEqual(commits[0]['parents'],[]);self.assertTrue(all(token=='synthetic-token' for _,token,_,_ in calls))
+  self.assertEqual(fetch.git.trees[commits[0]['tree']],cohort_files(inputs))
+  self.assertEqual(commits[0]['tree'],gits.tree_id(cohort_files(inputs)))
+  # Written inline: no blob request, and every tree request is one of few.
+  self.assertFalse(any(path=='/git/blobs' for path,_,_,_ in calls));self.assertLessEqual(sum(path=='/git/trees' for path,_,_,_ in calls),3)
   patches=[(path,payload) for path,_,payload,method in calls if method=='PATCH']
-  self.assertEqual([path for path,_ in patches],['/git/refs/heads/'+case[2] for case in p.CASES]);self.assertTrue(all(payload['force'] is True for _,payload in patches))
+  self.assertEqual([path for path,_ in patches],['/git/refs/heads/'+p.COHORT_BRANCH]);self.assertTrue(all(payload['force'] is True and payload['sha']==COMMIT_LETTERS[0]*40 for _,payload in patches))
   self.assertNotIn('synthetic-token',json.dumps(result));self.assertNotIn('xml',json.dumps(result))
  def test_missing_branches_created_only_after_404(self):
   fetch,calls,_=fake_api(existing=False);p.publish(fixtures(),SHA,'synthetic-token',fetch)
-  self.assertEqual(len([path for path,_,_,_ in calls if path=='/git/refs']),len(p.CASES))
+  self.assertEqual([body for path,_,body,_ in calls if path=='/git/refs'],[{'ref':'refs/heads/'+p.COHORT_BRANCH,'sha':COMMIT_LETTERS[0]*40}])
   self.assertFalse(any(method=='PATCH' for _,_,_,method in calls))
-  for case,_,branch in p.CASES:
-   get_index=next(i for i,(path,_,_,_) in enumerate(calls) if path=='/git/ref/heads/'+branch)
-   post_index=next(i for i,(path,_,body,_) in enumerate(calls) if path=='/git/refs' and body['ref']=='refs/heads/'+branch)
-   self.assertLess(get_index,post_index)
+  get_index=next(i for i,(path,_,_,_) in enumerate(calls) if path=='/git/ref/heads/'+p.COHORT_BRANCH)
+  post_index=next(i for i,(path,_,body,_) in enumerate(calls) if path=='/git/refs' and body['ref']=='refs/heads/'+p.COHORT_BRANCH)
+  self.assertLess(get_index,post_index)
  def test_get_ref_auth_or_validation_error_never_creates_or_patches(self):
   for code in (401,403,422,500):
    fetch,calls,_=fake_api()
    def denied(path,token,payload=None,method=None):
-    if path=='/git/ref/heads/'+p.CASES[0][2]:
+    if path=='/git/ref/heads/'+p.COHORT_BRANCH:
      calls.append((path,token,payload,method));raise urllib.error.HTTPError('https://api.github.com/',code,'PRIVATE REMOTE TEXT',{},None)
     return fetch(path,token,payload,method)
    with self.subTest(code=code),self.assertRaises(urllib.error.HTTPError):p.publish(fixtures(),SHA,'synthetic-token',denied)
@@ -170,10 +176,10 @@ class PublicationTests(unittest.TestCase):
    self.assertEqual(len([1 for _,_,_,method in calls if method=='PATCH']),1)
    self.assertFalse(any(path=='/git/refs' for path,_,_,_ in calls))
  def test_malformed_existing_ref_rejected_without_mutation(self):
-  for value in (None,{'ref':'refs/heads/main','object':{'type':'commit','sha':'f'*40}},{'ref':'refs/heads/'+p.CASES[0][2],'object':{'type':'tag','sha':'f'*40}},{'ref':'refs/heads/'+p.CASES[0][2],'object':{'type':'commit','sha':'invalid'}}):
+  for value in (None,{'ref':'refs/heads/main','object':{'type':'commit','sha':'f'*40}},{'ref':'refs/heads/'+p.COHORT_BRANCH,'object':{'type':'tag','sha':'f'*40}},{'ref':'refs/heads/'+p.COHORT_BRANCH,'object':{'type':'commit','sha':'invalid'}}):
    fetch,calls,_=fake_api()
    def malformed(path,token,payload=None,method=None):
-    if path=='/git/ref/heads/'+p.CASES[0][2]:return value
+    if path=='/git/ref/heads/'+p.COHORT_BRANCH:return value
     return fetch(path,token,payload,method)
    with self.subTest(value=value),self.assertRaises(p.PublicationError):p.publish(fixtures(),SHA,'synthetic-token',malformed)
    self.assertFalse(any(path=='/git/refs' or method=='PATCH' for path,_,_,method in calls))
@@ -215,13 +221,23 @@ class PublicationTests(unittest.TestCase):
    with self.subTest(mutation=mutation),self.assertRaises((p.PublicationError,p.reader.InputError)):p.publish(inputs,SHA,'synthetic-token',fetch)
    self.assertFalse(calls)
  def test_blob_identity_and_ref_response_rejected(self):
-  for mutation in ('blob','ref'):
-   fetch,_,_=fake_api()
+  # 'tree': a tree whose id differs from the local id of the cohort; 'blob': inline text stored differently,
+  # then a blob whose id differs from the bytes sent; 'ref': a ref answer for another ref.
+  for mutation in ('tree','blob','ref'):
+   fetch,calls,_=fake_api(inline=(lambda body:body+b' ') if mutation=='blob' else (lambda body:body))
    def altered(path,token,payload=None,method=None):
+    if mutation=='tree' and path=='/git/trees':return {'sha':'f'*40}
     if mutation=='blob' and path=='/git/blobs':return {'sha':'f'*40}
     if mutation=='ref' and path.startswith('/git/refs/heads/'):return {'ref':'refs/heads/main','object':{'type':'commit','sha':'d'*40}}
     return fetch(path,token,payload,method)
-   with self.subTest(mutation=mutation),self.assertRaises(p.PublicationError):p.publish(fixtures(),SHA,'synthetic-token',altered)
+   with self.subTest(mutation=mutation),self.assertRaises(p.PublicationError) as error:p.publish(fixtures(),SHA,'synthetic-token',altered)
+   if mutation!='ref':self.assertEqual(error.exception.code,'HASH');self.assertFalse(any(path.startswith('/git/refs') for path,_,_,_ in calls))
+ def test_inline_text_stored_differently_is_rewritten_from_verified_blobs(self):
+  inputs=fixtures();fetch,calls,commits=fake_api(inline=lambda body:body.replace(b'\n',b'\r\n'))
+  result=p.publish(inputs,SHA,'synthetic-token',fetch)
+  self.assertEqual(fetch.git.trees[commits[0]['tree']],cohort_files(inputs));self.assertEqual({c['artifactCommit'] for c in result['cases']},{COMMIT_LETTERS[0]*40})
+  blobs=[base64.b64decode(payload['content']) for path,_,payload,_ in calls if path=='/git/blobs']
+  self.assertEqual(sorted(blobs),sorted(cohort_files(inputs).values()))
  def test_auth_http_failures_not_retried_and_remote_text_not_exposed(self):
   for code in (401,403,422,500):
    calls=[]
@@ -262,16 +278,18 @@ class PublicationTests(unittest.TestCase):
 
 class ContextInPublicationTests(unittest.TestCase):
  def test_publication_carries_exactly_the_request_id_and_plan_of_every_case_context(self):
-  fetch,calls,_=fake_api();result=p.publish(fixtures(),SHA,'synthetic-token',fetch,request_id='4242')
+  fetch,calls,commits=fake_api();result=p.publish(fixtures(),SHA,'synthetic-token',fetch,request_id='4242')
   self.assertEqual((result['format'],result['requestId'],result['planSha256']),('htkk-web-input-publication-v2','4242',None))
-  contexts=[json.loads(base64.b64decode(payload['content'])) for path,_,payload,_ in calls if path=='/git/blobs' and b'htkk-case-context-v1' in base64.b64decode(payload['content'])]
-  self.assertEqual(len(contexts),len(p.CASES))
+  tree=fetch.git.trees[commits[0]['tree']]
+  contexts=[json.loads(tree[case+'/case-context.json']) for case,_,_ in p.CASES]
+  self.assertEqual([c['caseId'] for c in contexts],[case for case,_,_ in p.CASES]);self.assertTrue(all(c['sourceCommit']==SHA for c in contexts))
+  self.assertEqual(set(tree),set(cohort_files(fixtures()))|{case+'/case-context.json' for case,_,_ in p.CASES})
   self.assertTrue(all((c['requestId'],c['planSha256'])==(result['requestId'],result['planSha256']) for c in contexts))
 
 class FailureStepTests(unittest.TestCase):
  """A rejected publication names the fixed step that failed, never the remote text, a path or a token."""
- def failing_at(self,match,error):
-  fetch,calls,_=fake_api()
+ def failing_at(self,match,error,**fake):
+  fetch,calls,_=fake_api(**fake)
   def failing(path,token,payload=None,method=None):
    if match(path,payload,method):calls.append((path,token,payload,method));raise error
    return fetch(path,token,payload,method)
@@ -287,12 +305,13 @@ class FailureStepTests(unittest.TestCase):
    'blob':lambda q,b,m:q=='/git/blobs',
    'tree':tree_or_commit('/git/trees'),
    'commit':tree_or_commit('/git/commits'),
-   'branch-read':lambda q,b,m:q=='/git/ref/heads/'+p.CASES[0][2],
+   'branch-read':lambda q,b,m:q=='/git/ref/heads/'+p.COHORT_BRANCH,
    'branch-update':lambda q,b,m:m=='PATCH',
   }
   for step,match in cases.items():
    with self.subTest(step=step):
-    error,_=self.failing_at(match,urllib.error.HTTPError('https://api.github.com/repos/x/y/git/trees',422,'SECRET PRIVATE REMOTE BODY /tmp/x.xml',{},None))
+    # A blob is only written when inline text was stored differently: that server behaviour reaches the blob step.
+    error,_=self.failing_at(match,urllib.error.HTTPError('https://api.github.com/repos/x/y/git/trees',422,'SECRET PRIVATE REMOTE BODY /tmp/x.xml',{},None),**({'inline':lambda body:body+b' '} if step=='blob' else {}))
     report=p.safe_failure(error)
     self.assertEqual(report,{'format':'htkk-web-input-publication-status-v1','status':'rejected','code':'HTTP','httpStatus':422,'step':step})
     text=json.dumps(report);self.assertNotIn('SECRET',text);self.assertNotIn('synthetic-token',text);self.assertNotIn('/',text);self.assertNotIn('xml',text)

@@ -7,6 +7,7 @@ import base64, copy, datetime, hashlib, importlib.util, json, pathlib, re, shuti
 import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).parent
+_git_spec=importlib.util.spec_from_file_location('declaration_output_git',pathlib.Path(__file__).with_name('git_test_support.py'));gits=importlib.util.module_from_spec(_git_spec);_git_spec.loader.exec_module(gits);GIT=gits.Git()
 
 
 def load(name, file):
@@ -535,9 +536,8 @@ class NativeOutput(unittest.TestCase):
             if path in ('/git/commits/' + SOURCE, '/git/commits/' + ARTIFACT):return {'sha': path.rsplit('/', 1)[1]}
             if path == '/contents/manifest.json?ref=' + ARTIFACT:return envelope(json.dumps(manifest, ensure_ascii=False).encode(), 'manifest.json')
             if path == '/contents/declaration-web.xml?ref=' + ARTIFACT:return envelope(web, 'declaration-web.xml')
-            if path == '/git/blobs':
-                body = base64.b64decode(payload['content']); return {'sha': hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()}
-            if path == '/git/trees':return {'sha': 'd' * 40}
+            if path == '/git/blobs':return GIT.blob(payload)
+            if path == '/git/trees':return GIT.tree(payload)
             if path == '/git/commits':return {'sha': 'e' * 40}
             if path.startswith('/git/ref/heads/'):raise urllib.error.HTTPError('https://api.github.com/', 404, 'SECRET', {}, None)
             if path == '/git/refs':return {'ref': payload['ref'], 'object': {'type': 'commit', 'sha': payload['sha']}}
@@ -717,7 +717,7 @@ class NativeOutput(unittest.TestCase):
                     continue
                 fetch, calls = self.fake_api(web, manifest)
                 result = out.publish(native, self.provenance(web, native, case, matched, mask), 'synthetic-token', fetch, TODAY)
-                blobs = [base64.b64decode(p['content']) for path, _, p, _ in calls if path == '/git/blobs']
+                blobs = gits.written(gits.tree_payloads(calls))
                 self.assertEqual(blobs[0], native); stored = json.loads(blobs[1])
                 self.assertTrue(stored['comparison']['allTaxValuesMatched']); self.assertTrue(stored['comparison']['harnessAgreement']); self.assertFalse(stored['qualificationGranted'])
                 self.assertEqual(result['artifactCommit'], 'e' * 40); self.assertEqual(stored['comparison']['checkedTaxLeafCount'], d.tax_leaf_count(case))

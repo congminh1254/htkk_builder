@@ -106,15 +106,15 @@ def read_evidence(directory,run_id,builder_commit,source_commit,case_id,artifact
  validate_native(native,case_id,today,version)
  return native,metadata
 
-def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False,version=oracle.DEFAULT):
+def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False,version=oracle.DEFAULT,inputs=None):
  # Revalidate even when called independently of the fixed-path staging reader.
  metadata=validate_provenance(json.dumps(metadata).encode('utf-8'),native,metadata.get('runId'),metadata.get('builderCommit'),metadata.get('sourceCommit'),metadata.get('caseId'),metadata.get('artifactCommit'),str(metadata.get('runAttempt','')),version)
  checked=validate_native(native,metadata['caseId'],today,version)
  if not isinstance(token,str) or not token:fail('AUTH')
- fetch=fetch or transport.api
- if retain_immutable:transport.assert_current(fetch,token,metadata['sourceCommit'])
- # Only the fixed PRIVATE immutable input artifact of this case may justify retention.
- inputs=reader.download(token,fetch=lambda path,read_token:fetch(path,read_token),expected_source=metadata['sourceCommit'],expected_case=metadata['caseId'],artifact_commit=metadata['artifactCommit'])
+ production=fetch is None;fetch=fetch or transport.api
+ # Only the fixed PRIVATE immutable input artifact of this case may justify retention: its files as this job's
+ # fetch step verified them (inputs, digest-checked), else downloaded again. main == source is checked before any ref write.
+ inputs=transport.case_inputs(token,fetch,production,metadata['sourceCommit'],metadata['caseId'],metadata['artifactCommit'],inputs,retain_immutable)
  name=reader.xml_name(metadata['caseId']);input_manifest=reader.validate_manifest(inputs['manifest.json'])
  if hashlib.sha256(inputs[name]).hexdigest()!=metadata['webImportInputSha256']:fail('HASH')
  if ntnn.is_case(metadata['caseId']):
@@ -135,15 +135,7 @@ def publish(native,metadata,token,fetch=None,today=None,retain_immutable=False,v
   'files':{NAMES[0]:{'sha256':metadata['originalOutputSha256'],'bytes':len(native)}},'fullRoundTrip':False,'qualificationGranted':False}
  files={NAMES[0]:native,'manifest.json':(json.dumps(manifest,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n').encode('utf-8')}
  if len(files['manifest.json'])>reader.MAX_MANIFEST:fail('MANIFEST')
- entries=[]
- for file_name,body in files.items():
-  blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
-  expected=hashlib.sha1(b'blob '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest()
-  if not isinstance(blob,dict) or blob.get('sha')!=expected:fail('HASH')
-  entries.append({'path':file_name,'mode':'100644','type':'blob','sha':expected})
- tree=fetch('/git/trees',token,{'tree':entries})
- if not isinstance(tree,dict):fail('API_SHAPE')
- tree_sha=exact_sha(tree.get('sha'))
+ tree_sha=transport.write_flat_tree(fetch,token,files)
  commit=fetch('/git/commits',token,{'message':'Private original native declaration reexport '+metadata['caseId']+' '+metadata['sourceCommit'],'tree':tree_sha,'parents':[]})
  if not isinstance(commit,dict):fail('API_SHAPE')
  artifact=exact_sha(commit.get('sha'))
@@ -173,7 +165,7 @@ def main():
   if not directory.exists():print(json.dumps({'format':'htkk-declaration-native-output-publication-status-v1','status':'not-staged'},separators=(',',':')));return
   version=oracle.version(os.environ)
   native,metadata=read_evidence(directory,os.environ.get('GITHUB_RUN_ID'),os.environ.get('GITHUB_SHA'),os.environ.get('EXPECTED_WEB_SOURCE_SHA'),os.environ.get('EXPECTED_WEB_CASE_ID'),os.environ.get('WEB_ARTIFACT_COMMIT'),os.environ.get('GITHUB_RUN_ATTEMPT',''),version=version)
-  print(json.dumps(publish(native,metadata,token,retain_immutable=True,version=version),separators=(',',':')))
+  print(json.dumps(publish(native,metadata,token,retain_immutable=True,version=version,inputs=transport.job_inputs(metadata)),separators=(',',':')))
  except Exception as error:
   print(json.dumps(safe_failure(error),separators=(',',':')))
   raise SystemExit('Native declaration output retention failed; no XML, paths, credentials or raw remote error published.')

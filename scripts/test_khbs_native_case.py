@@ -2,6 +2,7 @@
 import base64,copy,datetime,hashlib,importlib.util,json,pathlib,re,tempfile,unittest,urllib.error
 import xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).parent
+_git_spec=importlib.util.spec_from_file_location('khbs_output_git',pathlib.Path(__file__).with_name('git_test_support.py'));gits=importlib.util.module_from_spec(_git_spec);_git_spec.loader.exec_module(gits);GIT=gits.Git()
 def load(name,file):
  spec=importlib.util.spec_from_file_location(name,ROOT/file);module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 cases=load('khbs_case_registry','htkk_native_cases.py')
@@ -641,9 +642,8 @@ class NativeOutput(unittest.TestCase):
    if path=='/contents/manifest.json?ref='+ARTIFACT:return envelope(json.dumps(manifest,ensure_ascii=False).encode(),'manifest.json')
    if path=='/contents/01GTGT-web.xml?ref='+ARTIFACT:return envelope(web,'01GTGT-web.xml')
    if prior is not None and path=='/contents/01GTGT-prior.xml?ref='+ARTIFACT:return envelope(prior,'01GTGT-prior.xml')
-   if path=='/git/blobs':
-    body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
-   if path=='/git/trees':return {'sha':'d'*40}
+   if path=='/git/blobs':return GIT.blob(payload)
+   if path=='/git/trees':return GIT.tree(payload)
    if path=='/git/commits':return {'sha':'e'*40}
    if path.startswith('/git/ref/heads/'):raise urllib.error.HTTPError('https://api.github.com/',404,'SECRET',{},None)
    if path=='/git/refs':return {'ref':payload['ref'],'object':{'type':'commit','sha':payload['sha']}}
@@ -654,7 +654,7 @@ class NativeOutput(unittest.TestCase):
    web=f.sale_fixture(case);manifest=f.case_manifest(web,case);native=native_of(web);fetch,calls=self.fake_api(web,manifest)
    status=out.publish(native,self.provenance(web,native,case,leaves=leaves),'token',fetch,TODAY,version='5.8.2')
    self.assertEqual((status['status'],status['allTaxValuesMatched'],status['mismatchSectionMask'],status['firstDifferenceOrdinal'],status['harnessAgreement']),('published',True,0,0,True))
-   blobs=[base64.b64decode(c[2]['content']) for c in calls if c[0]=='/git/blobs'];self.assertEqual(blobs[0],native)
+   blobs=gits.written(gits.tree_payloads(calls));self.assertEqual(blobs[0],native)
    stored=json.loads(blobs[1]);self.assertEqual(stored['comparison']['checkedTaxLeafCount'],leaves);self.assertEqual(stored['files'],{'khbs-native.xml':{'sha256':hashlib.sha256(native).hexdigest(),'bytes':len(native)}})
    self.assertIs(stored['qualificationGranted'],False)
    ref=next(c for c in calls if c[0]=='/git/refs');self.assertEqual(ref[2]['ref'],'refs/heads/'+out.oracle.output_branch(out.BRANCHES[case],'5.8.2'))

@@ -5,6 +5,10 @@ _retry_spec=importlib.util.spec_from_file_location('native_preflight_retry',path
 registry=collector.cases.case_registry
 SOURCE=collector.SOURCE;BUILDER=collector.BUILDER
 
+# Seconds between cohort polls (each poll: the main ref and the combined-status pages). A native job takes
+# five minutes or more, so a 60 s poll adds at most a minute to the gate for a quarter of the requests.
+POLL=60
+DEADLINE=1200 # Seconds the cohort may take before the release is rejected (NATIVE_TIMEOUT).
 def check(v):
  if not v:raise ValueError('NATIVE_BATCH')
 
@@ -73,7 +77,7 @@ def verify_pinned(batch,source,builder,get=collector.api):
  return True
 
 def main():
- temp=pathlib.Path(os.environ['RUNNER_TEMP']);publication=collector.cases.publication((temp/'htkk-web-input-publication.json').read_bytes(),os.environ['COMMIT_SHA']);deadline=time.monotonic()+1200
+ temp=pathlib.Path(os.environ['RUNNER_TEMP']);publication=collector.cases.publication((temp/'htkk-web-input-publication.json').read_bytes(),os.environ['COMMIT_SHA']);deadline=time.monotonic()+DEADLINE
  retried=set();declined=set()
  def retry(status,context,source,builder,artifact):
   # A run already classified as not retryable is not re-read every poll (candidate cases keep
@@ -88,7 +92,7 @@ def main():
   statuses=collector.combined_statuses(collector.api,publication['sourceCommit']);batch=discover(publication,os.environ['GITHUB_SHA'],statuses,retry=retry)
   if batch is not None:break
   if time.monotonic()>=deadline:raise ValueError('NATIVE_TIMEOUT')
-  print('Waiting for the exact immutable native input cohort.',flush=True);time.sleep(15)
+  print('Waiting for the exact immutable native input cohort.',flush=True);time.sleep(POLL)
  check(collector.api(SOURCE,'git/ref/heads/main')['object']['sha']==publication['sourceCommit'])
  with (temp/'htkk-native-batch-verification.json').open('x')as stream:stream.write(json.dumps(batch,separators=(',',':'))+'\n')
  print('Whole native cohort authenticated; qualification remains disabled.')

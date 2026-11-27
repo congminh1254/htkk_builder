@@ -9,7 +9,7 @@ class GuardRefTests(unittest.TestCase):
    paths.append(path)
    if path=='git/ref/heads/main':return {'object':{'sha':SOURCE}}
    if path.startswith('actions/runs/'):return {'run_attempt':1}
-   return []
+   return {'statuses':[]}
   self.assertTrue(guard.allowed(SOURCE,'htkk-native/zero',5,1,'t','t',get=get))
   self.assertEqual(paths[0],'git/ref/heads/main')
   self.assertNotIn('commits/main',paths)

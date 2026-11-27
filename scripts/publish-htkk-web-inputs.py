@@ -14,6 +14,9 @@ rate=reader.rate
 _ref_spec=importlib.util.spec_from_file_location('input_immutable_refs',pathlib.Path(__file__).with_name('immutable_case_refs.py'));immutable_refs=importlib.util.module_from_spec(_ref_spec);_ref_spec.loader.exec_module(immutable_refs)
 CASES=tuple((id,c['stagingDirectory'],c['inputBranch'])for id,c in reader.case_registry.CASES.items())
 OUTPUT='htkk-web-input-publication.json'
+# The cohort's append-only anchor (refs/tags/htkk-case-input/<source>/cohort/<commit>) and its latest-cohort branch.
+COHORT='cohort'
+COHORT_BRANCH='htkk-web-input-cohort'
 PRODUCER='scripts/generate-htkk-web-reference.mjs'
 # Each case is bound to the reviewed producer of its trusted adapter.
 CASE_PRODUCERS={id:reader.case_registry.ADAPTERS[c['adapterId']]['producer'] for id,c in reader.case_registry.CASES.items()}
@@ -155,6 +158,81 @@ def read_inputs(runner_temp,source_commit):
   if len({item[3]['producerSha256'] for item in result if CASE_PRODUCERS[item[0]]==producer})!=1:fail('SOURCE_PRODUCER')
  return result
 
+# Git object ids computed locally (reader), so a written tree is verified byte for byte by its id alone.
+git_blob_sha=reader.git_blob_sha;git_tree_sha=reader.git_tree_sha
+def flat_tree_sha(files):return git_tree_sha([('100644',name,git_blob_sha(body)) for name,body in files.items()])
+def _entry(fetch,token,path,body,inline,at):
+ if inline:
+  # Inline content is written as UTF-8 text; any other bytes go through a verified blob.
+  try:return {'path':path,'mode':'100644','type':'blob','content':body.decode('utf-8')}
+  except UnicodeDecodeError:pass
+ at('blob');blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
+ if not isinstance(blob,dict) or blob.get('sha')!=git_blob_sha(body):fail('HASH')
+ return {'path':path,'mode':'100644','type':'blob','sha':blob['sha']}
+def create_tree(fetch,token,files,expected,base=None,at=None):
+ """Write files ({path: bytes}, over base) in one tree request; the result must have the expected id.
+
+ Should the server ever store inline text differently, the same tree is written once more from verified
+ blobs; a tree that still differs is rejected (HASH)."""
+ sha(expected);at=at or (lambda step:None)
+ for inline in (True,False):
+  entries=[_entry(fetch,token,path,body,inline,at) for path,body in files.items()]
+  payload={'tree':entries}
+  if base is not None:payload['base_tree']=base
+  at('tree');tree=fetch('/git/trees',token,payload)
+  if not isinstance(tree,dict):fail('API_SHAPE')
+  if tree.get('sha')==expected:return expected
+  if not any('content' in entry for entry in entries):break
+ fail('HASH')
+def write_flat_tree(fetch,token,files):return create_tree(fetch,token,files,flat_tree_sha(files))
+INLINE_CHUNK=1_000_000 # Inline content per tree request; a larger cohort is written in several requests over base_tree.
+def write_cohort_tree(fetch,token,cohort,at=None):
+ """The cohort tree: each (case, files) under <case>/. Every request's result is checked against its local id."""
+ subtrees=[];base=None;pending={};size=0
+ def flush():
+  nonlocal base,pending,size
+  if pending:base=create_tree(fetch,token,pending,git_tree_sha(subtrees),base,at);pending={};size=0
+ for case,files in cohort:
+  if not re.fullmatch('[A-Za-z0-9-]{1,100}',case):fail('STAGING')
+  total=sum(len(body) for body in files.values())
+  if pending and size+total>INLINE_CHUNK:flush()
+  subtrees.append(('40000',case,flat_tree_sha(files)))
+  pending.update({case+'/'+name:body for name,body in files.items()});size+=total
+ flush()
+ return base
+
+STAGED_INPUT='htkk-web-reference-input'
+def staged_inputs(runner_temp,case,artifact_commit,digest,source_commit):
+ """The job's staged input files, accepted only if they still match the digest its fetch step recorded."""
+ if not isinstance(digest,str) or not re.fullmatch('[0-9a-f]{64}',digest):fail('HASH')
+ if case not in reader.CASES:fail('STAGING')
+ folder=pathlib.Path(runner_temp)/STAGED_INPUT;names=reader.names(case)
+ if unsafe_path(folder) or not folder.is_dir() or set(p.name for p in folder.iterdir())!=set(names):fail('STAGING')
+ files={name:safe_read(folder/name,reader.MAX_XML if name.endswith('.xml') else reader.MAX_MANIFEST) for name in names}
+ if reader.input_digest(files,artifact_commit,case)!=digest:fail('HASH')
+ return reader.verify_files(files,source_commit,case)
+def archive(commit,token):return reader.fetch_archive(commit,token)
+def job_inputs(metadata):
+ """In a native job: the staged inputs checked against WEB_INPUT_DIGEST (the fetch step's output), or None
+ when no digest was passed, so the retention downloads the pinned artifact itself."""
+ digest=os.environ.get('WEB_INPUT_DIGEST')
+ if not digest:return None
+ return staged_inputs(os.environ['RUNNER_TEMP'],metadata['caseId'],metadata['artifactCommit'],digest,metadata['sourceCommit'])
+def case_inputs(token,fetch,production,source_commit,case,artifact_commit,inputs=None,retain_immutable=False):
+ """The verified input files of one retained output: the job's staged copy (staged_inputs) when given, else one
+ download of the pinned artifact. The private-repository check is made either way; the source commit is
+ read here unless the caller checks main == source before any ref write (retain_immutable)."""
+ if inputs is None:
+  # The default transport reads one verified commit archive; an injected fetch keeps the per-file reads.
+  return reader.download(token,fetch=lambda path,read_token:fetch(path,read_token),archive=archive if production else None,expected_source=source_commit,expected_case=case,artifact_commit=artifact_commit)
+ info=fetch('',token)
+ if not isinstance(info,dict) or info.get('private') is not True or info.get('full_name')!=REPO:fail('PRIVATE_REPO')
+ files=reader.verify_files(inputs,source_commit,case)
+ if not retain_immutable:
+  value=fetch('/git/commits/'+source_commit,token)
+  if not isinstance(value,dict) or value.get('sha')!=source_commit:fail('SOURCE_COMMIT')
+ return files
+
 def assert_current(fetch,token,source_commit):
  current=fetch('/git/ref/heads/main',token)
  if not isinstance(current,dict) or current.get('ref')!='refs/heads/main' or not isinstance(current.get('object'),dict) or current['object'].get('type')!='commit':fail('API_SHAPE')
@@ -207,42 +285,40 @@ def _publish(inputs,source_commit,token,fetch,request_id,plan,retain_immutable,a
   if reader.json_object(raw_plan,'MANIFEST')!=plan:fail('MANIFEST')
   plan_sha=hashlib.sha256(raw_plan).hexdigest()
 
- cases=[]
+ # The whole cohort is ONE orphan commit: every case's unchanged files under its own directory <caseId>/,
+ # written inline in a few tree requests (no blob request per file) and verified against the locally
+ # computed git tree id. One append-only tag anchors the cohort; one branch names the latest cohort.
+ cohort=[]
  for case,branch,files,manifest in inputs:
-  entries=[];published=dict(files)
+  published=dict(files)
   if request_id is not None:
    c=reader.case_registry.policy(case);a=reader.case_registry.ADAPTERS[c['adapterId']]
    context={'format':'htkk-case-context-v1','sourceCommit':source_commit,'requestId':request_id,'caseId':case,'adapterId':c['adapterId'],'unit':c['unit'],'profilePolicy':a['profilePolicy'],'producerSha256':producer_hashes[CASE_PRODUCERS[case]],'xmlSha256':manifest['xmlSha256'],'planSha256':plan_sha}
    published['case-context.json']=(json.dumps(context,sort_keys=True,separators=(',',':'))+'\n').encode()
-  for name,body in published.items():
-   at('blob');blob=fetch('/git/blobs',token,{'content':base64.b64encode(body).decode('ascii'),'encoding':'base64'})
-   if not isinstance(blob,dict) or sha(blob.get('sha'))!=hashlib.sha1(b'blob '+str(len(body)).encode('ascii')+b'\0'+body).hexdigest():fail('HASH')
-   entries.append({'path':name,'mode':'100644','type':'blob','sha':blob['sha']})
-  at('tree');tree=fetch('/git/trees',token,{'tree':entries})
-  if not isinstance(tree,dict):fail('API_SHAPE')
-  tree_sha=sha(tree.get('sha'))
-  at('commit');commit=fetch('/git/commits',token,{'message':'Synthetic web reference input '+case+' '+source_commit,'tree':tree_sha,'parents':[]})
-  if not isinstance(commit,dict):fail('API_SHAPE')
-  artifact=sha(commit.get('sha'))
-  at('main-check');assert_current(fetch,token,source_commit)
-  at('immutable-ref')
-  if retain_immutable:immutable_refs.retain(fetch,token,'input',source_commit,case,artifact)
-  # GitHub PATCH of a missing ref can return 422. Only an explicit GET 404
-  # establishes absence; never reinterpret a failed mutation as permission to
-  # create a ref or retry authorization/validation errors.
-  missing=False;at('branch-read')
-  try:existing=fetch('/git/ref/heads/'+branch,token)
-  except urllib.error.HTTPError as error:
-   if error.code!=404:raise
-   missing=True
-  if missing:
-   at('branch-create');updated=fetch('/git/refs',token,{'ref':'refs/heads/'+branch,'sha':artifact})
-  else:
-   if not isinstance(existing,dict) or existing.get('ref')!='refs/heads/'+branch or not isinstance(existing.get('object'),dict) or existing['object'].get('type')!='commit':fail('API_SHAPE')
-   sha(existing['object'].get('sha'))
-   at('branch-update');updated=fetch('/git/refs/heads/'+branch,token,{'sha':artifact,'force':True},'PATCH')
-  if not isinstance(updated,dict) or updated.get('ref')!='refs/heads/'+branch or not isinstance(updated.get('object'),dict) or updated['object'].get('type')!='commit' or updated['object'].get('sha')!=artifact:fail('API_SHAPE')
-  cases.append({'caseId':case,'artifactCommit':artifact})
+  cohort.append((case,published))
+ at('tree');tree_sha=write_cohort_tree(fetch,token,cohort,at)
+ at('commit');commit=fetch('/git/commits',token,{'message':'Synthetic web reference input cohort '+source_commit,'tree':tree_sha,'parents':[]})
+ if not isinstance(commit,dict):fail('API_SHAPE')
+ artifact=sha(commit.get('sha'))
+ at('main-check');assert_current(fetch,token,source_commit)
+ at('immutable-ref')
+ if retain_immutable:immutable_refs.retain(fetch,token,'input',source_commit,COHORT,artifact)
+ # GitHub PATCH of a missing ref can return 422. Only an explicit GET 404
+ # establishes absence; never reinterpret a failed mutation as permission to
+ # create a ref or retry authorization/validation errors.
+ missing=False;at('branch-read')
+ try:existing=fetch('/git/ref/heads/'+COHORT_BRANCH,token)
+ except urllib.error.HTTPError as error:
+  if error.code!=404:raise
+  missing=True
+ if missing:
+  at('branch-create');updated=fetch('/git/refs',token,{'ref':'refs/heads/'+COHORT_BRANCH,'sha':artifact})
+ else:
+  if not isinstance(existing,dict) or existing.get('ref')!='refs/heads/'+COHORT_BRANCH or not isinstance(existing.get('object'),dict) or existing['object'].get('type')!='commit':fail('API_SHAPE')
+  sha(existing['object'].get('sha'))
+  at('branch-update');updated=fetch('/git/refs/heads/'+COHORT_BRANCH,token,{'sha':artifact,'force':True},'PATCH')
+ if not isinstance(updated,dict) or updated.get('ref')!='refs/heads/'+COHORT_BRANCH or not isinstance(updated.get('object'),dict) or updated['object'].get('type')!='commit' or updated['object'].get('sha')!=artifact:fail('API_SHAPE')
+ cases=[{'caseId':case,'artifactCommit':artifact} for case,_ in cohort]
  at('main-check');assert_current(fetch,token,source_commit)
  # requestId and planSha256 are what every case-context.json carries; the dispatcher passes them to each native run,
  # which checks its case context against them (fetch-htkk-web-input.py verify_case_context).

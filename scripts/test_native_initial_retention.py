@@ -36,7 +36,7 @@ class InitialRetentionTests(unittest.TestCase):
    with self.assertRaises((n.OutputError,n.transport.PublicationError)):self.read(directory)
  def test_publishes_both_original_byte_streams_to_private_commit(self):
   fetch,calls=t.fake_api(self.web,self.input);result=n.publish(self.native,self.metadata,'synthetic-token',fetch,t.TODAY,initial=self.initial)
-  blobs=[base64.b64decode(payload['content'])for path,_,payload,_ in calls if path=='/git/blobs'];self.assertEqual(blobs[0],self.native);self.assertEqual(blobs[2],self.initial)
+  blobs=t.gits.written(t.gits.tree_payloads(calls));self.assertEqual(blobs[0],self.native);self.assertEqual(blobs[2],self.initial)
   manifest=json.loads(blobs[1]);self.assertEqual(manifest['format'],'htkk-web-native-output-reference-v2');self.assertEqual(manifest['files'][n.INITIAL]['sha256'],hashlib.sha256(self.initial).hexdigest());self.assertEqual(manifest['provenance']['runAttempt'],2);self.assertFalse(manifest['initialReexportComparison']['allLeafValuesMatched']);self.assertFalse(manifest['initialReexportComparison']['normalizationApplied']);self.assertFalse(manifest['fullRoundTrip']);self.assertFalse(manifest['independentSchemaVerification'])
  def test_bad_initial_never_reaches_authenticated_io(self):
   broken=t.changed(self.initial,'ct40','1');self.metadata.update(initialOutputSha256=hashlib.sha256(broken).hexdigest(),initialOutputBytes=len(broken));calls=[]

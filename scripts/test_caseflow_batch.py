@@ -89,25 +89,25 @@ class ProducerAndCallbackTests(unittest.TestCase):
   def get(repo,path,token):
    if path=='git/ref/heads/main':return {'object':{'sha':SOURCE}}
    if path=='actions/runs/100':return {'run_attempt':2}
-   return [{'context':'htkk-native/zero','state':'success','target_url':'https://github.com/'+batch.BUILDER+'/actions/runs/101'}]
+   return {'statuses':[{'context':'htkk-native/zero','state':'success','target_url':'https://github.com/'+batch.BUILDER+'/actions/runs/101'}]}
   self.assertFalse(guard.allowed('0'*40,'htkk-native/zero','100','2','fake','fake',get))
   self.assertFalse(guard.allowed(SOURCE,'htkk-native/zero','100','1','fake','fake',get))
   self.assertFalse(guard.allowed(SOURCE,'htkk-native/zero','100','2','fake','fake',get))
 
 class InputContextTests(unittest.TestCase):
  def test_each_input_has_source_case_request_context_and_append_only_anchor(self):
-  fixtures=load('caseflow_input_fixture','test_htkk_web_input_publisher.py');publisher=fixtures.p;base,calls,_=fixtures.fake_api();contexts=[];refs_created=[]
+  fixtures=load('caseflow_input_fixture','test_htkk_web_input_publisher.py');publisher=fixtures.p;base,calls,commits=fixtures.fake_api();refs_created=[]
   def api(path,token,payload=None,method=None):
    if path.startswith('/git/ref/tags/'):raise urllib.error.HTTPError('https://api.github.com',404,'test',{},None)
-   if path=='/git/blobs':
-    body=base64.b64decode(payload['content'])
-    if body.startswith(b'{'):
-     value=json.loads(body)
-     if value.get('format')=='htkk-case-context-v1':contexts.append(value)
    if path=='/git/refs'and payload['ref'].startswith('refs/tags/'):refs_created.append(payload)
    return base(path,token,payload,method)
   result=publisher.publish(fixtures.fixtures(),fixtures.SHA,'fake',api,request_id='1234',retain_immutable=True)
-  total=len(batch.registry.CASES);self.assertEqual(len(result['cases']),total);self.assertEqual(len(contexts),total);self.assertEqual(len(refs_created),total)
+  total=len(batch.registry.CASES);self.assertEqual(len(result['cases']),total)
+  # Every case input is in the one cohort commit, which one append-only tag anchors.
+  artifact=result['cases'][0]['artifactCommit'];self.assertTrue(all(c['artifactCommit']==artifact for c in result['cases']))
+  self.assertEqual(refs_created,[{'ref':'refs/tags/htkk-case-input/'+fixtures.SHA+'/cohort/'+artifact,'sha':artifact}])
+  tree=base.git.trees[commits[0]['tree']]
+  contexts=[json.loads(tree[case+'/case-context.json']) for case in batch.registry.CASES];self.assertEqual(len(contexts),total)
   for ctx in contexts:self.assertEqual(ctx['sourceCommit'],fixtures.SHA);self.assertEqual(ctx['requestId'],'1234');self.assertEqual(ctx['unit'],batch.registry.CASES[ctx['caseId']]['unit'])
  def test_mixed_profile_plan_is_rejected_before_authenticated_io(self):
   fixtures=load('caseflow_input_bad_plan','test_htkk_web_input_publisher.py');publisher=fixtures.p
@@ -119,7 +119,7 @@ class InputContextTests(unittest.TestCase):
   def get(repo,path,token):
    if path=='git/ref/heads/main':return {'object':{'sha':SOURCE}}
    if path=='actions/runs/100':return {'run_attempt':1}
-   return [{'context':'htkk-native/zero','state':'pending','description':'queued input:'+'c'*40}]
+   return {'statuses':[{'context':'htkk-native/zero','state':'pending','description':'queued input:'+'c'*40}]}
   self.assertFalse(guard.allowed(SOURCE,'htkk-native/zero','100','1','fake','fake',get,input_commit='d'*40))
   self.assertTrue(guard.allowed(SOURCE,'htkk-native/zero','100','1','fake','fake',get,input_commit='c'*40))
 
@@ -131,18 +131,16 @@ class PlanBindingTests(unittest.TestCase):
    a=batch.registry.ADAPTERS[c['adapterId']];rows.append({**{k:c[k]for k in ('adapterId','producerCase','unit')},'caseId':case,'producer':a['producer'],'profilePolicy':a['profilePolicy'],'coverageGranted':False,'descriptorFingerprint':'a'*64})
   plan={'format':'htkk-case-plan-v1','htkkVersion':'5.8.1','nativeQualified':False,'filingEnabled':False,'nativeCases':rows}
   for mismatch in (False,True):
-   base,calls,_=fixtures.fake_api();contexts=[];remote=copy.deepcopy(plan)
+   base,calls,commits=fixtures.fake_api();remote=copy.deepcopy(plan)
    if mismatch:remote['nativeCases'][0]['descriptorFingerprint']='b'*64
    raw=json.dumps(remote).encode()
    def api(path,token,payload=None,method=None):
     if path.startswith('/contents/data/htkk-case-plan.json?ref='):return fixtures.contents(raw,'htkk-case-plan.json','data/htkk-case-plan.json')
-    if path=='/git/blobs':
-     value=json.loads(base64.b64decode(payload['content']))if base64.b64decode(payload['content']).startswith(b'{')else {}
-     if value.get('format')=='htkk-case-context-v1':contexts.append(value)
     return base(path,token,payload,method)
    if mismatch:
     with self.assertRaises(publisher.PublicationError):publisher.publish(fixtures.fixtures(),fixtures.SHA,'fake',api,request_id='1234',plan=plan)
     self.assertFalse(any(path.startswith('/git/refs')for path,_,_,_ in calls))
    else:
     publisher.publish(fixtures.fixtures(),fixtures.SHA,'fake',api,request_id='1234',plan=plan)
+    tree=base.git.trees[commits[0]['tree']];contexts=[json.loads(tree[case+'/case-context.json']) for case in batch.registry.CASES]
     self.assertEqual(len(contexts),len(batch.registry.CASES));self.assertTrue(all(c['planSha256']==hashlib.sha256(raw).hexdigest()for c in contexts))

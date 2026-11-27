@@ -10,6 +10,7 @@ import tempfile
 import unittest
 
 ROOT = pathlib.Path(__file__).parent
+_git_spec=importlib.util.spec_from_file_location('ntnn_output_git',pathlib.Path(__file__).with_name('git_test_support.py'));gits=importlib.util.module_from_spec(_git_spec);_git_spec.loader.exec_module(gits);GIT=gits.Git()
 spec = importlib.util.spec_from_file_location('htkk_ntnn_khbs_web_cases', ROOT / 'htkk_ntnn_khbs_web_cases.py')
 m = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(m)
@@ -216,9 +217,8 @@ class NtnnKhbsNativePublisher(unittest.TestCase):
             if path in ('/git/commits/' + self.SOURCE, '/git/commits/' + self.ARTIFACT):return {'sha': path.rsplit('/', 1)[1]}
             for name, body in files.items():
                 if path == '/contents/' + name + '?ref=' + self.ARTIFACT:return envelope(body, name)
-            if path == '/git/blobs':
-                body = base64.b64decode(payload['content']); return {'sha': hashlib.sha1(b'blob ' + str(len(body)).encode() + b'\0' + body).hexdigest()}
-            if path == '/git/trees':return {'sha': 'd' * 40}
+            if path == '/git/blobs':return GIT.blob(payload)
+            if path == '/git/trees':return GIT.tree(payload)
             if path == '/git/commits':return {'sha': 'e' * 40}
             if path.startswith('/git/ref/heads/'):raise urllib.error.HTTPError('https://api.github.com/', 404, 'SECRET', {}, None)
             if path == '/git/refs':return {'ref': payload['ref'], 'object': {'type': 'commit', 'sha': payload['sha']}}
@@ -242,7 +242,7 @@ class NtnnKhbsNativePublisher(unittest.TestCase):
                 fetch, calls = self.fake_api(case_id)
                 result = self.out.publish(native, self.provenance(case_id, native, matched), 'token', fetch, today=NtnnKhbsNativeOutput.TODAY, version='5.8.2')
                 self.assertEqual((result['status'], result['allTaxValuesMatched']), ('published', matched))
-                blobs = [__import__('base64').b64decode(p['content']) for path, p in calls if path == '/git/blobs']
+                blobs = gits.written(gits.tree_payloads(calls))
                 self.assertEqual(blobs[0], native)
                 retained = json.loads(blobs[1])
                 self.assertTrue(retained['comparison']['harnessAgreement'])
@@ -259,7 +259,7 @@ class NtnnKhbsNativePublisher(unittest.TestCase):
                 self.out.publish(native, self.provenance(case_id, native), 'token', fetch, today=NtnnKhbsNativeOutput.TODAY, version='5.8.2')
             self.assertEqual(error.exception.code, 'XML_PRIVACY')
             self.assertNotIn('THAT', json.dumps(self.out.safe_failure(error.exception)))
-            self.assertFalse(any(path == '/git/blobs' for path, _ in calls))
+            self.assertFalse(any(path in ('/git/blobs', '/git/trees') for path, _ in calls))
 
 
 class NtnnKhbsProbeWiring(unittest.TestCase):

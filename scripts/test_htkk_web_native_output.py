@@ -1,9 +1,10 @@
 """Synthetic parser/transport tests, never substitute for native execution."""
-import base64,copy,datetime,hashlib,importlib.util,json,pathlib,tempfile,unittest,urllib.error
+import base64,copy,datetime,hashlib,importlib.util,json,pathlib,tempfile,unittest,unittest.mock,urllib.error
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
 
 ROOT=pathlib.Path(__file__).parent
+_git_spec=importlib.util.spec_from_file_location('native_output_git',pathlib.Path(__file__).with_name('git_test_support.py'));gits=importlib.util.module_from_spec(_git_spec);_git_spec.loader.exec_module(gits);GIT=gits.Git()
 spec=importlib.util.spec_from_file_location('native_output',ROOT/'publish-htkk-web-native-output.py');n=importlib.util.module_from_spec(spec);spec.loader.exec_module(n)
 spec=importlib.util.spec_from_file_location('native_output_web_fixtures',ROOT/'test_htkk_web_input.py');f=importlib.util.module_from_spec(spec);spec.loader.exec_module(f)
 TODAY=datetime.date(2026,10,26)
@@ -49,9 +50,9 @@ def fake_api(web,manifest,info=None,existing=True):
   if path in ('/git/commits/'+SOURCE,'/git/commits/'+ARTIFACT):return {'sha':path.rsplit('/',1)[1]}
   if path=='/contents/manifest.json?ref='+ARTIFACT:return f.envelope(json.dumps(manifest,ensure_ascii=False).encode(),'manifest.json')
   if path=='/contents/01GTGT-web.xml?ref='+ARTIFACT:return f.envelope(web,'01GTGT-web.xml')
-  if path=='/git/blobs':
-   body=base64.b64decode(payload['content']);return {'sha':hashlib.sha1(b'blob '+str(len(body)).encode()+b'\0'+body).hexdigest()}
-  if path=='/git/trees':return {'sha':'d'*40}
+  if path=='/git/blobs':return GIT.blob(payload)
+  # The tree id git gives the written files (independent model): the publisher checks it against its own.
+  if path=='/git/trees':return GIT.tree(payload)
   if path=='/git/commits':return {'sha':'e'*40}
   if path.startswith('/git/ref/heads/'):
    if not existing:raise urllib.error.HTTPError('https://api.github.com/',404,'SECRET PRIVATE REMOTE TEXT',{},None)
@@ -182,7 +183,7 @@ class PublishTests(unittest.TestCase):
   for case,branch in n.BRANCHES.items():
    web,native,metadata,provenance=fixture(case);fetch,calls=fake_api(web,metadata);result=n.publish(native,provenance,'synthetic-token',fetch,TODAY)
    self.assertEqual(result['artifactCommit'],'e'*40);self.assertEqual(result['nativeOutputSha256'],hashlib.sha256(native).hexdigest())
-   blobs=[base64.b64decode(body['content']) for path,_,body,_ in calls if path=='/git/blobs'];self.assertEqual(blobs[0],native)
+   blobs=gits.written(gits.tree_payloads(calls));self.assertEqual(blobs[0],native)
    manifest=json.loads(blobs[1]);self.assertEqual(manifest['provenance'],provenance);self.assertEqual(manifest['sourcePins'],n.PINS);self.assertFalse(manifest['independentSchemaVerification']);self.assertFalse(manifest['fullRoundTrip']);self.assertEqual(manifest['comparison']['checkedTaxLeafCount'],n.tax_leaf_count(case))
    self.assertIn(('/git/commits/'+ARTIFACT,'synthetic-token',None,None),calls)
    self.assertTrue(all('?ref='+ARTIFACT in path for path,_,_,_ in calls if path.startswith('/contents/')))
@@ -238,7 +239,16 @@ class PublishTests(unittest.TestCase):
   self.assertIsNone(n.transport.NoRedirect().redirect_request(None,None,None,None,None,None))
  def test_default_api_is_bounded_no_redirect_shared_transport(self):
   web,native,metadata,provenance=fixture();fetch,_=fake_api(web,metadata)
-  with patch.object(n.transport,'api',side_effect=fetch) as api:n.publish(native,provenance,'synthetic-token',today=TODAY)
+  files={'01GTGT-web.xml':web,'manifest.json':json.dumps(metadata,ensure_ascii=False).encode()}
+  def shared(path,token,payload=None,method=None):
+   # The pinned commit names the tree of the archived files.
+   if path=='/git/commits/'+ARTIFACT:return {'sha':ARTIFACT,'tree':{'sha':gits.tree_id(files)}}
+   return fetch(path,token,payload,method)
+  with patch.object(n.transport,'api',side_effect=shared) as api,patch.object(n.transport,'archive',return_value=gits.tarball(ARTIFACT,files)) as archive:
+   n.publish(native,provenance,'synthetic-token',today=TODAY)
   self.assertEqual(api.call_args_list[0].args,('', 'synthetic-token'))
+  # The default transport reads the pinned input once as a verified commit archive, not file by file.
+  self.assertEqual(archive.call_args_list,[unittest.mock.call(ARTIFACT,'synthetic-token')])
+  self.assertFalse(any(call.args[0].startswith('/contents/') for call in api.call_args_list))
 
 if __name__=='__main__':unittest.main()

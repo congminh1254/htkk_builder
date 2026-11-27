@@ -15,7 +15,7 @@ class AlignedSigningTests(unittest.TestCase):
   for case in n.BRANCHES:
    with self.subTest(case=case):
     web,native,im,m,initial=self.make(case);fetch,calls=f.fake_api(web,im);n.publish(native,m,'synthetic-token',fetch,f.TODAY,initial=initial)
-    blobs=[base64.b64decode(payload['content'])for path,_,payload,_ in calls if path=='/git/blobs'];manifest=json.loads(blobs[1]);self.assertEqual(manifest['format'],'htkk-web-native-output-reference-v3');self.assertEqual(blobs[0],native);self.assertEqual(blobs[2],initial);self.assertEqual(manifest['initialReexportComparison']['allLeafValuesMatched'],n.baseline_matches_input(case));self.assertFalse(manifest['initialReexportComparison']['normalizationApplied']);self.assertFalse(manifest['fullRoundTrip'])
+    blobs=f.gits.written(f.gits.tree_payloads(calls));manifest=json.loads(blobs[1]);self.assertEqual(manifest['format'],'htkk-web-native-output-reference-v3');self.assertEqual(blobs[0],native);self.assertEqual(blobs[2],initial);self.assertEqual(manifest['initialReexportComparison']['allLeafValuesMatched'],n.baseline_matches_input(case));self.assertFalse(manifest['initialReexportComparison']['normalizationApplied']);self.assertFalse(manifest['fullRoundTrip'])
  def test_provider_date_money_and_attribute_changes_reject_before_api(self):
   for field,value in [('ttinNhaCCapDVu','B'*32),('ngayKy','2026-10-26'),('ngayLapTKhai','2026-10-25'),('ct40','1')]:
    with self.subTest(field=field):
