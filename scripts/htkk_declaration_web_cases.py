@@ -573,7 +573,7 @@ CASES = {
     # PL 01-8/GTGT (5%) (Menu sheet 01_9 = workbook 01_8_2, XML PLuc/Pluc_01_8_2_GTGT; htkk_web lib/htkk-gtgt01-tt89-annex18.ts):
     # 104 + 232 annex leaves. Texts: the catalogue names of DC_222 / DC_236 / DC_224 / DC_225 and of the bank (control 98), the
     # synthetic seller, the invoice ký hiệu, the đề nghị text and the loại kỳ M of the hidden period columns.
-    '01GTGT-TT89-pl018-5pct-M10-2026': _case('gtgt01-tt89-pl018-5pct-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 336, ['Pluc_01_8_2_GTGT'], WORKBOOK_SERVICE,
+    '01GTGT-TT89-pl018-5pct-M10-2026': _case('gtgt01-tt89-pl018-5pct-m10-2026', 'Z5', '2032', '3.0.9', GTGT01_TT89_SCHEMA, ('M', '10/2026', '01/10/2026', '31/10/2026'), None, '2026-10-27', '2026-10-27', 337, ['Pluc_01_8_2_GTGT'], WORKBOOK_SERVICE,
                                              [GTGT01_NAME, TEMPLATE_TT89, ADDRESS, GTGT01_ACTIVITY] + PL018_TEXTS),
     # PL 01-8/GTGT (Xuất khẩu) (Menu 01_8 = workbook 01_8_1, PLuc/Pluc_01_8_1_GTGT; 104 + 293 annex leaves) and (Giải thể, phá sản)
     # (Menu 01_10 = workbook 01_8_3, PLuc/Pluc_01_8_3_GTGT; 104 + 144): the 5% texts plus the customs list names and their own
@@ -690,7 +690,8 @@ def leaves(root):
         for key, value in node.attrib.items():
             # Row ids: "id" in most templates, "ID" in 01/NTNN ThueNTNN (01_NTNN_TT80_xml_251.xml / XSD).
             # 01_NTNN_NCCNN_TT89_xml_309.xml carries HSoKhaiThue id="ID1" (no underscore), kept as in the template.
-            if not ((key in ('id', 'ID') and re.fullmatch(r'ID_?[1-9][0-9]{0,3}', value)) or (key == '{' + XSI + '}nil' and value == 'true' and len(node) == 0 and not (node.text or ''))):
+            # 01/GTGT TT89 PL 01-8/GTGT: the template's file row CTietDsFileDk keeps its marker id "String" (no control section).
+            if not ((key in ('id', 'ID') and re.fullmatch(r'ID_?[1-9][0-9]{0,3}', value)) or (key == 'id' and value == 'String' and name == 'CTietDsFileDk') or (key == '{' + XSI + '}nil' and value == 'true' and len(node) == 0 and not (node.text or ''))):
                 reject('ATTRIBUTES')
         current = path + '/' + name if path else name
         children = list(node)
@@ -1383,6 +1384,11 @@ def _plain(value):
     return text.rstrip('0').rstrip('.') if '.' in text else text
 
 
+def _two_places(value):
+    """A control-16 cell with DefaultValue "0,00" as HTKK exports it: the cell Text with two places; zero is "0"."""
+    return '0' if value == 0 else format(value.quantize(decimal.Decimal('0.01')), 'f')
+
+
 def _pl018_muc3_5pct(c):
     D = decimal.Decimal
     w = {r: D(c['muc3'].get(r, '0')) for r in range(247, 279)}
@@ -1460,7 +1466,10 @@ def gtgt01_tt89_pl018_expected(case_id):
             out += [('DsToKhaiHQ/%s[1]/%s' % (table, code_leaf), code), ('DsToKhaiHQ/%s[1]/%s' % (table, name_leaf), name)]
     if kind != 'gt':
         for r, name, value in (_pl018_muc3_xk(c) if kind == 'xk' else _pl018_muc3_5pct(c)):
-            out += [('TTXacDinhHoan/%s/ct3' % name, '0'), ('TTXacDinhHoan/%s/ct4' % name, _plain(value)), ('TTXacDinhHoan/%s/ct5' % name, '')]
+            # TyTrongDT_3 (control 16, DefaultValue "0,00"): HTKK exports the cell Text, two places, a zero as "0" (run 46060840803:
+            # the ratio 100 written "100.00"); every other mục 3 cell is a whole number.
+            text = _two_places(value) if name == 'TyTrongDT_3' else _plain(value)
+            out += [('TTXacDinhHoan/%s/ct3' % name, '0'), ('TTXacDinhHoan/%s/ct4' % name, text), ('TTXacDinhHoan/%s/ct5' % name, '')]
         out += [('TTXacDinhHoan/htRiengGtgtHdsx', '1' if c['separate'] else '0'), ('TTXacDinhHoan/khongHtRiengGtgtHdsx', '0' if c['separate'] else '1')]
     if kind == 'xk':
         out += [('TTXacDinhHoan/htRiengGtgtXK', '1' if c['separateXk'] else '0'), ('TTXacDinhHoan/khongHtRiengGtgtXK', '0' if c['separateXk'] else '1')]
@@ -1486,10 +1495,10 @@ def _gtgt01_tt89_pl018(case_id, root):
             nodes = [found[int(index[:-1]) - 1]] if index and len(found) >= int(index[:-1]) else found if not index else []
         if [(n.text or '') for n in nodes] != [value]:
             reject('VALUE')
-    # The template's file row (DsFileDk/CTietDsFileDk) has no control section: no row on the 5% sheet (XSD minOccurs 0); one
-    # empty row with id ID_1 on the xuất khẩu / giải thể sheets, whose XSD requires it.
+    # The template's file row (DsFileDk/CTietDsFileDk) has no control section, so HTKK leaves it as the template has it on all three
+    # sheets: id "String", empty stt and linkFile (runs 46060840803, 46060844329, 46060847966).
     rows = annex.findall(_xpath('TTXacDinhHoan/DsFileDk/CTietDsFileDk'))
-    if [(r.attrib, [(x.text or '') for x in r]) for r in rows] != ([] if kind == '5pct' else [({'id': 'ID_1'}, ['', ''])]):
+    if [(r.attrib, [(x.text or '') for x in r]) for r in rows] != [({'id': 'String'}, ['', ''])]:
         reject('VALUE')
 
 

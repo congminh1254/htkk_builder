@@ -4,6 +4,7 @@ XML here is synthetic, assembled in memory from the reviewed contract (declarati
 it is not a product or original export and passing these tests is never native evidence.
 """
 import base64, copy, datetime, hashlib, importlib.util, json, pathlib, re, shutil, subprocess, tempfile, unittest, urllib.error
+import xml.etree.ElementTree as ET
 
 ROOT = pathlib.Path(__file__).parent
 
@@ -360,15 +361,15 @@ class InputPrivacy(unittest.TestCase):
 
     def test_gtgt01_tt89_pl018_export_and_dissolution_sheets_share_the_oracle(self):
         # Xuất khẩu (Pluc_01_8_1_GTGT) and giải thể (Pluc_01_8_3_GTGT): the 5% oracle plus the bảng 2.3 lists, the xuất khẩu mục 3
-        # formulas (W248 … W288 of 01_8_1), the quyết định giải thể and the XSD-required empty file row.
+        # formulas (W248 … W288 of 01_8_1), the quyết định giải thể and the template's file row HTKK leaves (id "String").
         for case, leaves_count, node in (('01GTGT-TT89-pl018-xk-M10-2026', 397, 'Pluc_01_8_1_GTGT'), ('01GTGT-TT89-pl018-gt-M10-2026', 248, 'Pluc_01_8_3_GTGT')):
             body = dfx.declaration_fixture(case)
             self.assertEqual(reader.validate_web_xml(body, case_id=case)['leafCount'], leaves_count)
             self.assertIn(('<%s>' % node).encode(), body)
             mutations = {'customs code': (b'<maLoaiHinhXK>03<', b'<maLoaiHinhXK>04<'), 'country': (b'>Nh\xe1\xba\xadt<', b'>Anh<'),
-                         'file row': (b'<CTietDsFileDk id="ID_1">', b'<CTietDsFileDk id="ID_2">'), 'refund': (b'<soTienHoan>300000000<', b'<soTienHoan>300000001<')}
+                         'file row': (b'<CTietDsFileDk id="String">', b'<CTietDsFileDk id="ID_1">'), 'refund': (b'<soTienHoan>300000000<', b'<soTienHoan>300000001<')}
             if case.endswith('xk-M10-2026'):
-                mutations['ratio'] = (b'<TyTrongDT_3><ct3>0</ct3><ct4>100<', b'<TyTrongDT_3><ct3>0</ct3><ct4>99<')
+                mutations['ratio'] = (b'<TyTrongDT_3><ct3>0</ct3><ct4>100.00<', b'<TyTrongDT_3><ct3>0</ct3><ct4>100<')
                 mutations['refund limit'] = (b'<SoThueGTGT_15><ct3>0</ct3><ct4>300000000<', b'<SoThueGTGT_15><ct3>0</ct3><ct4>300000001<')
             else:
                 mutations['decision'] = (b'<quyetDinhGtNgay>2026-10-20<', b'<quyetDinhGtNgay>2026-10-21<')
@@ -378,21 +379,22 @@ class InputPrivacy(unittest.TestCase):
                     reader.validate_web_xml(body.replace(old, new, 1), case_id=case)
             self.assertEqual(registry.htkk_version(case), '5.8.5'); self.assertIs(registry.CASES[case]['releaseGate'], False)
         leaves = dict(d.gtgt01_tt89_pl018_expected('01GTGT-TT89-pl018-xk-M10-2026'))
-        self.assertEqual([leaves['TTXacDinhHoan/%s/ct4' % n] for n in ('TyTrongDT_3', 'SoThueGTGT_9', 'ThueGTGTNoiDia_13', 'DoanhThuHH_14', 'SoThueGTGT_15')], ['100', '305000000', '300000000', '300000000', '300000000'])
+        self.assertEqual([leaves['TTXacDinhHoan/%s/ct4' % n] for n in ('TyTrongDT_3', 'SoThueGTGT_9', 'ThueGTGTNoiDia_13', 'DoanhThuHH_14', 'SoThueGTGT_15')], ['100.00', '305000000', '300000000', '300000000', '300000000'])
 
     def test_gtgt01_tt89_pl018_annex_is_the_independent_oracle(self):
         # 01/GTGT TT89 PL 01-8/GTGT (5%): the bảng 1 period columns (SetPeriodInfoCustomColumns), the mục 3 formulas, tổng [11], the
-        # hoàn trả trực tiếp leaves and the bank code are recomputed here; a changed value or a written file row is refused.
+        # hoàn trả trực tiếp leaves and the bank code are recomputed here; a changed value or a file row other than the template's (id "String") is refused.
         case = '01GTGT-TT89-pl018-5pct-M10-2026'; body = dfx.declaration_fixture(case)
-        self.assertEqual(reader.validate_web_xml(body, case_id=case)['leafCount'], 336)
+        self.assertEqual(reader.validate_web_xml(body, case_id=case)['leafCount'], 337)
         leaves = dict(d.gtgt01_tt89_pl018_expected(case))
         self.assertEqual([leaves['TTinDNHT/CTietTTinDNHT[1]/' + k] for k in ('ct2_TuKy_LoaiKy', 'ct2_TuKy_kyKKhaiTuNgay', 'ct2_TuKy_kyKKhaiDenNgay', 'ct3_DenKy_KyKeKhai')], ['M', '01/10/2026', '31/10/2026', '10/2026'])
-        self.assertEqual([leaves['TTXacDinhHoan/%s/ct4' % n] for n in ('TyTrongDT_3', 'SoThueGTGT_9', 'ThueGTGTPhaiNop_12', 'ThueGTGTDuocHoan_13', 'ThueGTGTDauVao_14')], ['100', '305000000', '5000000', '300000000', '300000000'])
+        self.assertEqual([leaves['TTXacDinhHoan/%s/ct4' % n] for n in ('TyTrongDT_3', 'SoThueGTGT_9', 'ThueGTGTPhaiNop_12', 'ThueGTGTDuocHoan_13', 'ThueGTGTDauVao_14')], ['100.00', '305000000', '5000000', '300000000', '300000000'])
         self.assertEqual(d._pl018_side('3/2026', '2', ('1', '3'), ('4', '2')), ('Q', '01/07/2026', '30/09/2026', '07/2026', '09/2026'))
         self.assertEqual(d._pl018_side('10/2026', '3', ('4', '1'), ('3', '2')), ('Q', '01/10/2026', '31/12/2026', '10/2026', '12/2026'))
         mutations = {
             'period column': (b'<ct2_TuKy_kyKKhaiDenNgay>31/10/2026<', b'<ct2_TuKy_kyKKhaiDenNgay>30/10/2026<'),
-            'ratio': (b'<ct4>100</ct4>', b'<ct4>99</ct4>'),
+            'ratio': (b'<ct4>100.00</ct4>', b'<ct4>100</ct4>'),
+            'file row': (b'<CTietDsFileDk id="String">', b'<CTietDsFileDk id="ID_1">'),
             'refund': (b'<soTienHoan>300000000<', b'<soTienHoan>300000001<'),
             'bank code': (b'<taiNganHang_ma>01201001<', b'<taiNganHang_ma>01201002<'),
             'total tax': (b'<tongCt11>305000000<', b'<tongCt11>305000001<'),
@@ -403,6 +405,16 @@ class InputPrivacy(unittest.TestCase):
                 reader.validate_web_xml(body.replace(old, new, 1), case_id=case)
         self.assertIn('"01|W19|1"', plan_block(case)); self.assertIn('"01_8_2|N359|300000000"', plan_block(case))
         self.assertEqual(registry.htkk_version(case), '5.8.5'); self.assertIs(registry.CASES[case]['releaseGate'], False)
+
+    def test_gtgt01_tt89_pl018_template_file_row_id_is_allowed_on_that_row_only(self):
+        # HTKK leaves the template's CTietDsFileDk id="String" (no control section; runs 46060840803, 46060844329, 46060847966); the
+        # privacy reader takes that fixed marker on that one element and nowhere else.
+        ns = d.NS
+        ok = ET.fromstring(('<HSoThueDTu xmlns="%s"><DsFileDk><CTietDsFileDk id="String"><stt/><linkFile/></CTietDsFileDk></DsFileDk></HSoThueDTu>' % ns).encode())
+        self.assertEqual(len(d.leaves(ok)), 2)
+        for bad in ('<CTietBuTru id="String"><ct1/></CTietBuTru>', '<CTietDsFileDk id="string"><stt/></CTietDsFileDk>', '<CTietDsFileDk id="ID_0"><stt/></CTietDsFileDk>'):
+            with self.subTest(bad=bad), self.assertRaises(d.DeclarationWebCaseError):
+                d.leaves(ET.fromstring(('<HSoThueDTu xmlns="%s">%s</HSoThueDTu>' % (ns, bad)).encode()))
 
     def test_gtgt01_tt89_other_province_header_is_the_reviewed_choice(self):
         # 01/GTGT TT89 hoạt động khác tỉnh: [09] ct09, [10] ct10, [11a] / [11c] (code, catalogue name) are checked exactly; a
