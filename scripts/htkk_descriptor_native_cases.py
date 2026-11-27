@@ -67,12 +67,14 @@ TRUSTED={
  '01-gtgt-tt89-3.0.9-pl016-dtvt':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':['01_6_2'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.4'},
  # Its PL 01-8/GTGT (5%) adapter (Menu sheet 01_9): a refund needs [42] > 0 and [5] >= 300 triệu (Header B199, B232), so no zero case.
  '01-gtgt-tt89-3.0.9-pl018-5pct':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':['01_9'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.5'},
+ '01-gtgt-tt89-3.0.9-pl018-xk':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':['01_8'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.5'},
+ '01-gtgt-tt89-3.0.9-pl018-gt':{'menuId':'Z5','businessClass':'Gtgt01TT89','xmlVersion':'3.0.9','schemaId':'Validate/01_GTGT_TT89_309.xsd','annexes':['01_10'],'mode':'web-xml-import-reexport','periodTypes':{'month'},'htkkVersion':'5.8.5'},
  '02-ntnn-tt80-2.5.1':{'menuId':'C9','businessClass':'Ntnn02TT80','xmlVersion':'2.5.1','schemaId':'Validate/02_NTNN_TT80_251.xsd','annexes':['01-1','01-2'],'mode':'web-xml-import-reexport','periodTypes':{'range'}},
 }
 # 05-1/PBT adapters: the annex needs at least one row with loại, tỉnh, xã, Thuế tỉnh/CCT and CQT quản lý (Header B35-B39),
 # so there is no zero declaration with the annex.
 # The 02/QTT refund adapter: a refund needs số thuế nộp thừa [44] > 0 and [46] > 0, so no zero declaration either.
-NO_ZERO_CASE=frozenset({'01-gtgt-tt89-3.0.9-nq204','01-gtgt-tt89-3.0.9-pl016-cssx','01-gtgt-tt89-3.0.9-pl016-dtvt','01-gtgt-tt89-3.0.9-pl018-5pct','04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2','01-tckt-tt89-3.1.0-bk1','01-tckt-tt89-3.1.0-bk2','01-tckt-tt89-3.1.0-bk1-pl013'})
+NO_ZERO_CASE=frozenset({'01-gtgt-tt89-3.0.9-nq204','01-gtgt-tt89-3.0.9-pl016-cssx','01-gtgt-tt89-3.0.9-pl016-dtvt','01-gtgt-tt89-3.0.9-pl018-5pct','01-gtgt-tt89-3.0.9-pl018-xk','01-gtgt-tt89-3.0.9-pl018-gt','04-ntnn-tt89-3.0.9','02-ntnn-tt89-3.0.9','05-kk-tncn-2.9.3-pbt','05-kk-tncn-tt89-3.0.9-pbt','02-qtt-tncn-2.7.3-refund','01-tts-tt40-2.8.3-bk1','01-tts-tt40-2.8.3-bk2','04-gtgt-tt80-2.7.4-pl013','04-gtgt-tt89-3.0.9-pl011','01-tckt-tt89-3.0.9-bk1','01-tckt-tt89-3.0.9-bk2','01-tckt-tt89-3.1.0-bk1','01-tckt-tt89-3.1.0-bk2','01-tckt-tt89-3.1.0-bk1-pl013'})
 def validate(value):
  check(type(value) is dict and set(value)=={'format','htkkVersion','status','dispatchable','reason','producer','profilePolicy','adapters','cases'})
  check(value['format']=='htkk-descriptor-native-case-design-v1' and value['htkkVersion']=='5.8.1')
@@ -109,7 +111,7 @@ def validate(value):
    check(re.fullmatch(r'[A-Za-z][A-Za-z0-9_.]{0,40}(/[A-Za-z][A-Za-z0-9_]{0,40})?',name) and isinstance(text,str))
    # Only the synthetic profile MST or plain non-negative integers: no names or free text.
    check(text=='9999999997' and name=='mst_cu' or re.fullmatch(r'0|[1-9][0-9]{0,15}',text))
-  rows=c.get('expectedRows',{});check(type(rows) is dict and all(re.fullmatch(r'(PLuc_[A-Za-z0-9_]+/[A-Za-z]+(_[A-Za-z]+)?(/[A-Za-z]+)?|PL[0-9]{2}_[0-9]_NTNN/[A-Za-z]+/[A-Za-z]+|PL_NQ[0-9]{2,3}_GTGT/[A-Za-z_]+/[A-Za-z]+|Pluc_01_6_GTGT_(?:CSSX|DVVT)/(?:NoiDungBangPhanBo|cong_ct18)|Pluc_01_8_2_GTGT/(?:TTinDNHT/CTietTTinDNHT|HoaDonChungTu/HDCoNgayLap/CTietHDCoNgayLap))',k) and type(v) is int and 1<=v<=50 for k,v in rows.items()))
+  rows=c.get('expectedRows',{});check(type(rows) is dict and all(re.fullmatch(r'(PLuc_[A-Za-z0-9_]+/[A-Za-z]+(_[A-Za-z]+)?(/[A-Za-z]+)?|PL[0-9]{2}_[0-9]_NTNN/[A-Za-z]+/[A-Za-z]+|PL_NQ[0-9]{2,3}_GTGT/[A-Za-z_]+/[A-Za-z]+|Pluc_01_6_GTGT_(?:CSSX|DVVT)/(?:NoiDungBangPhanBo|cong_ct18)|Pluc_01_8_[123]_GTGT/(?:TTinDNHT/CTietTTinDNHT|HoaDonChungTu/HDCoNgayLap/CTietHDCoNgayLap))',k) and type(v) is int and 1<=v<=50 for k,v in rows.items()))
   check(bool(rows)==bool(u['annexes']))
   per.setdefault(c['adapterId'],[]).append(c)
  # Each adapter needs a zero case and at least one case with amounts. The TT89 settlements have no zero

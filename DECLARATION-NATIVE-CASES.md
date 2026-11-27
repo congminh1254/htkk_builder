@@ -880,6 +880,8 @@ tiểu mục 1701) và CQT quản lý (0611 từ chối CQT khác với hoạt �
 | `01GTGT-TT89-pl016-dtvt-M10-2026` | tháng 10/2026 | kèm PL 01-6/GTGT (ĐTVT) (adapter `01-gtgt-tt89-3.0.9-pl016-dtvt`, sheet Menu 01_6_2 = sheet XLS 01_6_GTGT_DVVT, `PLuc/Pluc_01_6_GTGT_DVVT`): [32] 600.000.000, [06] 30.000.000, [07] và [14] khóa ở 0; [17] 4.000.001 / 3.000.002 / 1, [18] 4.000.002 / 3.000.002, [19] 7.000.004, [20] 22.999.996; 165 lá. Mỗi dòng mang mã quận/huyện (`ct11_huyen_ma` 10309 Quận Đồ Sơn / 21501 Thành phố Thái Nguyên): `checkPL1_6` đọc cột R, trên sheet ĐTVT là mã huyện (cột F ẩn, khóa); bản đầu không có nên HTKK 5.8.4 / 5.8.5 báo 0016 ở E22:E24 (run 45264873351, 45264897479) |
 | `01GTGT-TT89-other-province-M10-2026` | tháng 10/2026 | hoạt động khác tỉnh [09]–[11] (adapter `01-gtgt-tt89-3.0.9`, không phụ lục): hồ sơ thuộc CQT 82500, hộp kỳ Hải Phòng 103 / Phường Đồ Sơn 10309019 / CQT 82500; Header [09] `ct09`, [10] `ct10`, [11a] `DiaChiHDSXKDKhacTinhNDTSC/ct11a_phuongXa_*`, [11c] `ct11c_tinhTP_*`; [32] 200.000.000, [33] 20.000.000; 104 lá. Chưa chạy được: xem đoạn dưới |
 | `01GTGT-TT89-pl018-5pct-M10-2026` | tháng 10/2026 | kèm PL 01-8/GTGT (5%) (adapter `01-gtgt-tt89-3.0.9-pl018-5pct`, sheet Menu 01_9 = sheet XLS 01_8_2, `PLuc/Pluc_01_8_2_GTGT`; HTKK 5.8.5): [42] 300.000.000 với W19 = 1 (Header B199); bảng 1 một dòng Từ tháng – Đến tháng 10/2026, trường hợp 010901, [5] 300.000.000; một hóa đơn 305.000.000 tiền thuế; mục 3 W251 100, W277 = W278 300.000.000; hoàn trả trực tiếp 300.000.000; 336 lá |
+| `01GTGT-TT89-pl018-xk-M10-2026` | tháng 10/2026 | kèm PL 01-8/GTGT (Xuất khẩu) (adapter `01-gtgt-tt89-3.0.9-pl018-xk`, sheet Menu 01_8 = sheet XLS 01_8_1, `PLuc/Pluc_01_8_1_GTGT`; HTKK 5.8.5): [29] 3.000.000.000, [42] 300.000.000 với U19 = 1; trường hợp 010103; bảng 2.3 không có tờ khai hải quan (D161), loại hình 03, ngành nghề 4610, nước nhập khẩu JP; mục 3 W252 100, W284 = W288 300.000.000; 397 lá |
+| `01GTGT-TT89-pl018-gt-M10-2026` | tháng 10/2026 | kèm PL 01-8/GTGT (Giải thể, phá sản) (adapter `01-gtgt-tt89-3.0.9-pl018-gt`, sheet Menu 01_10 = sheet XLS 01_8_3, `PLuc/Pluc_01_8_3_GTGT`; HTKK 5.8.5): [42] 300.000.000 với X19 = 1; [5] AF47 = 01!L82; quyết định giải thể số/ngày 20/10/2026; trường hợp 010601; bảng 2.3 như bản xuất khẩu; 248 lá |
 
 Hai ca tháng 12/2026 có `notBefore` 2026-12-01: `frmHTKKPeriod.CheckPeriod` (HTKK.exe 5.8.4) từ chối năm lớn hơn
 `DateTime.Today.Year` hoặc tháng lớn hơn `DateTime.Today.Month` (0044 "Kỳ tính thuế không được lớn hơn kỳ hiện tại"), nên tháng
@@ -908,6 +910,12 @@ theo `GeneralFunctions.SetPeriodInfoCustomColumns` (loại kỳ, từ/đến ng�
 mẫu không được ghi. Kiểm ô: 01 W19, L81, L82, L83 và 01_8_2 AF47, AI128, W251, W271, W277, W278, N359. Hộp kỳ tích phụ lục
 "01-8/GTGT (5%)". Câu hỏi: nhập XML có giữ nguyên các cột kỳ ẩn (HTKK chỉ ghi chúng khi đổi ô, `CellChange_7`) và bỏ dòng file đính
 kèm như web không.
+
+Ca PL 01-8/GTGT (Xuất khẩu) và (Giải thể, phá sản): cùng oracle `gtgt01_tt89_pl018_expected` (khóa `sheet` của `GTGT01_TT89_PL018`),
+thêm các danh sách bảng 2.3 (`nntKhongCoTKHQ`, loại hình, ngành nghề, nước nhập khẩu), mục 3 của 01_8_1 theo công thức của sheet đó
+(W248–W288, 42 dòng), quyết định giải thể của 01_8_3 và dòng `CTietDsFileDk` rỗng id `ID_1` mà XSD hai sheet này bắt buộc (bản 5% bỏ
+dòng đó). Kiểm ô: 01 U19 hoặc X19, L81, L82, L83 và AF47, AI128, N359 (xuất khẩu thêm W252, W280, W284, W288). Câu hỏi: HTKK có ghi dòng
+file đính kèm rỗng như web không.
 
 Ca hoạt động khác tỉnh (htkk_web `lib/htkk-gtgt01-tt89-other-province.ts`, nguồn ghim ở `data/htkk-01-gtgt-tt89-other-province-contract.json`):
 `Gtgt01TT89Nckt309.AutoBindData_0` gọi `GeneralFunctions.ThayDoiTinhTheoCQT2Cap`; khi `maTinhNNT` của hồ sơ (`GetHeaderInfo`, HEADER.xml)

@@ -72,7 +72,7 @@ class Registry(unittest.TestCase):
         NEWER_584 = {'01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '01GTGT-TT89-nq204-M12-2026', '01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '01GTGT-TT89-khbs-increase-M10-2026', '01GTGT-TT89-khbs-decrease-M10-2026', '01GTGT-TT89-pl016-cssx-M10-2026', '01GTGT-TT89-pl016-cssx-ratio-M10-2026', '01GTGT-TT89-pl016-dtvt-M10-2026', '01GTGT-TT89-other-province-M10-2026'}
         # HTKK 5.8.5 observation cases of Y8 (HTKK-5.8.5-IMPACT.md): mục II KHBS under the 5.8.5 tiểu mục tables and contracts dated
         # after the run day (checkTKChinh 5.8.5 drops E_33 / E_36), the main declaration typed and a phần I bổ sung.
-        NEWER_585 = {'01NTNN-NCCNN-khbs-part2-585-M10-2026', '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026', '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '01GTGT-TT89-pl018-5pct-M10-2026'}
+        NEWER_585 = {'01NTNN-NCCNN-khbs-part2-585-M10-2026', '01NTNN-NCCNN-khbs-part2-tncn-585-M10-2026', '01NTNN-NCCNN-khbs-part1-future-contract-M10-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '01GTGT-TT89-pl018-5pct-M10-2026', '01GTGT-TT89-pl018-xk-M10-2026', '01GTGT-TT89-pl018-gt-M10-2026'}
         self.assertEqual(registry.oracle.DEFAULT, '5.8.1')
         self.assertEqual({c['caseId'] for c in RAW['cases'] if 'htkkVersion' in c}, NEWER | NEWER_583 | NEWER_584 | NEWER_585)
         self.assertEqual({c for c in registry.CASES if registry.htkk_version(c) != '5.8.1'}, NEWER | NEWER_583 | NEWER_584 | NEWER_585)

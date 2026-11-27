@@ -137,6 +137,9 @@ def _tree(case_id, native=False, created=None):
                         found = [child for child in parent.findall('{%s}%s' % (NS, name)) if child.attrib == attrib]
                         parent = found[0] if found else _add(parent, name, attrib=attrib)
                     _add(parent, path.split('/')[-1], value)
+                if d.GTGT01_TT89_PL018[case_id].get('sheet', '5pct') != '5pct':  # XSD-required empty file row (id ID_1)
+                    files = _add(_path(node, 'x/TTXacDinhHoan'), 'DsFileDk'); row = _add(files, 'CTietDsFileDk', attrib={'id': 'ID_1'})
+                    _add(row, 'stt', ''); _add(row, 'linkFile', '')
                 continue
             if case_id in d.GTGT01_TT89_PL016:  # 01/GTGT TT89 PL 01-6/GTGT (Pluc_01_6_GTGT_CSSX / _DVVT): head, both tables, totals of the oracle
                 _, head, rows_, provinces, totals = d.gtgt01_tt89_pl016_expected(case_id)

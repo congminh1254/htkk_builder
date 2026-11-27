@@ -235,6 +235,9 @@ TRUSTED_ADAPTERS={
  # exists from 5.8.4; the adapter and its case are on 5.8.5 (htkk_web applies the 5.8.5 Header B155/B158/B235/B237). htkk_web
  # gtgt01-tt89-pl018-5pct-m10-2026.
  '01-gtgt-tt89-3.0.9-pl018-5pct':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_9']),'htkkVersion':'5.8.5'},
+ # The xuất khẩu (Menu 01_8 = workbook 01_8_1) and giải thể (Menu 01_10 = workbook 01_8_3) sheets, the same driver and oracle.
+ '01-gtgt-tt89-3.0.9-pl018-xk':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_8']),'htkkVersion':'5.8.5'},
+ '01-gtgt-tt89-3.0.9-pl018-gt':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_10']),'htkkVersion':'5.8.5'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))
