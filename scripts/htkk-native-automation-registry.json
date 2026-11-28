@@ -2039,7 +2039,13 @@
     "declarationKhbsStepMask",
     "declarationKhbsMessageId",
     "declarationKhbsEntryShape",
-    "declarationKhbsEntryLengths"
+    "declarationKhbsEntryLengths",
+    "declarationAnnex12ImportPathMask",
+    "declarationAnnex12TableShape",
+    "declarationAnnex12HeaderMask",
+    "declarationAnnex12CellZeroMask",
+    "declarationAnnex12TotalMask",
+    "declarationAnnex12ProbeMask"
   ],
   "controlKinds": [
     "form",
@@ -4139,7 +4145,8 @@
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"
       ]
-    },    "declarationTickComboOpenMask": {
+    },
+    "declarationTickComboOpenMask": {
       "kind": "integer",
       "default": 0,
       "minimum": 0,
@@ -4826,6 +4833,66 @@
       "minimum": 0,
       "maximum": 65535,
       "activeModes": [
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationAnnex12ImportPathMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 63,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationAnnex12TableShape": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 65535,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationAnnex12HeaderMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4095,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationAnnex12CellZeroMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 16777215,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationAnnex12TotalMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 8191,
+      "activeModes": [
+        "declaration-web-import-inspect",
+        "declaration-amendment-khbs-inspect"
+      ]
+    },
+    "declarationAnnex12ProbeMask": {
+      "kind": "integer",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 4095,
+      "activeModes": [
+        "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"
       ]
     }

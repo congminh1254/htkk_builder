@@ -286,7 +286,7 @@ class Driver(unittest.TestCase):
         self.assertIn('if(declarationPhase.StartsWith("entry-",StringComparison.Ordinal)){ContinueDeclarationEntry();return;}', IMPORT)
         self.assertIn('if(exportFilenameEditing||declarationEntryBusy)return;', IMPORT)
         self.assertIn('DeclarationTerminal(matched?(declarationEntryPlan!=null?HtkkAutomationStage.DeclarationOriginalEntryExported:declarationTickPlan!=null?HtkkAutomationStage.DeclarationImportTickExported:HtkkAutomationStage.DeclarationWebImportInspected):HtkkAutomationStage.DeclarationExportNotMatched)', IMPORT)
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', IMPORT)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson()+DeclarationAnnex12Json();', IMPORT)
 
     def test_diagnostics_are_typed_bounded_and_value_free(self):
         fields = automation['resultFields']

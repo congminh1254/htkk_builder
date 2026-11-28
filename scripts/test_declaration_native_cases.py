@@ -284,7 +284,7 @@ class CompiledPlans(unittest.TestCase):
         for name, maximum in (('declarationTreeAttributeMask', 7), ('declarationTreeTextMismatchCount', 4096), ('declarationTreeFirstMismatchOrdinal', 65535), ('declarationTreeFirstMismatchKind', 7),
                               ('declarationTreeMismatch1', 6553599), ('declarationTreeMismatch2', 6553599), ('declarationTreeMismatch3', 6553599), ('declarationTreeMismatch4', 6553599)):
             self.assertEqual(fields[name], {'kind': 'integer', 'default': 0, 'minimum': 0, 'maximum': maximum, 'activeModes': [MODE, KHBS_MODE]})
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', DRIVER)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson()+DeclarationAnnex12Json();', DRIVER)
 
 
 class ExportInvocation(unittest.TestCase):
@@ -916,7 +916,7 @@ class VisibleAnnexList(unittest.TestCase):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         terminal = re.search(r"\$terminal=.*?-in @\(([^)]*)\)", probe).group(1)
         self.assertIn("'declaration-period-annex-list-not-matched'", terminal)
-        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();', DRIVER)
+        self.assertIn('return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson()+DeclarationAnnex12Json();', DRIVER)
 
     def test_handling_is_bounded_never_ticks_khbs_never_forces_locked_rows(self):
         body = self.section(' private void SelectReviewedVisibleAnnexList(Control grid){', ' private void SelectDeclarationAnnexes(Control period){')

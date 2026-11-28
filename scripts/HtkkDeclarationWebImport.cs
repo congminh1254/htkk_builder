@@ -115,7 +115,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
   names=new string[]{"declarationPeriodRejectedMessageId","declarationPeriodInfoMessageId","declarationAnnexSelectedCount","declarationSheetCount","declarationCellCheckCount","declarationCellMismatchMask","declarationCellLockedMask","declarationCellZeroMask","declarationXmlCheckCount","declarationXmlMismatchMask","declarationTreeMismatchMask","declarationTreeLeafCount","declarationInvalidSheetMask","declarationInvalidCellCount","declarationInvalidCell1","declarationInvalidCell2","declarationInvalidCell3","declarationInvalidCell4"};
   int[] counts=new int[]{declarationPeriodRejectedMessageId,declarationPeriodInfoMessageId,declarationAnnexSelectedCount,declarationSheetCount,declarationCellCheckCount,declarationCellMismatchMask,declarationCellLockedMask,declarationCellZeroMask,declarationXmlCheckCount,declarationXmlMismatchMask,declarationTreeMismatchMask,declarationTreeLeafCount,declarationInvalidSheetMask,declarationInvalidCellCount,declarationInvalidCell1,declarationInvalidCell2,declarationInvalidCell3,declarationInvalidCell4};
   for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
-  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson();
+  return json.ToString()+DeclarationEntryJson()+DeclarationTickJson()+DeclarationTreeJson()+DeclarationUiWaitJson()+DeclarationAnnexListJson()+DeclarationKhbsJson()+DeclarationAnnex12Json();
  }
  private void DeclarationTerminal(HtkkAutomationStage stage){SetStage(stage);finished=true;Record();if(exportWatcher!=null)exportWatcher.Stop();}
 
@@ -446,7 +446,182 @@ public sealed partial class HtkkGuiReferenceAutomation {
    if(!Decimal.TryParse(Convert.ToString(Get(cell,"Value"),CultureInfo.InvariantCulture),NumberStyles.Float,CultureInfo.InvariantCulture,out actual)||!Decimal.TryParse(parts[2],NumberStyles.Number,CultureInfo.InvariantCulture,out expected)||actual!=expected)declarationCellMismatchMask|=1<<index;
    if(Convert.ToBoolean(Get(cell,"Locked")))declarationCellLockedMask|=1<<index;
   }
-  return declarationCellMismatchMask==0&&declarationCellCheckCount==checks.Length;
+  bool matched=declarationCellMismatchMask==0&&declarationCellCheckCount==checks.Length;
+  if(DeclarationAnnex12Case())InspectDeclarationAnnex12(grids[0]);
+  return matched;
+ }
+
+ // ---- Z5 PL 01-2/GTGT after the original import: value-free diagnostic (run 46107139838) ----
+ // 01GTGT-TT89-pl012-M10-2026 imported (roundtripImportSucceeded) with 01!P20, 01!U20 and 01_2!AJ7 empty or 0
+ // (declarationCellZeroMask 70): HTKK left [13] T46 and [14] X46 at 0. Gtgt01TT89Nckt309.TinhLaiTongCot10_12_PL01_2 (5.8.4 = 5.8.5)
+ // is the only writer of both: FinishImportXML, CellChange_1 on column T or U, UpdateFormula_1. It finds the two cells as the
+ // StaticCells of SheetInfos[1] whose Path is PLuc_01_2_GTGT/ct13 and /ct14 and sums each table through
+ // Header.StaticCells[0].CellTemplate.RowIndex (CalculateSumHeaderByGroup / CalculateSumByGroup skip a table without it).
+ // Recorded, all without a value: which branch of frmWinToKhai.cmdImportXML_Click ran (TaiDuLieuRatLon), the shape of the
+ // tables, whether each table header is the row the sums read, which plant/row cells are 0 or empty, whether the two total cells
+ // are found, their formula dependants point at them and they equal the sums of the sheet. None of it decides the case.
+ private int declarationAnnex12ImportPathMask=0,declarationAnnex12TableShape=0,declarationAnnex12HeaderMask=0,declarationAnnex12CellZeroMask=0,declarationAnnex12TotalMask=0,declarationAnnex12ProbeMask=0;
+ private bool DeclarationAnnex12Case(){
+  if(declarationPlan==null||declarationPlan.MenuId!="Z5")return false;
+  foreach(string pair in declarationPlan.SheetNames)if(pair.Split('|')[0]=="01_2")return true;
+  return false;
+ }
+ private string DeclarationAnnex12Json(){
+  string q=((char)34).ToString();StringBuilder json=new StringBuilder();
+  string[] names=new string[]{"declarationAnnex12ImportPathMask","declarationAnnex12TableShape","declarationAnnex12HeaderMask","declarationAnnex12CellZeroMask","declarationAnnex12TotalMask","declarationAnnex12ProbeMask"};
+  int[] counts=new int[]{declarationAnnex12ImportPathMask,declarationAnnex12TableShape,declarationAnnex12HeaderMask,declarationAnnex12CellZeroMask,declarationAnnex12TotalMask,declarationAnnex12ProbeMask};
+  for(int index=0;index<names.Length;index++)json.Append(","+q+names[index]+q+":"+counts[index].ToString(CultureInfo.InvariantCulture));
+  return json.ToString();
+ }
+ private static object Annex12Property(object target,string name){
+  if(target==null)return null;PropertyInfo property=target.GetType().GetProperty(name,BindingFlags.Public|BindingFlags.Instance);
+  return property==null?null:property.GetValue(target,null);
+ }
+ // A numeric cell as Decimal; false when empty or not a number. Zero: empty or 0.
+ private static bool Annex12Number(object sheet,int row,int column,out decimal value){
+  object raw=Get(Cell(sheet,row,column),"Value");value=0m;
+  return raw!=null&&Decimal.TryParse(Convert.ToString(raw,CultureInfo.InvariantCulture),NumberStyles.Float,CultureInfo.InvariantCulture,out value);
+ }
+ private static bool Annex12Zero(object sheet,int row,int column){decimal value;return !Annex12Number(sheet,row,column,out value)||value==0m;}
+ private static string Annex12A1(int row,int column){string letters=column<26?((char)('A'+column)).ToString():((char)('A'+column/26-1)).ToString()+((char)('A'+column%26)).ToString();return letters+(row+1).ToString(CultureInfo.InvariantCulture);}
+ // Whether a formula addresses exactly the cell (sheet prefix and $ ignored): "T49", "01_2!X49:X49".
+ private static bool Annex12FormulaNames(object cell,string a1){
+  string formula=Convert.ToString(Annex12Property(cell,"Formula"),CultureInfo.InvariantCulture);if(String.IsNullOrEmpty(formula))return false;
+  formula=formula.Replace("$",String.Empty).Replace(" ",String.Empty).ToUpperInvariant();
+  foreach(string part in formula.Split(new char[]{'(',')',',','+','-','*','/','=','<','>'}))
+   foreach(string piece in part.Split(':')){string name=piece.IndexOf('!')>=0?piece.Substring(piece.LastIndexOf('!')+1):piece;if(name==a1)return true;}
+  return false;
+ }
+ // The 01_2 sheet info, its plant tables (PLuc_01_2_GTGT/TenNhaMay) and the static cells of ct13 / ct14.
+ private bool DeclarationAnnex12Infos(out object info,out List<object> tables,out object ct13,out object ct14){
+  info=null;tables=new List<object>();ct13=null;ct14=null;
+  System.Collections.IList infos=Annex12Property(Global("ToKhaiInfo"),"SheetInfos") as System.Collections.IList;if(infos==null||infos.Count>32)return false;
+  foreach(object candidate in infos)if(candidate!=null&&Convert.ToString(Annex12Property(candidate,"SheetID"),CultureInfo.InvariantCulture)=="01_2"){if(info!=null)return false;info=candidate;}
+  if(info==null)return false;
+  System.Collections.IList all=Annex12Property(info,"Tables") as System.Collections.IList;
+  if(all!=null)foreach(object table in all)if(table!=null&&Convert.ToString(Annex12Property(table,"TablePath"),CultureInfo.InvariantCulture)=="PLuc_01_2_GTGT/TenNhaMay")tables.Add(table);
+  System.Collections.IList statics=Annex12Property(info,"StaticCells") as System.Collections.IList;
+  if(statics!=null)foreach(object cell in statics){string path=Convert.ToString(Annex12Property(cell,"Path"),CultureInfo.InvariantCulture);if(path=="PLuc_01_2_GTGT/ct13"&&ct13==null)ct13=cell;else if(path=="PLuc_01_2_GTGT/ct14"&&ct14==null)ct14=cell;}
+  return true;
+ }
+ // CellTemplate of a cell info as a 0-based sheet position (HTKK subtracts 1 from RowIndex / ColIndex), or false.
+ private static bool Annex12Position(object cellInfo,out int row,out int column){
+  row=-1;column=-1;object template=Annex12Property(cellInfo,"CellTemplate");if(template==null)return false;
+  row=Convert.ToInt32(Annex12Property(template,"RowIndex"))-1;column=Convert.ToInt32(Annex12Property(template,"ColIndex"))-1;return row>=0&&column>=0&&row<100000&&column<256;
+ }
+ private const int Annex12ColumnB=1,Annex12ColumnC=2,Annex12ColumnT=19,Annex12ColumnU=20,Annex12ColumnX=23,Annex12ColumnAG=32,Annex12ColumnAO=40;
+ // declarationAnnex12ImportPathMask: 1 ToKhaiInfo read; 2 its TaiDuLieuRatLon is "1" (the WinDoWorkImportXmlToSheetInfos branch:
+ //   FinishImportXML on the spread without frmToKhai_ReLoad); 4 its TaiDuLieuLon is "1"; 8 the 01_2 sheet info found; 16 its
+ //   TaiDuLieuRatLon is "1"; 32 it is Active.
+ // declarationAnnex12TableShape: bits 0-3 plant tables (capped 15); bits 4+3i..6+3i rows of table i < 4 (capped 7).
+ // declarationAnnex12HeaderMask, 3 bits per table i < 4: 1 Header.StaticCells not empty; 2 its first cell's row is the plant row
+ //   (DataLocationTemplateRowStart - 2, as the D1 driver locates it); 4 column B of that row reads the TableID.
+ // declarationAnnex12CellZeroMask: bits 2i / 2i+1 the plant row's T ([10]) / U ([11]) of table i < 4 is 0 or empty; then 4 bits per
+ //   row in document order (rows 0..3) from bit 8: U ([11]), X ([12]), AO (SetLaiDongCon copy of T), C (tenLoai) text empty.
+ // declarationAnnex12TotalMask: 1 / 2 the ct13 / ct14 static cell found; 4 / 8 that cell is 0 or empty; 16 both lie below the last
+ //   row; 32 01_2!AJ7 has a formula naming the ct13 cell; 64 01!P20 has a formula naming the ct14 cell; 128 every row has AG
+ //   (maLoai); 256 the ct13 cell equals the sum of the plant T; 512 the ct14 cell equals the sum of the rows' X; 1024 every row's X
+ //   equals ROUND(U x AO / 100, 0) half away from zero; 2048 the 01 sheet was found; 4096 a read failed.
+ private void InspectDeclarationAnnex12(Control grid){
+  int path=0,shape=0,header=0,zero=0,total=0;
+  try{
+   object toKhai=Global("ToKhaiInfo");
+   if(toKhai!=null){path|=1;if(Convert.ToString(Annex12Property(toKhai,"TaiDuLieuRatLon"),CultureInfo.InvariantCulture)=="1")path|=2;if(Convert.ToString(Annex12Property(toKhai,"TaiDuLieuLon"),CultureInfo.InvariantCulture)=="1")path|=4;}
+   object info;List<object> tables;object ct13,ct14;
+   if(DeclarationAnnex12Infos(out info,out tables,out ct13,out ct14)){
+    path|=8;if(Convert.ToString(Annex12Property(info,"TaiDuLieuRatLon"),CultureInfo.InvariantCulture)=="1")path|=16;if(Selected(Annex12Property(info,"Active")))path|=32;
+    object sheet=DeclarationSheet(grid,"01_2"),main=DeclarationSheet(grid,"01");if(main!=null)total|=2048;
+    shape=Math.Min(tables.Count,15);
+    decimal sumT=0m,sumX=0m;int child=0,lastRow=-1;bool allAg=true,allRound=true;
+    for(int i=0;i<tables.Count;i++){
+     object table=tables[i];System.Collections.IList rows=Annex12Property(table,"RowsValues") as System.Collections.IList;int count=rows==null?0:rows.Count;
+     if(i<4)shape|=Math.Min(count,7)<<(4+3*i);
+     int start=Convert.ToInt32(Annex12Property(Annex12Property(table,"Location"),"DataLocationTemplateRowStart"))-1,parent=start-1;
+     object head=Annex12Property(table,"Header");System.Collections.IList statics=Annex12Property(head,"StaticCells") as System.Collections.IList;
+     int headRow,headColumn;
+     if(i<4&&statics!=null&&statics.Count>0){header|=1<<(3*i);if(Annex12Position(statics[0],out headRow,out headColumn)&&headRow==parent)header|=2<<(3*i);}
+     if(sheet==null||parent<0||start+count>Convert.ToInt32(Get(sheet,"RowCount")))continue;
+     if(i<4&&CellText(sheet,parent,Annex12ColumnB)==Convert.ToString(Annex12Property(table,"TableID"),CultureInfo.InvariantCulture))header|=4<<(3*i);
+     decimal t;if(Annex12Number(sheet,parent,Annex12ColumnT,out t))sumT+=t;
+     if(i<4){if(Annex12Zero(sheet,parent,Annex12ColumnT))zero|=1<<(2*i);if(Annex12Zero(sheet,parent,Annex12ColumnU))zero|=2<<(2*i);}
+     for(int j=0;j<count;j++,child++){
+      int row=start+j;lastRow=row;decimal u,x,ao;bool hasU=Annex12Number(sheet,row,Annex12ColumnU,out u),hasX=Annex12Number(sheet,row,Annex12ColumnX,out x),hasAo=Annex12Number(sheet,row,Annex12ColumnAO,out ao);
+      if(hasX)sumX+=x;
+      if(!hasU||!hasX||!hasAo||x!=Math.Round(u*ao/100m,0,MidpointRounding.AwayFromZero))allRound=false;
+      if(CellText(sheet,row,Annex12ColumnAG).Trim().Length==0)allAg=false;
+      if(child<4){int bit=8+4*child;if(!hasU||u==0m)zero|=1<<bit;if(!hasX||x==0m)zero|=2<<bit;if(!hasAo||ao==0m)zero|=4<<bit;if(CellText(sheet,row,Annex12ColumnC).Trim().Length==0)zero|=8<<bit;}
+     }
+    }
+    if(allAg&&child>0)total|=128;if(allRound&&child>0)total|=1024;
+    int r13,c13,r14,c14;bool p13=ct13!=null&&Annex12Position(ct13,out r13,out c13),p14=ct14!=null&&Annex12Position(ct14,out r14,out c14);
+    if(ct13!=null)total|=1;if(ct14!=null)total|=2;
+    if(sheet!=null&&p13&&p14){
+     Annex12Position(ct13,out r13,out c13);Annex12Position(ct14,out r14,out c14);
+     decimal v13,v14;bool n13=Annex12Number(sheet,r13,c13,out v13),n14=Annex12Number(sheet,r14,c14,out v14);
+     if(!n13||v13==0m)total|=4;if(!n14||v14==0m)total|=8;
+     if(r13>lastRow&&r14>lastRow)total|=16;
+     if(Annex12FormulaNames(Cell(sheet,6,35),Annex12A1(r13,c13)))total|=32;
+     if(main!=null&&Annex12FormulaNames(Cell(main,19,15),Annex12A1(r14,c14)))total|=64;
+     if(n13&&v13==sumT)total|=256;if(n14&&v14==sumX)total|=512;
+    }
+   }
+  }catch(Exception){total|=4096;}
+  declarationAnnex12ImportPathMask=path;declarationAnnex12TableShape=shape;declarationAnnex12HeaderMask=header;declarationAnnex12CellZeroMask=zero;declarationAnnex12TotalMask=total;Record();
+ }
+ // Whether option 2 (a fixed original edit after the import) would recompute the totals: only after the case has already failed
+ // (the sheet check missed past its bounded wait, the next stage is declaration-import-sheet-not-matched), so the pass criteria
+ // and every passing run are unchanged; no export follows. Plant 1's [10] (T on its plant row) is typed through the original
+ // editor as 0, then as its own amount again, each ended by TAB (FpSpread.Change -> WinDoWorkEvent.CellChange -> CellChange_1,
+ // whose T branch runs SetLaiDongCon and TinhLaiTongCot10_12_PL01_2). The amount stays in the process; only bits are recorded.
+ // declarationAnnex12ProbeMask: 1 attempted; 2 the 01_2 sheet activated by its tab; 4 the first edit reads 0; 8 the second edit
+ //   reads the original amount again; 16 an original message appeared (stopped); 32 an exception (stopped); 64 after the first edit
+ //   the ct13 cell equals the sum of the plant T (plant 1 now 0); 128 after the first edit the ct13 cell changed; 256 after the
+ //   second edit the ct13 cell equals the sum of the plant T and is not 0; 512 after the second edit the ct14 cell equals the sum
+ //   of the rows' X and is not 0; 1024 after the second edit 01!P20 equals the ct14 cell; 2048 no edit made (no plant row, the
+ //   cell locked or not a plain number cell, or the totals not located). The diagnostic masks above are taken again afterwards.
+ private void ProbeDeclarationAnnex12Recompute(){
+  int mask=1;declarationAnnex12ProbeMask=mask;Record();
+  try{
+   Control grid;object sheet=DeclarationTickSheet("01_2",out grid);object info;List<object> tables;object ct13,ct14;
+   int r13,c13,r14,c14;
+   if(!DeclarationAnnex12Infos(out info,out tables,out ct13,out ct14)||tables.Count<1||ct13==null||ct14==null||!Annex12Position(ct13,out r13,out c13)||!Annex12Position(ct14,out r14,out c14)){declarationAnnex12ProbeMask=mask|2048;Record();return;}
+   int row=Convert.ToInt32(Annex12Property(Annex12Property(tables[0],"Location"),"DataLocationTemplateRowStart"))-2,column=Annex12ColumnT;
+   if(row<0||row>=Convert.ToInt32(Get(sheet,"RowCount"))){declarationAnnex12ProbeMask=mask|2048;Record();return;}
+   object cell=Cell(sheet,row,column);string kind=DeclarationEntryCellKind(cell);
+   if(Convert.ToBoolean(Get(cell,"Locked"))||kind=="FarPoint.Win.Spread.CellType.ComboBoxCellType"||kind=="FarPoint.Win.Spread.CellType.CheckBoxCellType"||kind=="FarPoint.Win.Spread.CellType.ButtonCellType"||kind=="FarPoint.Win.Spread.CellType.MaskCellType"){declarationAnnex12ProbeMask=mask|2048;Record();return;}
+   // The amount as typed digits (the shown text carries thousand separators the numeric editor would misread).
+   decimal original;if(!Annex12Number(sheet,row,column,out original)||original<0m||original!=Decimal.Truncate(original)){declarationAnnex12ProbeMask=mask|2048;Record();return;}
+   string shown=original.ToString("0",CultureInfo.InvariantCulture);decimal before13;bool had13=Annex12Number(sheet,r13,c13,out before13);
+   if(DeclarationTickActivate(grid,sheet)!=0){declarationAnnex12ProbeMask=mask;Record();return;}
+   mask|=2;declarationAnnex12ProbeMask=mask;Record();
+   string[] texts=new string[]{"0",shown};
+   for(int step=0;step<2;step++){
+    DeclarationEntrySelect(grid,sheet,row,column);
+    if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid))break;
+    Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);if(editor==null||!editor.Visible||!editor.Enabled)break;
+    editor.Focus();if(!editor.ContainsFocus||!DeclarationEntryGuard(grid))break;
+    SendKeys.SendWait("^a");SendKeys.SendWait(texts[step]);SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);Application.DoEvents();
+    if(OriginalMessageVisible()){mask|=16;break;}
+    decimal now,sumT=0m,sumX=0m;
+    foreach(object table in tables){
+     System.Collections.IList rows=Annex12Property(table,"RowsValues") as System.Collections.IList;int start=Convert.ToInt32(Annex12Property(Annex12Property(table,"Location"),"DataLocationTemplateRowStart"))-1;
+     decimal t;if(Annex12Number(sheet,start-1,Annex12ColumnT,out t))sumT+=t;
+     for(int j=0;rows!=null&&j<rows.Count;j++){decimal x;if(Annex12Number(sheet,start+j,Annex12ColumnX,out x))sumX+=x;}
+    }
+    decimal v13,v14;bool n13=Annex12Number(sheet,r13,c13,out v13),n14=Annex12Number(sheet,r14,c14,out v14);
+    if(step==0){
+     if(Annex12Number(sheet,row,column,out now)&&now==0m)mask|=4;
+     if(n13&&v13==sumT)mask|=64;if(n13!=had13||(n13&&v13!=before13))mask|=128;
+    }else{
+     if(Annex12Number(sheet,row,column,out now)&&now==original)mask|=8;
+     if(n13&&v13==sumT&&v13!=0m)mask|=256;if(n14&&v14==sumX&&v14!=0m)mask|=512;
+     object main=DeclarationSheet(grid,"01");decimal p20;if(main!=null&&n14&&Annex12Number(main,19,15,out p20)&&p20==v14)mask|=1024;
+    }
+    declarationAnnex12ProbeMask=mask;Record();
+   }
+   InspectDeclarationAnnex12(grid);
+  }catch(Exception){mask|=32;}
+  declarationAnnex12ProbeMask=mask;Record();
  }
 
  // ---- Bounded diagnostic of an original 0016 refusal ----
@@ -645,7 +820,7 @@ public sealed partial class HtkkGuiReferenceAutomation {
    declarationImportSheetMatched=InspectDeclarationGrid();roundtripImportSheetMatched=declarationImportSheetMatched;Record();
    // Original recalculation after import may settle on a later UI turn; bounded wait.
    if(!declarationImportSheetMatched&&declarationClock.Elapsed.TotalSeconds<3)return;
-   if(!declarationImportSheetMatched){DeclarationTerminal(HtkkAutomationStage.DeclarationImportSheetNotMatched);return;}
+   if(!declarationImportSheetMatched){if(DeclarationAnnex12Case()&&!DeclarationKhbsMode())ProbeDeclarationAnnex12Recompute();DeclarationTerminal(HtkkAutomationStage.DeclarationImportSheetNotMatched);return;}
    if(DeclarationKhbsMode()){DeclarationKhbsInputDone();return;}
    declarationPhase="export-start";SetStage(HtkkAutomationStage.DeclarationExportReadyWaiting);Record();return;
   }

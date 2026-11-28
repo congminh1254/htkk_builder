@@ -355,6 +355,12 @@ function New-HtkkNativeResultDefaults {
   declarationKhbsMessageId=0
   declarationKhbsEntryShape=0
   declarationKhbsEntryLengths=0
+  declarationAnnex12ImportPathMask=0
+  declarationAnnex12TableShape=0
+  declarationAnnex12HeaderMask=0
+  declarationAnnex12CellZeroMask=0
+  declarationAnnex12TotalMask=0
+  declarationAnnex12ProbeMask=0
  }
  return $result
 }
