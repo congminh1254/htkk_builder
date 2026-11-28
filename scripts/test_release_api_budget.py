@@ -20,7 +20,7 @@ d=load('budget_dispatch','dispatch-native-cases.py')
 guard=load('budget_guard','callback_guard.py')
 batch=load('budget_batch','native_batch.py')
 TOKEN='synthetic-token';SOURCE=fx.SHA;REQUEST='4242'
-REQUEST_BUDGET=2500 # One release on one token; GitHub's primary limit is 5000 per hour.
+REQUEST_BUDGET=3000 # One release on one token: 60% of GitHub's 5000-per-hour primary limit, leaving room for retries and other jobs. About 15 requests per case; cut requests per case before raising this again.
 def http_error(code):return urllib.error.HTTPError('https://api.github.com/',code,'SECRET PRIVATE REMOTE BODY',{},None)
 
 def source_plan():
