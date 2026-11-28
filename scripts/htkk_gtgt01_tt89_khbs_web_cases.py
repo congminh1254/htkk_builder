@@ -29,6 +29,10 @@ _ORIGINAL = (3244, '11f0796d54e28f69079de6aec2535fbb2457ab99f27963cd51e9b3607308
 # The lần 1 web files, which are also the previous version (declaration-prior.xml) of the lần 2 cases.
 _INCREASE = (8504, 'c8979d63cedfaf4803cce8bc35f0cb3ff983ab9d10ed46d688ceb3e6ec261ca9')
 _DECREASE = (8204, 'e9cf8a4fcd07516504defa20143e7ca54a3adfc3c8f762a56eab27aea88dcab9')
+# Quý 4/2026 (hạn nộp 31/01/2027; ngày lập 13/11/2026 is before it): the lần đầu and the lần 1 web file (prior of the lần 2 case).
+_Q4 = ('Q', '4/2026', '01/10/2026', '31/12/2026')
+_QUARTER = (3303, 'b3709bf1a87a009a7be27e58f29aa5d58b40811adddad4c6c426bfe441cb5038')
+_QUARTER_INCREASE = (9236, '9c8172f52b82c2b658340005add4d02c1cbdaa2676878ce16b3e16d4aefd6202')
 # Tháng 10/2026 is due 20/11/2026: ngày lập 13/11/2026 is before it. ct10 is 0 in both cases (no tiểu mục on [40] / [43]), so
 # ct3a_1 stays empty (nil) and ct3a_2 / ct3b are 0.
 CASES = {
@@ -48,6 +52,23 @@ CASES = {
     # [41] / [43] 100.000 -> 0; [40a] / [40] stay 0, so no row for them (against the lần đầu they would change).
     '01GTGT-TT89-khbs-lan2-decrease-M10-2026': {'producerCase': 'gtgt01-tt89-khbs-lan2-decrease-m10-2026', 'menuId': 'Z5', 'soLan': 2, 'web': (7570, '5c5bb2315a143678f5dbfb24c4e1180e53a76cb3da98ef826f42479291be5ee2'), 'original': _ORIGINAL, 'prior': _DECREASE, 'leafTarget': 265,
         'expected': {'rows': ['[23]', '[23a]', '[25]', '[36]', '[41]', '[43]'], 'subitems': [], 'tongCong7': '0', 'tongCong8': '-100000', 'ct10': '0', 'ct3a_1': '', 'ct3a_2': '0', 'ct3b': '0'}},
+    # Kỳ QUÝ 4/2026 (own `period`), not yet run. Lần đầu: the inputs of 01GTGT-TT89-quarter-Q4-2026 (native-matched on 5.8.4 and
+    # 5.8.5; [36] -10.000.000, [41] = [43] 10.000.000). htkk_web reading of HTKK 5.8.4 / 5.8.5: GetFileNameLoadKhbs has a KieuKy Q
+    # branch for D1 and Z5 ("_Q0" + Quy) with the month branch's SoLan rule (lần 1 the lần đầu, lần N bs<N-1>); hạn nộp 31/01/2027.
+    # Lần 1: [32] 50.000.000 -> 200.000.000, [33] 5.000.000 -> 20.000.000: [36] -10.000.000 -> 5.000.000 (ct04 "(10.000.000)"),
+    # [40a] / [40] 0 -> 5.000.000, [41] / [43] 10.000.000 -> 0.
+    '01GTGT-TT89-khbs-increase-Q4-2026': {'producerCase': 'gtgt01-tt89-khbs-increase-q4-2026', 'menuId': 'Z5', 'period': _Q4, 'soLan': 1, 'web': _QUARTER_INCREASE, 'original': _QUARTER, 'prior': None, 'leafTarget': 330,
+        'expected': {'rows': ['[27]', '[28]', '[32]', '[33]', '[34]', '[35]', '[36]', '[40a]', '[40]', '[41]', '[43]'], 'subitems': [], 'tongCong7': '5000000', 'tongCong8': '-10000000', 'ct10': '0', 'ct3a_1': '', 'ct3a_2': '0', 'ct3b': '0'}},
+    # Lần 2 on it: [32] -> 250.000.000, [33] -> 25.000.000: nine rows, [40] ct04 5.000.000 (lần 1), ct7 +5.000.000; [41] / [43] stay 0.
+    '01GTGT-TT89-khbs-lan2-increase-Q4-2026': {'producerCase': 'gtgt01-tt89-khbs-lan2-increase-q4-2026', 'menuId': 'Z5', 'period': _Q4, 'soLan': 2, 'web': (8618, '1bd8b7294ea0851304ef1e2711d12801debe73ec592ebc73bb374e8aa2fc9de7'), 'original': _QUARTER, 'prior': _QUARTER_INCREASE, 'leafTarget': 304,
+        'expected': {'rows': ['[27]', '[28]', '[32]', '[33]', '[34]', '[35]', '[36]', '[40a]', '[40]'], 'subitems': [], 'tongCong7': '5000000', 'tongCong8': '0', 'ct10': '0', 'ct3a_1': '', 'ct3a_2': '0', 'ct3b': '0'}},
+    # Hoạt động khác tỉnh [09]-[11] (htkk_web gate GTGT01_TT89_KHBS_OTHER_PROVINCE_RELEASED, off), not yet run; registry
+    # taxpayerProfile / periodLocation of 01GTGT-TT89-other-province-M10-2026 (profile CQT 82500, period 103 / 10309019 / 82500 /
+    # 82500). Lần đầu: that case's inputs ([09], [10] typed, [32] 200.000.000, [33] 20.000.000). htkk_web reading of HTKK 5.8.4 / 5.8.5:
+    # GetNameNopTheoTinhCQT (NopTheoTinhCQT 3) names the lần trước file by "CQTQL" + maCQTQuanLy only, and MapMCT Z5 has no item for
+    # [09]-[11], so the tables are those without them. Bổ sung: [32] -> 300.000.000, [33] -> 30.000.000: nine rows, ct7 +10.000.000.
+    '01GTGT-TT89-khbs-other-province-M10-2026': {'producerCase': 'gtgt01-tt89-khbs-other-province-m10-2026', 'menuId': 'Z5', 'soLan': 1, 'web': (8777, '8cecea6e074feeb59a8f88ce3896454e17202c376bf4d90b1aa865ba7fdf0abb'), 'original': (3447, 'ec0e594ec204823f90dcbccfba73ab48c11023ff3290b34602633e6ec6f46775'), 'prior': None, 'leafTarget': 304,
+        'expected': {'rows': ['[27]', '[28]', '[32]', '[33]', '[34]', '[35]', '[36]', '[40a]', '[40]'], 'subitems': [], 'tongCong7': '10000000', 'tongCong8': '0', 'ct10': '0', 'ct3a_1': '', 'ct3a_2': '0', 'ct3b': '0'}},
 }
 # Public HTKK catalogue texts of Z5: Menu.xml sheet name and MaHoSo of the tờ khai, the MapMCT Z5 MauToKhai, the MCT codes and
 # captions of its 30 main-sheet items (as written there), and the DM_MaTM names of tiểu mục 1701 and 7551.

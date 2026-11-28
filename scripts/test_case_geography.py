@@ -17,6 +17,9 @@ registry = load('case_geography_registry_test', 'htkk_native_cases.py')
 RAW = json.loads((ROOT / 'htkk-native-cases.json').read_text())
 PLANS = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
 CASE = '01GTGT-TT89-other-province-M10-2026'
+# Its kê khai bổ sung lần 1 (driver declaration-amendment-khbs-inspect): the same profile and period place in every round.
+KHBS_CASE = '01GTGT-TT89-khbs-other-province-M10-2026'
+PLACED = (CASE, KHBS_CASE)
 DEFAULT = ('10100', 'Thuế Thành phố Hà Nội', '10129', 'Thuế cơ sở 16 Thành phố Hà Nội', '101', 'Thành phố Hà Nội', '10129087', 'Phường Sơn Tây',
            '10100', 'Thuế Thành phố Hà Nội', '10129', 'Thuế cơ sở 16 Thành phố Hà Nội')
 OTHER = ('82500', 'Chi cục Thuế doanh nghiệp lớn', '82500', 'Chi cục Thuế doanh nghiệp lớn', '103', 'Thành phố Hải Phòng', '10309019', 'Phường Đồ Sơn',
@@ -71,21 +74,26 @@ class Places(unittest.TestCase):
 
 
 class Registry(unittest.TestCase):
-    def test_only_the_other_province_case_carries_a_place_and_every_other_case_keeps_the_defaults(self):
-        self.assertEqual(registry.GEOGRAPHY_CASES, (CASE,))
-        self.assertEqual(g.compiled(registry.CASES[CASE]), OTHER)
+    def test_only_the_other_province_cases_carry_a_place_and_every_other_case_keeps_the_defaults(self):
+        self.assertEqual(registry.GEOGRAPHY_CASES, PLACED)
+        for case_id in PLACED:
+            self.assertEqual(g.compiled(registry.CASES[case_id]), OTHER)
+        self.assertEqual({k: registry.CASES[KHBS_CASE][k] for k in g.FIELDS}, {k: registry.CASES[CASE][k] for k in g.FIELDS})
+        self.assertEqual(registry.CASES[KHBS_CASE]['adapterId'], '01-gtgt-tt89-3.0.9-khbs')
+        self.assertIn(KHBS_CASE, registry.NTNN_KHBS_CASES)
         for case_id, case in registry.CASES.items():
-            if case_id != CASE:
+            if case_id not in PLACED:
                 self.assertNotIn('taxpayerProfile', case, case_id); self.assertNotIn('periodLocation', case, case_id)
                 self.assertEqual(g.compiled(case), DEFAULT, case_id)
 
     def test_the_compiled_table_equals_the_registry(self):
         table = compiled_table()
-        self.assertEqual(table, {None: DEFAULT, CASE: OTHER})
+        self.assertEqual(table, {None: DEFAULT, CASE: OTHER, KHBS_CASE: OTHER})
         self.assertEqual(set(table) - {None}, set(registry.GEOGRAPHY_CASES))
         for case_id in registry.GEOGRAPHY_CASES:
             self.assertEqual(table[case_id], g.compiled(registry.CASES[case_id]))
-            self.assertIn('case "' + case_id + '":return new HtkkDeclarationCasePlan(', PLANS)
+        self.assertIn('case "' + CASE + '":return new HtkkDeclarationCasePlan(', PLANS)
+        self.assertRegex(PLANS, r'case "%s":(case "[^"]+":)*return KhbsPlan\(caseId\);' % KHBS_CASE)
 
     def mutated(self, mutate):
         value = copy.deepcopy(RAW); mutate({c['caseId']: c for c in value['cases']})
@@ -96,12 +104,14 @@ class Registry(unittest.TestCase):
             return load('case_geography_registry_mutated', 'htkk_native_cases.py', folder)
 
     def test_the_registry_refuses_a_place_outside_declaration_import_cases_or_a_default_spelled_out(self):
-        self.assertEqual(self.mutated(lambda c: None).GEOGRAPHY_CASES, (CASE,))  # the copied loader itself is sound
+        self.assertEqual(self.mutated(lambda c: None).GEOGRAPHY_CASES, PLACED)  # the copied loader itself is sound
         place = {k: copy.deepcopy(registry.CASES[CASE][k]) for k in g.FIELDS}
         gate = registry.GATE_CASES[0]
         tick = registry.DECLARATION_TICK_CASES[0]
         for mutate in (lambda c: c[gate].update(place),                                   # a release gate
                        lambda c: c[tick].update(place),                                   # an import-tick case
+                       lambda c: c['01GTGT-TT89-khbs-lan2-increase-M10-2026'].update(place),  # a KHBS adapter not reviewed for it
+                       lambda c: c['01NTNN-khbs-lan2-M09-2026'].update(place),             # another form's KHBS case
                        lambda c: c['01GTGT-TT89-zero-M10-2026'].update(taxpayerProfile=dict(g.DEFAULT_PROFILE)),  # default spelled out
                        lambda c: c[CASE]['periodLocation'].update(taxOfficeHead='10300'),
                        lambda c: c[CASE].update(periodLocation={'province': '103', 'ward': '10309019', 'taxOfficeHead': '82500'})):

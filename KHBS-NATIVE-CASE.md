@@ -969,6 +969,35 @@ lần đầu, round 1 imports `.web-prior.xml` with Bổ sung lần 1, runs "T�
 lần 2 is the lần 1 figure, that rows unchanged since lần 1 are left out, the first negative ct04 of Z5 ("(100.000)"; lần 1 had only a
 negative ct05), and 01/KHBS still at its default rows with no tiền chậm nộp.
 
+### Z5 kỳ quý and hoạt động khác tỉnh: three non-gating cases on HTKK 5.8.4 (not yet run)
+
+htkk_web reading of HTKK 5.8.4 (the same IL in 5.8.5), nothing executed:
+
+- Kỳ quý: `GetFileNameLoadKhbs` has, under KieuKy Q with TuThang/DenThang empty (the Z5 quarter XML leaves `kyKKhaiTuThang` /
+  `kyKKhaiDenThang` empty), its own D1 / Z5 branch: file `[bs<N>_]` + MST + `_CQTQL…_` + tiểu mục + `_Q0` + quý + năm, `SoLan` 1 the
+  lần đầu, `SoLan` N the `bs<N−1>_` file (each unless `bs<N>_` already exists; `ReadSheet_LanTruoc` passes false as the last
+  argument), the month branch's rule. htkk_web already opens quarter KHBS lần 1 and lần 2 under its existing gates; these two cases
+  are its first quarter evidence.
+- Hoạt động khác tỉnh: `GetNameNopTheoTinhCQT` for NopTheoTinhCQT 3 puts only "CQTQL" + maCQTQuanLy into those file names (never the
+  tỉnh / xã of the period dialog), and 0611 keeps maCQTQuanLy at the profile's CQT; `CollectionStatic01_1_KHBS` compares only the
+  MapMCT Z5 main-sheet items ([21]–[43]), none of which is [09]–[11]. htkk_web keeps this behind `GTGT01_TT89_KHBS_OTHER_PROVINCE_RELEASED`
+  (off) and requires the same [09], [10], [11a], [11c] and maCQTNoiNop in both versions.
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `01GTGT-TT89-khbs-increase-Q4-2026` (quý 4/2026; lần đầu = `01GTGT-TT89-quarter-Q4-2026`; [32] 50tr → 200tr, [33] 5tr → 20tr; eleven rows, [36] ct04 "(10.000.000)", tongCong_7 5.000.000, tongCong_8 −10.000.000) | original, web | 330 |
+| `01GTGT-TT89-khbs-lan2-increase-Q4-2026` (on the quý lần 1: [32] → 250tr, [33] → 25tr; nine rows, [40] ct04 5.000.000, ct7 +5.000.000) | original, prior (= the quý lần 1 web file), web | 304 |
+| `01GTGT-TT89-khbs-other-province-M10-2026` (lần đầu = `01GTGT-TT89-other-province-M10-2026`; [32] 200tr → 300tr, [33] 20tr → 30tr; nine rows, ct7 +10.000.000) | original, web | 304 |
+
+Registry: adapters `01-gtgt-tt89-3.0.9-khbs` / `-khbs-lan2` now also allow quarter 4/2026; each case carries its own `period` in
+`htkk_gtgt01_tt89_khbs_web_cases.py`. The khác tỉnh case carries the `taxpayerProfile` / `periodLocation` of its lần đầu case (profile
+82500 / 82500, period 103 / 10309019 / 82500 / 82500): `htkk_native_cases.py` now accepts a place on a case of adapter
+`01-gtgt-tt89-3.0.9-khbs` (`GEOGRAPHY_KHBS_ADAPTERS`), since every KHBS round's period dialog goes through the same
+`ConfigureDeclarationPeriod` (HtkkDeclarationWebImport.cs) that reads `HtkkDeclarationCasePlans.Geography`. Plans: `Gtgt01Tt89KhbsPlan`
+takes the quarter period of `01GTGT-TT89-quarter-Q4-2026` for the `-Q4-2026` cases (leaf counts 334 / 308 / 308); `KhbsSoLan` 2 for the
+quý lần 2. What only these runs decide: that HTKK compares quý lần 2 with quý lần 1, and that with [09]–[11] the bổ sung tờ khai and
+its 01/KHBS, 01-1/KHBS are the same as without them (rows, captions, no row for [09]–[11]).
+
 ## Case 25: negative amounts on 01-1/KHBS (non-gating; adapter `01-gtgt-2.8.3-khbs`, HTKK 5.8.2)
 
 `01GTGT-khbs-negative-zero-to-purchase-M10-2026` (htkk_web producer `khbs-negative-zero-to-purchase`): case 1's flow (the all-zero

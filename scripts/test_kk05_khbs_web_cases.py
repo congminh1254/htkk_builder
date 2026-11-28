@@ -130,7 +130,7 @@ class Kk05KhbsDriverWiring(unittest.TestCase):
     def test_probe_lists_and_success_predicate(self):
         probe = (ROOT / 'probe-htkk-windows.ps1').read_text(encoding='utf-8')
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text(encoding='utf-8')
-        self.assertIn("$HtkkNtnnKhbsLan2Cases=@('01NTNN-khbs-lan2-M09-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','05KK-khbs-lan2-Q3-2026','01CNKD-khbs-lan2-Q3-2026','02QTT-khbs-lan2-Y2025','05QTT-khbs-lan2-Y2025','03TNDN-khbs-lan2-Y2025','03NTNN-khbs-lan2-M09-2026','01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026','01GTGT-TT89-khbs-lan2-increase-M10-2026','01GTGT-TT89-khbs-lan2-decrease-M10-2026')", formats)
+        self.assertIn("$HtkkNtnnKhbsLan2Cases=@('01NTNN-khbs-lan2-M09-2026','01NTNN-NCCNN-khbs-lan2-M10-2026','05KK-khbs-lan2-Q3-2026','01CNKD-khbs-lan2-Q3-2026','02QTT-khbs-lan2-Y2025','05QTT-khbs-lan2-Y2025','03TNDN-khbs-lan2-Y2025','03NTNN-khbs-lan2-M09-2026','01TCKT-310-khbs-lan2-hop-tac-kd-Q4-2026','01GTGT-TT89-khbs-lan2-increase-M10-2026','01GTGT-TT89-khbs-lan2-decrease-M10-2026','01GTGT-TT89-khbs-lan2-increase-Q4-2026')", formats)
         self.assertIn("$HtkkNtnnKhbsTickCases=@('05KK-PBT-khbs-Q3-2026','05KK-PBT-nomst-khbs-Q3-2026','01CNKD-PL01-khbs-Q3-2026','03NTNN-khbs-increase-M09-2026','03NTNN-khbs-lan2-M09-2026','03NTNN-khbs-decrease-M09-2026')", formats)
         self.assertIn('$khbsLan2=$env:EXPECTED_WEB_CASE_ID -cin $HtkkNtnnKhbsLan2Cases', probe)
         self.assertIn('$khbsTickCase=$env:EXPECTED_WEB_CASE_ID -cin $HtkkNtnnKhbsTickCases', probe)

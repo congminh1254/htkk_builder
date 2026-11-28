@@ -4088,6 +4088,71 @@
       }
     },
     {
+      "caseId": "01GTGT-TT89-khbs-increase-Q4-2026",
+      "producerCase": "gtgt01-tt89-khbs-increase-q4-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9-khbs",
+      "format": "htkk-web-gtgt01-tt89-khbs-increase-q4-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-khbs-increase-q4-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-khbs-increase-q4-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-khbs-increase-q4-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-khbs-increase-q4-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.4",
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "quarter",
+        "periodValue": "4/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
+      "caseId": "01GTGT-TT89-khbs-lan2-increase-Q4-2026",
+      "producerCase": "gtgt01-tt89-khbs-lan2-increase-q4-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9-khbs-lan2",
+      "format": "htkk-web-gtgt01-tt89-khbs-lan2-increase-q4-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-khbs-lan2-increase-q4-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-khbs-lan2-increase-q4-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-khbs-lan2-increase-q4-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-khbs-lan2-increase-q4-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.4",
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "quarter",
+        "periodValue": "4/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 2
+      }
+    },
+    {
+      "caseId": "01GTGT-TT89-khbs-other-province-M10-2026",
+      "producerCase": "gtgt01-tt89-khbs-other-province-m10-2026",
+      "adapterId": "01-gtgt-tt89-3.0.9-khbs",
+      "format": "htkk-web-gtgt01-tt89-khbs-other-province-m10-2026-input-v1",
+      "stagingDirectory": "htkk-web-reference-gtgt01-tt89-khbs-other-province-m10-2026-input",
+      "inputBranch": "declaration-web-reference-gtgt01-tt89-khbs-other-province-m10-2026-input",
+      "outputBranch": "declaration-web-native-gtgt01-tt89-khbs-other-province-m10-2026-output",
+      "statusContext": "htkk-native/gtgt01-tt89-khbs-other-province-m10-2026",
+      "releaseGate": false,
+      "htkkVersion": "5.8.4",
+      "taxpayerProfile": {"taxOfficeHead": "82500", "taxOffice": "82500"},
+      "periodLocation": {"province": "103", "ward": "10309019", "taxOfficeHead": "82500", "taxOffice": "82500"},
+      "unit": {
+        "menuId": "Z5",
+        "adapterVersion": "3.0.9",
+        "periodType": "month",
+        "periodValue": "10/2026",
+        "activityCode": "00",
+        "annexes": [],
+        "amendmentOrder": 1
+      }
+    },
+    {
       "caseId": "01GTGT-TT89-pl012-M10-2026",
       "producerCase": "gtgt01-tt89-pl012-m10-2026",
       "adapterId": "01-gtgt-tt89-3.0.9-pl012",

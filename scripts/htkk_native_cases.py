@@ -223,10 +223,10 @@ TRUSTED_ADAPTERS={
  # (FinishImportXML does not run CellChange_9); htkk_web gtgt01-tt89-nq204-m12-2026.
  # KHBS 01/GTGT TT89: Z5 without phụ lục, bổ sung lần 1 of tháng 10/2026, every round imported (the lần đầu as
  # 01GTGT-TT89-sale10-M10-2026). HTKK 5.8.4 only, like the lần đầu adapter.
- '01-gtgt-tt89-3.0.9-khbs':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.4'},
+ '01-gtgt-tt89-3.0.9-khbs':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',),'quarter':('4/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.4'},
  # Bổ sung LẦN 2 of the same Z5 cases (amendmentOrder 2): the previous version (bổ sung lần 1 of an adapter-above case, byte for
  # byte) is imported, summarised and saved before round 2; HTKK compares lần 2 with that saved bs1_ file. HTKK 5.8.4 only.
- '01-gtgt-tt89-3.0.9-khbs-lan2':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.4'},
+ '01-gtgt-tt89-3.0.9-khbs-lan2':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',),'quarter':('4/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.4'},
  '01-gtgt-tt89-3.0.9-nq204':{**_declaration('Z5','3.0.9',{'month':('10/2026','12/2026')},['01_11']),'htkkVersion':'5.8.4'},
  # With PL 01-6/GTGT (CSSX: Menu sheet 01_6, ĐTVT: 01_6_2, ticked in the period dialog; XML PLuc/Pluc_01_6_GTGT_CSSX / _DVVT): XML
  # import → re-export (FinishImportXML runs TinhTongTheoTinhPl01_3 / TinhCot_17_21_Pl_01_6CSSX / TinhTongTheoTinhPl01_4). Column H
@@ -330,9 +330,11 @@ check(all(not CASES[id]['releaseGate'] for id in DECLARATION_CASES))
 DECLARATION_ENTRY_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==ENTRY_MODE)
 # Declaration cases imported and then completed by fixed original edits/ticks; never a release gate.
 DECLARATION_TICK_CASES=tuple(id for id in DECLARATION_CASES if TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==IMPORT_TICK_MODE)
-# A non-default profile CQT or period place: declaration import cases only (HtkkDeclarationWebImport.cs reads it), never a gate.
+# A non-default profile CQT or period place: declaration import cases, or the Z5 kê khai bổ sung lần 1 (every round's period dialog
+# goes through the same ConfigureDeclarationPeriod of HtkkDeclarationWebImport.cs, which reads it); never a gate.
 GEOGRAPHY_CASES=tuple(id for id,c in CASES.items() if not geography.is_default(c))
-check(all(id in DECLARATION_CASES and TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==IMPORT_MODE and not CASES[id]['releaseGate'] for id in GEOGRAPHY_CASES))
+GEOGRAPHY_KHBS_ADAPTERS=('01-gtgt-tt89-3.0.9-khbs',)
+check(all((id in DECLARATION_CASES and TRUSTED_ADAPTERS[CASES[id]['adapterId']]['mode']==IMPORT_MODE or id in NTNN_KHBS_CASES and CASES[id]['adapterId'] in GEOGRAPHY_KHBS_ADAPTERS) and not CASES[id]['releaseGate'] for id in GEOGRAPHY_CASES))
 check(all(geography.FIELDS[0] not in c and geography.FIELDS[1] not in c for id,c in CASES.items() if id not in GEOGRAPHY_CASES))
 check(set(t['mode'] for t in TRUSTED_ADAPTERS.values() if 'mode' in t)<={IMPORT_MODE,ENTRY_MODE,IMPORT_TICK_MODE})
 def input_mode(case):check(case in DECLARATION_CASES);return TRUSTED_ADAPTERS[CASES[case]['adapterId']]['mode']
