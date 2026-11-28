@@ -128,6 +128,20 @@ def _tree(case_id, native=False, created=None):
                         _add(table, leaf, value)
                 _add(_add(node, 'ChenhLech'), 'ct9', ct9)
                 continue
+            if case_id in d.GTGT01_TT89_PL012:  # 01/GTGT TT89 PL 01-2/GTGT: plants with their rows, then [13], [14] of the oracle
+                groups, ct13, ct14 = d.gtgt01_tt89_pl012_expected(case_id)
+                for g, (leaves, rows_) in enumerate(groups, 1):
+                    group = _add(node, 'TenNhaMay', attrib={'id': 'ID_%d' % g})
+                    for leaf in ('sTT', 'ten_nhaMay', 'ma_nhaMay'):
+                        _add(group, leaf, leaves[leaf])
+                    for k, row in enumerate(rows_, 1):
+                        row_ = _add(group, 'DiaBanPhanBo', attrib={'id': 'ID_%d' % k})
+                        for leaf, value in row.items():
+                            _add(row_, leaf, value)
+                    for leaf in ('ct10_a', 'ct11_a', 'ct12_a'):
+                        _add(group, leaf, leaves[leaf])
+                _add(node, 'ct13', ct13); _add(node, 'ct14', ct14)
+                continue
             if case_id in d.GTGT01_TT89_PL018:  # 01/GTGT TT89 PL 01-8/GTGT (5%): every oracle leaf, rows with their id attribute
                 for path, value in d.gtgt01_tt89_pl018_expected(case_id):
                     parent = node

@@ -56,7 +56,7 @@ def export_day_of(native, case_id):
 
 class Registry(unittest.TestCase):
     def test_one_case_per_form_all_candidates_with_own_driver_and_status(self):
-        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'D4', 'D4', 'D4', 'D4', 'Z3', 'Z3', 'Z3', 'Z3', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'X9', 'Y1', 'Y8', 'Y8', 'C9', 'D6', 'X9', 'Y1', 'Y8', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5'])
+        self.assertEqual([registry.CASES[c]['unit']['menuId'] for c in CASES], ['N8', 'A2', '78', 'L7', 'Z8', 'B9', 'U5', 'B8', 'I9', 'J1', 'Y8', 'D6', 'Y1', 'X9', 'C9', 'I9', 'Y8', 'J1', 'U5', 'U5', 'N8', 'N8', 'L7', 'Z8', 'B8', 'B8', 'B8', 'G7', 'G7', 'G7', 'G7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'Y7', 'D4', 'D4', 'D4', 'D4', 'Z3', 'Z3', 'Z3', 'Z3', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'X9', 'Y1', 'Y8', 'Y8', 'C9', 'D6', 'X9', 'Y1', 'Y8', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5', 'Z5'])
         self.assertEqual(set(CASES), set(d.CASES))
         self.assertEqual(len(registry.GATE_CASES), 13)
         for case in CASES:
@@ -340,10 +340,12 @@ class InputPrivacy(unittest.TestCase):
         # Z8 05/KK-TNCN TT89: the web manifest carries htkkVersion 5.8.2 (the registry case version); no other
         # declaration manifest may carry the key, and the Z8 manifest must.
         # 03/TNDN C7 rate 15% / 17% (HTKK 5.8.2 oracle): the web writes htkkVersion for these producer cases too.
-        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'01GTGT-TT89-pl018-xk-M10-2026', '01GTGT-TT89-pl018-gt-M10-2026', '01GTGT-TT89-pl018-5pct-M10-2026', '01GTGT-TT89-other-province-M10-2026', '05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '01GTGT-TT89-nq204-M12-2026', '01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '01GTGT-TT89-pl016-cssx-M10-2026', '01GTGT-TT89-pl016-cssx-ratio-M10-2026', '01GTGT-TT89-pl016-dtvt-M10-2026'}))
+        self.assertEqual(d.MANIFEST_HTKK_VERSION_CASES, frozenset({'01GTGT-TT89-pl012-M10-2026', '01GTGT-TT89-pl018-xk-M10-2026', '01GTGT-TT89-pl018-gt-M10-2026', '01GTGT-TT89-pl018-5pct-M10-2026', '01GTGT-TT89-other-province-M10-2026', '05KK-TT89-withheld-Q4-2026', '03TNDN-rate15-Y2025', '03TNDN-rate17-Y2025', '05KK-PBT-two-provinces-Q3-2026', '05KK-TT89-PBT-two-provinces-Q4-2026', '02QTT-refund-transfer-Y2025', '02QTT-dependants-Y2026', '02QTT-refund-transfer-Y2026', '01TTS-individual-one-contract-Y2025', '01TTS-individual-two-contracts-Y2025', '01TTS-organization-two-individuals-Q3-2026', '01TTS-organization-monthly-M10-2026', '04GTGT-TT80-one-group-M09-2026', '04GTGT-TT80-quarter-Q3-2026', '04GTGT-TT80-four-groups-rounding-M08-2026', '04GTGT-TT80-reduction-annex-Q2-2026', '04GTGT-TT89-one-group-M10-2026', '04GTGT-TT89-quarter-Q4-2026', '04GTGT-TT89-four-groups-rounding-M10-2026', '04GTGT-TT89-reduction-annex-M10-2026', '01GTGT-TT89-zero-M10-2026', '01GTGT-TT89-sale10-M10-2026', '01GTGT-TT89-quarter-Q4-2026', '01GTGT-TT89-no-activity-M11-2026', '01GTGT-TT89-full-M12-2026', '01GTGT-TT89-nq204-M12-2026', '01GTGT-TT89-full-M10-2026', '01GTGT-TT89-nq204-M10-2026', '02NTNN-TT89-two-annexes-to-07-10-2026', '04NTNN-TT89-one-subcontractor-to-07-10-2026', '01NTNN-NCCNN-entry-part-II1-M10-2026', '01NTNN-NCCNN-entry-part-II2-M10-2026', '02NTNN-TT80-two-annexes-to-06-10-2026', '04NTNN-TT80-one-subcontractor-to-06-10-2026', '02NTNN-TT89-two-annexes-from-01-06-2026', '04NTNN-TT89-one-subcontractor-from-01-06-2026', '01TCKT-310-hop-tac-kd-two-individuals-Q4-2026', '01TCKT-310-bds-three-lessors-M10-2026', '01TCKT-310-bds-occurrence-D15-10-2026', '01TCKT-310-pl-nq43-hop-tac-kd-Q4-2026', '01NTNN-NCCNN-entry-future-contract-M10-2026', '01GTGT-TT89-pl016-cssx-M10-2026', '01GTGT-TT89-pl016-cssx-ratio-M10-2026', '01GTGT-TT89-pl016-dtvt-M10-2026'}))
         # HTKK 5.8.3 observation cases (X9/Y1 to 07/10/2026, Y8 one part II table) name 5.8.3; every other one 5.8.2.
         for case in d.MANIFEST_HTKK_VERSION_CASES:
             if case in ('01GTGT-TT89-pl018-5pct-M10-2026', '01GTGT-TT89-pl018-xk-M10-2026', '01GTGT-TT89-pl018-gt-M10-2026'):  # Z5 PL 01-8/GTGT: htkk_web applies the 5.8.5 Header
+                self.assertEqual(registry.htkk_version(case), '5.8.5'); continue
+            if case == '01GTGT-TT89-pl012-M10-2026':  # Z5 PL 01-2/GTGT: same routines in 5.8.4 and 5.8.5, the case runs on 5.8.5
                 self.assertEqual(registry.htkk_version(case), '5.8.5'); continue
             if case.startswith('01GTGT-TT89-'):  # 01/GTGT TT89 (Z5) exists only in HTKK 5.8.4
                 self.assertEqual(registry.htkk_version(case), '5.8.4'); continue
@@ -381,6 +383,32 @@ class InputPrivacy(unittest.TestCase):
             self.assertEqual(registry.htkk_version(case), '5.8.5'); self.assertIs(registry.CASES[case]['releaseGate'], False)
         leaves = dict(d.gtgt01_tt89_pl018_expected('01GTGT-TT89-pl018-xk-M10-2026'))
         self.assertEqual([leaves['TTXacDinhHoan/%s/ct4' % n] for n in ('TyTrongDT_3', 'SoThueGTGT_9', 'ThueGTGTNoiDia_13', 'DoanhThuHH_14', 'SoThueGTGT_15')], ['100.00', '305000000', '300000000', '300000000', '300000000'])
+
+    def test_gtgt01_tt89_pl012_annex_is_the_independent_oracle(self):
+        # 01/GTGT TT89 PL 01-2/GTGT: plants (TenNhaMay) holding rows (DiaBanPhanBo); Z5's X44 = ROUND(U44 x AO44 / 100, 0), so [12] of
+        # 50% of 100.000.001 is 50.000.001 and [14] (130.000.002) is the sum of the rounded rows, one more than [13]. A changed amount,
+        # name or id, a row out of its plant, or the groups after ct13 is refused.
+        case = '01GTGT-TT89-pl012-M10-2026'; body = dfx.declaration_fixture(case)
+        self.assertEqual(reader.validate_web_xml(body, case_id=case)['leafCount'], 174)
+        groups, ct13, ct14 = d.gtgt01_tt89_pl012_expected(case)
+        self.assertEqual((ct13, ct14), ('130000001', '130000002'))
+        self.assertEqual([[r['ct12'] for r in rows] for _, rows in groups], [['50000001', '50000001'], ['9999000', '20001000']])
+        self.assertEqual([g['ct11_a'] for g, _ in groups], ['100.00', '100.00'])
+        self.assertEqual(groups[0][1][0]['tenLoai'], 'Nơi có văn phòng điều hành nhà máy')
+        self.assertEqual(groups[1][1][1]['ct09_cqt_ma'], '10300')
+        mutations = {
+            'row amount': (b'<ct12>50000001</ct12>', b'<ct12>50000000</ct12>'),
+            'total': (b'<ct14>130000002</ct14>', b'<ct14>130000001</ct14>'),
+            'ratio': (b'<ct11>33.33</ct11>', b'<ct11>33.34</ct11>'),
+            'type name': ('<tenLoai>Nơi có văn phòng điều hành nhà máy</tenLoai>'.encode(), '<tenLoai>Nơi có nhà máy thủy điện (khác nơi có văn phòng điều hành)</tenLoai>'.encode()),
+            'group id': (b'<TenNhaMay id="ID_2">', b'<TenNhaMay id="ID_3">'),
+        }
+        for name, (old, new) in mutations.items():
+            self.assertIn(old, body, name)
+            with self.subTest(name=name), self.assertRaises(reader.InputError):
+                reader.validate_web_xml(body.replace(old, new, 1), case_id=case)
+        self.assertIn('"01|P19|1"', plan_block(case)); self.assertIn('"01|P20|130000002"', plan_block(case)); self.assertIn('"01_2|AJ7|130000001"', plan_block(case))
+        self.assertEqual(registry.htkk_version(case), '5.8.5'); self.assertIs(registry.CASES[case]['releaseGate'], False)
 
     def test_gtgt01_tt89_pl018_annex_is_the_independent_oracle(self):
         # 01/GTGT TT89 PL 01-8/GTGT (5%): the bảng 1 period columns (SetPeriodInfoCustomColumns), the mục 3 formulas, tổng [11], the

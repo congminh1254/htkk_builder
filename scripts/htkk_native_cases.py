@@ -238,6 +238,9 @@ TRUSTED_ADAPTERS={
  # The xuất khẩu (Menu 01_8 = workbook 01_8_1) and giải thể (Menu 01_10 = workbook 01_8_3) sheets, the same driver and oracle.
  '01-gtgt-tt89-3.0.9-pl018-xk':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_8']),'htkkVersion':'5.8.5'},
  '01-gtgt-tt89-3.0.9-pl018-gt':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_10']),'htkkVersion':'5.8.5'},
+ # With PL 01-2/GTGT (Menu sheet 01_2, XML PLuc/PLuc_01_2_GTGT, ticked in the period dialog): the routines of the sheet are the same
+ # in HTKK 5.8.4 and 5.8.5; the case runs on 5.8.5. htkk_web gtgt01-tt89-pl012-m10-2026.
+ '01-gtgt-tt89-3.0.9-pl012':{**_declaration('Z5','3.0.9',{'month':('10/2026',)},['01_2']),'htkkVersion':'5.8.5'},
 }
 ADAPTERS={a['adapterId']:a for a in REGISTRY['adapters']}
 check(len(ADAPTERS)==len(REGISTRY['adapters']) and set(ADAPTERS)<=set(TRUSTED_ADAPTERS))
