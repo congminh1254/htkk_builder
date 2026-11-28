@@ -224,6 +224,9 @@ TRUSTED_ADAPTERS={
  # KHBS 01/GTGT TT89: Z5 without phụ lục, bổ sung lần 1 of tháng 10/2026, every round imported (the lần đầu as
  # 01GTGT-TT89-sale10-M10-2026). HTKK 5.8.4 only, like the lần đầu adapter.
  '01-gtgt-tt89-3.0.9-khbs':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':1,'htkkVersion':'5.8.4'},
+ # Bổ sung LẦN 2 of the same Z5 cases (amendmentOrder 2): the previous version (bổ sung lần 1 of an adapter-above case, byte for
+ # byte) is imported, summarised and saved before round 2; HTKK compares lần 2 with that saved bs1_ file. HTKK 5.8.4 only.
+ '01-gtgt-tt89-3.0.9-khbs-lan2':{'producer':GTGT01_TT89_KHBS_PRODUCER,'privacyValidator':'ntnn-khbs-v1','annexes':[],'driver':NTNN_KHBS_DRIVER,'menuId':'Z5','xmlVersion':'3.0.9','periods':{'month':('10/2026',)},'amendmentOrder':2,'htkkVersion':'5.8.4'},
  '01-gtgt-tt89-3.0.9-nq204':{**_declaration('Z5','3.0.9',{'month':('10/2026','12/2026')},['01_11']),'htkkVersion':'5.8.4'},
  # With PL 01-6/GTGT (CSSX: Menu sheet 01_6, ĐTVT: 01_6_2, ticked in the period dialog; XML PLuc/Pluc_01_6_GTGT_CSSX / _DVVT): XML
  # import → re-export (FinishImportXML runs TinhTongTheoTinhPl01_3 / TinhCot_17_21_Pl_01_6CSSX / TinhTongTheoTinhPl01_4). Column H

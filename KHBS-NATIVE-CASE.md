@@ -948,6 +948,27 @@ text shape 36 = native length 9, no prefix relation. `WinSpreadProcess.InsertNum
 the path, the [23] row's ct05), not a second problem. htkk_web now writes a negative ct04/ct05 of Z5 in parentheses; the decrease web
 pin changed (8204 bytes), the lần đầu and the increase file are unchanged, leaf targets unchanged.
 
+### Bổ sung lần 2 of Z5 (adapter `01-gtgt-tt89-3.0.9-khbs-lan2`, HTKK 5.8.4, `amendmentOrder` 2; observation cases)
+
+htkk_web keeps Z5 lần 2 hidden (`GTGT01_TT89_KHBS_LATER_RELEASED` false) until these two cases match. Its static reading of HTKK.exe 5.8.4
+and 5.8.5 (same IL after token normalisation, but for S8 added to another menu list): `WinDoWorkEvent.GetFileNameLoadKhbs` takes the D1
+branch for Z5 and, for a monthly main sheet, loads the lần đầu file when `SoLan` is 1 and the `bs<SoLan−1>_` file otherwise;
+`WinFnProcess.ReadSheet_LanTruoc` reads that file's main sheet, so lần 2 is compared with bổ sung lần 1, not with the lần đầu.
+`frmHTKKPeriod.CheckPeriodKhbs` (Z5 in its menu list) refuses lần N without that file (0296), as for D1. The two KHBS fragments of lần 1
+are not carried over (`CollectionStatic01_1_KHBS` compares the main sheet only).
+
+| Case | Files | Web leaf target (no TTinDVu) |
+| --- | --- | --- |
+| `01GTGT-TT89-khbs-lan2-increase-M10-2026` (on the increase lần 1: [32] 3tr → 5tr, [33] 300.000 → 500.000; nine rows, [40] ct04 300.000, ct7 +200.000) | original, prior (= the increase web file), web | 304 |
+| `01GTGT-TT89-khbs-lan2-decrease-M10-2026` (on the decrease lần 1: purchases halved; rows [23] [23a] [25] [36] [41] [43], no [40a] / [40] row since both lần have 0 there; [36] ct04 "(100.000)", tongCong_8 −100.000) | original, prior (= the decrease web file), web | 265 |
+
+Driver: the rounds of the I9 lần-2 case on the Z5 plan (`Gtgt01Tt89KhbsPlan`, leaf counts 308 / 269): round 0 imports and saves the
+lần đầu, round 1 imports `.web-prior.xml` with Bổ sung lần 1, runs "Tổng hợp KHBS" and saves (`bs1_`), round 2 opens Bổ sung lần 2
+(txtLan 2), imports the web file, runs "Tổng hợp KHBS", exports and compares the whole tree (no driver change; `KhbsSoLan` 2, step mask
+1791). Profile and period place are the defaults (`htkk_case_geography.py`). What only these runs decide: that the 01-1/KHBS ct04 of
+lần 2 is the lần 1 figure, that rows unchanged since lần 1 are left out, the first negative ct04 of Z5 ("(100.000)"; lần 1 had only a
+negative ct05), and 01/KHBS still at its default rows with no tiền chậm nộp.
+
 ## Case 25: negative amounts on 01-1/KHBS (non-gating; adapter `01-gtgt-2.8.3-khbs`, HTKK 5.8.2)
 
 `01GTGT-khbs-negative-zero-to-purchase-M10-2026` (htkk_web producer `khbs-negative-zero-to-purchase`): case 1's flow (the all-zero
