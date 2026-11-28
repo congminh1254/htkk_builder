@@ -595,12 +595,12 @@ public sealed partial class HtkkGuiReferenceAutomation {
   // Run 43827106248 (E30, code 18, open mask 3): F4 opened the list (bit 2) but the full editor guard failed while it was open
   // (bit 4 clear): the dropped list has the focus, not the grid. While the list is open only a narrower guard holds (cell
   // still active, HTKK window foreground in this process, no original message); the item is chosen in the open list by
-  // DOWN (one press per step from the current index) and committed by ENTER, which closes the list. If that ENTER also ends
-  // the cell edit (FpSpread handles it), the edit is complete when the cell shows the name and HTKK wrote the code.
+  // DOWN (one press per step from the current index) and committed by TAB (it was ENTER until the releases below left the list
+  // dropped); the edit is complete when the list is closed, the cell shows the name and HTKK wrote the code.
   // declarationTickComboOpenMask (0..65535): 1 F4 sent, 2 open after F4, 4 editor kept after F4, 8 ALT+DOWN sent, 16 open
   // after it, 32 editor kept after it, 64 item typed, 128 typed item selected, 256 no editor after an open key, 512 active
-  // cell moved, 1024 grid without focus, 2048 foreground not HTKK's window, 4096 original message, 8192 list-commit ENTER
-  // sent, 16384 planned item selected after it, 32768 list closed after it.
+  // cell moved, 1024 grid without focus, 2048 foreground not HTKK's window, 4096 original message, 8192 list-commit TAB
+  // sent, 16384 cell shows the name and HTKK wrote the code after it, 32768 list closed after it.
   bool committed=false;
   if(current<0&&current!=planned&&(mask&4)==0){
    mask|=32768|16384;listShown=true;declarationTickComboOpenMask=0;
@@ -620,20 +620,27 @@ public sealed partial class HtkkGuiReferenceAutomation {
     if((declarationTickComboOpenMask&(512|2048|4096))!=0){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
     int presses=planned-Convert.ToInt32(Get(vendor,"SelectedIndex"));
     for(int press=0;press<presses&&press<=list.Length;press++){SendKeys.SendWait("{DOWN}");Application.DoEvents();System.Threading.Thread.Sleep(30);}
-    declarationTickComboOpenMask|=8192;Record();SendKeys.SendWait("{ENTER}");Stopwatch closing=Stopwatch.StartNew();
+    // Releases 44036861361 .. 46123553622 (E30 done, E31 code 10): one second after the list ENTER, FpCombo still reported
+    // DroppedDown (open mask 25603, bit 32768 clear), and at E31 the guard found the grid without focus, Form.ActiveForm not the
+    // owner, a managed control outside the owner focused, and the editor's FpCombo dropped (guard mask 52744 = 8, 512, 1024,
+    // 2048, 16384, 32768): the popup list form kept the focus. FarPoint.Win.dll (5.8.2, fae1320c…4d2a): the popup ListBox
+    // KeyDown handler maps ENTER to ShowList(false) then OnItemSubmited (SpreadView.as: StopCellEditing when the cell type stops
+    // after a list pick, and StartCellEditing again under EditModePermanent), all inside that one key; its KeyUp handler maps TAB to
+    // ShowList(false), FpCombo.Focus() and the TAB resent, which FpCombo.ProcessDialogKey passes on to the grid. So the item is
+    // committed by TAB, FarPoint's own close-refocus-move route, and the edit counts only when the list is closed afterwards,
+    // the cell shows the name and HTKK wrote the code; a list still dropped stops the case here (code 18) instead of at the next
+    // edit. declarationTickComboOpenMask 8192 = list-commit TAB sent.
+    if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(15);return;}
+    declarationTickComboOpenMask|=8192;Record();SendKeys.SendWait("{TAB}");Stopwatch closing=Stopwatch.StartNew();
     while(Convert.ToBoolean(Get(vendor,"DroppedDown"))&&closing.Elapsed.TotalSeconds<1){Application.DoEvents();System.Threading.Thread.Sleep(10);}
     Application.DoEvents();
     if(!Convert.ToBoolean(Get(vendor,"DroppedDown")))declarationTickComboOpenMask|=32768;
     if(OriginalMessageVisible()){declarationTickComboOpenMask|=4096;DeclarationTickCombo(mask,list.Length);DeclarationTickFail(17);return;}
-    if(Get(grid,"EditingControl")!=null&&DeclarationEntryActive(sheet,row,column)&&DeclarationEntryGuard(grid)){
-     if(Convert.ToInt32(Get(vendor,"SelectedIndex"))==planned)declarationTickComboOpenMask|=16384;
-    }else{
-     // The ENTER also ended the edit: accepted when HTKK shows the name and wrote the code (read back below).
-     Stopwatch written=Stopwatch.StartNew();
-     while(CellText(sheet,code[0],code[1])!=parts[5]&&written.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
-     if(CellText(sheet,row,column)!=name||CellText(sheet,code[0],code[1])!=parts[5]){declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
-     declarationTickComboOpenMask|=16384;committed=true;
-    }
+    if((declarationTickComboOpenMask&32768)==0){declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    Stopwatch written=Stopwatch.StartNew();
+    while(CellText(sheet,code[0],code[1])!=parts[5]&&written.Elapsed.TotalSeconds<2){Application.DoEvents();System.Threading.Thread.Sleep(10);}
+    if(CellText(sheet,row,column)!=name||CellText(sheet,code[0],code[1])!=parts[5]){declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}
+    declarationTickComboOpenMask|=16384;committed=true;
     Record();
    }else{
     declarationTickComboOpenMask|=64;Record();SendKeys.SendWait(name);Stopwatch typing=Stopwatch.StartNew();

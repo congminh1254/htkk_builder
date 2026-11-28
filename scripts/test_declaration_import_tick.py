@@ -471,10 +471,20 @@ class ComboNothingSelected(unittest.TestCase):
         self.assertIn('if(dropped){declarationTickComboOpenMask|=openIndex==0?2:16;Record();break;}', block)
         self.assertLess(block.index('if(dropped){'), block.index('Get(grid,"EditingControl")==null||!DeclarationEntryGuard(grid)'))
         self.assertIn('if((declarationTickComboOpenMask&(512|2048|4096))!=0)', block)
-        self.assertIn('SendKeys.SendWait("{DOWN}")', block); self.assertIn('SendKeys.SendWait("{ENTER}")', block)
+        self.assertIn('SendKeys.SendWait("{DOWN}")', block)
         self.assertIn('SendKeys.SendWait(name)', block)
-        # An edit ended by the list ENTER counts only when HTKK shows the name and wrote the code.
-        self.assertIn('if(CellText(sheet,row,column)!=name||CellText(sheet,code[0],code[1])!=parts[5])', block)
+        # Releases 44036861361 .. 46123553622 (E31 code 10, guard mask 52744): the list ENTER left the FpCombo list dropped and
+        # focused. The open list is committed by TAB (FarPoint's ListBox KeyUp: ShowList(false), Focus, TAB resent), never ENTER.
+        self.assertNotIn('SendKeys.SendWait("{ENTER}")', block)
+        tab = block.index('declarationTickComboOpenMask|=8192;Record();SendKeys.SendWait("{TAB}");')
+        self.assertLess(block.index('if(Convert.ToInt32(Get(vendor,"SelectedIndex"))!=planned){DeclarationTickCombo(mask,list.Length);DeclarationTickFail(15);return;}'), tab)
+        # The edit counts only when the list closed, then HTKK shows the name and wrote the code.
+        closed = block.index('if((declarationTickComboOpenMask&32768)==0){declarationTickComboOpenMask|=DeclarationComboOpenState(grid,sheet,row,column);DeclarationTickCombo(mask,list.Length);DeclarationTickFail(18);return;}')
+        readback = block.index('if(CellText(sheet,row,column)!=name||CellText(sheet,code[0],code[1])!=parts[5])')
+        self.assertLess(tab, closed); self.assertLess(closed, readback)
+        self.assertLess(readback, block.index('declarationTickComboOpenMask|=16384;committed=true;'))
+        # The full editor guard is not applied while the list holds the focus (run 43827106248).
+        self.assertNotIn('DeclarationEntryGuard(', block[block.index('if(Convert.ToBoolean(Get(vendor,"DroppedDown"))){'):block.index('declarationTickComboOpenMask|=16384;committed=true;')])
         self.assertIn('if(!committed){', body)
         self.assertIn('"declarationTickComboOpenMask"', ENTRY)
         self.assertEqual(automation['resultFields']['declarationTickComboOpenMask']['maximum'], 65535)
@@ -490,7 +500,7 @@ class ComboGuardAfterPreviousEdit(unittest.TestCase):
         guard = body.index('if(!DeclarationEntryActive(sheet,row,column)||!DeclarationTickComboGuard(grid)){DeclarationTickFail(10);return;}')
         self.assertLess(entry, guard); self.assertLess(guard, body.index('DeclarationComboCellItems(Cell(sheet,row,column)'))
         self.assertNotIn('if(!DeclarationEntryActive(sheet,row,column)||!DeclarationEntryGuard(grid)){DeclarationTickFail(10);return;}', body)
-        # The previous combo's list state after its commit (TAB or list ENTER), read only.
+        # The previous combo's list state after its commit (TAB, or the list TAB of an open catalogue list), read only.
         self.assertLess(body.index('if(!committed){'), body.index('declarationTickPreviousListDropped=Convert.ToBoolean(Get(vendor,"DroppedDown"));'))
         helper = CODE[CODE.index('private bool DeclarationTickComboGuard('):CODE.index('private void DeclarationTickCombo(')]
         # The full original guard decides; one grid.Focus() only when the grid focus is the sole missing part and the owner is active.

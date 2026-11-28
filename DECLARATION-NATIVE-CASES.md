@@ -833,6 +833,24 @@ có 8 mà thiếu 64 (form đang hoạt động không phải owner) hoặc có 
 cần đóng danh sách trước khi xác nhận ô; có 16 thì foreground đã ra ngoài tiến trình HTKK; có 32 thì HTKK hiện thông báo sau khi chọn thuế suất (đọc `importRejectedMessageId` và các mã thông
 báo).
 
+**Các run sau 865449b** (45908382036 lần 3 job 140622324642, 46072846913 builder 7946282, 46123553622 builder d2f7dcd; cả ba
+giống hệt nhau): vẫn mã 10 ở E31, kế hoạch 5 thao tác, làm được 1, `declarationTickMismatchMask` 0, `declarationTickLockShape` 0
+và `declarationTickRefreshMask` 0 (không có ô tích nào; không phải khóa của HTKK như `01CNKD-PL01-khbs` ở KHBS-NATIVE-CASE.md).
+Combo mask 54251 và open mask 25603 như trên (E30 xong, danh sách không đóng sau ENTER). `declarationTickGuardMask` 52744 = 8, 512,
+1024, 2048, 16384, 32768: lưới không có focus, `Form.ActiveForm` không phải owner (thiếu 64), focus ở một control managed ngoài owner
+(thiếu 128 và 256), editor của E31 có FpCombo báo `DroppedDown` (1024), FpCombo của E30 vẫn báo `DroppedDown` sau khi xác nhận
+(2048); không có 4096 nên không focus lại (đúng quy tắc: phần hỏng không chỉ là focus của lưới). Đúng nhánh "danh sách thả xuống
+còn giữ focus" ở trên: lỗi ở driver, không phải web xuất sai hay HTKK khóa.
+
+Đọc tĩnh FarPoint.Win.dll (5.8.2, `fae1320c…4d2a`, giống 5.8.1): danh sách là một `Form` riêng chứa `ListBox`; handler KeyDown
+của ListBox với ENTER gọi `ShowList(false)` rồi `OnItemSubmited` (SpreadView `as`: `StopCellEditing` khi kiểu ô dừng sau khi chọn,
+`StartCellEditing` lại khi `EditModePermanent`) ngay trong phím đó; handler KeyUp với TAB gọi `ShowList(false)`, `Focus()` FpCombo
+rồi gửi lại TAB, mà `FpCombo.ProcessDialogKey` chuyển cho lưới. Sửa (nhánh `work/gtgt04-reduction`): trong danh sách đang mở, sau
+DOWN, kiểm mục đã chọn (mã 15 nếu sai) rồi xác nhận bằng TAB thay ENTER; chỉ tính thao tác khi danh sách đã đóng (bit 32768), ô
+hiện tên và HTKK ghi mã; danh sách còn mở thì dừng ngay ở thao tác đó, mã 18 (kèm trạng thái `DeclarationComboOpenState`), thay vì
+mã 10 ở thao tác sau. Open mask 8192 nay là "TAB xác nhận đã gửi", 16384 là "ô hiện tên và có mã". Chỉ nhánh danh sách mục lục bị
+xóa sau nhập (Z3 PL 01-1) đi qua đây; 05-1/PBT và U5 không đổi. Cần chạy lại ca này trên HTKK 5.8.2 để xác nhận.
+
 ## HTKK 5.8.3 — bốn ca quan sát, không chặn phát hành (`htkkVersion` 5.8.3)
 
 Theo `HTKK-5.8.3-IMPACT.md` §3. Nhà sản xuất `htkk_web` nhánh `work/htkk-583-phase2` (thiết kế trong
