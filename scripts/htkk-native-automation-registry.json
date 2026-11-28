@@ -2044,8 +2044,7 @@
     "declarationAnnex12TableShape",
     "declarationAnnex12HeaderMask",
     "declarationAnnex12CellZeroMask",
-    "declarationAnnex12TotalMask",
-    "declarationAnnex12ProbeMask"
+    "declarationAnnex12TotalMask"
   ],
   "controlKinds": [
     "form",
@@ -4881,16 +4880,6 @@
       "default": 0,
       "minimum": 0,
       "maximum": 8191,
-      "activeModes": [
-        "declaration-web-import-inspect",
-        "declaration-amendment-khbs-inspect"
-      ]
-    },
-    "declarationAnnex12ProbeMask": {
-      "kind": "integer",
-      "default": 0,
-      "minimum": 0,
-      "maximum": 4095,
       "activeModes": [
         "declaration-web-import-inspect",
         "declaration-amendment-khbs-inspect"

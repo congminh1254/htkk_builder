@@ -407,7 +407,10 @@ class InputPrivacy(unittest.TestCase):
             self.assertIn(old, body, name)
             with self.subTest(name=name), self.assertRaises(reader.InputError):
                 reader.validate_web_xml(body.replace(old, new, 1), case_id=case)
-        self.assertIn('"01|P19|1"', plan_block(case)); self.assertIn('"01|P20|130000002"', plan_block(case)); self.assertIn('"01_2|AJ7|130000001"', plan_block(case))
+        self.assertIn('"01|P19|1"', plan_block(case))
+        # After the original import P20 / U20 / 01_2!AJ7 keep 0 (runs 46107139838, 46112620593); [13] / [14] are the re-exported leaves.
+        self.assertIn('"01|P20|0","01|U20|0"', plan_block(case)); self.assertIn('"01_2|AJ7|0"', plan_block(case))
+        self.assertIn(b'<ct13>130000001</ct13><ct14>130000002</ct14>', body)
         self.assertEqual(registry.htkk_version(case), '5.8.5'); self.assertIs(registry.CASES[case]['releaseGate'], False)
 
     def test_gtgt01_tt89_pl018_annex_is_the_independent_oracle(self):

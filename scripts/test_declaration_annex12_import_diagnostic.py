@@ -1,7 +1,7 @@
 """Z5 PL 01-2/GTGT import diagnostic (01GTGT-TT89-pl012-M10-2026, run 46107139838: declarationCellZeroMask 70).
 
-Value-free masks of the 01-2 sheet after the original import and, only after the case has already failed, one bounded probe of
-whether an original edit of a plant's [10] recomputes [13] / [14]. Neither changes what the case needs to pass.
+Value-free masks of the 01-2 sheet after the original import; they never change what the case needs to pass. The post-failure edit
+probe of run 46112620593 re-entered the import phase through SendKeys' message pumping (no declarationEntryBusy guard) and is gone.
 """
 import json
 import pathlib
@@ -13,7 +13,7 @@ DRIVER = (ROOT / 'HtkkDeclarationWebImport.cs').read_text(encoding='utf-8')
 PLANS = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
 REGISTRY = json.loads((ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8'))
 FIELDS = {'declarationAnnex12ImportPathMask': 63, 'declarationAnnex12TableShape': 65535, 'declarationAnnex12HeaderMask': 4095,
-          'declarationAnnex12CellZeroMask': 16777215, 'declarationAnnex12TotalMask': 8191, 'declarationAnnex12ProbeMask': 4095}
+          'declarationAnnex12CellZeroMask': 16777215, 'declarationAnnex12TotalMask': 8191}
 
 
 def method(name):
@@ -48,33 +48,20 @@ class Annex12ImportDiagnostic(unittest.TestCase):
         grid = method('private bool InspectDeclarationGrid(){')
         self.assertIn('bool matched=declarationCellMismatchMask==0&&declarationCellCheckCount==checks.Length;\n  if(DeclarationAnnex12Case())InspectDeclarationAnnex12(grids[0]);\n  return matched;', grid)
         inspect = method('private void InspectDeclarationAnnex12(Control grid){')
-        probe = method('private void ProbeDeclarationAnnex12Recompute(){')
-        for body in (inspect, probe):
-            for name in ('declarationCellMismatchMask', 'declarationCellCheckCount', 'declarationImportSheetMatched', 'roundtripImportSheetMatched', 'DeclarationTerminal', 'SetStage('):
-                self.assertNotIn(name, body)
+        for name in ('declarationCellMismatchMask', 'declarationCellCheckCount', 'declarationImportSheetMatched', 'roundtripImportSheetMatched', 'DeclarationTerminal', 'SetStage('):
+            self.assertNotIn(name, inspect)
         # Every read is guarded: a failed read is a bit, never an exception of the run.
         self.assertIn('}catch(Exception){total|=4096;}', inspect)
-        self.assertIn('}catch(Exception){mask|=32;}', probe)
 
-    def test_the_probe_runs_only_after_the_case_failed_and_ends_it(self):
-        self.assertEqual(DRIVER.count('ProbeDeclarationAnnex12Recompute();'), 1)
-        self.assertIn('if(!declarationImportSheetMatched&&declarationClock.Elapsed.TotalSeconds<3)return;\n   if(!declarationImportSheetMatched){if(DeclarationAnnex12Case()&&!DeclarationKhbsMode())ProbeDeclarationAnnex12Recompute();DeclarationTerminal(HtkkAutomationStage.DeclarationImportSheetNotMatched);return;}', DRIVER)
-
-    def test_the_probe_edits_only_plant_1_amount_through_the_original_editor(self):
-        probe = method('private void ProbeDeclarationAnnex12Recompute(){')
-        self.assertIn('Control grid;object sheet=DeclarationTickSheet("01_2",out grid);', probe)
-        self.assertIn('DataLocationTemplateRowStart"))-2,column=Annex12ColumnT;', probe)
-        self.assertIn('if(DeclarationTickActivate(grid,sheet)!=0)', probe)
-        self.assertIn('Control editor=HtkkNativeUiHarness.BeginCellEdit(grid,sheet,row,column,true);', probe)
-        self.assertIn('SendKeys.SendWait("^a");SendKeys.SendWait(texts[step]);SendKeys.SendWait("{TAB}");HtkkNativeUiHarness.CommitCellEdit(grid);', probe)
-        self.assertIn('string[] texts=new string[]{"0",shown};', probe)
-        # The typed amount is the cell's own whole number in invariant digits, never the shown text with separators.
-        self.assertIn('string shown=original.ToString("0",CultureInfo.InvariantCulture);', probe)
-        self.assertIn('if(OriginalMessageVisible()){mask|=16;break;}', probe)
-        # No cell value is assigned directly and no business routine is called.
-        for forbidden in ('"Value",', 'set_Value', 'TinhLaiTongCot10_12_PL01_2(', 'Invoke(', 'SetValue('):
-            self.assertNotIn(forbidden, probe)
-        self.assertEqual(probe.count('SendKeys.SendWait(texts[step])'), 1)
+    def test_no_edit_is_made_after_the_import(self):
+        # The diagnostic reads only: no original editor, key, tab click or cell write, and the failure branch is the plain one.
+        self.assertNotIn('ProbeDeclarationAnnex12Recompute', DRIVER)
+        self.assertNotIn('declarationAnnex12ProbeMask', DRIVER)
+        self.assertNotIn('declarationAnnex12ProbeMask', REGISTRY['keys'])
+        inspect = method('private void InspectDeclarationAnnex12(Control grid){')
+        for forbidden in ('SendKeys', 'BeginCellEdit', 'DeclarationTickActivate', 'DeclarationEntrySelect', 'set_Value', 'SetValue(', 'Invoke('):
+            self.assertNotIn(forbidden, inspect)
+        self.assertIn('if(!declarationImportSheetMatched&&declarationClock.Elapsed.TotalSeconds<3)return;\n   if(!declarationImportSheetMatched){DeclarationTerminal(HtkkAutomationStage.DeclarationImportSheetNotMatched);return;}', DRIVER)
 
     def test_cell_positions_match_the_pinned_sheet(self):
         self.assertIn('Annex12ColumnB=1,Annex12ColumnC=2,Annex12ColumnT=19,Annex12ColumnU=20,Annex12ColumnX=23,Annex12ColumnAG=32,Annex12ColumnAO=40;', DRIVER)

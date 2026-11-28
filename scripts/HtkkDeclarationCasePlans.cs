@@ -998,15 +998,20 @@ internal static class HtkkDeclarationCasePlans {
     new string[]{"01|X19|1","01|L81|305000000","01|L82|300000000","01|L83|5000000","01_8_3|AF47|300000000","01_8_3|AI128|305000000","01_8_3|N359|300000000"},
     new string[]{Main+"ct21|0",Main+"ct22|0",Main+"GiaTriVaThueGTGTHHDVMuaVao/ct23|3050000000",Main+"GiaTriVaThueGTGTHHDVMuaVao/ct24|305000000",Main+"ct25|305000000",Main+"ct26|0",Main+"HHDVBRaChiuThueGTGT/ct27|0",Main+"HHDVBRaChiuThueGTGT/ct28|0",Main+"ct29|0",Main+"HHDVBRaChiuTSuat5/ct30|0",Main+"HHDVBRaChiuTSuat5/ct31|0",Main+"HHDVBRaChiuTSuat10/ct32|0",Main+"HHDVBRaChiuTSuat10/ct33|0",Main+"ct32a|0",Main+"ct32b|0",Main+"ct34a|0",Main+"TongDThuVaThueGTGTHHDVBRa/ct34|0",Main+"TongDThuVaThueGTGTHHDVBRa/ct35|0",Main+"ct37|0",Main+"ct38|0",Main+"ct40a|0",Main+"ct40|0",Main+"ct41|305000000",Main+"ct43|5000000"});
    // PL 01-2/GTGT (Menu sheet 01_2 = workbook 01_2, ticked "01-2/GTGT" in the period dialog; XML PLuc/PLuc_01_2_GTGT): two plants
-   // (TenNhaMay) of two rows each (DiaBanPhanBo). P19 = 1 (SetCoPhuLucHayKhong), P20 = IF(P19=1, 01_2!X46) = [14], U20 = P20 (Header
-   // B78 <= [40]); 01_2!AJ7 = T46 = [13] (row 7, above the table). FinishImportXML runs SetLaiDongCon (T -> AO, J -> AP) and
-   // TinhLaiTongCot10_12_PL01_2; X44 = ROUND(U44 x AO44 / 100, 0) on every row. Columns P and R are hidden: nothing to choose again.
-   // 104 + 70 annex leaves.
+   // (TenNhaMay) of two rows each (DiaBanPhanBo). P19 = 1 (SetCoPhuLucHayKhong). FinishImportXML runs SetLaiDongCon (T -> AO,
+   // J -> AP) and TinhLaiTongCot10_12_PL01_2, which writes [13] and [14] into the ct13 / ct14 static cells; X44 = ROUND(U44 x AO44 /
+   // 100, 0) on every row. Columns P and R are hidden: nothing to choose again. 104 + 70 annex leaves.
+   // The workbook formulas P20 = IF(P19=1, 01_2!X46) (= [14]), U20 = P20 + R20 + S20 and 01_2!AJ7 = T46 (= [13]) read 0 after the
+   // original import: run 46107139838 (import only, declarationCellZeroMask 70 after the bounded wait) and run 46112620593, where
+   // an original edit of plant 1's [10] then ran CellChange_1 -> TinhLaiTongCot10_12_PL01_2: the ct13 / ct14 cells, below the
+   // imported rows, equalled the sums of the sheet (declarationAnnex12TotalMask 256 | 512 | 16) while the three formulas still read 0
+   // and do not name those cells (bits 32 / 64 clear). The import adds the rows without moving the references, so HTKK applies no
+   // B66 / B78 to an imported 01-2; the totals themselves are decided by the re-export (leaves ct13 / ct14 of the whole tree).
    case "01GTGT-TT89-pl012-M10-2026":return new HtkkDeclarationCasePlan(caseId,"Z5","3.0.9","2032","Gtgt01TT89Nckt309",new string[]{"101","101_1","Z5"},"month","19","2026","10","01/10/2026","31/10/2026",false,
     new string[]{"01-2/GTGT"},new string[]{"01|Tờ khai","01_2|01-2/GTGT"},
     "InterfaceTemplates/excel/01_GTGT_TT89_309.xls","5370eb12c05cc2770e85ccc1bee7e6a7dc6138065f4c0fc4e0a418d3d9ee4585","InterfaceTemplates/xml/01_GTGT_TT89_309.xml","ba96834481a4b5b8a1c803572d10fafb669538402ed06f80a504c3212488638a",
     "Validate/01_GTGT_TT89_309.xsd","8481f7c98ca9e008742552bda4f7ecc814cb91d453584b179fdf2d7767d9da19",TKhaiThueDbhc,TKhaiThueDbhcSha256,WorkbookService,174,
-    new string[]{"01|P19|1","01|P20|130000002","01|U20|130000002","01|J58|2000000000","01|L58|200000000","01|L80|200000000","01_2|AJ7|130000001"},
+    new string[]{"01|P19|1","01|P20|0","01|U20|0","01|J58|2000000000","01|L58|200000000","01|L80|200000000","01_2|AJ7|0"},
     new string[]{Main+"ct21|0",Main+"ct22|0",Main+"GiaTriVaThueGTGTHHDVMuaVao/ct23|0",Main+"GiaTriVaThueGTGTHHDVMuaVao/ct24|0",Main+"ct25|0",Main+"ct26|0",Main+"HHDVBRaChiuThueGTGT/ct27|2000000000",Main+"HHDVBRaChiuThueGTGT/ct28|200000000",Main+"ct29|0",Main+"HHDVBRaChiuTSuat5/ct30|0",Main+"HHDVBRaChiuTSuat5/ct31|0",Main+"HHDVBRaChiuTSuat10/ct32|2000000000",Main+"HHDVBRaChiuTSuat10/ct33|200000000",Main+"ct32a|0",Main+"ct32b|0",Main+"ct34a|0",Main+"TongDThuVaThueGTGTHHDVBRa/ct34|2000000000",Main+"TongDThuVaThueGTGTHHDVBRa/ct35|200000000",Main+"ct37|0",Main+"ct38|0",Main+"ct40a|200000000",Main+"ct40|200000000",Main+"ct41|0",Main+"ct43|0"});
    default:return null;
   }

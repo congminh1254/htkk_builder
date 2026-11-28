@@ -925,9 +925,19 @@ khác ở Z5: X44 = ROUND(U44 × AO44 / 100, 0) (D1 không làm tròn) nên [14]
 lá `tenLoai` (tên DC_01) và `maLoai` thay `loai`, không còn `ct07_huyen_*`; cột P, R ẩn; CQT quản lý (control 9) theo
 `loadCqtCapChiCucTheoDiaBanXa(mã xã)`. Hàm của sheet giống nhau ở 5.8.4 và 5.8.5; ca chạy trên 5.8.5. Oracle độc lập `GTGT01_TT89_PL012` /
 `gtgt01_tt89_pl012_expected` (Decimal, làm tròn nửa xa số 0): [12] từng dòng, [11] của nhà máy hai chữ số, [10] dòng và [12] nhà máy 0,
-[13], [14]; nhóm đứng trước `ct13`, `ct14` (`InsertExportTableNode`, nhánh D1/Z5). Kiểm ô: 01 P19, P20, U20, J58, L58, L80 và 01_2 AJ7
-(= T46, dòng 7 nằm trên bảng nên không đổi chỗ khi chèn dòng). Hộp kỳ tích phụ lục "01-2/GTGT". Câu hỏi: kết xuất lại có giữ [12]
-50.000.001 (ROUND) và [14] 130.000.002 không; nhập XML có giữ CQT cấp cục 10300 của dòng 2.2 không.
+[13], [14]; nhóm đứng trước `ct13`, `ct14` (`InsertExportTableNode`, nhánh D1/Z5). Kiểm ô: 01 P19 = 1, J58, L58, L80; 01 P20, U20 và
+01_2 AJ7 = 0. Hộp kỳ tích phụ lục "01-2/GTGT". Câu hỏi: kết xuất lại có giữ [12] 50.000.001 (ROUND) và [14] 130.000.002 không; nhập
+XML có giữ CQT cấp cục 10300 của dòng 2.2 không.
+
+Sau khi HTKK nhập XML, ba ô công thức P20 = IF(P19=1, 01_2!X46), U20 = P20 + R20 + S20 và 01_2!AJ7 = T46 vẫn là 0 (run 46107139838:
+`declarationCellZeroMask` 70 sau thời gian chờ có giới hạn). Run 46112620593 có chẩn đoán không giá trị (`declarationAnnex12*`): nhánh
+nhập thường (`TaiDuLieuRatLon` khác "1", mask 45), hai nhà máy hai dòng (290), dòng nhà máy đúng là dòng các hàm tổng đọc (63), AG mọi
+dòng và X = ROUND(U × AO / 100) mọi dòng; ô ct13/ct14 nằm dưới các dòng đã nhập và bằng tổng của sheet (3987: bit 256, 512, 16),
+còn AJ7 và P20 không trỏ tới chúng (bit 32, 64 tắt) và vẫn 0. Mặt nạ ô của run này lấy sau một lần sửa gốc [10] của nhà máy 1 thành 0
+(probe sau lỗi, thiếu khóa `declarationEntryBusy` nên chạy lại pha nhập qua vòng thông điệp của SendKeys; đã bỏ): HTKK tính lại
+[13]/[14] đúng (CellChange_1, nhánh T) nhưng ba ô công thức vẫn 0. Vậy khi nhập, HTKK chèn dòng mà không dời tham chiếu của AJ7/P20: kế
+hoạch kiểm 0 ở ba ô đó như HTKK, còn [13]/[14] do so cả cây bản kết xuất lại (lá ct13, ct14) quyết định. HTKK không áp B66/B78 cho
+01-2 vừa nhập; ứng dụng vẫn áp như khi nhập phụ lục trên HTKK.
 
 Ca hoạt động khác tỉnh (htkk_web `lib/htkk-gtgt01-tt89-other-province.ts`, nguồn ghim ở `data/htkk-01-gtgt-tt89-other-province-contract.json`):
 `Gtgt01TT89Nckt309.AutoBindData_0` gọi `GeneralFunctions.ThayDoiTinhTheoCQT2Cap`; khi `maTinhNNT` của hồ sơ (`GetHeaderInfo`, HEADER.xml)
