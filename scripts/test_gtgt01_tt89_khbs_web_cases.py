@@ -24,17 +24,22 @@ support = load('ntnn_khbs_test_support_gtgt01_tt89', 'ntnn_khbs_test_support.py'
 sm = support.pin(load('htkk_ntnn_khbs_web_cases_gtgt01_tt89_pinned', 'htkk_ntnn_khbs_web_cases.py'))
 registry = load('htkk_native_cases_gtgt01_tt89', 'htkk_native_cases.py')
 INCREASE, DECREASE = '01GTGT-TT89-khbs-increase-M10-2026', '01GTGT-TT89-khbs-decrease-M10-2026'
-CASES = (INCREASE, DECREASE)
+LAN2_INCREASE, LAN2_DECREASE = '01GTGT-TT89-khbs-lan2-increase-M10-2026', '01GTGT-TT89-khbs-lan2-decrease-M10-2026'
+LAN1 = (INCREASE, DECREASE)
+LAN2 = (LAN2_INCREASE, LAN2_DECREASE)
+CASES = LAN1 + LAN2
+PRIOR_OF = {LAN2_INCREASE: INCREASE, LAN2_DECREASE: DECREASE}
 
 
 def manifest(case_id, module):
     c = module.CASES[case_id]
+    prior = {'priorBytes': c['prior'][0], 'priorXmlSha256': c['prior'][1]} if c['prior'] else {}
     return dict(module.manifest_fields(case_id), sourceCommit='0' * 40, producerSha256='1' * 64, bytes=c['web'][0], xmlSha256=c['web'][1],
-                originalBytes=c['original'][0], originalXmlSha256=c['original'][1])
+                originalBytes=c['original'][0], originalXmlSha256=c['original'][1], **prior)
 
 
 class Gtgt01Tt89KhbsWebCases(unittest.TestCase):
-    def test_two_cases_merged_with_their_own_producer_menu_period_and_oracle(self):
+    def test_four_cases_merged_with_their_own_producer_menu_period_and_oracle(self):
         self.assertEqual(m.GTGT01_TT89_CASES, CASES)
         self.assertEqual(set(z5.CASES), set(CASES))
         self.assertFalse((set(m.NTNN_CASES) | set(m.KK05_CASES) | set(m.CNKD_CASES) | set(m.QTT02_CASES) | set(m.QTT05_CASES) | set(m.TNDN03_CASES) | set(m.NTNN03_CASES) | set(m.TCKT01_CASES)) & set(CASES))
@@ -45,19 +50,28 @@ class Gtgt01Tt89KhbsWebCases(unittest.TestCase):
             self.assertEqual(m.producer(case_id), 'scripts/generate-htkk-web-gtgt01-tt89-khbs-reference.mjs')
             self.assertEqual(m.manifest_fields(case_id)['exporter'], 'lib/htkk-gtgt01-tt89-khbs.ts')
             self.assertEqual(m.manifest_fields(case_id)['htkkVersion'], '5.8.4')
-            self.assertEqual(m.names(case_id), (m.ORIGINAL_NAME, m.WEB_NAME, m.MANIFEST_NAME))
             self.assertEqual(m.input_mode(case_id), 'khbs-web-xml-import-reexport')
-            self.assertEqual((c['annexParts'], c['khbsParts'], c['soLan'], c['prior']), ((), ('PL01_KHBS', 'PL01_1_KHBS'), 1, None))
+            if case_id in LAN1:
+                self.assertEqual(m.names(case_id), (m.ORIGINAL_NAME, m.WEB_NAME, m.MANIFEST_NAME))
+                self.assertEqual((c['annexParts'], c['khbsParts'], c['soLan'], c['prior']), ((), ('PL01_KHBS', 'PL01_1_KHBS'), 1, None))
+            else:
+                # Lần 2: the previous version is the lần 1 web file of the case it builds on, byte for byte.
+                self.assertEqual(m.names(case_id), (m.ORIGINAL_NAME, m.PRIOR_NAME, m.WEB_NAME, m.MANIFEST_NAME))
+                self.assertEqual((c['annexParts'], c['khbsParts'], c['soLan'], c['prior']), ((), ('PL01_KHBS', 'PL01_1_KHBS'), 2, m.CASES[PRIOR_OF[case_id]]['web']))
             self.assertTrue(m.khbs_summary(case_id))
             self.assertEqual(m.validate_manifest(manifest(case_id, m))['caseId'], case_id)
             self.assertEqual(set(c['expected']), {'rows', 'subitems', 'tongCong7', 'tongCong8', 'ct10', 'ct3a_1', 'ct3a_2', 'ct3b'})
             # The web reading: no tiểu mục on [40] / [43] (MapMCT_TieuMuc path_1 has no Z5 cell), so Muc_I.1 / Muc_II stay empty.
             self.assertEqual((c['expected']['subitems'], c['expected']['ct10'], c['expected']['ct3a_1'], c['expected']['ct3a_2'], c['expected']['ct3b']), ([], '0', '', '0', '0'))
-        self.assertEqual(m.CASES[INCREASE]['original'], m.CASES[DECREASE]['original'])
+        self.assertEqual({m.CASES[c]['original'] for c in CASES}, {m.CASES[INCREASE]['original']})
         self.assertEqual(m.CASES[INCREASE]['expected']['rows'][-1], '[40]')
         self.assertEqual(m.CASES[DECREASE]['expected']['rows'], ['[23]', '[23a]', '[25]', '[36]', '[40a]', '[40]', '[41]', '[43]'])
         self.assertEqual((m.CASES[DECREASE]['expected']['tongCong7'], m.CASES[DECREASE]['expected']['tongCong8']), ('-100000', '100000'))
-        self.assertEqual([m.tax_leaf_count(c) for c in CASES], [304, 291])
+        self.assertEqual([m.tax_leaf_count(c) for c in CASES], [304, 291, 304, 265])
+        # Lần 2 is compared with lần 1 (GetFileNameLoadKhbs bs<N-1>): no [40a] / [40] row when both lần have 0 there.
+        self.assertEqual(m.CASES[LAN2_INCREASE]['expected']['rows'], m.CASES[INCREASE]['expected']['rows'])
+        self.assertEqual(m.CASES[LAN2_DECREASE]['expected']['rows'], ['[23]', '[23a]', '[25]', '[36]', '[41]', '[43]'])
+        self.assertEqual((m.CASES[LAN2_DECREASE]['expected']['tongCong7'], m.CASES[LAN2_DECREASE]['expected']['tongCong8']), ('0', '-100000'))
 
     def test_another_oracle_in_the_manifest_is_refused(self):
         value = manifest(INCREASE, m)
@@ -75,9 +89,12 @@ class Gtgt01Tt89KhbsWebCases(unittest.TestCase):
             self.assertNotIn('notBefore', row)
             self.assertEqual(registry.htkk_version(case_id), '5.8.4')
             self.assertEqual(registry.driver(case_id), 'declaration-amendment-khbs-inspect')
-            self.assertEqual(row['adapterId'], '01-gtgt-tt89-3.0.9-khbs')
+            lan2 = case_id in LAN2
+            self.assertEqual(row['adapterId'], '01-gtgt-tt89-3.0.9-khbs-lan2' if lan2 else '01-gtgt-tt89-3.0.9-khbs')
             self.assertEqual(row['format'], m.manifest_fields(case_id)['format'])
-            self.assertEqual(row['unit'], {'menuId': 'Z5', 'adapterVersion': '3.0.9', 'periodType': 'month', 'periodValue': '10/2026', 'activityCode': '00', 'annexes': [], 'amendmentOrder': 1})
+            self.assertEqual(row['unit'], {'menuId': 'Z5', 'adapterVersion': '3.0.9', 'periodType': 'month', 'periodValue': '10/2026', 'activityCode': '00', 'annexes': [], 'amendmentOrder': 2 if lan2 else 1})
+        self.assertEqual(registry.TRUSTED_ADAPTERS['01-gtgt-tt89-3.0.9-khbs-lan2']['htkkVersion'], '5.8.4')
+        self.assertEqual(registry.TRUSTED_ADAPTERS['01-gtgt-tt89-3.0.9-khbs-lan2']['amendmentOrder'], 2)
         self.assertTrue(set(CASES) <= set(registry.NTNN_KHBS_CASES))
         self.assertFalse(set(CASES) & set(registry.NTNN_KHBS_NO_SUMMARY_CASES))
         self.assertFalse(set(CASES) & set(registry.NTNN_KHBS_TICK_CASES))
@@ -91,6 +108,13 @@ class Gtgt01Tt89KhbsWebCases(unittest.TestCase):
         for case_id in CASES:
             files = support.files(sm, case_id)
             self.assertEqual(sm.validate_files(files, manifest(case_id, sm))['amendmentLeafTarget'], sm.CASES[case_id]['leafTarget'])
+        # A lần 2 case without its previous version, or with a lần 1 file where the prior belongs, is refused.
+        files = support.files(sm, LAN2_INCREASE)
+        with self.assertRaises(sm.NtnnKhbsWebCaseError) as error:
+            sm.validate_files({k: v for k, v in files.items() if k != sm.PRIOR_NAME}, manifest(LAN2_INCREASE, sm))
+        self.assertEqual(error.exception.code, 'NAMES')
+        with self.assertRaises(sm.NtnnKhbsWebCaseError):
+            sm.validate_files(dict(files, **{sm.PRIOR_NAME: files[sm.WEB_NAME]}), manifest(LAN2_INCREASE, sm))
         body = support.files(sm, INCREASE)[sm.WEB_NAME].decode('utf-8')
         changed = body.replace('<PLuc>', '<PLuc><PL_NQ142_GTGT><ct14>0</ct14></PL_NQ142_GTGT>').encode('utf-8')
         import hashlib
@@ -123,13 +147,16 @@ class Gtgt01Tt89KhbsDriverWiring(unittest.TestCase):
         plans = (ROOT / 'HtkkDeclarationCasePlans.cs').read_text(encoding='utf-8')
         ids = set(re.findall('"([^"]+)"', re.search(r'KhbsCaseIds=new string\[\]\{(.*?)\};', plans, re.S).group(1)))
         self.assertTrue(set(CASES) <= ids)
-        self.assertNotRegex(plans, r'KhbsSoLan\(string caseId\)\{return [^;]*01GTGT-TT89-khbs-')
+        self.assertNotRegex(plans, r'KhbsSoLan\(string caseId\)\{return [^;]*01GTGT-TT89-khbs-(increase|decrease)-')
+        for case_id in LAN2:
+            self.assertRegex(plans, r'KhbsSoLan\(string caseId\)\{return [^;]*caseId=="%s"[^;]*\?2:' % case_id)
         self.assertIn('if(caseId.StartsWith("01GTGT-TT89-khbs-",StringComparison.Ordinal))return Gtgt01Tt89KhbsPlan(caseId);', plans)
         body = plans[plans.index('private static HtkkDeclarationCasePlan Gtgt01Tt89KhbsPlan('):]
         body = body[:body.index('\n }\n')]
         # KHBS_01_GTGT_TT89_309.xsd has the same bytes as 01_GTGT_TT89_309.xsd (HTKK 5.8.4 and 5.8.5).
         self.assertIn('"Validate/KHBS_01_GTGT_TT89_309.xsd","8481f7c98ca9e008742552bda4f7ecc814cb91d453584b179fdf2d7767d9da19"', body)
-        self.assertIn('int leaves=caseId=="%s"?%d:%d;' % (DECREASE, m.tax_leaf_count(DECREASE) + 4, m.tax_leaf_count(INCREASE) + 4), body)
+        self.assertIn('int leaves=caseId=="%s"?%d:caseId=="%s"?%d:%d;' % (DECREASE, m.tax_leaf_count(DECREASE) + 4, LAN2_DECREASE, m.tax_leaf_count(LAN2_DECREASE) + 4, m.tax_leaf_count(INCREASE) + 4), body)
+        self.assertEqual(m.tax_leaf_count(LAN2_INCREASE), m.tax_leaf_count(INCREASE))
         self.assertIn('new HtkkDeclarationCasePlan(caseId,"Z5","3.0.9","2032","Gtgt01TT89Nckt309",new string[]{"101","101_1","Z5"},"month","19","2026","10","01/10/2026","31/10/2026",false,', body)
         first = plans[plans.index('case "01GTGT-TT89-sale10-M10-2026":'):]
         first = first[:first.index(';\n')]
@@ -144,7 +171,9 @@ class Gtgt01Tt89KhbsDriverWiring(unittest.TestCase):
         formats = (ROOT / 'HtkkNativeCaseFormats.ps1').read_text(encoding='utf-8')
         listed = re.search(r"\$HtkkNtnnKhbsCases=@\((.*?)\)\n", formats).group(1)
         self.assertTrue(set(CASES) <= set(re.findall("'([^']+)'", listed)))
-        self.assertFalse(set(CASES) & set(re.findall("'([^']+)'", re.search(r"\$HtkkNtnnKhbsLan2Cases=@\((.*?)\)\n", formats).group(1))))
+        lan2_listed = set(re.findall("'([^']+)'", re.search(r"\$HtkkNtnnKhbsLan2Cases=@\((.*?)\)\n", formats).group(1)))
+        self.assertFalse(set(LAN1) & lan2_listed)
+        self.assertTrue(set(LAN2) <= lan2_listed)
         registry_text = (ROOT / 'htkk-native-automation-registry.json').read_text(encoding='utf-8')
         reader = (ROOT / 'Get-HtkkSafeGuiReferenceResult.ps1').read_text(encoding='utf-8')
         workflow = (ROOT.parent / '.github/workflows/probe-htkk-windows.yml').read_text(encoding='utf-8')
